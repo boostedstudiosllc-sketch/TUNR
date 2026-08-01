@@ -6,6 +6,7 @@ import MeetCard from "./components/MeetCard.jsx";
 import MeetDetail from "./components/MeetDetail.jsx";
 import MapView from "./components/MapView.jsx";
 import SubmitMeet from "./components/SubmitMeet.jsx";
+import ProfileTab from "./components/ProfileTab.jsx";
 
 const FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -300,6 +301,7 @@ export default function App() {
           { id: "discover", icon: "≡", label: "DISCOVER" },
           { id: "map", icon: "◎", label: "MAP" },
           { id: "saved", icon: "★", label: "MY MEETS" },
+          { id: "profile", icon: "◉", label: "PROFILE" },
         ].map((t) => (
           <button
             key={t.id}
@@ -343,6 +345,8 @@ export default function App() {
           </button>
         ))}
       </nav>
+
+      {tab === "profile" && <ProfileTab events={events} rsvps={rsvps} />}
 
       {selected && (
         <MeetDetail
