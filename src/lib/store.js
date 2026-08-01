@@ -6,6 +6,7 @@
 
 import { seedEvents } from "../data/events.js";
 import { supabase } from "./supabase.js";
+import { DEFAULT_TZ, parseLocal } from "./dates.js";
 
 const RSVP_KEY = "tunr.rsvps.v1";
 const SUBMITTED_KEY = "tunr.submitted.v1";
@@ -31,18 +32,27 @@ function write(key, value) {
   }
 }
 
-function isoLocal(ts) {
-  // timestamptz -> "YYYY-MM-DDTHH:MM" in the viewer's local time,
-  // matching the shape the date helpers expect.
+function isoInTz(ts, tz) {
+  // timestamptz -> "YYYY-MM-DDTHH:MM" wall clock in the event's own timezone,
+  // which is the shape the date helpers expect.
   if (!ts) return null;
   const d = new Date(ts);
   if (isNaN(d.getTime())) return null;
-  const p = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  const p = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit",
+  })
+    .formatToParts(d)
+    .reduce((acc, x) => ((acc[x.type] = x.value), acc), {});
+  const hour = String(Number(p.hour) % 24).padStart(2, "0");
+  return `${p.year}-${p.month}-${p.day}T${hour}:${p.minute}`;
 }
 
 function rowToEvent(row, counts, userId) {
   const c = counts.get(row.id) || { going: 0, interested: 0 };
+  const tz = row.timezone || DEFAULT_TZ;
   return {
     id: row.id,
     slug: row.slug,
@@ -51,8 +61,9 @@ function rowToEvent(row, counts, userId) {
     verified: row.verified,
     location: row.location,
     city: row.city,
-    start: isoLocal(row.start_at),
-    end: isoLocal(row.end_at),
+    timezone: tz,
+    start: isoInTz(row.start_at, tz),
+    end: isoInTz(row.end_at, tz),
     recurrence: row.recurrence,
     vibe: row.vibe,
     going: (row.base_going || 0) + c.going,
@@ -94,7 +105,7 @@ export async function submitEvent(draft, userId = null) {
         host: draft.host || "you",
         location: draft.location || "TBA",
         city: draft.city || "Atlanta, GA",
-        start_at: draft.start ? new Date(draft.start).toISOString() : null,
+        start_at: draft.start ? parseLocal(draft.start, DEFAULT_TZ).toISOString() : null,
         vibe: draft.vibe || "JDM",
         tags: ["Just Posted"],
         description: draft.description || "No description yet.",
@@ -102,6 +113,7 @@ export async function submitEvent(draft, userId = null) {
         source_url: draft.igLink || null,
         lng: draft.lng ?? -84.39,
         lat: draft.lat ?? 33.75,
+        timezone: DEFAULT_TZ,
         created_by: userId,
       })
       .select()
@@ -122,6 +134,7 @@ export async function submitEvent(draft, userId = null) {
     start: draft.start || null,
     end: draft.end || null,
     recurrence: null,
+    timezone: DEFAULT_TZ,
     vibe: draft.vibe || "JDM",
     going: 1,
     interested: 0,

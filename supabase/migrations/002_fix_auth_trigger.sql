@@ -31,3 +31,8 @@ begin
     execute format('drop function if exists public.%I() cascade', t.proname);
   end loop;
 end $$;
+
+-- Events carry the timezone their wall-clock times belong to, so a meet at
+-- 9:00 AM in Kennesaw reads 9:00 AM to every viewer, anywhere.
+alter table public.events
+  add column if not exists timezone text not null default 'America/New_York';
