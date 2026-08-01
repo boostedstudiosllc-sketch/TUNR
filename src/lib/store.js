@@ -349,6 +349,31 @@ export async function ensureProfile(user) {
   await supabase.from("profiles").upsert({ id: user.id, username, city: "Atlanta, GA" });
 }
 
+export async function signInWithGoogle() {
+  if (!supabase) throw new Error("Backend not configured");
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: window.location.origin },
+  });
+  if (error) throw new Error(friendlyAuthError(error));
+}
+
+// True once the Google provider is switched on in the Supabase dashboard, so
+// the button only appears when it will actually work.
+export async function googleEnabled() {
+  if (!supabase) return false;
+  try {
+    const res = await fetch(
+      import.meta.env.VITE_SUPABASE_URL + "/auth/v1/settings",
+      { headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY } }
+    );
+    const json = await res.json();
+    return Boolean(json?.external?.google);
+  } catch {
+    return false;
+  }
+}
+
 export async function signOut() {
   if (supabase) await supabase.auth.signOut();
 }
