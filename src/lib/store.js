@@ -84,15 +84,23 @@ export async function loadEvents(userId = null) {
   if (!supabase) {
     return [...read(SUBMITTED_KEY, []), ...seedEvents];
   }
-  const [{ data: rows, error }, { data: countRows }] = await Promise.all([
+  const [eventsRes, countsRes] = await Promise.all([
     supabase.from("events").select("*"),
     supabase.from("event_rsvp_counts").select("*"),
   ]);
-  if (error || !rows) {
+
+  const rows = eventsRes?.data;
+  if (eventsRes?.error || !Array.isArray(rows)) {
     // Network/db hiccup: degrade to local so the app still shows meets.
     return [...read(SUBMITTED_KEY, []), ...seedEvents];
   }
-  const counts = new Map((countRows || []).map((r) => [r.event_id, r]));
+
+  // Counts are decorative: if that query fails, still show the meets rather
+  // than blanking the whole feed.
+  const countRows = Array.isArray(countsRes?.data) ? countsRes.data : [];
+  const counts = new Map(
+    countRows.filter((r) => r && r.event_id).map((r) => [r.event_id, r])
+  );
   return rows.map((r) => rowToEvent(r, counts, userId));
 }
 
