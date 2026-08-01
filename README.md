@@ -34,11 +34,23 @@ npm run dev
 The app works without a Mapbox token — the map tab shows a placeholder and event
 detail maps are hidden until `VITE_MAPBOX_TOKEN` is set.
 
+## Backend (Supabase)
+
+1. Create a Supabase project and run `supabase/migrations/001_init.sql` in the
+   SQL Editor (schema, row-level security, seed events).
+2. In Supabase: Authentication → URL Configuration → set Site URL to your
+   deployed URL (email sign-in links redirect there).
+3. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars.
+
+Without these vars the app runs in guest mode: seed events + device-local
+RSVPs and posts.
+
 ## Deploy (Vercel)
 
 1. vercel.com → Add New → Project → import this repo
 2. Set the production branch to this branch (or merge to `main`)
-3. Add env var `VITE_MAPBOX_TOKEN` with your Mapbox public token
+3. Add env vars: `VITE_MAPBOX_TOKEN`, `VITE_SUPABASE_URL`,
+   `VITE_SUPABASE_ANON_KEY`
 4. Deploy — Vercel auto-detects Vite
 
 ## Content policy

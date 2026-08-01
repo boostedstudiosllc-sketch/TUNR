@@ -1,5 +1,11 @@
-import { useState } from "react";
-import { loadProfile, saveProfile } from "../lib/store.js";
+import { useEffect, useState } from "react";
+import {
+  loadProfile,
+  saveProfile,
+  hasBackend,
+  signInWithEmail,
+  signOut,
+} from "../lib/store.js";
 
 const inputStyle = {
   background: "#161616",
@@ -14,10 +20,26 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
-export default function ProfileTab({ events, rsvps, onShowTerms }) {
-  const [profile, setProfile] = useState(loadProfile);
-  const [editing, setEditing] = useState(!profile.username);
-  const [draft, setDraft] = useState(profile);
+export default function ProfileTab({ events, rsvps, user, onShowTerms, onToast }) {
+  const [profile, setProfile] = useState({ username: "", city: "Atlanta, GA" });
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({ username: "", city: "Atlanta, GA" });
+  const [email, setEmail] = useState("");
+  const [linkSent, setLinkSent] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadProfile(user?.id || null).then((p) => {
+      if (cancelled) return;
+      setProfile(p);
+      setDraft(p);
+      setEditing(!p.username);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const goingCount = events.filter((e) => rsvps[e.id] === "going").length;
   const savedCount = events.filter((e) => rsvps[e.id] === "interested").length;
@@ -25,13 +47,32 @@ export default function ProfileTab({ events, rsvps, onShowTerms }) {
 
   const initial = (profile.username || "T")[0].toUpperCase();
 
-  function save() {
+  async function save() {
     const next = {
       username: draft.username.trim().toLowerCase().replace(/[^a-z0-9_.]/g, ""),
       city: draft.city.trim() || "Atlanta, GA",
     };
-    setProfile(saveProfile(next));
-    setEditing(false);
+    try {
+      await saveProfile(next, user?.id || null);
+      setProfile(next);
+      setEditing(false);
+    } catch {
+      onToast("Couldn't save profile — that username may be taken.");
+    }
+  }
+
+  async function sendLink() {
+    const addr = email.trim();
+    if (!addr || !addr.includes("@")) return;
+    setSending(true);
+    try {
+      await signInWithEmail(addr);
+      setLinkSent(true);
+    } catch {
+      onToast("Couldn't send the sign-in link. Try again in a minute.");
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -127,6 +168,134 @@ export default function ProfileTab({ events, rsvps, onShowTerms }) {
       </div>
 
       <div style={{ padding: "16px 20px" }}>
+        {/* Account section */}
+        {hasBackend() && !user && (
+          <div
+            style={{
+              background: "#111",
+              border: "1px solid #2A2A2A",
+              borderRadius: 10,
+              padding: "16px 18px",
+              marginBottom: 12,
+            }}
+          >
+            <div style={{ fontSize: 15, fontWeight: 800 }}>Sign in to sync</div>
+            <div
+              style={{
+                fontSize: 12.5,
+                color: "#777",
+                marginTop: 5,
+                lineHeight: 1.6,
+                fontFamily: "'Barlow', sans-serif",
+              }}
+            >
+              Your RSVPs count toward the public numbers, your posted meets go live for everyone,
+              and your profile follows you across devices.
+            </div>
+            {linkSent ? (
+              <div
+                style={{
+                  marginTop: 12,
+                  background: "rgba(16,185,129,0.1)",
+                  border: "1px solid #10B981",
+                  borderRadius: 8,
+                  padding: "12px 14px",
+                  fontSize: 13,
+                  color: "#10B981",
+                  fontFamily: "'Barlow', sans-serif",
+                  lineHeight: 1.5,
+                }}
+              >
+                ✓ Check your email — tap the sign-in link we sent to {email.trim()}. It opens the
+                app signed in.
+              </div>
+            ) : (
+              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                <input
+                  style={{ ...inputStyle, flex: 1 }}
+                  type="email"
+                  placeholder="you@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") sendLink();
+                  }}
+                />
+                <button
+                  className="action-btn"
+                  onClick={sendLink}
+                  disabled={sending}
+                  style={{
+                    padding: "0 18px",
+                    background: sending ? "#1E1E1E" : "#FF4500",
+                    color: sending ? "#555" : "#fff",
+                    border: "none",
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 800,
+                    letterSpacing: 1,
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {sending ? "SENDING…" : "SEND LINK"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {hasBackend() && user && (
+          <div
+            style={{
+              background: "#111",
+              border: "1px solid #2A2A2A",
+              borderRadius: 10,
+              padding: "14px 18px",
+              marginBottom: 12,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 10,
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 800 }}>Signed in</div>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "#666",
+                  marginTop: 2,
+                  fontFamily: "'Barlow', sans-serif",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {user.email}
+              </div>
+            </div>
+            <button
+              className="action-btn"
+              onClick={() => signOut()}
+              style={{
+                padding: "8px 14px",
+                background: "#1A1A1A",
+                border: "1px solid #2A2A2A",
+                borderRadius: 8,
+                color: "#888",
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: 1,
+                fontFamily: "'Barlow Condensed', sans-serif",
+                flexShrink: 0,
+              }}
+            >
+              SIGN OUT
+            </button>
+          </div>
+        )}
+
         <div
           style={{
             background: "#111",
@@ -147,8 +316,7 @@ export default function ProfileTab({ events, rsvps, onShowTerms }) {
               fontFamily: "'Barlow', sans-serif",
             }}
           >
-            Accounts, follows, and your build gallery arrive with sign-in. Your RSVPs and posted
-            meets are saved on this device in the meantime.
+            Follows and your build gallery are next up on the roadmap.
           </div>
         </div>
 

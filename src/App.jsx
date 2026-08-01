@@ -1,7 +1,16 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { VIBES } from "./data/events.js";
 import { isPast, isToday, isThisWeekend, sortKey, displayDate, displayTime } from "./lib/dates.js";
-import { loadEvents, loadRsvps, saveRsvp, submitEvent, loadTosAccepted, saveTosAccepted } from "./lib/store.js";
+import {
+  loadEvents,
+  loadRsvps,
+  saveRsvp,
+  submitEvent,
+  loadTosAccepted,
+  saveTosAccepted,
+  syncTosToAccount,
+  onAuthChange,
+} from "./lib/store.js";
 import MeetCard from "./components/MeetCard.jsx";
 import MeetDetail from "./components/MeetDetail.jsx";
 import MapView from "./components/MapView.jsx";
@@ -12,8 +21,10 @@ import TermsOfService from "./components/TermsOfService.jsx";
 const FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
 export default function App() {
-  const [events, setEvents] = useState(loadEvents);
-  const [rsvps, setRsvps] = useState(loadRsvps);
+  const [events, setEvents] = useState([]);
+  const [rsvps, setRsvps] = useState({});
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("discover");
   const [filter, setFilter] = useState("All");
   const [selected, setSelected] = useState(null);
@@ -23,6 +34,33 @@ export default function App() {
   const [showTerms, setShowTerms] = useState(false);
 
   const now = new Date();
+
+  // Track auth session
+  useEffect(() => {
+    const unsubscribe = onAuthChange((u) => {
+      setUser(u);
+      if (u) syncTosToAccount(u.id);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Load events + rsvps whenever the signed-in user changes
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([loadEvents(user?.id || null), loadRsvps(user?.id || null)])
+      .then(([evts, r]) => {
+        if (cancelled) return;
+        setEvents(evts);
+        setRsvps(r);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const visible = useMemo(() => {
     return events
@@ -44,16 +82,29 @@ export default function App() {
   const saved = events.filter((e) => rsvps[e.id]);
 
   function handleRsvp(eventId, status) {
-    setRsvps((prev) => saveRsvp(prev, eventId, status));
+    // Optimistic update; persistence happens in the store.
+    setRsvps((prev) => {
+      const turningOff = prev[eventId] === status;
+      const next = { ...prev };
+      if (turningOff) delete next[eventId];
+      else next[eventId] = status;
+      saveRsvp(prev, eventId, status, user?.id || null).catch(() => {});
+      return next;
+    });
   }
 
-  function handleSubmit(draft) {
-    submitEvent(draft);
-    setEvents(loadEvents());
-    setShowSubmit(false);
-    setTab("discover");
-    setFilter("All");
-    showToast("🏁 Meet posted — it's live on Discover");
+  async function handleSubmit(draft) {
+    try {
+      await submitEvent(draft, user?.id || null);
+      const evts = await loadEvents(user?.id || null);
+      setEvents(evts);
+      setShowSubmit(false);
+      setTab("discover");
+      setFilter("All");
+      showToast("🏁 Meet posted — it's live on Discover");
+    } catch {
+      showToast("Couldn't post the meet. Check your connection and try again.");
+    }
   }
 
   function showToast(msg) {
@@ -67,7 +118,7 @@ export default function App() {
         <GlobalStyles />
         <TermsOfService
           onAccept={() => {
-            saveTosAccepted();
+            saveTosAccepted(user?.id || null);
             setTosAccepted(true);
           }}
         />
@@ -199,7 +250,9 @@ export default function App() {
           )}
 
           <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 14 }}>
-            {visible.length === 0 ? (
+            {loading ? (
+              <EmptyState title="Loading meets…" sub="Pulling the latest events" />
+            ) : visible.length === 0 ? (
               <EmptyState
                 title="No meets match this filter"
                 sub="Try a different vibe or clear filters"
@@ -298,6 +351,17 @@ export default function App() {
         </div>
       )}
 
+      {/* Profile */}
+      {tab === "profile" && (
+        <ProfileTab
+          events={events}
+          rsvps={rsvps}
+          user={user}
+          onShowTerms={() => setShowTerms(true)}
+          onToast={showToast}
+        />
+      )}
+
       {/* Bottom nav */}
       <nav
         style={{
@@ -362,8 +426,6 @@ export default function App() {
           </button>
         ))}
       </nav>
-
-      {tab === "profile" && <ProfileTab events={events} rsvps={rsvps} onShowTerms={() => setShowTerms(true)} />}
 
       {selected && (
         <MeetDetail
