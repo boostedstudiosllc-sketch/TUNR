@@ -1,5 +1,5 @@
 import MeetCard from "./MeetCard.jsx";
-import SignInForm from "./SignInForm.jsx";
+import AuthForm from "./AuthForm.jsx";
 
 // Blurred preview of the meets behind the sign-in wall, with the prompt
 // overlaid on top.
@@ -17,11 +17,11 @@ export default function LockedMeets({ events, lockedCount, onError }) {
           display: "flex",
           flexDirection: "column",
           gap: 14,
-          maxHeight: 420,
+          maxHeight: 620,
           overflow: "hidden",
         }}
       >
-        {events.slice(0, 3).map((event) => (
+        {events.slice(0, 4).map((event) => (
           <MeetCard
             key={event.id}
             event={event}
@@ -86,9 +86,9 @@ export default function LockedMeets({ events, lockedCount, onError }) {
               fontFamily: "'Barlow', sans-serif",
             }}
           >
-            Sign in free to unlock every meet, RSVP, save the ones you want, and post your own.
+            Free account — unlock every meet, RSVP, save the ones you want, and post your own.
           </div>
-          <SignInForm onError={onError} />
+          <AuthForm />
         </div>
       </div>
     </div>

@@ -267,17 +267,86 @@ export function hasBackend() {
   return Boolean(supabase);
 }
 
-export async function signInWithEmail(email) {
-  if (!supabase) throw new Error("Backend not configured");
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: window.location.origin },
-  });
-  if (error) throw error;
+export async function isUsernameTaken(username) {
+  if (!supabase || !username) return false;
+  const { data } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("username", username)
+    .maybeSingle();
+  return Boolean(data);
 }
 
-export async function signOut() {
-  if (supabase) await supabase.auth.signOut();
+export async function signUpWithPassword(email, password, username) {
+  if (!supabase) throw new Error("Backend not configured");
+
+  if (await isUsernameTaken(username)) {
+    throw new Error("That username is taken — pick another.");
+  }
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { username },
+      emailRedirectTo: window.location.origin,
+    },
+  });
+  if (error) throw new Error(friendlyAuthError(error));
+
+  // With email confirmation on, there's no session until the link is clicked.
+  if (!data.session) return { needsConfirmation: true };
+
+  await supabase
+    .from("profiles")
+    .upsert({ id: data.user.id, username, city: "Atlanta, GA" });
+  return { signedIn: true };
+}
+
+export async function signInWithPassword(email, password) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw new Error(friendlyAuthError(error));
+  return { signedIn: true };
+}
+
+export async function sendPasswordReset(email) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin,
+  });
+  if (error) throw new Error(friendlyAuthError(error));
+}
+
+export async function updatePassword(password) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw new Error(friendlyAuthError(error));
+}
+
+function friendlyAuthError(error) {
+  const msg = (error && error.message) || "";
+  const code = (error && error.code) || "";
+  if (/invalid login credentials/i.test(msg)) return "Wrong email or password.";
+  if (/email not confirmed/i.test(msg)) return "Confirm your email first — check your inbox.";
+  if (/already registered|already been registered/i.test(msg))
+    return "That email already has an account. Log in instead.";
+  if (/password/i.test(msg) && /(short|least|6)/i.test(msg))
+    return "Password must be at least 6 characters.";
+  if (/rate|too many/i.test(msg) || code === "over_email_send_rate_limit")
+    return "Too many attempts. Wait a few minutes and try again.";
+  if (/invalid/i.test(msg) && /email/i.test(msg)) return "That email address isn't valid.";
+  return msg || "Something went wrong. Try again.";
+}
+
+// Ensures a profile row exists for a freshly confirmed account, carrying the
+// username chosen at sign-up.
+export async function ensureProfile(user) {
+  if (!supabase || !user) return;
+  const { data } = await supabase.from("profiles").select("id").eq("id", user.id).maybeSingle();
+  if (data) return;
+  const username = user.user_metadata?.username || null;
+  await supabase.from("profiles").upsert({ id: user.id, username, city: "Atlanta, GA" });
 }
 
 export function onAuthChange(callback) {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadProfile, saveProfile, hasBackend, signOut } from "../lib/store.js";
-import SignInForm from "./SignInForm.jsx";
+import AuthForm from "./AuthForm.jsx";
 
 const inputStyle = {
   background: "#161616",
@@ -157,7 +157,7 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onToast }
               marginBottom: 12,
             }}
           >
-            <div style={{ fontSize: 15, fontWeight: 800 }}>Sign in to sync</div>
+            <div style={{ fontSize: 15, fontWeight: 800 }}>Create your account</div>
             <div
               style={{
                 fontSize: 12.5,
@@ -171,7 +171,7 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onToast }
               and your profile follows you across devices.
             </div>
             <div style={{ marginTop: 12 }}>
-              <SignInForm onError={onToast} />
+              <AuthForm />
             </div>
           </div>
         )}

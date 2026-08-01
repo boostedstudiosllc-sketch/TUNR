@@ -12,6 +12,7 @@ import {
   onAuthChange,
   hasBackend,
   completeSignInFromUrl,
+  ensureProfile,
 } from "./lib/store.js";
 import MeetCard from "./components/MeetCard.jsx";
 import MeetDetail from "./components/MeetDetail.jsx";
@@ -20,7 +21,7 @@ import SubmitMeet from "./components/SubmitMeet.jsx";
 import ProfileTab from "./components/ProfileTab.jsx";
 import TermsOfService from "./components/TermsOfService.jsx";
 import LockedMeets from "./components/LockedMeets.jsx";
-import SignInForm from "./components/SignInForm.jsx";
+import AuthForm from "./components/AuthForm.jsx";
 
 const FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -46,7 +47,10 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthChange((u) => {
       setUser(u);
-      if (u) syncTosToAccount(u.id);
+      if (u) {
+        ensureProfile(u);
+        syncTosToAccount(u.id);
+      }
     });
     return unsubscribe;
   }, []);
@@ -187,7 +191,7 @@ export default function App() {
           onClick={() => {
             if (gated) {
               setTab("profile");
-              showToast("Sign in to post a meet");
+              showToast("Create a free account to post a meet");
               return;
             }
             setShowSubmit(true);
@@ -379,9 +383,9 @@ export default function App() {
                     fontFamily: "'Barlow', sans-serif",
                   }}
                 >
-                  Sign in free to see every pin near you.
+                  Free account — see every pin near you.
                 </div>
-                <SignInForm compact onError={showToast} />
+                <AuthForm />
               </div>
             )}
           </div>
@@ -420,10 +424,9 @@ export default function App() {
                   fontFamily: "'Barlow', sans-serif",
                 }}
               >
-                Sign in free to RSVP, keep a list of the meets you're hitting, and get them on any
-                device.
+                Free account — RSVP, keep a list of the meets you're hitting, and get them on any device.
               </div>
-              <SignInForm onError={showToast} />
+              <AuthForm />
             </div>
           ) : saved.length === 0 ? (
             <EmptyState title="No meets saved yet" sub="RSVP to meets in the Discover tab" />
