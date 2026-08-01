@@ -273,12 +273,56 @@ export async function signOut() {
 }
 
 export function onAuthChange(callback) {
-  if (!supabase) return () => {};
+  if (!supabase) {
+    callback(null);
+    return () => {};
+  }
+  // Single source of truth. supabase-js emits INITIAL_SESSION once it has
+  // finished reading any session out of the URL, so subscribing is enough —
+  // pairing it with a getSession() call races and can clobber a fresh sign-in
+  // back to signed-out.
   const {
     data: { subscription },
-  } = supabase.auth.onAuthStateChange((_evt, session) => {
+  } = supabase.auth.onAuthStateChange((_event, session) => {
     callback(session?.user || null);
   });
-  supabase.auth.getSession().then(({ data }) => callback(data.session?.user || null));
   return () => subscription.unsubscribe();
+}
+
+// Reads the sign-in result out of the URL after the emailed link lands, then
+// strips the tokens from the address bar. Returns an error message when the
+// link failed (expired, already used, wrong browser) so the UI can say so
+// instead of silently showing a signed-out app.
+export async function completeSignInFromUrl() {
+  if (!supabase || typeof window === "undefined") return null;
+
+  const hash = window.location.hash.startsWith("#")
+    ? new URLSearchParams(window.location.hash.slice(1))
+    : new URLSearchParams();
+  const query = new URLSearchParams(window.location.search);
+
+  const errorDescription = hash.get("error_description") || query.get("error_description");
+  const hasToken = Boolean(hash.get("access_token"));
+  const code = query.get("code");
+
+  let result = null;
+
+  if (errorDescription) {
+    result = { error: errorDescription };
+  } else if (code) {
+    // A link minted while the app still used PKCE.
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    result = error
+      ? { error: "That sign-in link couldn't be completed. Request a new one." }
+      : { signedIn: true };
+  } else if (hasToken) {
+    // detectSessionInUrl already consumed it; confirm the session took.
+    const { data } = await supabase.auth.getSession();
+    result = data.session ? { signedIn: true } : { error: "Sign-in link expired. Request a new one." };
+  }
+
+  if (result) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+  return result;
 }

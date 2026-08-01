@@ -11,6 +11,7 @@ import {
   syncTosToAccount,
   onAuthChange,
   hasBackend,
+  completeSignInFromUrl,
 } from "./lib/store.js";
 import MeetCard from "./components/MeetCard.jsx";
 import MeetDetail from "./components/MeetDetail.jsx";
@@ -48,6 +49,15 @@ export default function App() {
       if (u) syncTosToAccount(u.id);
     });
     return unsubscribe;
+  }, []);
+
+  // Finish the emailed sign-in link, and say so if it failed.
+  useEffect(() => {
+    completeSignInFromUrl().then((res) => {
+      if (!res) return;
+      if (res.error) showToast(res.error);
+      else if (res.signedIn) showToast("✓ Signed in — all meets unlocked");
+    });
   }, []);
 
   // Load events + rsvps whenever the signed-in user changes
