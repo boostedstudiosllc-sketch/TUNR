@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-  loadProfile,
-  saveProfile,
-  hasBackend,
-  signInWithEmail,
-  signOut,
-} from "../lib/store.js";
+import { loadProfile, saveProfile, hasBackend, signOut } from "../lib/store.js";
+import SignInForm from "./SignInForm.jsx";
 
 const inputStyle = {
   background: "#161616",
@@ -24,9 +19,6 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onToast }
   const [profile, setProfile] = useState({ username: "", city: "Atlanta, GA" });
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ username: "", city: "Atlanta, GA" });
-  const [email, setEmail] = useState("");
-  const [linkSent, setLinkSent] = useState(false);
-  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,20 +50,6 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onToast }
       setEditing(false);
     } catch {
       onToast("Couldn't save profile — that username may be taken.");
-    }
-  }
-
-  async function sendLink() {
-    const addr = email.trim();
-    if (!addr || !addr.includes("@")) return;
-    setSending(true);
-    try {
-      await signInWithEmail(addr);
-      setLinkSent(true);
-    } catch {
-      onToast("Couldn't send the sign-in link. Try again in a minute.");
-    } finally {
-      setSending(false);
     }
   }
 
@@ -192,56 +170,9 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onToast }
               Your RSVPs count toward the public numbers, your posted meets go live for everyone,
               and your profile follows you across devices.
             </div>
-            {linkSent ? (
-              <div
-                style={{
-                  marginTop: 12,
-                  background: "rgba(16,185,129,0.1)",
-                  border: "1px solid #10B981",
-                  borderRadius: 8,
-                  padding: "12px 14px",
-                  fontSize: 13,
-                  color: "#10B981",
-                  fontFamily: "'Barlow', sans-serif",
-                  lineHeight: 1.5,
-                }}
-              >
-                ✓ Check your email — tap the sign-in link we sent to {email.trim()}. It opens the
-                app signed in.
-              </div>
-            ) : (
-              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                <input
-                  style={{ ...inputStyle, flex: 1 }}
-                  type="email"
-                  placeholder="you@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") sendLink();
-                  }}
-                />
-                <button
-                  className="action-btn"
-                  onClick={sendLink}
-                  disabled={sending}
-                  style={{
-                    padding: "0 18px",
-                    background: sending ? "#1E1E1E" : "#FF4500",
-                    color: sending ? "#555" : "#fff",
-                    border: "none",
-                    borderRadius: 8,
-                    fontSize: 12,
-                    fontWeight: 800,
-                    letterSpacing: 1,
-                    fontFamily: "'Barlow Condensed', sans-serif",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {sending ? "SENDING…" : "SEND LINK"}
-                </button>
-              </div>
-            )}
+            <div style={{ marginTop: 12 }}>
+              <SignInForm onError={onToast} />
+            </div>
           </div>
         )}
 

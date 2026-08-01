@@ -10,6 +10,7 @@ import {
   saveTosAccepted,
   syncTosToAccount,
   onAuthChange,
+  hasBackend,
 } from "./lib/store.js";
 import MeetCard from "./components/MeetCard.jsx";
 import MeetDetail from "./components/MeetDetail.jsx";
@@ -17,8 +18,13 @@ import MapView from "./components/MapView.jsx";
 import SubmitMeet from "./components/SubmitMeet.jsx";
 import ProfileTab from "./components/ProfileTab.jsx";
 import TermsOfService from "./components/TermsOfService.jsx";
+import LockedMeets from "./components/LockedMeets.jsx";
+import SignInForm from "./components/SignInForm.jsx";
 
 const FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
+
+// Meets a signed-out visitor can see before the sign-in wall.
+const FREE_PREVIEW_COUNT = 2;
 
 export default function App() {
   const [events, setEvents] = useState([]);
@@ -80,6 +86,10 @@ export default function App() {
   );
 
   const saved = events.filter((e) => rsvps[e.id]);
+
+  const gated = Boolean(hasBackend() && !user);
+  const unlocked = gated ? visible.slice(0, FREE_PREVIEW_COUNT) : visible;
+  const lockedEvents = gated ? visible.slice(FREE_PREVIEW_COUNT) : [];
 
   function handleRsvp(eventId, status) {
     // Optimistic update; persistence happens in the store.
@@ -164,7 +174,14 @@ export default function App() {
         </div>
         <button
           className="action-btn"
-          onClick={() => setShowSubmit(true)}
+          onClick={() => {
+            if (gated) {
+              setTab("profile");
+              showToast("Sign in to post a meet");
+              return;
+            }
+            setShowSubmit(true);
+          }}
           style={{
             background: "#FF4500",
             color: "#fff",
@@ -258,16 +275,25 @@ export default function App() {
                 sub="Try a different vibe or clear filters"
               />
             ) : (
-              visible.map((event, i) => (
-                <MeetCard
-                  key={event.id}
-                  event={event}
-                  rsvp={rsvps[event.id]}
-                  onOpen={setSelected}
-                  onRsvp={handleRsvp}
-                  index={i}
-                />
-              ))
+              <>
+                {unlocked.map((event, i) => (
+                  <MeetCard
+                    key={event.id}
+                    event={event}
+                    rsvp={rsvps[event.id]}
+                    onOpen={setSelected}
+                    onRsvp={handleRsvp}
+                    index={i}
+                  />
+                ))}
+                {lockedEvents.length > 0 && (
+                  <LockedMeets
+                    events={lockedEvents}
+                    lockedCount={lockedEvents.length}
+                    onError={showToast}
+                  />
+                )}
+              </>
             )}
           </div>
         </div>
@@ -276,12 +302,12 @@ export default function App() {
       {/* Map */}
       {tab === "map" && (
         <div style={{ animation: "fadeIn 0.3s ease", padding: "0 20px" }}>
-          <MapView events={visible} onSelect={setSelected} />
+          <MapView events={unlocked} onSelect={setSelected} />
           <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, fontWeight: 700 }}>
               TAP A PIN OR BROWSE
             </div>
-            {visible.map((event) => (
+            {unlocked.map((event) => (
               <div
                 key={event.id}
                 className="meet-card"
@@ -319,6 +345,35 @@ export default function App() {
                 </div>
               </div>
             ))}
+            {gated && lockedEvents.length > 0 && (
+              <div
+                style={{
+                  background: "#111",
+                  border: "1px solid #FF4500",
+                  borderRadius: 12,
+                  padding: "18px 18px",
+                  marginTop: 4,
+                }}
+              >
+                <div style={{ fontSize: 22, marginBottom: 6 }}>🔒</div>
+                <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: 0.4 }}>
+                  {lockedEvents.length} MORE ON THE MAP
+                </div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: "#999",
+                    marginTop: 6,
+                    marginBottom: 14,
+                    lineHeight: 1.6,
+                    fontFamily: "'Barlow', sans-serif",
+                  }}
+                >
+                  Sign in free to see every pin near you.
+                </div>
+                <SignInForm compact onError={showToast} />
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -332,7 +387,35 @@ export default function App() {
           <div style={{ fontSize: 13, color: "#555", marginBottom: 20 }}>
             Meets you're going to or interested in
           </div>
-          {saved.length === 0 ? (
+          {gated ? (
+            <div
+              style={{
+                background: "#111",
+                border: "1px solid #FF4500",
+                borderRadius: 12,
+                padding: "22px 20px",
+              }}
+            >
+              <div style={{ fontSize: 24, marginBottom: 8 }}>🔒</div>
+              <div style={{ fontSize: 19, fontWeight: 900, letterSpacing: 0.4 }}>
+                SAVE YOUR MEETS
+              </div>
+              <div
+                style={{
+                  fontSize: 13,
+                  color: "#999",
+                  marginTop: 7,
+                  marginBottom: 16,
+                  lineHeight: 1.6,
+                  fontFamily: "'Barlow', sans-serif",
+                }}
+              >
+                Sign in free to RSVP, keep a list of the meets you're hitting, and get them on any
+                device.
+              </div>
+              <SignInForm onError={showToast} />
+            </div>
+          ) : saved.length === 0 ? (
             <EmptyState title="No meets saved yet" sub="RSVP to meets in the Discover tab" />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
