@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { VIBES } from "./data/events.js";
 import { isPast, isToday, isThisWeekend, sortKey, displayDate, displayTime } from "./lib/dates.js";
-import { loadEvents, loadRsvps, saveRsvp, submitEvent } from "./lib/store.js";
+import { loadEvents, loadRsvps, saveRsvp, submitEvent, loadTosAccepted, saveTosAccepted } from "./lib/store.js";
 import MeetCard from "./components/MeetCard.jsx";
 import MeetDetail from "./components/MeetDetail.jsx";
 import MapView from "./components/MapView.jsx";
 import SubmitMeet from "./components/SubmitMeet.jsx";
 import ProfileTab from "./components/ProfileTab.jsx";
+import TermsOfService from "./components/TermsOfService.jsx";
 
 const FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -18,6 +19,8 @@ export default function App() {
   const [selected, setSelected] = useState(null);
   const [showSubmit, setShowSubmit] = useState(false);
   const [toast, setToast] = useState(null);
+  const [tosAccepted, setTosAccepted] = useState(() => Boolean(loadTosAccepted()));
+  const [showTerms, setShowTerms] = useState(false);
 
   const now = new Date();
 
@@ -56,6 +59,20 @@ export default function App() {
   function showToast(msg) {
     setToast(msg);
     setTimeout(() => setToast(null), 2400);
+  }
+
+  if (!tosAccepted) {
+    return (
+      <>
+        <GlobalStyles />
+        <TermsOfService
+          onAccept={() => {
+            saveTosAccepted();
+            setTosAccepted(true);
+          }}
+        />
+      </>
+    );
   }
 
   return (
@@ -346,7 +363,7 @@ export default function App() {
         ))}
       </nav>
 
-      {tab === "profile" && <ProfileTab events={events} rsvps={rsvps} />}
+      {tab === "profile" && <ProfileTab events={events} rsvps={rsvps} onShowTerms={() => setShowTerms(true)} />}
 
       {selected && (
         <MeetDetail
@@ -358,6 +375,8 @@ export default function App() {
       )}
 
       {showSubmit && <SubmitMeet onClose={() => setShowSubmit(false)} onSubmit={handleSubmit} />}
+
+      {showTerms && <TermsOfService readOnly onClose={() => setShowTerms(false)} />}
 
       {toast && (
         <div

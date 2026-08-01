@@ -14,7 +14,7 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
-export default function ProfileTab({ events, rsvps }) {
+export default function ProfileTab({ events, rsvps, onShowTerms }) {
   const [profile, setProfile] = useState(loadProfile);
   const [editing, setEditing] = useState(!profile.username);
   const [draft, setDraft] = useState(profile);
@@ -151,6 +151,26 @@ export default function ProfileTab({ events, rsvps }) {
             meets are saved on this device in the meantime.
           </div>
         </div>
+
+        <button
+          className="action-btn"
+          onClick={onShowTerms}
+          style={{
+            marginTop: 12,
+            width: "100%",
+            padding: "12px 0",
+            background: "#111",
+            border: "1px solid #2A2A2A",
+            borderRadius: 10,
+            color: "#666",
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: 1.5,
+            fontFamily: "'Barlow Condensed', sans-serif",
+          }}
+        >
+          📄 TERMS OF SERVICE
+        </button>
       </div>
     </div>
   );

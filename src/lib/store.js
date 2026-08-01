@@ -6,6 +6,7 @@ import { seedEvents } from "../data/events.js";
 const RSVP_KEY = "tunr.rsvps.v1";
 const SUBMITTED_KEY = "tunr.submitted.v1";
 const PROFILE_KEY = "tunr.profile.v1";
+const TOS_KEY = "tunr.tos.v1";
 
 function read(key, fallback) {
   try {
@@ -84,4 +85,14 @@ export function loadProfile() {
 export function saveProfile(profile) {
   write(PROFILE_KEY, profile);
   return profile;
+}
+
+export function loadTosAccepted() {
+  return read(TOS_KEY, null);
+}
+
+export function saveTosAccepted() {
+  const record = { acceptedAt: new Date().toISOString(), version: 1 };
+  write(TOS_KEY, record);
+  return record;
 }
