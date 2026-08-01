@@ -349,6 +349,10 @@ export async function ensureProfile(user) {
   await supabase.from("profiles").upsert({ id: user.id, username, city: "Atlanta, GA" });
 }
 
+export async function signOut() {
+  if (supabase) await supabase.auth.signOut();
+}
+
 export function onAuthChange(callback) {
   if (!supabase) {
     callback(null);
