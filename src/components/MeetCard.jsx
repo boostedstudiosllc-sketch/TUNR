@@ -22,10 +22,20 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, index = 0 }) {
         style={{
           position: "relative",
           height: 130,
+          overflow: "hidden",
           background: `linear-gradient(135deg, ${color}22, #0a0a0a 65%)`,
         }}
       >
-        <CarSilhouette color={color} />
+        {event.photoUrl ? (
+          <img
+            src={event.photoUrl}
+            alt=""
+            loading="lazy"
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
+        ) : (
+          <CarSilhouette color={color} />
+        )}
         <div
           style={{
             position: "absolute",

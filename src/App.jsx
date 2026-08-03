@@ -13,6 +13,9 @@ import {
   hasBackend,
   completeSignInFromUrl,
   ensureProfile,
+  loadFollows,
+  toggleFollow,
+  track,
 } from "./lib/store.js";
 import MeetCard from "./components/MeetCard.jsx";
 import MeetDetail from "./components/MeetDetail.jsx";
@@ -22,8 +25,9 @@ import ProfileTab from "./components/ProfileTab.jsx";
 import TermsOfService from "./components/TermsOfService.jsx";
 import LockedMeets from "./components/LockedMeets.jsx";
 import AuthForm from "./components/AuthForm.jsx";
+import EditMeet from "./components/EditMeet.jsx";
 
-const FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
+const BASE_FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
 // Meets a signed-out visitor can see before the sign-in wall.
 const FREE_PREVIEW_COUNT = 2;
@@ -40,6 +44,9 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [tosAccepted, setTosAccepted] = useState(() => Boolean(loadTosAccepted()));
   const [showTerms, setShowTerms] = useState(false);
+  const [search, setSearch] = useState("");
+  const [follows, setFollows] = useState([]);
+  const [editing, setEditing] = useState(null);
 
   const now = new Date();
 
@@ -55,6 +62,25 @@ export default function App() {
     return unsubscribe;
   }, []);
 
+  // Record a session start once.
+  useEffect(() => {
+    track("app_opened", { path: window.location.pathname });
+  }, []);
+
+  // A shared /m/<slug> link opens straight to that meet.
+  useEffect(() => {
+    if (!events.length) return;
+    const match = /^\/m\/([^/?#]+)/.exec(window.location.pathname);
+    if (!match) return;
+    const key = decodeURIComponent(match[1]);
+    const found = events.find((e) => e.slug === key || e.id === key);
+    if (found) {
+      setSelected(found);
+      track("shared_link_opened", { slug: key });
+    }
+    window.history.replaceState({}, document.title, "/");
+  }, [events]);
+
   // Finish the emailed sign-in link, and say so if it failed.
   useEffect(() => {
     completeSignInFromUrl().then((res) => {
@@ -68,11 +94,16 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    Promise.all([loadEvents(user?.id || null), loadRsvps(user?.id || null)])
-      .then(([evts, r]) => {
+    Promise.all([
+      loadEvents(user?.id || null),
+      loadRsvps(user?.id || null),
+      loadFollows(user?.id || null),
+    ])
+      .then(([evts, r, f]) => {
         if (cancelled) return;
         setEvents(evts);
         setRsvps(r);
+        setFollows(f);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -83,16 +114,25 @@ export default function App() {
   }, [user?.id]);
 
   const visible = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return events
       .filter((e) => !isPast(e, now))
       .filter((e) => {
         if (filter === "All") return true;
+        if (filter === "Following") return follows.includes(e.host);
         if (filter === "Today") return isToday(e, now);
         if (filter === "This Weekend") return isThisWeekend(e, now);
         return e.vibe === filter;
       })
+      .filter((e) => {
+        if (!q) return true;
+        const haystack = [e.title, e.host, e.location, e.city, ...(e.tags || [])]
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(q);
+      })
       .sort((a, b) => sortKey(a, now) - sortKey(b, now));
-  }, [events, filter]);
+  }, [events, filter, search, follows]);
 
   const todayCount = useMemo(
     () => events.filter((e) => !isPast(e, now) && isToday(e, now)).length,
@@ -113,6 +153,7 @@ export default function App() {
       if (turningOff) delete next[eventId];
       else next[eventId] = status;
       saveRsvp(prev, eventId, status, user?.id || null).catch(() => {});
+      if (!turningOff) track("rsvp", { eventId, status });
       return next;
     });
   }
@@ -125,10 +166,29 @@ export default function App() {
       setShowSubmit(false);
       setTab("discover");
       setFilter("All");
+      track("meet_posted", {});
       showToast("🏁 Meet posted — it's live on Discover");
     } catch {
       showToast("Couldn't post the meet. Check your connection and try again.");
     }
+  }
+
+  async function handleToggleFollow(host) {
+    const isFollowing = follows.includes(host);
+    setFollows((f) => (isFollowing ? f.filter((h) => h !== host) : [...f, host]));
+    try {
+      await toggleFollow(host, user.id, isFollowing);
+      track(isFollowing ? "host_unfollowed" : "host_followed", { host });
+    } catch {
+      setFollows((f) => (isFollowing ? [...f, host] : f.filter((h) => h !== host)));
+    }
+  }
+
+  async function refreshEvents() {
+    const evts = await loadEvents(user?.id || null);
+    setEvents(evts);
+    const fresh = evts.find((e) => e.id === selected?.id);
+    if (fresh) setSelected(fresh);
   }
 
   function showToast(msg) {
@@ -214,6 +274,59 @@ export default function App() {
       {/* Discover */}
       {tab === "discover" && (
         <div style={{ animation: "fadeIn 0.3s ease" }}>
+          <div style={{ padding: "0 20px 12px", position: "relative" }}>
+            <span
+              style={{
+                position: "absolute",
+                left: 33,
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "#555",
+                fontSize: 14,
+                pointerEvents: "none",
+              }}
+            >
+              ⌕
+            </span>
+            <input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                if (e.target.value.trim().length === 3) track("search", { q: e.target.value.trim() });
+              }}
+              placeholder="Search meets, hosts, places…"
+              style={{
+                width: "100%",
+                background: "#161616",
+                border: "1px solid #2A2A2A",
+                borderRadius: 20,
+                padding: "10px 38px",
+                color: "#F0F0F0",
+                fontSize: 13.5,
+                outline: "none",
+                fontFamily: "'Barlow', sans-serif",
+                boxSizing: "border-box",
+              }}
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                style={{
+                  position: "absolute",
+                  right: 30,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  color: "#666",
+                  fontSize: 15,
+                  cursor: "pointer",
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
           <div
             style={{
               display: "flex",
@@ -223,7 +336,7 @@ export default function App() {
               WebkitOverflowScrolling: "touch",
             }}
           >
-            {FILTERS.map((f) => (
+            {(user ? ["All", "Following", ...BASE_FILTERS.slice(1)] : BASE_FILTERS).map((f) => (
               <button
                 key={f}
                 className="filter-pill"
@@ -285,8 +398,8 @@ export default function App() {
               <EmptyState title="Loading meets…" sub="Pulling the latest events" />
             ) : visible.length === 0 ? (
               <EmptyState
-                title="No meets match this filter"
-                sub="Try a different vibe or clear filters"
+                title={search ? `No meets match "${search.trim()}"` : "No meets match this filter"}
+                sub={search ? "Try a different word" : "Try a different vibe or clear filters"}
               />
             ) : (
               <>
@@ -529,10 +642,34 @@ export default function App() {
           rsvp={rsvps[selected.id]}
           onClose={() => setSelected(null)}
           onRsvp={handleRsvp}
+          user={user}
+          following={follows.includes(selected.host)}
+          onToggleFollow={handleToggleFollow}
+          onEdit={() => setEditing(selected)}
+          onClaimed={refreshEvents}
+          onNeedAccount={() => {
+            setSelected(null);
+            setTab("profile");
+            showToast("Create a free account first");
+          }}
+          onToast={showToast}
         />
       )}
 
       {showSubmit && <SubmitMeet onClose={() => setShowSubmit(false)} onSubmit={handleSubmit} />}
+
+      {editing && (
+        <EditMeet
+          event={editing}
+          user={user}
+          onClose={() => setEditing(null)}
+          onSaved={async () => {
+            setEditing(null);
+            await refreshEvents();
+            showToast("Saved");
+          }}
+        />
+      )}
 
       {showTerms && <TermsOfService readOnly onClose={() => setShowTerms(false)} />}
 

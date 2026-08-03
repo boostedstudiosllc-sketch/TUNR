@@ -1,10 +1,60 @@
 import { VIBES } from "../data/events.js";
 import { displayDate, displayTime } from "../lib/dates.js";
 import { CarSilhouette } from "./MeetCard.jsx";
+import Comments from "./Comments.jsx";
+import { claimEvent, toggleFollow, track } from "../lib/store.js";
+import { useState } from "react";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
-export default function MeetDetail({ event, rsvp, onClose, onRsvp }) {
+export default function MeetDetail({
+  event,
+  rsvp,
+  onClose,
+  onRsvp,
+  user,
+  following,
+  onToggleFollow,
+  onEdit,
+  onClaimed,
+  onNeedAccount,
+  onToast,
+}) {
+  const [claiming, setClaiming] = useState(false);
+
+  const canEdit = Boolean(user && (event.claimedByMe || event.submittedByUser));
+  const claimable = Boolean(user && !event.claimedBy && !event.submittedByUser);
+
+  async function share() {
+    const url = `${window.location.origin}/m/${event.slug || event.id}`;
+    track("meet_shared", { eventId: event.id });
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: event.title, text: `${event.title} — on TUNR`, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        onToast("Link copied");
+      }
+    } catch {
+      // user dismissed the share sheet
+    }
+  }
+
+  async function claim() {
+    if (claiming) return;
+    setClaiming(true);
+    try {
+      await claimEvent(event.id, user.id);
+      track("meet_claimed", { eventId: event.id });
+      onToast("You now manage this meet");
+      onClaimed();
+    } catch (e) {
+      onToast(e.message);
+    } finally {
+      setClaiming(false);
+    }
+  }
+
   const color = VIBES[event.vibe] || "#FF4500";
   const going = rsvp === "going";
   const interested = rsvp === "interested";
@@ -46,7 +96,15 @@ export default function MeetDetail({ event, rsvp, onClose, onRsvp }) {
             background: `linear-gradient(135deg, ${color}26, #0a0a0a 70%)`,
           }}
         >
-          <CarSilhouette color={color} width={190} />
+          {event.photoUrl ? (
+            <img
+              src={event.photoUrl}
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
+          ) : (
+            <CarSilhouette color={color} width={190} />
+          )}
           <div
             style={{
               position: "absolute",
@@ -95,8 +153,35 @@ export default function MeetDetail({ event, rsvp, onClose, onRsvp }) {
 
         <div style={{ padding: "16px 20px 40px" }}>
           <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.1 }}>{event.title}</div>
-          <div style={{ fontSize: 13, color: "#FF4500", marginTop: 4 }}>
-            Hosted by @{event.host} {event.verified && "✓"}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              marginTop: 6,
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ fontSize: 13, color: "#FF4500" }}>
+              Hosted by @{event.host} {event.verified && "✓"}
+            </div>
+            <button
+              className="action-btn"
+              onClick={() => (user ? onToggleFollow(event.host) : onNeedAccount())}
+              style={{
+                padding: "5px 12px",
+                borderRadius: 20,
+                background: following ? "rgba(255,69,0,0.15)" : "#1A1A1A",
+                border: `1px solid ${following ? "#FF4500" : "#2A2A2A"}`,
+                color: following ? "#FF4500" : "#888",
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: 1,
+                fontFamily: "'Barlow Condensed', sans-serif",
+              }}
+            >
+              {following ? "✓ FOLLOWING" : "+ FOLLOW"}
+            </button>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 }}>
@@ -238,6 +323,95 @@ export default function MeetDetail({ event, rsvp, onClose, onRsvp }) {
             </a>
           </div>
 
+          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+            <button
+              className="action-btn"
+              onClick={share}
+              style={{
+                flex: 1,
+                padding: "12px 0",
+                background: "#111",
+                border: "1px solid #2A2A2A",
+                borderRadius: 10,
+                color: "#888",
+                fontSize: 13,
+                fontWeight: 800,
+                letterSpacing: 1.5,
+                fontFamily: "'Barlow Condensed', sans-serif",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
+            >
+              ↗ SHARE
+            </button>
+            {canEdit && (
+              <button
+                className="action-btn"
+                onClick={onEdit}
+                style={{
+                  flex: 1,
+                  padding: "12px 0",
+                  background: "rgba(255,69,0,0.12)",
+                  border: "1px solid #FF4500",
+                  borderRadius: 10,
+                  color: "#FF4500",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  letterSpacing: 1.5,
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                }}
+              >
+                ✎ EDIT
+              </button>
+            )}
+          </div>
+
+          {claimable && (
+            <div
+              style={{
+                marginTop: 12,
+                background: "#111",
+                border: "1px solid #2A2A2A",
+                borderRadius: 10,
+                padding: "14px 16px",
+              }}
+            >
+              <div style={{ fontSize: 13.5, fontWeight: 800 }}>Is this your meet?</div>
+              <div
+                style={{
+                  fontSize: 12.5,
+                  color: "#777",
+                  marginTop: 4,
+                  lineHeight: 1.55,
+                  fontFamily: "'Barlow', sans-serif",
+                }}
+              >
+                Claim it to edit the details, add a photo, and keep it current.
+              </div>
+              <button
+                className="action-btn"
+                onClick={claim}
+                disabled={claiming}
+                style={{
+                  marginTop: 10,
+                  padding: "10px 18px",
+                  background: "#FF4500",
+                  border: "none",
+                  borderRadius: 8,
+                  color: "#fff",
+                  fontSize: 12.5,
+                  fontWeight: 800,
+                  letterSpacing: 1.2,
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                }}
+              >
+                {claiming ? "CLAIMING…" : "CLAIM THIS MEET"}
+              </button>
+            </div>
+          )}
+
           {event.source && (
             <div
               style={{
@@ -276,6 +450,8 @@ export default function MeetDetail({ event, rsvp, onClose, onRsvp }) {
               )}
             </div>
           )}
+
+          <Comments eventId={event.id} user={user} onNeedAccount={onNeedAccount} />
 
           <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
             <button

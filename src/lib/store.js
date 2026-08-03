@@ -74,6 +74,9 @@ function rowToEvent(row, counts, userId) {
     sourceUrl: row.source_url,
     lng: row.lng,
     lat: row.lat,
+    photoUrl: row.photo_url || null,
+    claimedBy: row.claimed_by || null,
+    claimedByMe: Boolean(userId && row.claimed_by === userId),
     submittedByUser: Boolean(userId && row.created_by === userId),
   };
 }
@@ -431,4 +434,117 @@ export async function completeSignInFromUrl() {
     window.history.replaceState({}, document.title, window.location.pathname);
   }
   return result;
+}
+
+// ---------- host claiming & editing ----------
+
+export async function claimEvent(eventId, userId) {
+  if (!supabase || !userId) throw new Error("Sign in first");
+  const { data, error } = await supabase
+    .from("events")
+    .update({ claimed_by: userId, claimed_at: new Date().toISOString() })
+    .eq("id", eventId)
+    .is("claimed_by", null)
+    .select()
+    .maybeSingle();
+  if (error) throw new Error("Couldn't claim this meet.");
+  if (!data) throw new Error("This meet has already been claimed.");
+  return data;
+}
+
+export async function updateEvent(eventId, fields) {
+  if (!supabase) throw new Error("Backend not configured");
+  const payload = {};
+  if (fields.title !== undefined) payload.title = fields.title;
+  if (fields.location !== undefined) payload.location = fields.location;
+  if (fields.city !== undefined) payload.city = fields.city;
+  if (fields.description !== undefined) payload.description = fields.description;
+  if (fields.vibe !== undefined) payload.vibe = fields.vibe;
+  if (fields.photoUrl !== undefined) payload.photo_url = fields.photoUrl;
+  if (fields.start !== undefined) {
+    payload.start_at = fields.start ? parseLocal(fields.start, DEFAULT_TZ).toISOString() : null;
+  }
+  const { error } = await supabase.from("events").update(payload).eq("id", eventId);
+  if (error) throw new Error("Couldn't save those changes.");
+}
+
+// ---------- photos ----------
+
+export async function uploadEventPhoto(file, userId) {
+  if (!supabase || !userId) throw new Error("Sign in first");
+  if (!file.type.startsWith("image/")) throw new Error("Pick an image file.");
+  if (file.size > 6 * 1024 * 1024) throw new Error("Image must be under 6MB.");
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const path = `${userId}/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from("event-photos").upload(path, file, {
+    cacheControl: "31536000",
+    upsert: false,
+  });
+  if (error) throw new Error("Upload failed. Try a different image.");
+  const { data } = supabase.storage.from("event-photos").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+// ---------- comments ----------
+
+export async function loadComments(eventId) {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("comments_with_author")
+    .select("*")
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error || !Array.isArray(data)) return [];
+  return data;
+}
+
+export async function addComment(eventId, body, userId) {
+  if (!supabase || !userId) throw new Error("Sign in to comment");
+  const text = body.trim();
+  if (!text) throw new Error("Write something first.");
+  if (text.length > 1000) throw new Error("Comment is too long.");
+  const { error } = await supabase
+    .from("comments")
+    .insert({ event_id: eventId, user_id: userId, body: text });
+  if (error) throw new Error("Couldn't post that comment.");
+}
+
+export async function deleteComment(commentId) {
+  if (!supabase) return;
+  await supabase.from("comments").delete().eq("id", commentId);
+}
+
+// ---------- follows ----------
+
+export async function loadFollows(userId) {
+  if (!supabase || !userId) return [];
+  const { data, error } = await supabase.from("follows").select("host").eq("user_id", userId);
+  if (error || !Array.isArray(data)) return [];
+  return data.map((r) => r.host);
+}
+
+export async function toggleFollow(host, userId, following) {
+  if (!supabase || !userId) throw new Error("Sign in to follow hosts");
+  if (following) {
+    await supabase.from("follows").delete().eq("user_id", userId).eq("host", host);
+  } else {
+    await supabase.from("follows").upsert({ user_id: userId, host }, { onConflict: "user_id,host" });
+  }
+}
+
+// ---------- analytics ----------
+
+export function track(name, props = {}) {
+  if (!supabase) return;
+  try {
+    supabase.auth.getUser().then(({ data }) => {
+      supabase
+        .from("analytics_events")
+        .insert({ name, props, user_id: data?.user?.id || null })
+        .then(() => {}, () => {});
+    });
+  } catch {
+    // analytics must never break the app
+  }
 }
