@@ -7,6 +7,7 @@
 import { seedEvents } from "../data/events.js";
 import { supabase } from "./supabase.js";
 import { DEFAULT_TZ, parseLocal } from "./dates.js";
+import { friendlyWriteError } from "./errors.js";
 
 const RSVP_KEY = "tunr.rsvps.v1";
 const SUBMITTED_KEY = "tunr.submitted.v1";
@@ -127,7 +128,9 @@ export async function submitEvent(draft, userId = null) {
       })
       .select()
       .single();
-    if (error) throw error;
+    if (error) {
+      throw new Error(friendlyWriteError(error, "Couldn't post the meet. Try again."));
+    }
     return data;
   }
 
@@ -491,7 +494,9 @@ export async function addComment(eventId, body, userId) {
   const { error } = await supabase
     .from("comments")
     .insert({ event_id: eventId, user_id: userId, body: text });
-  if (error) throw new Error("Couldn't post that comment.");
+  if (error) {
+    throw new Error(friendlyWriteError(error, "Couldn't post that comment."));
+  }
 }
 
 export async function deleteComment(commentId) {

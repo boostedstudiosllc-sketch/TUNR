@@ -168,8 +168,8 @@ export default function App() {
       setFilter("All");
       track("meet_posted", {});
       showToast("🏁 Meet posted — it's live on Discover");
-    } catch {
-      showToast("Couldn't post the meet. Check your connection and try again.");
+    } catch (e) {
+      showToast(e.message || "Couldn't post the meet. Check your connection and try again.");
     }
   }
 
