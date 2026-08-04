@@ -55,6 +55,15 @@ export default async function handler(req, res) {
     indexHtml = FALLBACK_HTML;
   }
 
+  // Strip the static generic og:*/twitter:*/description tags baked into
+  // index.html so the event-specific ones injected below are the only
+  // copies — duplicates are ambiguous and most crawlers just take whichever
+  // they see first, which would silently defeat this per-meet override.
+  indexHtml = indexHtml
+    .replace(/<meta\s+property="og:[^"]*"[^>]*>\s*/g, "")
+    .replace(/<meta\s+name="twitter:[^"]*"[^>]*>\s*/g, "")
+    .replace(/<meta\s+name="description"[^>]*>\s*/g, "");
+
   const metaTags = `
     <meta property="og:type" content="website" />
     <meta property="og:title" content="${escapeHtml(title)}" />
