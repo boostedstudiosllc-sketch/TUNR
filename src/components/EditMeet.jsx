@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { VIBES } from "../data/events.js";
 import { updateEvent, uploadEventPhoto, track } from "../lib/store.js";
+import { compressImage } from "../lib/image.js";
 
 const input = {
   width: "100%",
@@ -41,7 +42,8 @@ export default function EditMeet({ event, user, onClose, onSaved }) {
     setUploading(true);
     setError("");
     try {
-      const url = await uploadEventPhoto(file, user.id);
+      const compressed = await compressImage(file);
+      const url = await uploadEventPhoto(compressed, user.id);
       setPhotoUrl(url);
     } catch (err) {
       setError(err.message);

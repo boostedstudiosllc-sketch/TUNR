@@ -532,3 +532,16 @@ export function track(name, props = {}) {
     // analytics must never break the app
   }
 }
+
+// ---------- reports ----------
+
+export async function submitReport(eventId, reason, note, userId) {
+  if (!supabase || !userId) throw new Error("Sign in to report a meet");
+  const { error } = await supabase
+    .from("reports")
+    .insert({ event_id: eventId, reporter_id: userId, reason, note: note?.trim() || null });
+  if (error) {
+    if (error.code === "23505") throw new Error("You already reported this meet — thanks.");
+    throw new Error("Couldn't submit the report. Try again.");
+  }
+}

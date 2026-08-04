@@ -2,6 +2,7 @@ import { VIBES } from "../data/events.js";
 import { displayDate, displayTime } from "../lib/dates.js";
 import { CarSilhouette } from "./MeetCard.jsx";
 import Comments from "./Comments.jsx";
+import ReportMeet from "./ReportMeet.jsx";
 import { track } from "../lib/store.js";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -390,6 +391,8 @@ export default function MeetDetail({
           )}
 
           <Comments eventId={event.id} user={user} onNeedAccount={onNeedAccount} />
+
+          <ReportMeet eventId={event.id} user={user} onNeedAccount={onNeedAccount} />
 
           <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
             <button
