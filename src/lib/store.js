@@ -75,8 +75,6 @@ function rowToEvent(row, counts, userId) {
     lng: row.lng,
     lat: row.lat,
     photoUrl: row.photo_url || null,
-    claimedBy: row.claimed_by || null,
-    claimedByMe: Boolean(userId && row.claimed_by === userId),
     submittedByUser: Boolean(userId && row.created_by === userId),
   };
 }
@@ -436,21 +434,7 @@ export async function completeSignInFromUrl() {
   return result;
 }
 
-// ---------- host claiming & editing ----------
-
-export async function claimEvent(eventId, userId) {
-  if (!supabase || !userId) throw new Error("Sign in first");
-  const { data, error } = await supabase
-    .from("events")
-    .update({ claimed_by: userId, claimed_at: new Date().toISOString() })
-    .eq("id", eventId)
-    .is("claimed_by", null)
-    .select()
-    .maybeSingle();
-  if (error) throw new Error("Couldn't claim this meet.");
-  if (!data) throw new Error("This meet has already been claimed.");
-  return data;
-}
+// ---------- editing your own meets ----------
 
 export async function updateEvent(eventId, fields) {
   if (!supabase) throw new Error("Backend not configured");

@@ -2,8 +2,7 @@ import { VIBES } from "../data/events.js";
 import { displayDate, displayTime } from "../lib/dates.js";
 import { CarSilhouette } from "./MeetCard.jsx";
 import Comments from "./Comments.jsx";
-import { claimEvent, toggleFollow, track } from "../lib/store.js";
-import { useState } from "react";
+import { track } from "../lib/store.js";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -16,14 +15,10 @@ export default function MeetDetail({
   following,
   onToggleFollow,
   onEdit,
-  onClaimed,
   onNeedAccount,
   onToast,
 }) {
-  const [claiming, setClaiming] = useState(false);
-
-  const canEdit = Boolean(user && (event.claimedByMe || event.submittedByUser));
-  const claimable = Boolean(user && !event.claimedBy && !event.submittedByUser);
+  const canEdit = Boolean(user && event.submittedByUser);
 
   async function share() {
     const url = `${window.location.origin}/m/${event.slug || event.id}`;
@@ -40,20 +35,6 @@ export default function MeetDetail({
     }
   }
 
-  async function claim() {
-    if (claiming) return;
-    setClaiming(true);
-    try {
-      await claimEvent(event.id, user.id);
-      track("meet_claimed", { eventId: event.id });
-      onToast("You now manage this meet");
-      onClaimed();
-    } catch (e) {
-      onToast(e.message);
-    } finally {
-      setClaiming(false);
-    }
-  }
 
   const color = VIBES[event.vibe] || "#FF4500";
   const going = rsvp === "going";
@@ -368,49 +349,6 @@ export default function MeetDetail({
             )}
           </div>
 
-          {claimable && (
-            <div
-              style={{
-                marginTop: 12,
-                background: "#111",
-                border: "1px solid #2A2A2A",
-                borderRadius: 10,
-                padding: "14px 16px",
-              }}
-            >
-              <div style={{ fontSize: 13.5, fontWeight: 800 }}>Is this your meet?</div>
-              <div
-                style={{
-                  fontSize: 12.5,
-                  color: "#777",
-                  marginTop: 4,
-                  lineHeight: 1.55,
-                  fontFamily: "'Barlow', sans-serif",
-                }}
-              >
-                Claim it to edit the details, add a photo, and keep it current.
-              </div>
-              <button
-                className="action-btn"
-                onClick={claim}
-                disabled={claiming}
-                style={{
-                  marginTop: 10,
-                  padding: "10px 18px",
-                  background: "#FF4500",
-                  border: "none",
-                  borderRadius: 8,
-                  color: "#fff",
-                  fontSize: 12.5,
-                  fontWeight: 800,
-                  letterSpacing: 1.2,
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                }}
-              >
-                {claiming ? "CLAIMING…" : "CLAIM THIS MEET"}
-              </button>
-            </div>
-          )}
 
           {event.source && (
             <div

@@ -646,7 +646,6 @@ export default function App() {
           following={follows.includes(selected.host)}
           onToggleFollow={handleToggleFollow}
           onEdit={() => setEditing(selected)}
-          onClaimed={refreshEvents}
           onNeedAccount={() => {
             setSelected(null);
             setTab("profile");

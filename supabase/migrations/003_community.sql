@@ -1,19 +1,23 @@
--- Host claiming, comments, follows, event photos, and analytics.
+-- Comments, follows, event photos, and analytics.
 
--- ============ HOST CLAIMING ============
-alter table public.events add column if not exists claimed_by uuid references auth.users (id) on delete set null;
-alter table public.events add column if not exists claimed_at timestamptz;
+-- ============ EVENT PHOTOS ============
 alter table public.events add column if not exists photo_url text;
 
--- A signed-in user can claim an unclaimed event, and the claimant can then
--- edit it. Claims are recorded with a timestamp so they can be audited or
--- reversed from the dashboard.
+-- Only the account that posted an event may edit it. Self-serve claiming of
+-- someone else's listing is deliberately not offered: any policy permissive
+-- enough to allow it also lets a stranger edit an unclaimed meet. Host
+-- verification will be handled out of band instead.
+drop policy if exists "creators and claimants can update their events" on public.events;
 drop policy if exists "creators can update their events" on public.events;
-create policy "creators and claimants can update their events"
+create policy "creators can update their events"
   on public.events for update
   to authenticated
-  using (created_by = auth.uid() or claimed_by = auth.uid() or claimed_by is null)
-  with check (created_by = auth.uid() or claimed_by = auth.uid());
+  using (created_by = auth.uid())
+  with check (created_by = auth.uid());
+
+-- Remove claim artifacts if an earlier version of this file was already run.
+alter table public.events drop column if exists claimed_by;
+alter table public.events drop column if exists claimed_at;
 
 -- ============ COMMENTS ============
 create table if not exists public.comments (
