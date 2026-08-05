@@ -95,10 +95,17 @@ export async function loadEvents(userId = null) {
   if (!supabase) {
     return [...read(SUBMITTED_KEY, []), ...seedEvents];
   }
-  const [eventsRes, countsRes] = await Promise.all([
+  let [eventsRes, countsRes] = await Promise.all([
     supabase.from("events_public").select("*"),
     supabase.from("event_rsvp_counts").select("*"),
   ]);
+
+  // events_public arrives with migration 008. Until that has been run, read
+  // the table directly — there are no private meets before it either, so
+  // there is nothing for the view to redact.
+  if (eventsRes?.error?.code === "PGRST205") {
+    eventsRes = await supabase.from("events").select("*");
+  }
 
   const rows = eventsRes?.data;
   if (eventsRes?.error || !Array.isArray(rows)) {
