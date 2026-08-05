@@ -26,6 +26,7 @@ import TermsOfService from "./components/TermsOfService.jsx";
 import LockedMeets from "./components/LockedMeets.jsx";
 import AuthForm from "./components/AuthForm.jsx";
 import EditMeet from "./components/EditMeet.jsx";
+import HostProfile from "./components/HostProfile.jsx";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -47,6 +48,7 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [follows, setFollows] = useState([]);
   const [editing, setEditing] = useState(null);
+  const [hostView, setHostView] = useState(null);
 
   const now = new Date();
 
@@ -410,6 +412,7 @@ export default function App() {
                     rsvp={rsvps[event.id]}
                     onOpen={setSelected}
                     onRsvp={handleRsvp}
+                    onOpenHost={setHostView}
                     index={i}
                   />
                 ))}
@@ -552,6 +555,7 @@ export default function App() {
                   rsvp={rsvps[event.id]}
                   onOpen={setSelected}
                   onRsvp={handleRsvp}
+                  onOpenHost={setHostView}
                   index={i}
                 />
               ))}
@@ -568,6 +572,10 @@ export default function App() {
           user={user}
           onShowTerms={() => setShowTerms(true)}
           onToast={showToast}
+          onOpenHost={(h) => {
+            setSelected(null);
+            setHostView(h);
+          }}
         />
       )}
 
@@ -652,10 +660,36 @@ export default function App() {
             showToast("Create a free account first");
           }}
           onToast={showToast}
+          onOpenHost={(h) => {
+            setSelected(null);
+            setHostView(h);
+          }}
         />
       )}
 
       {showSubmit && <SubmitMeet onClose={() => setShowSubmit(false)} onSubmit={handleSubmit} />}
+
+      {hostView && (
+        <HostProfile
+          host={hostView}
+          events={events}
+          rsvps={rsvps}
+          user={user}
+          following={follows.includes(hostView)}
+          onToggleFollow={handleToggleFollow}
+          onOpenMeet={(e) => {
+            setHostView(null);
+            setSelected(e);
+          }}
+          onRsvp={handleRsvp}
+          onClose={() => setHostView(null)}
+          onNeedAccount={() => {
+            setHostView(null);
+            setTab("profile");
+            showToast("Create a free account first");
+          }}
+        />
+      )}
 
       {editing && (
         <EditMeet

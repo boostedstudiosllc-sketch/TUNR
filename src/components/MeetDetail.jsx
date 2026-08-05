@@ -18,6 +18,7 @@ export default function MeetDetail({
   onEdit,
   onNeedAccount,
   onToast,
+  onOpenHost,
 }) {
   const canEdit = Boolean(user && event.submittedByUser);
 
@@ -144,7 +145,14 @@ export default function MeetDetail({
               flexWrap: "wrap",
             }}
           >
-            <div style={{ fontSize: 13, color: "#FF4500" }}>
+            <div
+              onClick={() => onOpenHost && onOpenHost(event.host)}
+              style={{
+                fontSize: 13,
+                color: "#FF4500",
+                cursor: onOpenHost ? "pointer" : "default",
+              }}
+            >
               Hosted by @{event.host} {event.verified && "✓"}
             </div>
             <button

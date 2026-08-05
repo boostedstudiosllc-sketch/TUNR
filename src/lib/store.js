@@ -513,6 +513,17 @@ export async function loadFollows(userId) {
   return data.map((r) => r.host);
 }
 
+export async function loadHostFollowerCount(host) {
+  if (!supabase || !host) return 0;
+  const { data, error } = await supabase
+    .from("host_follower_counts")
+    .select("followers")
+    .eq("host", host)
+    .maybeSingle();
+  if (error || !data) return 0;
+  return Number(data.followers) || 0;
+}
+
 export async function toggleFollow(host, userId, following) {
   if (!supabase || !userId) throw new Error("Sign in to follow hosts");
   if (following) {

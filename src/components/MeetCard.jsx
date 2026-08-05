@@ -1,7 +1,7 @@
 import { VIBES } from "../data/events.js";
 import { displayDate, displayTime } from "../lib/dates.js";
 
-export default function MeetCard({ event, rsvp, onOpen, onRsvp, index = 0 }) {
+export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, index = 0 }) {
   const color = VIBES[event.vibe] || "#FF4500";
   const going = rsvp === "going";
   const interested = rsvp === "interested";
@@ -73,7 +73,20 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, index = 0 }) {
         <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: 0.5, lineHeight: 1.1 }}>
           {event.title}
         </div>
-        <div style={{ fontSize: 12, color: "#FF4500", marginTop: 3 }}>
+        <div
+          onClick={(e) => {
+            if (!onOpenHost) return;
+            e.stopPropagation();
+            onOpenHost(event.host);
+          }}
+          style={{
+            fontSize: 12,
+            color: "#FF4500",
+            marginTop: 3,
+            display: "inline-block",
+            cursor: onOpenHost ? "pointer" : "default",
+          }}
+        >
           @{event.host} {event.verified && "✓"}
         </div>
         <div style={{ fontSize: 13, color: "#888", marginTop: 8 }}>
