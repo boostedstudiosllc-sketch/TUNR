@@ -94,6 +94,9 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, inde
         </div>
         <div style={{ fontSize: 12, color: "#666", marginTop: 3 }}>
           📍 {event.location} · {event.city}
+          {event.distanceLabel && (
+            <span style={{ color: "#FF7A00" }}> · {event.distanceLabel}</span>
+          )}
         </div>
         <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
           {event.tags.map((tag) => (

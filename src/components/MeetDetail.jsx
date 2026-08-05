@@ -194,7 +194,12 @@ export default function MeetDetail({
               📍 LOCATION
             </div>
             <div style={{ fontSize: 14, fontWeight: 700 }}>{event.location}</div>
-            <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{event.city}</div>
+            <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+              {event.city}
+              {event.distanceLabel && (
+                <span style={{ color: "#FF7A00" }}> · {event.distanceLabel} away</span>
+              )}
+            </div>
           </div>
 
           {hasCoords && MAPBOX_TOKEN && (

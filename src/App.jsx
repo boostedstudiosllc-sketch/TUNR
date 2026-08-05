@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { VIBES } from "./data/events.js";
 import { isPast, isToday, isThisWeekend, sortKey, displayDate, displayTime } from "./lib/dates.js";
+import { withDistances } from "./lib/geo.js";
 import {
   loadEvents,
   loadRsvps,
@@ -33,6 +34,12 @@ const BASE_FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "
 // Meets a signed-out visitor can see before the sign-in wall.
 const FREE_PREVIEW_COUNT = 2;
 
+const SORTS = [
+  { id: "soonest", label: "SOONEST" },
+  { id: "popular", label: "MOST GOING" },
+  { id: "nearest", label: "NEAREST" },
+];
+
 export default function App() {
   const [events, setEvents] = useState([]);
   const [rsvps, setRsvps] = useState({});
@@ -49,6 +56,9 @@ export default function App() {
   const [follows, setFollows] = useState([]);
   const [editing, setEditing] = useState(null);
   const [hostView, setHostView] = useState(null);
+  const [sort, setSort] = useState("soonest");
+  const [position, setPosition] = useState(null);
+  const [locating, setLocating] = useState(false);
 
   const now = new Date();
 
@@ -117,7 +127,7 @@ export default function App() {
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return events
+    return withDistances(events, position)
       .filter((e) => !isPast(e, now))
       .filter((e) => {
         if (filter === "All") return true;
@@ -133,8 +143,17 @@ export default function App() {
           .toLowerCase();
         return haystack.includes(q);
       })
-      .sort((a, b) => sortKey(a, now) - sortKey(b, now));
-  }, [events, filter, search, follows]);
+      .sort((a, b) => {
+        if (sort === "popular") return (b.going || 0) - (a.going || 0);
+        if (sort === "nearest") {
+          // Events without a known distance sort after those with one.
+          const da = a.distanceMi ?? Infinity;
+          const db = b.distanceMi ?? Infinity;
+          if (da !== db) return da - db;
+        }
+        return sortKey(a, now) - sortKey(b, now);
+      });
+  }, [events, filter, search, follows, sort, position]);
 
   const todayCount = useMemo(
     () => events.filter((e) => !isPast(e, now) && isToday(e, now)).length,
@@ -191,6 +210,26 @@ export default function App() {
     setEvents(evts);
     const fresh = evts.find((e) => e.id === selected?.id);
     if (fresh) setSelected(fresh);
+  }
+
+  function requestLocation() {
+    if (!navigator.geolocation) {
+      showToast("This browser can't share your location.");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocating(false);
+        track("location_granted", {});
+      },
+      () => {
+        setLocating(false);
+        showToast("Couldn't get your location — check browser permissions.");
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
+    );
   }
 
   function showToast(msg) {
@@ -360,6 +399,76 @@ export default function App() {
               </button>
             ))}
           </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 6,
+              padding: "0 20px 14px",
+              alignItems: "center",
+            }}
+          >
+            <span
+              style={{
+                fontSize: 10,
+                color: "#555",
+                letterSpacing: 1.4,
+                fontWeight: 700,
+                flexShrink: 0,
+              }}
+            >
+              SORT
+            </span>
+            {SORTS.map((s) => (
+              <button
+                key={s.id}
+                className="filter-pill"
+                onClick={() => {
+                  setSort(s.id);
+                  track("sort_changed", { sort: s.id });
+                  if (s.id === "nearest" && !position) requestLocation();
+                }}
+                style={{
+                  padding: "5px 11px",
+                  borderRadius: 16,
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  letterSpacing: 0.6,
+                  whiteSpace: "nowrap",
+                  background: sort === s.id ? "rgba(255,69,0,0.14)" : "transparent",
+                  color: sort === s.id ? "#FF4500" : "#666",
+                  border: `1px solid ${sort === s.id ? "#FF4500" : "#242424"}`,
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                }}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          {!position && (
+            <div style={{ padding: "0 20px 14px" }}>
+              <button
+                className="action-btn"
+                onClick={requestLocation}
+                disabled={locating}
+                style={{
+                  width: "100%",
+                  padding: "10px 0",
+                  background: "#111",
+                  border: "1px dashed #2A2A2A",
+                  borderRadius: 10,
+                  color: "#777",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: 1,
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                }}
+              >
+                {locating ? "LOCATING…" : "📍 SHOW DISTANCES FROM ME"}
+              </button>
+            </div>
+          )}
 
           {todayCount > 0 && (
             <div
