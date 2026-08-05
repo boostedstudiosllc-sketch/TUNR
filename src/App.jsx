@@ -773,6 +773,7 @@ export default function App() {
             setSelected(null);
             setHostView(h);
           }}
+          onJoined={refreshEvents}
         />
       )}
 

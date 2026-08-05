@@ -24,8 +24,11 @@ export default async function handler(req, res) {
   let event = null;
   if (supabaseUrl && anonKey && slug) {
     try {
+      // events_public, not events: it hands back a redacted row for private
+      // meets (location/photo already null, `locked` true), so a link preview
+      // can't leak an address even if the code below got it wrong.
       const apiRes = await fetch(
-        `${supabaseUrl}/rest/v1/events?slug=eq.${encodeURIComponent(slug)}&select=title,description,photo_url,city,location&limit=1`,
+        `${supabaseUrl}/rest/v1/events_public?slug=eq.${encodeURIComponent(slug)}&select=title,description,photo_url,city,location,locked&limit=1`,
         { headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` } }
       );
       if (apiRes.ok) {
@@ -42,10 +45,16 @@ export default async function handler(req, res) {
   const pageUrl = `${proto}://${host}/m/${encodeURIComponent(slug || "")}`;
 
   const title = event ? `${event.title} — TUNR` : "TUNR — Find Your Meet";
-  const description = event
-    ? [event.location, event.city].filter(Boolean).join(", ") || "Car meet on TUNR."
-    : "Find car meets near you. Discover, RSVP, and post local meets.";
-  const image = event?.photo_url || null;
+  let description;
+  if (!event) {
+    description = "Find car meets near you. Discover, RSVP, and post local meets.";
+  } else if (event.locked) {
+    // Private meet: the title is the most a shared link ever gives away.
+    description = "Private meet on TUNR. Open the link to request access.";
+  } else {
+    description = [event.location, event.city].filter(Boolean).join(", ") || "Car meet on TUNR.";
+  }
+  const image = event?.locked ? null : event?.photo_url || null;
 
   let indexHtml;
   try {

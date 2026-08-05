@@ -34,6 +34,8 @@ export default function SubmitMeet({ onClose, onSubmit }) {
     time: "",
     description: "",
     igLink: "",
+    visibility: "public",
+    accessMode: "both",
   });
 
   const set = (field) => (e) => setDraft((d) => ({ ...d, [field]: e.target.value }));
@@ -55,6 +57,8 @@ export default function SubmitMeet({ onClose, onSubmit }) {
       start,
       description: draft.description.trim(),
       igLink: draft.igLink.trim() || null,
+      visibility: draft.visibility,
+      accessMode: draft.visibility === "private" ? draft.accessMode : "both",
     });
   }
 
@@ -191,6 +195,87 @@ export default function SubmitMeet({ onClose, onSubmit }) {
 
         {step === 2 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div>
+              <div style={labelStyle}>WHO CAN SEE THE ADDRESS</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {[
+                  { id: "public", label: "PUBLIC", sub: "Anyone" },
+                  { id: "private", label: "PRIVATE", sub: "Invite only" },
+                ].map((v) => (
+                  <button
+                    key={v.id}
+                    onClick={() => setDraft((d) => ({ ...d, visibility: v.id }))}
+                    style={{
+                      flex: 1,
+                      padding: "11px 0",
+                      borderRadius: 8,
+                      background: draft.visibility === v.id ? "rgba(255,69,0,0.12)" : "#161616",
+                      border: `1.5px solid ${draft.visibility === v.id ? "#FF4500" : "#2A2A2A"}`,
+                      color: draft.visibility === v.id ? "#FF4500" : "#777",
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1 }}>{v.label}</div>
+                    <div style={{ fontSize: 10, opacity: 0.7, letterSpacing: 0.5 }}>{v.sub}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {draft.visibility === "private" && (
+              <div
+                style={{
+                  background: "#131313",
+                  border: "1px solid #242424",
+                  borderRadius: 8,
+                  padding: "13px 14px",
+                }}
+              >
+                <div style={labelStyle}>HOW PEOPLE GET IN</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                  {[
+                    { id: "both", label: "Passcode or request", sub: "Share a code, and take requests too" },
+                    { id: "passcode", label: "Passcode only", sub: "Only people you give the code to" },
+                    { id: "request", label: "Requests only", sub: "You approve everyone by hand" },
+                  ].map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => setDraft((d) => ({ ...d, accessMode: m.id }))}
+                      style={{
+                        textAlign: "left",
+                        padding: "9px 11px",
+                        borderRadius: 6,
+                        background: draft.accessMode === m.id ? "rgba(255,69,0,0.1)" : "#0F0F0F",
+                        border: `1px solid ${draft.accessMode === m.id ? "#FF4500" : "#242424"}`,
+                        color: draft.accessMode === m.id ? "#FF4500" : "#888",
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.6 }}>
+                        {m.label}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#666", letterSpacing: 0.3 }}>{m.sub}</div>
+                    </button>
+                  ))}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "#555",
+                    marginTop: 10,
+                    lineHeight: 1.5,
+                    fontFamily: "'Barlow', sans-serif",
+                  }}
+                >
+                  Everyone still sees the title, vibe and date on Discover — the address, map and
+                  description stay hidden until someone's in. Your passcode is generated after you
+                  post; you'll find it on the meet.
+                </div>
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: 10 }}>
               <div style={{ flex: 1 }}>
                 <div style={labelStyle}>DATE</div>

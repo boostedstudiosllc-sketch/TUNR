@@ -61,6 +61,7 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, inde
           {event.vibe}
         </div>
         <div style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 6 }}>
+          {event.visibility === "private" && <Badge>🔒 PRIVATE</Badge>}
           {event.recurrence && <Badge>WEEKLY</Badge>}
           {event.verified && (
             <Badge accent>✓ VERIFIED</Badge>
@@ -93,9 +94,15 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, inde
           📅 {displayDate(event)} · {displayTime(event)}
         </div>
         <div style={{ fontSize: 12, color: "#666", marginTop: 3 }}>
-          📍 {event.location} · {event.city}
-          {event.distanceLabel && (
-            <span style={{ color: "#FF7A00" }}> · {event.distanceLabel}</span>
+          {event.locked ? (
+            <span>🔒 Address shared once you're in · {event.city}</span>
+          ) : (
+            <>
+              📍 {event.location} · {event.city}
+              {event.distanceLabel && (
+                <span style={{ color: "#FF7A00" }}> · {event.distanceLabel}</span>
+              )}
+            </>
           )}
         </div>
         <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
@@ -118,48 +125,74 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, inde
           ))}
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-          <button
-            className="action-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onRsvp(event.id, "going");
-            }}
-            style={{
-              flex: 1,
-              padding: "9px 0",
-              background: going ? "#FF4500" : "#1A1A1A",
-              color: going ? "#fff" : "#888",
-              border: going ? "1px solid #FF4500" : "1px solid #2A2A2A",
-              borderRadius: 5,
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: 1,
-              fontFamily: "'Barlow Condensed', sans-serif",
-            }}
-          >
-            {going ? "✓ GOING" : `GOING · ${event.going}`}
-          </button>
-          <button
-            className="action-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onRsvp(event.id, "interested");
-            }}
-            style={{
-              flex: 1,
-              padding: "9px 0",
-              background: interested ? "#1A0800" : "#1A1A1A",
-              color: interested ? "#FF7A00" : "#666",
-              border: interested ? "1px solid #FF7A00" : "1px solid #2A2A2A",
-              borderRadius: 5,
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: 1,
-              fontFamily: "'Barlow Condensed', sans-serif",
-            }}
-          >
-            {interested ? "★ SAVED" : `INTERESTED · ${event.interested}`}
-          </button>
+          {event.locked ? (
+            <button
+              className="action-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpen(event);
+              }}
+              style={{
+                flex: 1,
+                padding: "9px 0",
+                background: "rgba(255,69,0,0.12)",
+                color: "#FF4500",
+                border: "1px solid #FF4500",
+                borderRadius: 5,
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: 1,
+                fontFamily: "'Barlow Condensed', sans-serif",
+              }}
+            >
+              {event.membershipStatus === "pending" ? "⏳ REQUEST PENDING" : "🔒 GET ACCESS"}
+            </button>
+          ) : (
+            <>
+            <button
+              className="action-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRsvp(event.id, "going");
+              }}
+              style={{
+                flex: 1,
+                padding: "9px 0",
+                background: going ? "#FF4500" : "#1A1A1A",
+                color: going ? "#fff" : "#888",
+                border: going ? "1px solid #FF4500" : "1px solid #2A2A2A",
+                borderRadius: 5,
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: 1,
+                fontFamily: "'Barlow Condensed', sans-serif",
+              }}
+            >
+              {going ? "✓ GOING" : `GOING · ${event.going}`}
+            </button>
+            <button
+              className="action-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRsvp(event.id, "interested");
+              }}
+              style={{
+                flex: 1,
+                padding: "9px 0",
+                background: interested ? "#1A0800" : "#1A1A1A",
+                color: interested ? "#FF7A00" : "#666",
+                border: interested ? "1px solid #FF7A00" : "1px solid #2A2A2A",
+                borderRadius: 5,
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: 1,
+                fontFamily: "'Barlow Condensed', sans-serif",
+              }}
+            >
+              {interested ? "★ SAVED" : `INTERESTED · ${event.interested}`}
+            </button>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { displayDate, displayTime } from "../lib/dates.js";
 import { CarSilhouette } from "./MeetCard.jsx";
 import Comments from "./Comments.jsx";
 import ReportMeet from "./ReportMeet.jsx";
+import PrivateAccess from "./PrivateAccess.jsx";
 import { track } from "../lib/store.js";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -19,8 +20,12 @@ export default function MeetDetail({
   onNeedAccount,
   onToast,
   onOpenHost,
+  onJoined,
 }) {
   const canEdit = Boolean(user && event.submittedByUser);
+  // Private meet the viewer isn't in: the address fields arrive as null from
+  // the database, so everything that would expose a location stays out.
+  const locked = Boolean(event.locked);
 
   async function share() {
     const url = `${window.location.origin}/m/${event.slug || event.id}`;
@@ -181,26 +186,36 @@ export default function MeetDetail({
             <StatBox label="★ INTERESTED" value={String(event.interested)} />
           </div>
 
-          <div
-            style={{
-              background: "#161616",
-              border: "1px solid #222",
-              borderRadius: 8,
-              padding: "12px 14px",
-              marginTop: 10,
-            }}
-          >
-            <div style={{ fontSize: 9, color: "#555", letterSpacing: 1.5, marginBottom: 4 }}>
-              📍 LOCATION
+          {!locked && (
+            <div
+              style={{
+                background: "#161616",
+                border: "1px solid #222",
+                borderRadius: 8,
+                padding: "12px 14px",
+                marginTop: 10,
+              }}
+            >
+              <div style={{ fontSize: 9, color: "#555", letterSpacing: 1.5, marginBottom: 4 }}>
+                📍 LOCATION
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>{event.location}</div>
+              <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+                {event.city}
+                {event.distanceLabel && (
+                  <span style={{ color: "#FF7A00" }}> · {event.distanceLabel} away</span>
+                )}
+              </div>
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700 }}>{event.location}</div>
-            <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-              {event.city}
-              {event.distanceLabel && (
-                <span style={{ color: "#FF7A00" }}> · {event.distanceLabel} away</span>
-              )}
-            </div>
-          </div>
+          )}
+
+          <PrivateAccess
+            event={event}
+            user={user}
+            onNeedAccount={onNeedAccount}
+            onToast={onToast}
+            onJoined={onJoined}
+          />
 
           {hasCoords && MAPBOX_TOKEN && (
             <div
@@ -222,22 +237,24 @@ export default function MeetDetail({
             </div>
           )}
 
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, marginBottom: 8 }}>
-              ABOUT THIS MEET
+          {!locked && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, marginBottom: 8 }}>
+                ABOUT THIS MEET
+              </div>
+              <div
+                style={{
+                  fontSize: 14,
+                  color: "#AAA",
+                  lineHeight: 1.6,
+                  fontFamily: "'Barlow', sans-serif",
+                  fontWeight: 400,
+                }}
+              >
+                {event.description}
+              </div>
             </div>
-            <div
-              style={{
-                fontSize: 14,
-                color: "#AAA",
-                lineHeight: 1.6,
-                fontFamily: "'Barlow', sans-serif",
-                fontWeight: 400,
-              }}
-            >
-              {event.description}
-            </div>
-          </div>
+          )}
 
           <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
             {event.tags.map((tag) => (
@@ -259,20 +276,51 @@ export default function MeetDetail({
             ))}
           </div>
 
-          <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-            {hasCoords && (
+          {!locked && (
+            <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+              {hasCoords && (
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${event.lat},${event.lng}&travelmode=driving`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    flex: 1,
+                    padding: "12px 0",
+                    background: "linear-gradient(135deg,#1A2A1A,#0F1F0F)",
+                    border: "1px solid #10B981",
+                    borderRadius: 10,
+                    color: "#10B981",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    letterSpacing: 1.5,
+                    fontFamily: "'Barlow Condensed',sans-serif",
+                    textDecoration: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                  }}
+                >
+                  🗺 NAVIGATE
+                </a>
+              )}
               <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${event.lat},${event.lng}&travelmode=driving`}
+                href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+                  event.title
+                )}&location=${encodeURIComponent(
+                  event.location + ", " + event.city
+                )}&details=${encodeURIComponent("Car meet via TUNR.")}`}
                 target="_blank"
                 rel="noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 style={{
                   flex: 1,
                   padding: "12px 0",
-                  background: "linear-gradient(135deg,#1A2A1A,#0F1F0F)",
-                  border: "1px solid #10B981",
+                  background: "#111",
+                  border: "1px solid #2A2A2A",
                   borderRadius: 10,
-                  color: "#10B981",
+                  color: "#888",
                   fontSize: 13,
                   fontWeight: 800,
                   letterSpacing: 1.5,
@@ -284,39 +332,10 @@ export default function MeetDetail({
                   gap: 8,
                 }}
               >
-                🗺 NAVIGATE
+                📅 CALENDAR
               </a>
-            )}
-            <a
-              href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-                event.title
-              )}&location=${encodeURIComponent(
-                event.location + ", " + event.city
-              )}&details=${encodeURIComponent("Car meet via TUNR.")}`}
-              target="_blank"
-              rel="noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                flex: 1,
-                padding: "12px 0",
-                background: "#111",
-                border: "1px solid #2A2A2A",
-                borderRadius: 10,
-                color: "#888",
-                fontSize: 13,
-                fontWeight: 800,
-                letterSpacing: 1.5,
-                fontFamily: "'Barlow Condensed',sans-serif",
-                textDecoration: "none",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-              }}
-            >
-              📅 CALENDAR
-            </a>
-          </div>
+            </div>
+          )}
 
           <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
             <button
@@ -403,49 +422,51 @@ export default function MeetDetail({
             </div>
           )}
 
-          <Comments eventId={event.id} user={user} onNeedAccount={onNeedAccount} />
+          {!locked && <Comments eventId={event.id} user={user} onNeedAccount={onNeedAccount} />}
 
           <ReportMeet eventId={event.id} user={user} onNeedAccount={onNeedAccount} />
 
-          <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
-            <button
-              className="action-btn"
-              onClick={() => onRsvp(event.id, "going")}
-              style={{
-                flex: 1,
-                padding: "14px 0",
-                background: going ? "#FF4500" : "#1A1A1A",
-                color: going ? "#fff" : "#888",
-                border: going ? "none" : "1px solid #2A2A2A",
-                borderRadius: 8,
-                fontSize: 14,
-                fontWeight: 800,
-                letterSpacing: 2,
-                fontFamily: "'Barlow Condensed', sans-serif",
-                boxShadow: going ? "0 4px 20px rgba(255,69,0,0.4)" : "none",
-              }}
-            >
-              {going ? "✓ YOU'RE GOING" : "I'M GOING"}
-            </button>
-            <button
-              className="action-btn"
-              onClick={() => onRsvp(event.id, "interested")}
-              style={{
-                flex: 1,
-                padding: "14px 0",
-                background: interested ? "#1A0800" : "#1A1A1A",
-                color: interested ? "#FF7A00" : "#666",
-                border: interested ? "1px solid #FF7A00" : "1px solid #2A2A2A",
-                borderRadius: 8,
-                fontSize: 14,
-                fontWeight: 800,
-                letterSpacing: 2,
-                fontFamily: "'Barlow Condensed', sans-serif",
-              }}
-            >
-              {interested ? "★ INTERESTED" : "INTERESTED"}
-            </button>
-          </div>
+          {!locked && (
+            <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
+              <button
+                className="action-btn"
+                onClick={() => onRsvp(event.id, "going")}
+                style={{
+                  flex: 1,
+                  padding: "14px 0",
+                  background: going ? "#FF4500" : "#1A1A1A",
+                  color: going ? "#fff" : "#888",
+                  border: going ? "none" : "1px solid #2A2A2A",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: 800,
+                  letterSpacing: 2,
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  boxShadow: going ? "0 4px 20px rgba(255,69,0,0.4)" : "none",
+                }}
+              >
+                {going ? "✓ YOU'RE GOING" : "I'M GOING"}
+              </button>
+              <button
+                className="action-btn"
+                onClick={() => onRsvp(event.id, "interested")}
+                style={{
+                  flex: 1,
+                  padding: "14px 0",
+                  background: interested ? "#1A0800" : "#1A1A1A",
+                  color: interested ? "#FF7A00" : "#666",
+                  border: interested ? "1px solid #FF7A00" : "1px solid #2A2A2A",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: 800,
+                  letterSpacing: 2,
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                }}
+              >
+                {interested ? "★ INTERESTED" : "INTERESTED"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
