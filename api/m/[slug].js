@@ -27,10 +27,20 @@ export default async function handler(req, res) {
       // events_public, not events: it hands back a redacted row for private
       // meets (location/photo already null, `locked` true), so a link preview
       // can't leak an address even if the code below got it wrong.
-      const apiRes = await fetch(
-        `${supabaseUrl}/rest/v1/events_public?slug=eq.${encodeURIComponent(slug)}&select=title,description,photo_url,city,location,locked&limit=1`,
-        { headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` } }
+      const headers = { apikey: anonKey, Authorization: `Bearer ${anonKey}` };
+      const where = `slug=eq.${encodeURIComponent(slug)}`;
+      let apiRes = await fetch(
+        `${supabaseUrl}/rest/v1/events_public?${where}&select=title,description,photo_url,city,location,locked&limit=1`,
+        { headers }
       );
+      // The view arrives with migration 008; until then read the table, which
+      // has no private meets to redact yet.
+      if (!apiRes.ok) {
+        apiRes = await fetch(
+          `${supabaseUrl}/rest/v1/events?${where}&select=title,description,photo_url,city,location&limit=1`,
+          { headers }
+        );
+      }
       if (apiRes.ok) {
         const rows = await apiRes.json();
         event = rows[0] || null;
