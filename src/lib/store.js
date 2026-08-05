@@ -8,6 +8,7 @@ import { seedEvents } from "../data/events.js";
 import { supabase } from "./supabase.js";
 import { DEFAULT_TZ, parseLocal } from "./dates.js";
 import { friendlyWriteError } from "./errors.js";
+import { normalizePasscode } from "./passcode.js";
 
 const RSVP_KEY = "tunr.rsvps.v1";
 const SUBMITTED_KEY = "tunr.submitted.v1";
@@ -54,14 +55,22 @@ function isoInTz(ts, tz) {
 function rowToEvent(row, counts, userId) {
   const c = counts.get(row.id) || { going: 0, interested: 0 };
   const tz = row.timezone || DEFAULT_TZ;
+  // events_public already blanked the address fields for private meets the
+  // viewer isn't in; `locked` just tells the UI to show the teaser treatment.
+  const locked = Boolean(row.locked);
   return {
     id: row.id,
     slug: row.slug,
     title: row.title,
     host: row.host,
     verified: row.verified,
-    location: row.location,
+    location: locked ? null : row.location,
     city: row.city,
+    visibility: row.visibility || "public",
+    accessMode: row.access_mode || "both",
+    locked,
+    membershipStatus: row.membership_status || null,
+    passcode: row.passcode || null,
     timezone: tz,
     start: isoInTz(row.start_at, tz),
     end: isoInTz(row.end_at, tz),
@@ -87,7 +96,7 @@ export async function loadEvents(userId = null) {
     return [...read(SUBMITTED_KEY, []), ...seedEvents];
   }
   const [eventsRes, countsRes] = await Promise.all([
-    supabase.from("events").select("*"),
+    supabase.from("events_public").select("*"),
     supabase.from("event_rsvp_counts").select("*"),
   ]);
 
@@ -124,6 +133,8 @@ export async function submitEvent(draft, userId = null) {
         lng: draft.lng ?? -84.39,
         lat: draft.lat ?? 33.75,
         timezone: DEFAULT_TZ,
+        visibility: draft.visibility === "private" ? "private" : "public",
+        access_mode: draft.accessMode || "both",
         created_by: userId,
       })
       .select()
@@ -156,6 +167,9 @@ export async function submitEvent(draft, userId = null) {
     sourceUrl: draft.igLink || null,
     lng: draft.lng ?? -84.39,
     lat: draft.lat ?? 33.75,
+    visibility: draft.visibility === "private" ? "private" : "public",
+    accessMode: draft.accessMode || "both",
+    locked: false,
     submittedByUser: true,
   };
   write(SUBMITTED_KEY, [event, ...submitted]);
@@ -453,6 +467,63 @@ export async function updateEvent(eventId, fields) {
   }
   const { error } = await supabase.from("events").update(payload).eq("id", eventId);
   if (error) throw new Error("Couldn't save those changes.");
+}
+
+// ---------- private meets ----------
+
+// The passcode is checked inside the database, so a wrong guess reveals
+// nothing and the real code never reaches the client.
+export async function redeemPasscode(eventId, passcode) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { data, error } = await supabase.rpc("redeem_event_passcode", {
+    p_event_id: eventId,
+    p_passcode: normalizePasscode(passcode),
+  });
+  if (error) return "error";
+  return data || "error";
+}
+
+export async function requestToJoin(eventId, userId) {
+  if (!supabase || !userId) throw new Error("Sign in to request access");
+  const { error } = await supabase
+    .from("event_members")
+    .insert({ event_id: eventId, user_id: userId, status: "pending" });
+  if (error) {
+    if (error.code === "23505") throw new Error("You've already asked to join this meet.");
+    throw new Error("Couldn't send that request. Try again.");
+  }
+}
+
+// Host-side: everyone who has asked for or been given access to their meet.
+export async function loadJoinRequests(eventId) {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("event_members_with_profile")
+    .select("*")
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: true });
+  if (error || !Array.isArray(data)) return [];
+  return data;
+}
+
+export async function approveJoinRequest(eventId, userId) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { error } = await supabase
+    .from("event_members")
+    .update({ status: "approved", decided_at: new Date().toISOString() })
+    .eq("event_id", eventId)
+    .eq("user_id", userId);
+  if (error) throw new Error("Couldn't approve that request.");
+}
+
+export async function denyJoinRequest(eventId, userId) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { error } = await supabase
+    .from("event_members")
+    .delete()
+    .eq("event_id", eventId)
+    .eq("user_id", userId);
+  if (error) throw new Error("Couldn't update that request.");
 }
 
 // ---------- photos ----------
