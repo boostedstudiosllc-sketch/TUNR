@@ -1,0 +1,43 @@
+name: Apply Supabase migrations
+
+# Runs whenever a migration file lands on the working branch, so schema
+# changes ship with the code that needs them instead of waiting to be pasted
+# into the SQL editor by hand.
+
+on:
+  push:
+    branches:
+      - main
+      - claude/tunr-car-meet-app-f9dqlh
+    paths:
+      - "supabase/migrations/**"
+      - "scripts/migrate.sh"
+      - ".github/workflows/migrate.yml"
+  workflow_dispatch:
+    inputs:
+      baseline:
+        description: >-
+          Mark every migration up to and including this filename as applied
+          without running it (e.g. 004_september_events.sql). First run only.
+        required: false
+        default: ""
+
+# One migration run at a time — two concurrent pushes must not race each
+# other into the same database.
+concurrency:
+  group: supabase-migrations
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply migrations
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BASELINE: ${{ inputs.baseline }}
+        run: |
+          chmod +x scripts/migrate.sh
+          ./scripts/migrate.sh

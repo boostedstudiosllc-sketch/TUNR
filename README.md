@@ -45,6 +45,31 @@ detail maps are hidden until `VITE_MAPBOX_TOKEN` is set.
 Without these vars the app runs in guest mode: seed events + device-local
 RSVPs and posts.
 
+## Migrations
+
+Migrations live in `supabase/migrations` and are applied by a GitHub Action
+(`.github/workflows/migrate.yml`) whenever one lands on the working branch.
+Which files a database has run is tracked in `public.schema_migrations`; each
+file runs in a single transaction with the row that records it, so a failure
+leaves nothing half-applied.
+
+**Setup (once):**
+
+1. Supabase → Project Settings → Database → Connection string → **Session
+   pooler**, copy the URI and put your database password in it.
+2. GitHub → repo Settings → Secrets and variables → Actions → New repository
+   secret, named `SUPABASE_DB_URL`.
+3. If the database already had migrations applied by hand, run the workflow
+   once from the Actions tab with **baseline** set to the last file that was
+   applied (e.g. `004_september_events.sql`). Those are recorded as done
+   without being re-run; everything after them is applied normally.
+
+After that, pushing a new migration applies it. To run it locally instead:
+
+```bash
+SUPABASE_DB_URL='postgresql://…' ./scripts/migrate.sh
+```
+
 ## Deploy (Vercel)
 
 1. vercel.com → Add New → Project → import this repo
