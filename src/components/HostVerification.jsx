@@ -137,7 +137,8 @@ export default function HostVerification({ user, profile, onToast }) {
       {request?.status === "rejected" && (
         <>
           <div style={bodyStyle}>
-            That request wasn't approved{request.note ? `: ${request.note}` : "."} You can try again.
+            That request wasn't approved
+            {request.note ? `: ${request.note.replace(/[.!?]?$/, ".")}` : "."} You can try again.
           </div>
           <button
             className="action-btn"
