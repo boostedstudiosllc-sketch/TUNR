@@ -124,11 +124,23 @@ export async function loadEvents(userId = null) {
 
 export async function submitEvent(draft, userId = null) {
   if (supabase && userId) {
+    // Post under the account's own handle. Verification binds a host name to
+    // an account, so "you" for everyone would make the badge meaningless.
+    let host = draft.host;
+    if (!host) {
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", userId)
+        .maybeSingle();
+      host = p?.username || "you";
+    }
+
     const { data, error } = await supabase
       .from("events")
       .insert({
         title: draft.title || "Untitled Meet",
-        host: draft.host || "you",
+        host,
         location: draft.location || "TBA",
         city: draft.city || "Atlanta, GA",
         start_at: draft.start ? parseLocal(draft.start, DEFAULT_TZ).toISOString() : null,
@@ -235,8 +247,14 @@ export function loadLocalProfile() {
 export async function loadProfile(userId = null) {
   if (supabase && userId) {
     const { data } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
-    if (data) return { username: data.username || "", city: data.city || "Atlanta, GA" };
-    return { username: "", city: "Atlanta, GA" };
+    if (data) {
+      return {
+        username: data.username || "",
+        city: data.city || "Atlanta, GA",
+        isAdmin: Boolean(data.is_admin),
+      };
+    }
+    return { username: "", city: "Atlanta, GA", isAdmin: false };
   }
   return loadLocalProfile();
 }
@@ -474,6 +492,66 @@ export async function updateEvent(eventId, fields) {
   }
   const { error } = await supabase.from("events").update(payload).eq("id", eventId);
   if (error) throw new Error("Couldn't save those changes.");
+}
+
+// ---------- host verification ----------
+
+export async function loadMyVerification(userId) {
+  if (!supabase || !userId) return null;
+  const { data, error } = await supabase
+    .from("host_verifications")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) return null;
+  return data || null;
+}
+
+export async function requestVerification(host, instagramHandle, userId) {
+  if (!supabase || !userId) throw new Error("Sign in first");
+  const handle = String(instagramHandle || "").trim().replace(/^@/, "");
+  if (!host) throw new Error("Set a username on your profile first.");
+  if (!handle) throw new Error("Add the Instagram account that runs this meet.");
+  const { data, error } = await supabase
+    .from("host_verifications")
+    .insert({ user_id: userId, host, instagram_handle: handle, status: "pending" })
+    .select()
+    .single();
+  if (error) {
+    if (error.code === "23505") throw new Error("You've already requested this. Check back soon.");
+    throw new Error("Couldn't send that request. Try again.");
+  }
+  return data;
+}
+
+export async function withdrawVerification(id) {
+  if (!supabase) return;
+  await supabase.from("host_verifications").delete().eq("id", id);
+}
+
+// Admin-only; RLS returns nothing for everyone else.
+export async function loadPendingVerifications() {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("host_verifications")
+    .select("*")
+    .eq("status", "pending")
+    .order("created_at", { ascending: true });
+  if (error || !Array.isArray(data)) return [];
+  return data;
+}
+
+export async function decideVerification(id, approve, note = null) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { data, error } = await supabase.rpc("decide_host_verification", {
+    p_id: id,
+    p_approve: approve,
+    p_note: note,
+  });
+  if (error) throw new Error("Couldn't record that decision.");
+  return data;
 }
 
 // ---------- private meets ----------

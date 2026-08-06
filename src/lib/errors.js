@@ -12,6 +12,8 @@ const WRITE_ERROR_COPY = {
     "You've posted several meets in the last hour. Try again a bit later.",
   rate_limit_events_daily:
     "You've hit the daily limit for posting meets. Try again tomorrow.",
+  host_reserved:
+    "That host name belongs to a verified host. Post under your own handle.",
 };
 
 // `fallback` is what the caller would have said anyway, so unrelated failures

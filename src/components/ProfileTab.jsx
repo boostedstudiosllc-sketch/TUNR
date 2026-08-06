@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { loadProfile, saveProfile, hasBackend, signOut } from "../lib/store.js";
 import AuthForm from "./AuthForm.jsx";
+import HostVerification, { VerificationQueue } from "./HostVerification.jsx";
 
 const inputStyle = {
   background: "#161616",
@@ -46,7 +47,8 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onToast }
     };
     try {
       await saveProfile(next, user?.id || null);
-      setProfile(next);
+      // isAdmin isn't editable here; keep it rather than dropping it.
+      setProfile((p) => ({ ...p, ...next }));
       setEditing(false);
     } catch {
       onToast("Couldn't save profile — that username may be taken.");
@@ -225,6 +227,12 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onToast }
               SIGN OUT
             </button>
           </div>
+        )}
+
+        {hasBackend() && user && profile.isAdmin && <VerificationQueue onToast={onToast} />}
+
+        {hasBackend() && user && (
+          <HostVerification user={user} profile={profile} onToast={onToast} />
         )}
 
         <div

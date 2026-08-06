@@ -24,6 +24,11 @@ test("maps hourly and daily meet limits to different copy", () => {
   assert.notEqual(hourly, daily);
 });
 
+test("maps the reserved host marker", () => {
+  const error = { message: 'new row violates ... "host_reserved"' };
+  assert.match(friendlyWriteError(error, FALLBACK), /verified host/);
+});
+
 test("falls back for unrelated errors", () => {
   assert.equal(friendlyWriteError({ message: "connection reset" }, FALLBACK), FALLBACK);
 });
