@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { VIBES } from "../data/events.js";
+import { compressImage } from "../lib/image.js";
+import { uploadEventPhoto } from "../lib/store.js";
 
 const inputStyle = {
   background: "#161616",
@@ -23,8 +25,11 @@ const labelStyle = {
   fontFamily: "'Barlow Condensed', sans-serif",
 };
 
-export default function SubmitMeet({ onClose, onSubmit }) {
+export default function SubmitMeet({ onClose, onSubmit, user }) {
   const [step, setStep] = useState(1);
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [photoError, setPhotoError] = useState("");
   const [draft, setDraft] = useState({
     title: "",
     location: "",
@@ -39,6 +44,21 @@ export default function SubmitMeet({ onClose, onSubmit }) {
   });
 
   const set = (field) => (e) => setDraft((d) => ({ ...d, [field]: e.target.value }));
+
+  async function pickPhoto(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setPhotoError("");
+    try {
+      const compressed = await compressImage(file);
+      setPhotoUrl(await uploadEventPhoto(compressed, user.id));
+    } catch (err) {
+      setPhotoError(err.message || "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const canContinue =
     step === 1 ? draft.title.trim().length >= 3 && draft.location.trim().length >= 3 : true;
@@ -57,6 +77,7 @@ export default function SubmitMeet({ onClose, onSubmit }) {
       start,
       description: draft.description.trim(),
       igLink: draft.igLink.trim() || null,
+      photoUrl: photoUrl || null,
       visibility: draft.visibility,
       accessMode: draft.visibility === "private" ? draft.accessMode : "both",
     });
@@ -296,6 +317,84 @@ export default function SubmitMeet({ onClose, onSubmit }) {
                 onChange={set("description")}
               />
             </div>
+            {user && (
+              <div>
+                <div style={labelStyle}>FLYER PHOTO (OPTIONAL)</div>
+                {photoUrl ? (
+                  <div style={{ position: "relative" }}>
+                    <img
+                      src={photoUrl}
+                      alt=""
+                      style={{
+                        width: "100%",
+                        height: 150,
+                        objectFit: "cover",
+                        borderRadius: 8,
+                        display: "block",
+                        border: "1px solid #2A2A2A",
+                      }}
+                    />
+                    <button
+                      className="action-btn"
+                      onClick={() => setPhotoUrl("")}
+                      style={{
+                        position: "absolute",
+                        top: 8,
+                        right: 8,
+                        background: "rgba(0,0,0,0.75)",
+                        border: "1px solid #444",
+                        color: "#fff",
+                        borderRadius: "50%",
+                        width: 28,
+                        height: 28,
+                        fontSize: 14,
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      height: 76,
+                      borderRadius: 8,
+                      border: "1px dashed #2A2A2A",
+                      background: "#131313",
+                      color: "#777",
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      letterSpacing: 1,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {uploading ? "UPLOADING…" : "📷 ADD THE FLYER"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={pickPhoto}
+                      disabled={uploading}
+                      style={{ display: "none" }}
+                    />
+                  </label>
+                )}
+                {photoError && (
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "#FF6B4A",
+                      marginTop: 6,
+                      fontFamily: "'Barlow', sans-serif",
+                    }}
+                  >
+                    {photoError}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div>
               <div style={labelStyle}>INSTAGRAM POST LINK (OPTIONAL)</div>
               <input
@@ -313,8 +412,7 @@ export default function SubmitMeet({ onClose, onSubmit }) {
                   lineHeight: 1.5,
                 }}
               >
-                Link the original flyer post for credit. Flyer photo upload with auto-fill is coming
-                soon.
+                Link the original flyer post so the host gets credit.
               </div>
             </div>
           </div>

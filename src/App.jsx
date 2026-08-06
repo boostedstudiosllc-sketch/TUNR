@@ -777,7 +777,9 @@ export default function App() {
         />
       )}
 
-      {showSubmit && <SubmitMeet onClose={() => setShowSubmit(false)} onSubmit={handleSubmit} />}
+      {showSubmit && (
+        <SubmitMeet user={user} onClose={() => setShowSubmit(false)} onSubmit={handleSubmit} />
+      )}
 
       {hostView && (
         <HostProfile
