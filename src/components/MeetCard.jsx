@@ -1,10 +1,13 @@
 import { VIBES } from "../data/events.js";
-import { displayDate, displayTime } from "../lib/dates.js";
+import { displayDate, displayTime, startsInLabel, isHappeningNow } from "../lib/dates.js";
 
-export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, index = 0 }) {
+export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now, index = 0 }) {
   const color = VIBES[event.vibe] || "#FF4500";
   const going = rsvp === "going";
   const interested = rsvp === "interested";
+  // Only within a day of starting; further out the date line says it better.
+  const countdown = now ? startsInLabel(event, now) : null;
+  const live = Boolean(now && isHappeningNow(event, now));
 
   return (
     <div
@@ -90,8 +93,36 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, inde
         >
           @{event.host} {event.verified && "✓"}
         </div>
-        <div style={{ fontSize: 13, color: "#888", marginTop: 8 }}>
-          📅 {displayDate(event)} · {displayTime(event)}
+        <div
+          style={{
+            fontSize: 13,
+            color: "#888",
+            marginTop: 8,
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+            flexWrap: "wrap",
+          }}
+        >
+          <span>
+            📅 {displayDate(event)} · {displayTime(event)}
+          </span>
+          {countdown && (
+            <span
+              style={{
+                fontSize: 9.5,
+                fontWeight: 800,
+                letterSpacing: 1,
+                padding: "2px 7px",
+                borderRadius: 3,
+                color: live ? "#0A0A0A" : "#FF7A00",
+                background: live ? "#FF4500" : "rgba(255,122,0,0.12)",
+                border: `1px solid ${live ? "#FF4500" : "rgba(255,122,0,0.4)"}`,
+              }}
+            >
+              {countdown}
+            </span>
+          )}
         </div>
         <div style={{ fontSize: 12, color: "#666", marginTop: 3 }}>
           {event.locked ? (

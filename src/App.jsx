@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { VIBES } from "./data/events.js";
-import { isPast, isToday, isThisWeekend, sortKey, displayDate, displayTime } from "./lib/dates.js";
+import {
+  isPast,
+  isToday,
+  isThisWeekend,
+  sortKey,
+  displayDate,
+  displayTime,
+} from "./lib/dates.js";
 import { withDistances } from "./lib/geo.js";
 import {
   loadEvents,
@@ -28,6 +35,7 @@ import LockedMeets from "./components/LockedMeets.jsx";
 import AuthForm from "./components/AuthForm.jsx";
 import EditMeet from "./components/EditMeet.jsx";
 import HostProfile from "./components/HostProfile.jsx";
+import TodayStrip from "./components/TodayStrip.jsx";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -60,7 +68,12 @@ export default function App() {
   const [position, setPosition] = useState(null);
   const [locating, setLocating] = useState(false);
 
-  const now = new Date();
+  // Ticks so the "starts in" countdowns stay honest while the app is open.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(id);
+  }, []);
 
   // Track auth session
   useEffect(() => {
@@ -157,7 +170,17 @@ export default function App() {
 
   const todayCount = useMemo(
     () => events.filter((e) => !isPast(e, now) && isToday(e, now)).length,
-    [events]
+    [events, now]
+  );
+
+  // Meets you RSVP'd to that are on today. Locked private meets are left out —
+  // you can't have RSVP'd to one, and it has no time worth counting down to.
+  const todayMine = useMemo(
+    () =>
+      events
+        .filter((e) => rsvps[e.id] && !e.locked && !isPast(e, now) && isToday(e, now))
+        .sort((a, b) => sortKey(a, now) - sortKey(b, now)),
+    [events, rsvps, now]
   );
 
   const saved = events.filter((e) => rsvps[e.id]);
@@ -315,6 +338,8 @@ export default function App() {
       {/* Discover */}
       {tab === "discover" && (
         <div style={{ animation: "fadeIn 0.3s ease" }}>
+          <TodayStrip events={todayMine} rsvps={rsvps} now={now} onOpen={setSelected} />
+
           <div style={{ padding: "0 20px 12px", position: "relative" }}>
             <span
               style={{
@@ -470,8 +495,13 @@ export default function App() {
             </div>
           )}
 
-          {todayCount > 0 && (
+          {todayCount > 0 && todayMine.length === 0 && (
             <div
+              className="meet-card"
+              onClick={() => {
+                setFilter("Today");
+                track("today_banner_tapped", { count: todayCount });
+              }}
               style={{
                 margin: "0 20px 16px",
                 background: "linear-gradient(135deg, #1A0A00, #2A1000)",
@@ -522,6 +552,7 @@ export default function App() {
                     onOpen={setSelected}
                     onRsvp={handleRsvp}
                     onOpenHost={setHostView}
+                    now={now}
                     index={i}
                   />
                 ))}
@@ -665,6 +696,7 @@ export default function App() {
                   onOpen={setSelected}
                   onRsvp={handleRsvp}
                   onOpenHost={setHostView}
+                  now={now}
                   index={i}
                 />
               ))}
@@ -726,7 +758,37 @@ export default function App() {
               gap: 3,
             }}
           >
-            <span style={{ fontSize: 20, color: tab === t.id ? "#FF4500" : "#333" }}>{t.icon}</span>
+            <span
+              style={{
+                fontSize: 20,
+                color: tab === t.id ? "#FF4500" : "#333",
+                position: "relative",
+              }}
+            >
+              {t.icon}
+              {t.id === "saved" && todayMine.length > 0 && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: -1,
+                    right: -9,
+                    minWidth: 15,
+                    height: 15,
+                    padding: "0 4px",
+                    borderRadius: 8,
+                    background: "#FF4500",
+                    color: "#fff",
+                    fontSize: 9,
+                    fontWeight: 800,
+                    lineHeight: "15px",
+                    textAlign: "center",
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                  }}
+                >
+                  {todayMine.length}
+                </span>
+              )}
+            </span>
             <span
               style={{
                 fontSize: 9,

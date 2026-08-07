@@ -218,6 +218,66 @@ export function isPast(event, now = new Date()) {
   return end < now;
 }
 
+// When the next occurrence finishes. For a recurring meet the end time-of-day
+// is taken from `event.end` and applied to the occurrence's own day; without
+// an end we assume it runs until midnight.
+function occurrenceEnd(event, now = new Date()) {
+  const key = nextOccurrenceKey(event, now);
+  if (!key) return null;
+  const tz = tzOf(event);
+  const e = event.end
+    ? /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/.exec(event.end)
+    : null;
+
+  if (!e) {
+    const { y, m, d } = keyToParts(key);
+    return instantFrom(y, m, d, 23, 59, tz);
+  }
+
+  // One-off meets can span days, so use the end date as written.
+  if (!event.recurrence) {
+    return instantFrom(
+      Number(e[1]), Number(e[2]), Number(e[3]),
+      e[4] === undefined ? 23 : Number(e[4]),
+      e[5] === undefined ? 59 : Number(e[5]),
+      tz
+    );
+  }
+
+  const { y, m, d } = keyToParts(key);
+  return instantFrom(
+    y, m, d,
+    e[4] === undefined ? 23 : Number(e[4]),
+    e[5] === undefined ? 59 : Number(e[5]),
+    tz
+  );
+}
+
+export function isHappeningNow(event, now = new Date()) {
+  const start = nextOccurrence(event, now);
+  const end = occurrenceEnd(event, now);
+  if (!start || !end) return false;
+  return start <= now && now <= end;
+}
+
+// Short countdown for a meet that's close enough for it to mean something.
+// Null past a day out — the date line already says what's needed.
+export function startsInLabel(event, now = new Date()) {
+  const start = nextOccurrence(event, now);
+  if (!start) return null;
+  if (isHappeningNow(event, now)) return "ON NOW";
+
+  const minutes = Math.round((start.getTime() - now.getTime()) / 60000);
+  if (minutes < 0) return null;
+  if (minutes < 1) return "STARTING NOW";
+  if (minutes < 60) return `IN ${minutes} MIN`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours >= 24) return null;
+  const rest = minutes % 60;
+  return rest ? `IN ${hours}H ${rest}M` : `IN ${hours}H`;
+}
+
 export function startOfDay(d) {
   const c = new Date(d);
   c.setHours(0, 0, 0, 0);

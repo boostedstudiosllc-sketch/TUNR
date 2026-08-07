@@ -8,6 +8,8 @@ import {
   isPast,
   nextOccurrenceKey,
   sortKey,
+  isHappeningNow,
+  startsInLabel,
 } from "../src/lib/dates.js";
 
 // Event times are wall-clock at the venue, so these must hold regardless of
@@ -87,4 +89,45 @@ test("isPast hides finished one-offs but not recurring or undated ones", () => {
 
 test("undated events sort last", () => {
   assert.ok(sortKey(dateTbc, now) > sortKey(torq, now));
+});
+
+// --- happening-now / countdown ---------------------------------------------
+// 2026-08-01 is a Saturday. Times below are ET expressed as UTC instants, so
+// these assertions hold whatever timezone the test runner is in.
+const at = (utc) => new Date(utc);
+
+test("isHappeningNow is true between start and end", () => {
+  // Road Atlanta runs 9:00–16:00 ET = 13:00–20:00 UTC.
+  assert.equal(isHappeningNow(roadAtlanta, at("2026-08-01T14:00:00Z")), true);
+  assert.equal(isHappeningNow(roadAtlanta, at("2026-08-01T12:59:00Z")), false);
+  assert.equal(isHappeningNow(roadAtlanta, at("2026-08-01T20:01:00Z")), false);
+});
+
+test("isHappeningNow follows a recurring meet to its own day", () => {
+  // Locals & Legends is every Thursday 18:00–21:00 ET. Thu 2026-08-13 is a
+  // later week than the one the row was written for.
+  assert.equal(isHappeningNow(localsLegends, at("2026-08-13T23:00:00Z")), true);
+  assert.equal(isHappeningNow(localsLegends, at("2026-08-13T21:00:00Z")), false);
+});
+
+test("startsInLabel counts down in minutes then hours", () => {
+  assert.equal(startsInLabel(roadAtlanta, at("2026-08-01T12:30:00Z")), "IN 30 MIN");
+  assert.equal(startsInLabel(roadAtlanta, at("2026-08-01T12:00:00Z")), "IN 1H");
+  assert.equal(startsInLabel(roadAtlanta, at("2026-08-01T11:45:00Z")), "IN 1H 15M");
+});
+
+test("startsInLabel says ON NOW once it has started", () => {
+  assert.equal(startsInLabel(roadAtlanta, at("2026-08-01T14:00:00Z")), "ON NOW");
+});
+
+test("startsInLabel stays quiet more than a day out and after the end", () => {
+  assert.equal(startsInLabel(roadAtlanta, at("2026-07-30T13:00:00Z")), null);
+  assert.equal(startsInLabel(roadAtlanta, at("2026-08-01T21:00:00Z")), null);
+});
+
+test("startsInLabel handles a meet with no end time", () => {
+  const noEnd = ev({ start: "2026-08-01T09:00", end: null });
+  assert.equal(startsInLabel(noEnd, at("2026-08-01T12:30:00Z")), "IN 30 MIN");
+  // No end means it counts as running until midnight at the venue.
+  assert.equal(isHappeningNow(noEnd, at("2026-08-01T20:00:00Z")), true);
 });
