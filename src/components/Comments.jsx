@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
-import { loadComments, addComment, deleteComment, track } from "../lib/store.js";
+import { loadComments, addComment, deleteComment, blockUser, track } from "../lib/store.js";
+
+const commentActionStyle = {
+  marginLeft: "auto",
+  background: "none",
+  border: "none",
+  color: "#444",
+  fontSize: 11,
+  cursor: "pointer",
+  fontFamily: "'Barlow', sans-serif",
+};
 
 function timeAgo(iso) {
   const secs = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -13,7 +23,7 @@ function timeAgo(iso) {
   return new Date(iso).toLocaleDateString();
 }
 
-export default function Comments({ eventId, user, onNeedAccount }) {
+export default function Comments({ eventId, user, onNeedAccount, onToast }) {
   const [comments, setComments] = useState([]);
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
@@ -54,6 +64,20 @@ export default function Comments({ eventId, user, onNeedAccount }) {
   async function remove(id) {
     await deleteComment(id);
     setComments((c) => c.filter((x) => x.id !== id));
+  }
+
+  async function block(comment) {
+    if (!user) return onNeedAccount();
+    try {
+      await blockUser(user.id, comment.user_id);
+      // The database filters blocked authors out of future reads; drop what's
+      // already on screen so it takes effect immediately.
+      setComments((c) => c.filter((x) => x.user_id !== comment.user_id));
+      track("user_blocked", { eventId });
+      onToast && onToast(`Blocked @${comment.username}`);
+    } catch (e) {
+      setError(e.message);
+    }
   }
 
   return (
@@ -146,21 +170,16 @@ export default function Comments({ eventId, user, onNeedAccount }) {
                     @{c.username}
                   </span>
                   <span style={{ fontSize: 10.5, color: "#555" }}>{timeAgo(c.created_at)}</span>
-                  {user && c.user_id === user.id && (
-                    <button
-                      onClick={() => remove(c.id)}
-                      style={{
-                        marginLeft: "auto",
-                        background: "none",
-                        border: "none",
-                        color: "#444",
-                        fontSize: 11,
-                        cursor: "pointer",
-                        fontFamily: "'Barlow', sans-serif",
-                      }}
-                    >
+                  {user && c.user_id === user.id ? (
+                    <button onClick={() => remove(c.id)} style={commentActionStyle}>
                       delete
                     </button>
+                  ) : (
+                    user && (
+                      <button onClick={() => block(c)} style={commentActionStyle}>
+                        block
+                      </button>
+                    )
                   )}
                 </div>
                 <div

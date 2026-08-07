@@ -7,3 +7,11 @@ createRoot(document.getElementById("root")).render(
     <TUNR />
   </StrictMode>
 );
+
+// Makes the app installable to a home screen. Registration failures are not
+// worth surfacing — the app works identically without it.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}

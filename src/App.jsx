@@ -31,6 +31,7 @@ import MapView from "./components/MapView.jsx";
 import SubmitMeet from "./components/SubmitMeet.jsx";
 import ProfileTab from "./components/ProfileTab.jsx";
 import TermsOfService from "./components/TermsOfService.jsx";
+import PrivacyPolicy from "./components/PrivacyPolicy.jsx";
 import LockedMeets from "./components/LockedMeets.jsx";
 import AuthForm from "./components/AuthForm.jsx";
 import EditMeet from "./components/EditMeet.jsx";
@@ -60,6 +61,7 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [tosAccepted, setTosAccepted] = useState(() => Boolean(loadTosAccepted()));
   const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [search, setSearch] = useState("");
   const [follows, setFollows] = useState([]);
   const [editing, setEditing] = useState(null);
@@ -712,6 +714,7 @@ export default function App() {
           rsvps={rsvps}
           user={user}
           onShowTerms={() => setShowTerms(true)}
+          onShowPrivacy={() => setShowPrivacy(true)}
           onToast={showToast}
           onOpenHost={(h) => {
             setSelected(null);
@@ -879,6 +882,8 @@ export default function App() {
       )}
 
       {showTerms && <TermsOfService readOnly onClose={() => setShowTerms(false)} />}
+
+      {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
 
       {toast && (
         <div

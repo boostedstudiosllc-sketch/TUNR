@@ -422,7 +422,14 @@ export default function MeetDetail({
             </div>
           )}
 
-          {!locked && <Comments eventId={event.id} user={user} onNeedAccount={onNeedAccount} />}
+          {!locked && (
+            <Comments
+              eventId={event.id}
+              user={user}
+              onNeedAccount={onNeedAccount}
+              onToast={onToast}
+            />
+          )}
 
           <ReportMeet eventId={event.id} user={user} onNeedAccount={onNeedAccount} />
 

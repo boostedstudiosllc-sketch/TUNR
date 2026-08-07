@@ -662,6 +662,43 @@ export async function deleteComment(commentId) {
   await supabase.from("comments").delete().eq("id", commentId);
 }
 
+// ---------- blocking ----------
+
+export async function blockUser(userId, blockedId) {
+  if (!supabase || !userId) throw new Error("Sign in first");
+  if (userId === blockedId) throw new Error("You can't block yourself.");
+  const { error } = await supabase
+    .from("blocks")
+    .upsert({ blocker_id: userId, blocked_id: blockedId }, { onConflict: "blocker_id,blocked_id" });
+  if (error) throw new Error("Couldn't block that account.");
+}
+
+export async function unblockUser(userId, blockedId) {
+  if (!supabase || !userId) return;
+  await supabase.from("blocks").delete().eq("blocker_id", userId).eq("blocked_id", blockedId);
+}
+
+export async function loadBlockedAccounts() {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("blocked_accounts")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error || !Array.isArray(data)) return [];
+  return data;
+}
+
+// ---------- account deletion ----------
+
+// Irreversible. The database drops the auth user and everything hanging off
+// it; the meets they posted go too, since nobody would be left to run them.
+export async function deleteMyAccount() {
+  if (!supabase) throw new Error("Backend not configured");
+  const { error } = await supabase.rpc("delete_my_account");
+  if (error) throw new Error("Couldn't delete the account. Try again.");
+  await supabase.auth.signOut();
+}
+
 // ---------- follows ----------
 
 export async function loadFollows(userId) {

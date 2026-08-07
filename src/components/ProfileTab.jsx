@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { loadProfile, saveProfile, hasBackend, signOut } from "../lib/store.js";
 import AuthForm from "./AuthForm.jsx";
 import HostVerification, { VerificationQueue } from "./HostVerification.jsx";
+import AccountSettings from "./AccountSettings.jsx";
 
 const inputStyle = {
   background: "#161616",
@@ -16,7 +17,20 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
-export default function ProfileTab({ events, rsvps, user, onShowTerms, onToast }) {
+const legalButton = {
+  flex: 1,
+  padding: "12px 0",
+  background: "#111",
+  border: "1px solid #2A2A2A",
+  borderRadius: 10,
+  color: "#666",
+  fontSize: 12,
+  fontWeight: 700,
+  letterSpacing: 1.5,
+  fontFamily: "'Barlow Condensed', sans-serif",
+};
+
+export default function ProfileTab({ events, rsvps, user, onShowTerms, onShowPrivacy, onToast }) {
   const [profile, setProfile] = useState({ username: "", city: "Atlanta, GA" });
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ username: "", city: "Atlanta, GA" });
@@ -235,6 +249,8 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onToast }
           <HostVerification user={user} profile={profile} onToast={onToast} />
         )}
 
+        {hasBackend() && user && <AccountSettings user={user} onToast={onToast} />}
+
         <div
           style={{
             background: "#111",
@@ -259,25 +275,14 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onToast }
           </div>
         </div>
 
-        <button
-          className="action-btn"
-          onClick={onShowTerms}
-          style={{
-            marginTop: 12,
-            width: "100%",
-            padding: "12px 0",
-            background: "#111",
-            border: "1px solid #2A2A2A",
-            borderRadius: 10,
-            color: "#666",
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: 1.5,
-            fontFamily: "'Barlow Condensed', sans-serif",
-          }}
-        >
-          📄 TERMS OF SERVICE
-        </button>
+        <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+          <button className="action-btn" onClick={onShowTerms} style={legalButton}>
+            📄 TERMS
+          </button>
+          <button className="action-btn" onClick={onShowPrivacy} style={legalButton}>
+            🔒 PRIVACY
+          </button>
+        </div>
       </div>
     </div>
   );
