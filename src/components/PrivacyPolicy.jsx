@@ -2,6 +2,8 @@
 // privacy labels. Kept plain and specific — a policy that describes something
 // the app doesn't do is worse than none.
 
+import { CONTACT_EMAIL } from "../lib/contact.js";
+
 const body = { fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "#AAA", lineHeight: 1.7 };
 const heading = {
   fontFamily: "'Barlow Condensed', sans-serif",
@@ -12,10 +14,6 @@ const heading = {
   marginTop: 20,
   marginBottom: 6,
 };
-
-// TODO: replace with a real address once the domain is bought — a privacy
-// policy has to name someone reachable.
-const CONTACT = "privacy@tunr.app";
 
 export default function PrivacyPolicy({ onClose }) {
   return (
@@ -139,7 +137,12 @@ export default function PrivacyPolicy({ onClose }) {
         </div>
 
         <div style={heading}>CONTACT</div>
-        <div style={body}>{CONTACT}</div>
+        <div style={body}>
+          Questions about your data, or anything in this policy:{" "}
+          <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#FF4500" }}>
+            {CONTACT_EMAIL}
+          </a>
+        </div>
       </div>
     </div>
   );

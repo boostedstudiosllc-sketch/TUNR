@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CONTACT_EMAIL } from "../lib/contact.js";
 
 const body = { fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "#AAA", lineHeight: 1.7 };
 const heading = {
@@ -141,6 +142,19 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
         <div style={body}>
           If you witness illegal activity at a TUNR-listed meet, report it to local law enforcement
           immediately. TUNR will cooperate fully with law enforcement investigations.
+          <br />
+          <br />
+          Inside the app, use Report on any meet to flag a listing, and block on any comment to stop
+          hearing from an account. Reported content is reviewed within 24 hours and removed if it
+          breaks these terms.
+        </div>
+
+        <div style={heading}>7. CONTACT</div>
+        <div style={body}>
+          Questions, complaints, or anything that needs a human:{" "}
+          <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#FF4500" }}>
+            {CONTACT_EMAIL}
+          </a>
         </div>
         <div style={{ height: 40 }} />
       </div>
