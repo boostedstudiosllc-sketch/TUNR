@@ -2,7 +2,7 @@
 // privacy labels. Kept plain and specific — a policy that describes something
 // the app doesn't do is worse than none.
 
-import { CONTACT_EMAIL } from "../lib/contact.js";
+import { CONTACT_EMAIL, LEGAL_ENTITY } from "../lib/contact.js";
 
 const body = { fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "#AAA", lineHeight: 1.7 };
 const heading = {
@@ -59,6 +59,10 @@ export default function PrivacyPolicy({ onClose }) {
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "4px 20px 40px" }}>
+        <div style={body}>
+          TUNR is operated by {LEGAL_ENTITY}. This policy covers the app and the website.
+        </div>
+
         <div style={heading}>WHAT WE COLLECT</div>
         <div style={body}>
           <strong>If you create an account:</strong> your email address, the username you pick, and

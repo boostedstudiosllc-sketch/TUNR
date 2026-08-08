@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CONTACT_EMAIL } from "../lib/contact.js";
+import { CONTACT_EMAIL, LEGAL_ENTITY } from "../lib/contact.js";
 
 const body = { fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "#AAA", lineHeight: 1.7 };
 const heading = {
@@ -83,7 +83,12 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
         style={{ flex: 1, overflowY: "auto", padding: "20px 20px 0" }}
       >
         <div style={body}>
-          Welcome to TUNR. By using this app you agree to the following terms.
+          Welcome to TUNR. TUNR is operated by {LEGAL_ENTITY} ("we", "us"). By using this app you
+          agree to the following terms.
+          <br />
+          <br />
+          <strong>You must be 13 or older to use TUNR.</strong> If you're under 13, don't create an
+          account. If we learn an account belongs to someone under 13 we'll remove it.
         </div>
         <div style={warn}>
           ⚠️ TUNR is a discovery platform only. We do not organize or endorse any listed event.
@@ -131,14 +136,42 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           reserves the right to remove any content and restrict any user at any time.
         </div>
 
-        <div style={heading}>5. RELEASE OF LIABILITY</div>
+        <div style={heading}>5. YOUR CONTENT</div>
         <div style={body}>
-          TO THE MAXIMUM EXTENT PERMITTED BY LAW, TUNR IS NOT LIABLE FOR ANY INJURY, DEATH, PROPERTY
-          DAMAGE, OR OTHER HARM ARISING FROM YOUR USE OF THIS APP OR ATTENDANCE AT ANY LISTED EVENT.
-          YOU ATTEND ANY EVENT AT YOUR SOLE RISK.
+          Anything you post — meet listings, comments, photos — stays yours. By posting it you give
+          us permission to display, store, resize and share it inside TUNR and in links to TUNR, for
+          as long as you keep it up. Delete the content or your account and that permission ends.
+          <br />
+          <br />
+          You promise that what you upload is yours to upload: your own photo, or one you have the
+          rights to. Don't post a flyer, photo or logo you don't have permission to use.
         </div>
 
-        <div style={heading}>6. REPORTING</div>
+        <div style={heading}>6. COPYRIGHT &amp; TAKEDOWN</div>
+        <div style={body}>
+          If something on TUNR infringes your copyright, email{" "}
+          <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#FF4500" }}>
+            {CONTACT_EMAIL}
+          </a>{" "}
+          with: what work was copied, where it appears in TUNR, your contact details, a statement
+          that you believe in good faith the use isn't authorised, a statement that your notice is
+          accurate and that you're the rights holder or authorised to act for them, and your
+          signature. We remove infringing material promptly.
+          <br />
+          <br />
+          If your content was removed and you believe that was a mistake, you can send a counter
+          notice to the same address. Accounts that repeatedly infringe are terminated.
+        </div>
+
+        <div style={heading}>7. RELEASE OF LIABILITY</div>
+        <div style={body}>
+          TO THE MAXIMUM EXTENT PERMITTED BY LAW, {LEGAL_ENTITY.toUpperCase()}, ITS OWNERS,
+          EMPLOYEES AND AGENTS ARE NOT LIABLE FOR ANY INJURY, DEATH, PROPERTY DAMAGE, OR OTHER HARM
+          ARISING FROM YOUR USE OF THIS APP OR ATTENDANCE AT ANY LISTED EVENT. YOU ATTEND ANY EVENT
+          AT YOUR SOLE RISK.
+        </div>
+
+        <div style={heading}>8. REPORTING</div>
         <div style={body}>
           If you witness illegal activity at a TUNR-listed meet, report it to local law enforcement
           immediately. TUNR will cooperate fully with law enforcement investigations.
@@ -149,9 +182,10 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           breaks these terms.
         </div>
 
-        <div style={heading}>7. CONTACT</div>
+        <div style={heading}>9. CONTACT</div>
         <div style={body}>
-          Questions, complaints, or anything that needs a human:{" "}
+          TUNR is operated by {LEGAL_ENTITY}. Questions, complaints, or anything that needs a
+          human:{" "}
           <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#FF4500" }}>
             {CONTACT_EMAIL}
           </a>

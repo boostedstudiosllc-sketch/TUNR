@@ -15,7 +15,9 @@ const SUBMITTED_KEY = "tunr.submitted.v1";
 const PROFILE_KEY = "tunr.profile.v1";
 const TOS_KEY = "tunr.tos.v1";
 
-export const TOS_VERSION = 1;
+// Bumped when the terms change in a way that affects anyone's rights, which
+// re-prompts accounts that accepted an earlier version.
+export const TOS_VERSION = 2;
 
 function read(key, fallback) {
   try {
@@ -276,6 +278,13 @@ export async function saveProfile(profile, userId = null) {
 
 export function loadTosAccepted() {
   return read(TOS_KEY, null);
+}
+
+// Accepting an older version doesn't count once the terms have materially
+// changed — otherwise bumping TOS_VERSION would be decorative.
+export function hasAcceptedCurrentTos() {
+  const record = loadTosAccepted();
+  return Boolean(record && Number(record.version) >= TOS_VERSION);
 }
 
 export async function saveTosAccepted(userId = null) {

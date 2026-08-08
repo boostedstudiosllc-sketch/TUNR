@@ -14,7 +14,7 @@ import {
   loadRsvps,
   saveRsvp,
   submitEvent,
-  loadTosAccepted,
+  hasAcceptedCurrentTos,
   saveTosAccepted,
   syncTosToAccount,
   onAuthChange,
@@ -59,7 +59,7 @@ export default function App() {
   const [selected, setSelected] = useState(null);
   const [showSubmit, setShowSubmit] = useState(false);
   const [toast, setToast] = useState(null);
-  const [tosAccepted, setTosAccepted] = useState(() => Boolean(loadTosAccepted()));
+  const [tosAccepted, setTosAccepted] = useState(hasAcceptedCurrentTos);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [search, setSearch] = useState("");
