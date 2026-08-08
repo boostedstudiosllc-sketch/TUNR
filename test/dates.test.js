@@ -131,3 +131,46 @@ test("startsInLabel handles a meet with no end time", () => {
   // No end means it counts as running until midnight at the venue.
   assert.equal(isHappeningNow(noEnd, at("2026-08-01T20:00:00Z")), true);
 });
+
+// --- nth-weekday recurrence ------------------------------------------------
+// Half the regular Georgia meets are "second Sunday" or "last Saturday", which
+// the original monthly:first-only format could not express.
+const secondSunday = ev({ start: "2026-08-09T08:00", end: "2026-08-09T11:00", recurrence: "monthly:second:SUN" });
+const lastSaturday = ev({ start: "2026-08-29T09:00", end: "2026-08-29T12:00", recurrence: "monthly:last:SAT" });
+
+test("monthly:second finds the second matching weekday", () => {
+  // August 2026 Sundays: 2, 9, 16, 23, 30.
+  assert.equal(nextOccurrenceKey(secondSunday, new Date("2026-08-06T12:00:00Z")), "2026-08-09");
+  // Once it has passed, roll to next month. September 2026 Sundays: 6, 13, ...
+  assert.equal(nextOccurrenceKey(secondSunday, new Date("2026-08-20T12:00:00Z")), "2026-09-13");
+});
+
+test("monthly:last counts back from the end of the month", () => {
+  // August 2026 Saturdays: 1, 8, 15, 22, 29.
+  assert.equal(nextOccurrenceKey(lastSaturday, new Date("2026-08-06T12:00:00Z")), "2026-08-29");
+  // September 2026 Saturdays: 5, 12, 19, 26.
+  assert.equal(nextOccurrenceKey(lastSaturday, new Date("2026-08-30T12:00:00Z")), "2026-09-26");
+});
+
+test("monthly:last is not the same as monthly:fourth when there are five", () => {
+  const fourth = ev({ start: "2026-08-22T09:00", recurrence: "monthly:fourth:SAT" });
+  const now = new Date("2026-08-06T12:00:00Z");
+  assert.equal(nextOccurrenceKey(fourth, now), "2026-08-22");
+  assert.equal(nextOccurrenceKey(lastSaturday, now), "2026-08-29");
+});
+
+test("monthly:first still behaves as before", () => {
+  assert.equal(nextOccurrenceKey(caffeineOctane, new Date("2026-08-20T12:00:00Z")), "2026-09-06");
+});
+
+test("displayDate labels each nth variant", () => {
+  assert.equal(displayDate(secondSunday), "2ND SUNDAY/MO");
+  assert.equal(displayDate(lastSaturday), "LAST SATURDAY/MO");
+  assert.equal(displayDate(caffeineOctane), "1ST SUNDAY/MO");
+});
+
+test("a month with no fifth weekday rolls forward instead of breaking", () => {
+  // February 2027 has only four Mondays, so monthly:fourth is its last one.
+  const fourthMon = ev({ start: "2027-02-22T18:00", recurrence: "monthly:fourth:MON" });
+  assert.equal(nextOccurrenceKey(fourthMon, new Date("2027-02-01T12:00:00Z")), "2027-02-22");
+});

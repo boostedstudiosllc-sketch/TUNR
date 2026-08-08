@@ -11,6 +11,11 @@ export const DEFAULT_TZ = "America/New_York";
 
 const DAY_CODES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const DAY_INDEX = { SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6 };
+// Offsets from the first matching weekday of the month; "last" is handled
+// separately since it counts backwards.
+const NTH_INDEX = { first: 0, second: 1, third: 2, fourth: 3, last: -1 };
+const NTH_LABELS = { first: "1ST", second: "2ND", third: "3RD", fourth: "4TH", last: "LAST" };
+
 const DAY_NAMES = {
   SUN: "SUNDAY", MON: "MONDAY", TUE: "TUESDAY", WED: "WEDNESDAY",
   THU: "THURSDAY", FRI: "FRIDAY", SAT: "SATURDAY",
@@ -133,24 +138,46 @@ export function nextOccurrenceKey(event, from = new Date()) {
     return startKey;
   }
 
-  if (kind === "monthly" && a === "first") {
+  if (kind === "monthly" && NTH_INDEX[a] !== undefined) {
     const target = DAY_INDEX[b];
     const { y, m } = keyToParts(todayKey);
     for (const [yy, mm] of [
       [y, m],
       [m === 12 ? y + 1 : y, m === 12 ? 1 : m + 1],
     ]) {
-      let key = `${yy}-${String(mm).padStart(2, "0")}-01`;
-      for (let i = 0; i < 7; i++) {
-        if (dowOfKey(key) === target) break;
-        key = addDaysToKey(key, 1);
-      }
-      if (key >= todayKey) return key;
+      const key = nthWeekdayOfMonth(yy, mm, target, a);
+      if (key && key >= todayKey) return key;
     }
     return startKey;
   }
 
   return startKey;
+}
+
+// "second Sunday of August 2026" -> "2026-08-09". `nth` is first/second/
+// third/fourth/last; a month without a fifth Tuesday simply has no answer.
+function nthWeekdayOfMonth(year, month, targetDow, nth) {
+  const first = `${year}-${String(month).padStart(2, "0")}-01`;
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+  if (nth === "last") {
+    let key = `${year}-${String(month).padStart(2, "0")}-${daysInMonth}`;
+    for (let i = 0; i < 7; i++) {
+      if (dowOfKey(key) === targetDow) return key;
+      key = addDaysToKey(key, -1);
+    }
+    return null;
+  }
+
+  let key = first;
+  for (let i = 0; i < 7; i++) {
+    if (dowOfKey(key) === targetDow) break;
+    key = addDaysToKey(key, 1);
+  }
+  key = addDaysToKey(key, 7 * NTH_INDEX[nth]);
+  return Number(key.slice(8)) <= daysInMonth && key.slice(0, 7) === first.slice(0, 7)
+    ? key
+    : null;
 }
 
 export function nextOccurrence(event, from = new Date()) {
@@ -166,7 +193,9 @@ export function displayDate(event) {
   if (event.recurrence) {
     const [kind, a, b] = event.recurrence.split(":");
     if (kind === "weekly") return "EVERY " + (DAY_NAMES[a] || a);
-    if (kind === "monthly" && a === "first") return "1ST " + (DAY_NAMES[b] || b) + "/MO";
+    if (kind === "monthly" && NTH_LABELS[a]) {
+      return `${NTH_LABELS[a]} ${DAY_NAMES[b] || b}/MO`;
+    }
   }
   const p = wallParts(event);
   if (!p) return "DATE TBC";
