@@ -93,10 +93,17 @@ export default function PrivacyPolicy({ onClose }) {
 
         <div style={heading}>WHAT'S PUBLIC</div>
         <div style={body}>
-          Your username, the meets you post, and your comments are visible to everyone. Your email
-          address is never shown to other users. Your RSVPs are counted in the totals shown on a
-          meet, but who RSVP'd is not published. The address of a private meet is only visible to
-          its host and to people who have been let in.
+          Your username, your profile, the cars in your garage, the meets you post, and your
+          comments are visible to everyone. Your email address is never shown to other users.
+          <br />
+          <br />
+          <strong>RSVPs:</strong> when you RSVP with a car, that meet's attendee list shows the
+          car's <strong>make and model only</strong> — not your name, handle, photo, or anything
+          else about you or the car. Totals are shown on the meet. Who RSVP'd is not published.
+          <br />
+          <br />
+          The address of a private meet, and its attendee list, are only visible to its host and to
+          people who have been let in.
         </div>
 
         <div style={heading}>WHO ELSE HANDLES IT</div>
