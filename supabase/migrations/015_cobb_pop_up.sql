@@ -1,11 +1,10 @@
 -- Cobb Car Meets x Fastlane Car Club pop-up, 8 Aug 2026.
 --
--- Worth noting how this one arrived: it was announced on Instagram nine
--- minutes before it was passed to me, for a meet starting that evening. No
--- aggregator, directory or search result had it, and none would have in time.
--- Same-day pop-ups are precisely the category that only host-posting can
--- cover, which is the argument for getting hosts onto the app rather than
--- scraping harder.
+-- Worth noting how this one arrived: announced on Instagram the same
+-- afternoon for a meet starting that evening. No aggregator, directory or
+-- search result carried it at any point. Same-day pop-ups are precisely the
+-- category that only host-posting can cover, which is the argument for
+-- getting hosts onto the app rather than scraping harder.
 --
 -- Coordinates geocoded from the flyer's address, not estimated.
 -- The flyer states "NO REVVING - NO BURNOUTS", so it clears the content
