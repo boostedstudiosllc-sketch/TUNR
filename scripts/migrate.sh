@@ -66,3 +66,11 @@ for path in "${files[@]}"; do
 done
 
 echo "Done — $ran migration(s) applied."
+
+# Report what the database now considers applied. Without this the only way to
+# check the tracking table is to query it, and it is not readable through the
+# REST API — so a run that applied everything but recorded nothing would look
+# identical to a healthy one until the next push failed.
+recorded="$(query "select count(*) from public.schema_migrations;")"
+echo "Tracked as applied: $recorded of $(ls "$MIGRATIONS_DIR"/*.sql | wc -l | tr -d ' ')"
+query "select '  ' || version from public.schema_migrations order by version;"
