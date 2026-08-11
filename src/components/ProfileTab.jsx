@@ -3,6 +3,7 @@ import { loadProfile, saveProfile, hasBackend, signOut } from "../lib/store.js";
 import AuthForm from "./AuthForm.jsx";
 import HostVerification, { VerificationQueue } from "./HostVerification.jsx";
 import AccountSettings from "./AccountSettings.jsx";
+import Garage from "./Garage.jsx";
 
 const inputStyle = {
   background: "#161616",
@@ -244,6 +245,8 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onShowPri
         )}
 
         {hasBackend() && user && profile.isAdmin && <VerificationQueue onToast={onToast} />}
+
+        {hasBackend() && user && <Garage user={user} onToast={onToast} />}
 
         {hasBackend() && user && (
           <HostVerification user={user} profile={profile} onToast={onToast} />

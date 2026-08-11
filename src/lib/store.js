@@ -232,14 +232,117 @@ export async function saveRsvp(rsvps, eventId, status, userId = null) {
     if (turningOff) {
       await supabase.from("rsvps").delete().eq("user_id", userId).eq("event_id", eventId);
     } else {
-      await supabase
-        .from("rsvps")
-        .upsert({ user_id: userId, event_id: eventId, status }, { onConflict: "user_id,event_id" });
+      // Bring your main car by default. A car isn't required to RSVP, so this
+      // stays null for anyone who hasn't added one — they just don't appear in
+      // the meet's car list.
+      const { data: primary } = await supabase
+        .from("vehicles")
+        .select("id")
+        .eq("owner_id", userId)
+        .eq("is_primary", true)
+        .maybeSingle();
+      await supabase.from("rsvps").upsert(
+        {
+          user_id: userId,
+          event_id: eventId,
+          status,
+          ...(primary?.id ? { vehicle_id: primary.id } : {}),
+        },
+        { onConflict: "user_id,event_id" }
+      );
     }
   } else {
     write(RSVP_KEY, next);
   }
   return next;
+}
+
+// ---------- vehicles ----------
+
+export async function loadCarMakes() {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("car_makes").select("name").order("name");
+  if (error || !Array.isArray(data)) return [];
+  // 'Other' is the escape hatch, so it belongs at the bottom rather than
+  // alphabetically between Nissan and Porsche.
+  const names = data.map((r) => r.name);
+  return [...names.filter((n) => n !== "Other"), ...names.filter((n) => n === "Other")];
+}
+
+export async function loadVehicles(ownerId) {
+  if (!supabase || !ownerId) return [];
+  const { data, error } = await supabase
+    .from("vehicles")
+    .select("*")
+    .eq("owner_id", ownerId)
+    .order("is_primary", { ascending: false })
+    .order("created_at");
+  if (error || !Array.isArray(data)) return [];
+  return data;
+}
+
+export async function saveVehicle(vehicle, ownerId) {
+  if (!supabase || !ownerId) throw new Error("Sign in first");
+  const payload = {
+    owner_id: ownerId,
+    year: vehicle.year ? Number(vehicle.year) : null,
+    make: vehicle.make,
+    model: (vehicle.model || "").trim(),
+    build_notes: (vehicle.buildNotes || "").trim() || null,
+    photo_url: vehicle.photoUrl || null,
+  };
+  if (!payload.make) throw new Error("Pick a make.");
+  if (!payload.model) throw new Error("Add the model.");
+
+  const query = vehicle.id
+    ? supabase.from("vehicles").update(payload).eq("id", vehicle.id)
+    : supabase.from("vehicles").insert(payload);
+  const { error } = await query;
+  if (error) throw new Error("Couldn't save that car. Try again.");
+}
+
+export async function deleteVehicle(vehicleId) {
+  if (!supabase) return;
+  await supabase.from("vehicles").delete().eq("id", vehicleId);
+}
+
+// The trigger from 015 demotes whichever car was primary before.
+export async function setPrimaryVehicle(vehicleId) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { error } = await supabase
+    .from("vehicles")
+    .update({ is_primary: true })
+    .eq("id", vehicleId);
+  if (error) throw new Error("Couldn't set that as your main car.");
+}
+
+export async function uploadVehiclePhoto(file, userId) {
+  if (!supabase || !userId) throw new Error("Sign in first");
+  if (!file.type.startsWith("image/")) throw new Error("Pick an image file.");
+  if (file.size > 6 * 1024 * 1024) throw new Error("Image must be under 6MB.");
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+  // Storage policy scopes writes to a folder named after the uploader.
+  const path = `${userId}/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from("vehicle-photos").upload(path, file, {
+    cacheControl: "31536000",
+    upsert: false,
+  });
+  if (error) throw new Error("Upload failed. Try a different image.");
+  return supabase.storage.from("vehicle-photos").getPublicUrl(path).data.publicUrl;
+}
+
+// ---------- attendees ----------
+
+// Reads the view, which publishes make and model only — never who.
+export async function loadAttendees(eventId) {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("event_attendees")
+    .select("make,model,status")
+    .eq("event_id", eventId)
+    .order("created_at");
+  if (error || !Array.isArray(data)) return [];
+  return data;
 }
 
 // ---------- profile ----------
