@@ -50,7 +50,7 @@ export default async function handler(req, res) {
   `;
 
   const html = indexHtml
-    .replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(title)} — TUNR</title>`)
+    .replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(title)}</title>`)
     .replace("</head>", `${metaTags}\n  </head>`);
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
