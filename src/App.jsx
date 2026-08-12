@@ -37,6 +37,7 @@ import AuthForm from "./components/AuthForm.jsx";
 import EditMeet from "./components/EditMeet.jsx";
 import HostProfile from "./components/HostProfile.jsx";
 import TodayStrip from "./components/TodayStrip.jsx";
+import HostPitch from "./components/HostPitch.jsx";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -60,6 +61,11 @@ export default function App() {
   const [showSubmit, setShowSubmit] = useState(false);
   const [toast, setToast] = useState(null);
   const [tosAccepted, setTosAccepted] = useState(hasAcceptedCurrentTos);
+  // /hosts is the pitch page sent to prospective hosts. Kept as plain path
+  // matching rather than a router — it's the only extra route in the app.
+  const [showHostPitch, setShowHostPitch] = useState(
+    () => typeof window !== "undefined" && /^\/hosts\/?$/.test(window.location.pathname)
+  );
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [search, setSearch] = useState("");
@@ -260,6 +266,21 @@ export default function App() {
   function showToast(msg) {
     setToast(msg);
     setTimeout(() => setToast(null), 2400);
+  }
+
+  if (showHostPitch) {
+    return (
+      <>
+        <GlobalStyles />
+        <HostPitch
+          onStart={() => {
+            window.history.replaceState({}, document.title, "/");
+            setShowHostPitch(false);
+            setTab("profile");
+          }}
+        />
+      </>
+    );
   }
 
   if (!tosAccepted) {

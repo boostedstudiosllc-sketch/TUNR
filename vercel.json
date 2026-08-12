@@ -1,3 +1,6 @@
 {
-  "rewrites": [{ "source": "/m/:slug", "destination": "/api/m/:slug" }]
+  "rewrites": [
+    { "source": "/m/:slug", "destination": "/api/m/:slug" },
+    { "source": "/hosts", "destination": "/api/hosts" }
+  ]
 }
