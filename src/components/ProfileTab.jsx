@@ -4,6 +4,7 @@ import AuthForm from "./AuthForm.jsx";
 import HostVerification, { VerificationQueue } from "./HostVerification.jsx";
 import AccountSettings from "./AccountSettings.jsx";
 import Garage from "./Garage.jsx";
+import ModerationQueue from "./ModerationQueue.jsx";
 
 const inputStyle = {
   background: "#161616",
@@ -243,6 +244,8 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onShowPri
             </button>
           </div>
         )}
+
+        {hasBackend() && user && profile.isAdmin && <ModerationQueue onToast={onToast} />}
 
         {hasBackend() && user && profile.isAdmin && <VerificationQueue onToast={onToast} />}
 

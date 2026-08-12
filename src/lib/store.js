@@ -840,6 +840,38 @@ export async function toggleFollow(host, userId, following) {
   }
 }
 
+// ---------- moderation (admin) ----------
+
+// RLS returns nothing to non-admins, so this is empty for everyone else.
+export async function loadReportQueue(includeResolved = false) {
+  if (!supabase) return [];
+  let q = supabase.from("reports_queue").select("*").order("created_at", { ascending: false });
+  if (!includeResolved) q = q.is("resolved_at", null);
+  const { data, error } = await q.limit(100);
+  if (error || !Array.isArray(data)) return [];
+  return data;
+}
+
+// Taking a meet down closes its open reports in the same call.
+export async function moderateEvent(eventId, hidden) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { data, error } = await supabase.rpc("moderate_event", {
+    p_event_id: eventId,
+    p_hidden: hidden,
+  });
+  if (error) throw new Error("Couldn't apply that.");
+  return data;
+}
+
+export async function dismissReport(reportId) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { error } = await supabase
+    .from("reports")
+    .update({ resolved_at: new Date().toISOString(), outcome: "dismissed" })
+    .eq("id", reportId);
+  if (error) throw new Error("Couldn't dismiss that report.");
+}
+
 // ---------- analytics ----------
 
 export function track(name, props = {}) {
