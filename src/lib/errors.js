@@ -12,6 +12,9 @@ const WRITE_ERROR_COPY = {
     "You've posted several meets in the last hour. Try again a bit later.",
   rate_limit_events_daily:
     "You've hit the daily limit for posting meets. Try again tomorrow.",
+  rate_limit_photos:
+    "You're posting photos quickly — give it a few minutes and try again.",
+  photo_limit_per_meet: "That's the photo limit for one meet.",
   host_reserved:
     "That host name belongs to a verified host. Post under your own handle.",
 };

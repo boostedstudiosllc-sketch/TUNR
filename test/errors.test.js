@@ -45,3 +45,11 @@ test("does not confuse the hourly marker for the daily one", () => {
   const daily = friendlyWriteError({ message: "rate_limit_events_daily" }, FALLBACK);
   assert.doesNotMatch(daily, /last hour/);
 });
+
+test("maps the photo limit markers to distinct copy", () => {
+  const hourly = friendlyWriteError({ message: "rate_limit_photos" }, FALLBACK);
+  const perMeet = friendlyWriteError({ message: "photo_limit_per_meet" }, FALLBACK);
+  assert.match(hourly, /quickly/);
+  assert.match(perMeet, /one meet/);
+  assert.notEqual(hourly, perMeet);
+});

@@ -5,6 +5,7 @@ import Comments from "./Comments.jsx";
 import ReportMeet from "./ReportMeet.jsx";
 import PrivateAccess from "./PrivateAccess.jsx";
 import Attendees from "./Attendees.jsx";
+import MeetPhotos from "./MeetPhotos.jsx";
 import { track } from "../lib/store.js";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -424,6 +425,16 @@ export default function MeetDetail({
           )}
 
           {!locked && <Attendees eventId={event.id} goingCount={event.going} />}
+
+          {!locked && (
+            <MeetPhotos
+              eventId={event.id}
+              user={user}
+              isHost={canEdit}
+              onNeedAccount={onNeedAccount}
+              onToast={onToast}
+            />
+          )}
 
           {!locked && (
             <Comments

@@ -840,6 +840,51 @@ export async function toggleFollow(host, userId, following) {
   }
 }
 
+// ---------- meet photos ----------
+
+export async function loadMeetPhotos(eventId) {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("meet_photos_with_author")
+    .select("*")
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: false })
+    .limit(60);
+  if (error || !Array.isArray(data)) return [];
+  return data;
+}
+
+export async function uploadMeetPhoto(file, userId) {
+  if (!supabase || !userId) throw new Error("Sign in first");
+  if (!file.type.startsWith("image/")) throw new Error("Pick an image file.");
+  if (file.size > 6 * 1024 * 1024) throw new Error("Image must be under 6MB.");
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const path = `${userId}/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from("meet-photos").upload(path, file, {
+    cacheControl: "31536000",
+    upsert: false,
+  });
+  if (error) throw new Error("Upload failed. Try a different image.");
+  return supabase.storage.from("meet-photos").getPublicUrl(path).data.publicUrl;
+}
+
+export async function addMeetPhoto(eventId, photoUrl, caption, userId) {
+  if (!supabase || !userId) throw new Error("Sign in to add photos");
+  const { error } = await supabase.from("meet_photos").insert({
+    event_id: eventId,
+    user_id: userId,
+    photo_url: photoUrl,
+    caption: (caption || "").trim() || null,
+  });
+  if (error) throw new Error(friendlyWriteError(error, "Couldn't add that photo."));
+}
+
+// The uploader, the meet's host and admins can delete; RLS decides which.
+export async function deleteMeetPhoto(photoId) {
+  if (!supabase) return;
+  await supabase.from("meet_photos").delete().eq("id", photoId);
+}
+
 // ---------- moderation (admin) ----------
 
 // RLS returns nothing to non-admins, so this is empty for everyone else.
