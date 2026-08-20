@@ -32,7 +32,6 @@ import SubmitMeet from "./components/SubmitMeet.jsx";
 import ProfileTab from "./components/ProfileTab.jsx";
 import TermsOfService from "./components/TermsOfService.jsx";
 import PrivacyPolicy from "./components/PrivacyPolicy.jsx";
-import LockedMeets from "./components/LockedMeets.jsx";
 import AuthForm from "./components/AuthForm.jsx";
 import EditMeet from "./components/EditMeet.jsx";
 import HostProfile from "./components/HostProfile.jsx";
@@ -40,9 +39,6 @@ import TodayStrip from "./components/TodayStrip.jsx";
 import HostPitch from "./components/HostPitch.jsx";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
-
-// Meets a signed-out visitor can see before the sign-in wall.
-const FREE_PREVIEW_COUNT = 2;
 
 const SORTS = [
   { id: "soonest", label: "SOONEST" },
@@ -193,11 +189,22 @@ export default function App() {
 
   const saved = events.filter((e) => rsvps[e.id]);
 
-  const gated = Boolean(hasBackend() && !user);
-  const unlocked = gated ? visible.slice(0, FREE_PREVIEW_COUNT) : visible;
-  const lockedEvents = gated ? visible.slice(FREE_PREVIEW_COUNT) : [];
+  // Browsing is open to everyone: meets came from public listings, and a wall
+  // in front of them costs reach without buying anything. The account is what
+  // gates *acting* — RSVPing, a garage, posting, and eventually reminders.
+  const needsAccount = Boolean(hasBackend() && !user);
+  const unlocked = visible;
 
   function handleRsvp(eventId, status) {
+    // The natural place to ask for an account: they've already decided they
+    // want this meet. Far easier a yes than a wall on the way in.
+    if (needsAccount) {
+      setSelected(null);
+      setTab("profile");
+      showToast("Create a free account to RSVP");
+      track("rsvp_needs_account", { eventId });
+      return;
+    }
     // Optimistic update; persistence happens in the store.
     setRsvps((prev) => {
       const turningOff = prev[eventId] === status;
@@ -336,7 +343,7 @@ export default function App() {
         <button
           className="action-btn"
           onClick={() => {
-            if (gated) {
+            if (needsAccount) {
               setTab("profile");
               showToast("Create a free account to post a meet");
               return;
@@ -579,12 +586,34 @@ export default function App() {
                     index={i}
                   />
                 ))}
-                {lockedEvents.length > 0 && (
-                  <LockedMeets
-                    events={lockedEvents}
-                    lockedCount={lockedEvents.length}
-                    onError={showToast}
-                  />
+                {needsAccount && (
+                  <div
+                    style={{
+                      background: "#111",
+                      border: "1px solid #2A2A2A",
+                      borderRadius: 12,
+                      padding: "18px 20px",
+                      marginTop: 2,
+                    }}
+                  >
+                    <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: 0.3 }}>
+                      KEEP TRACK OF THESE
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        color: "#999",
+                        marginTop: 7,
+                        marginBottom: 14,
+                        lineHeight: 1.6,
+                        fontFamily: "'Barlow', sans-serif",
+                      }}
+                    >
+                      Browsing is free and always will be. A free account lets you RSVP, save meets,
+                      add your car, and post your own.
+                    </div>
+                    <AuthForm />
+                  </div>
                 )}
               </>
             )}
@@ -638,35 +667,6 @@ export default function App() {
                 </div>
               </div>
             ))}
-            {gated && lockedEvents.length > 0 && (
-              <div
-                style={{
-                  background: "#111",
-                  border: "1px solid #FF4500",
-                  borderRadius: 12,
-                  padding: "18px 18px",
-                  marginTop: 4,
-                }}
-              >
-                <div style={{ fontSize: 22, marginBottom: 6 }}>🔒</div>
-                <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: 0.4 }}>
-                  {lockedEvents.length} MORE ON THE MAP
-                </div>
-                <div
-                  style={{
-                    fontSize: 13,
-                    color: "#999",
-                    marginTop: 6,
-                    marginBottom: 14,
-                    lineHeight: 1.6,
-                    fontFamily: "'Barlow', sans-serif",
-                  }}
-                >
-                  Free account — see every pin near you.
-                </div>
-                <AuthForm />
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -680,7 +680,7 @@ export default function App() {
           <div style={{ fontSize: 13, color: "#555", marginBottom: 20 }}>
             Meets you're going to or interested in
           </div>
-          {gated ? (
+          {needsAccount ? (
             <div
               style={{
                 background: "#111",
