@@ -37,6 +37,7 @@ import EditMeet from "./components/EditMeet.jsx";
 import HostProfile from "./components/HostProfile.jsx";
 import TodayStrip from "./components/TodayStrip.jsx";
 import HostPitch from "./components/HostPitch.jsx";
+import PerksTab from "./components/PerksTab.jsx";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -728,6 +729,18 @@ export default function App() {
         </div>
       )}
 
+      {/* Perks */}
+      {tab === "perks" && (
+        <PerksTab
+          user={user}
+          onNeedAccount={() => {
+            setTab("profile");
+            showToast("Create a free account first");
+          }}
+          onToast={showToast}
+        />
+      )}
+
       {/* Profile */}
       {tab === "profile" && (
         <ProfileTab
@@ -764,6 +777,7 @@ export default function App() {
           { id: "discover", icon: "≡", label: "DISCOVER" },
           { id: "map", icon: "◎", label: "MAP" },
           { id: "saved", icon: "★", label: "MY MEETS" },
+          { id: "perks", icon: "🎟", label: "PERKS" },
           { id: "profile", icon: "◉", label: "PROFILE" },
         ].map((t) => (
           <button

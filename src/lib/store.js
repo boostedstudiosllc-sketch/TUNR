@@ -359,9 +359,11 @@ export async function loadProfile(userId = null) {
         username: data.username || "",
         city: data.city || "Atlanta, GA",
         isAdmin: Boolean(data.is_admin),
+        isMember: Boolean(data.is_member),
+        memberSince: data.member_since || null,
       };
     }
-    return { username: "", city: "Atlanta, GA", isAdmin: false };
+    return { username: "", city: "Atlanta, GA", isAdmin: false, isMember: false };
   }
   return loadLocalProfile();
 }
@@ -883,6 +885,32 @@ export async function addMeetPhoto(eventId, photoUrl, caption, userId) {
 export async function deleteMeetPhoto(photoId) {
   if (!supabase) return;
   await supabase.from("meet_photos").delete().eq("id", photoId);
+}
+
+// ---------- perks ----------
+
+// perks_public shows every live offer to everyone but nulls the code and
+// link for non-members, so the paywall is the database's job rather than
+// the screen's.
+export async function loadPerks() {
+  if (!supabase) return [];
+  const [perksRes, countsRes] = await Promise.all([
+    supabase.from("perks_public").select("*").order("partner_name"),
+    supabase.from("perk_redemption_counts").select("*"),
+  ]);
+  const rows = perksRes?.data;
+  if (perksRes?.error || !Array.isArray(rows)) return [];
+  const counts = new Map(
+    (Array.isArray(countsRes?.data) ? countsRes.data : []).map((r) => [r.perk_id, r.redemptions])
+  );
+  return rows.map((r) => ({ ...r, redemptions: Number(counts.get(r.id) || 0) }));
+}
+
+// Recorded so a partner can be shown how many people we sent them. Rejected
+// by policy for non-members, so a failure here is not worth surfacing.
+export async function recordRedemption(perkId, userId) {
+  if (!supabase || !userId) return;
+  await supabase.from("perk_redemptions").insert({ perk_id: perkId, user_id: userId });
 }
 
 // ---------- moderation (admin) ----------
