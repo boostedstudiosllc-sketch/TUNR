@@ -10,6 +10,7 @@ import {
   hostInviteUrl,
   track,
 } from "../lib/store.js";
+import { INSTAGRAM_HANDLE } from "../lib/contact.js";
 
 const inputStyle = {
   background: "#0F0F0F",
@@ -94,8 +95,9 @@ export default function HostVerification({ user, profile, onToast }) {
       {request?.status === "pending" && (
         <>
           <div style={bodyStyle}>
-            We'll DM <strong>@{request.instagram_handle}</strong> on Instagram with a link. Open it
-            while you're signed in here and you're verified — nothing to put in your bio.
+            Watch for a DM from @{INSTAGRAM_HANDLE} to <strong>@{request.instagram_handle}</strong>{" "}
+            (check message requests if you don't follow us). Open the link while you're signed in
+            here and you're verified.
           </div>
           <button
             className="action-btn"

@@ -10,6 +10,7 @@ import {
   requestVerification,
   track,
 } from "../lib/store.js";
+import { INSTAGRAM_HANDLE } from "../lib/contact.js";
 import AuthForm from "./AuthForm.jsx";
 import Badge from "./Badge.jsx";
 import TermsOfService from "./TermsOfService.jsx";
@@ -263,7 +264,7 @@ function RequestAccess({ user, host, request, onRequested, onStart }) {
       <>
         <Heading
           title="You're on the list"
-          sub={`We'll DM @${request.instagram_handle} on Instagram with a link. Open it and you're verified — nothing to put in your bio. Until then you can post meets as @${host} like normal.`}
+          sub={`Watch for a DM from @${INSTAGRAM_HANDLE} to @${request.instagram_handle} — check your message requests if you don't follow us. It has a link: open it and you're verified. Until then you can post meets as @${host} like normal.`}
         />
         <PrimaryButton onClick={() => onStart(true)}>POST YOUR FIRST MEET →</PrimaryButton>
         <SecondaryButton onClick={() => onStart(false)}>Open TUNR</SecondaryButton>
@@ -275,7 +276,7 @@ function RequestAccess({ user, host, request, onRequested, onStart }) {
     <>
       <Heading
         title="Which Instagram runs your meets?"
-        sub={`We'll DM that page a link to verify @${host}. Opening it is the proof the page is yours — nothing to put in your bio.`}
+        sub={`@${INSTAGRAM_HANDLE} will DM that page a link to verify @${host}. Opening it is the proof the page is yours — nothing to put in your bio.`}
       />
       <div style={{ position: "relative" }}>
         <span style={{ position: "absolute", left: 14, top: 13, color: "#555", fontWeight: 700 }}>@</span>

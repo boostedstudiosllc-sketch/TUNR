@@ -132,8 +132,8 @@ export default function HostPitch({ user, onStart }) {
           </Point>
           <Point icon="✓" title="Your name, reserved">
             Get verified and nobody else can post under your name. No impersonation, no fake
-            listings using your name. Verifying is a link we DM to your page — nothing to put in
-            your bio.
+            listings using your name. Verifying is a link @tunr.app DMs to your page — nothing to
+            put in your bio.
           </Point>
         </Section>
 

@@ -6,3 +6,8 @@ export const CONTACT_EMAIL = "boostedstudiosllc@gmail.com";
 // The legal person behind the app. The terms have to name it for the LLC's
 // liability shield to mean anything — "TUNR" is a brand, not an entity.
 export const LEGAL_ENTITY = "Boosted Studios Production LLC";
+
+// The Instagram account host invites are DMed from. Hosts are told to expect
+// a message from it, since Instagram files DMs from accounts they don't
+// follow under message requests.
+export const INSTAGRAM_HANDLE = "tunr.app";
