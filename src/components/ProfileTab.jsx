@@ -5,6 +5,8 @@ import HostVerification, { VerificationQueue } from "./HostVerification.jsx";
 import AccountSettings from "./AccountSettings.jsx";
 import Garage from "./Garage.jsx";
 import ModerationQueue from "./ModerationQueue.jsx";
+import DayOneBadge from "./DayOneBadge.jsx";
+import SignupStats from "./SignupStats.jsx";
 
 const inputStyle = {
   background: "#161616",
@@ -122,6 +124,11 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onShowPri
                 </div>
                 <div style={{ fontSize: 12, color: "#FF4500", marginTop: 2 }}>
                   @{profile.username || "your_handle"}
+                  {profile.dayOne && (
+                    <span style={{ marginLeft: 7 }}>
+                      <DayOneBadge number={profile.dayOneNumber} />
+                    </span>
+                  )}
                 </div>
                 <div style={{ fontSize: 12, color: "#555", marginTop: 3 }}>📍 {profile.city}</div>
               </>
@@ -244,6 +251,8 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onShowPri
             </button>
           </div>
         )}
+
+        {hasBackend() && user && profile.isAdmin && <SignupStats />}
 
         {hasBackend() && user && profile.isAdmin && <ModerationQueue onToast={onToast} />}
 

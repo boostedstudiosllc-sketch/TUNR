@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadComments, addComment, deleteComment, blockUser, track } from "../lib/store.js";
+import DayOneBadge from "./DayOneBadge.jsx";
 
 const commentActionStyle = {
   marginLeft: "auto",
@@ -169,6 +170,7 @@ export default function Comments({ eventId, user, onNeedAccount, onToast }) {
                   <span style={{ fontSize: 12.5, fontWeight: 800, color: "#FF7A00" }}>
                     @{c.username}
                   </span>
+                  {c.day_one && <DayOneBadge number={c.day_one_number} />}
                   <span style={{ fontSize: 10.5, color: "#555" }}>{timeAgo(c.created_at)}</span>
                   {user && c.user_id === user.id ? (
                     <button onClick={() => remove(c.id)} style={commentActionStyle}>

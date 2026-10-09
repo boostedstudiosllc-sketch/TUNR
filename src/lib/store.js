@@ -14,6 +14,7 @@ const RSVP_KEY = "tunr.rsvps.v1";
 const SUBMITTED_KEY = "tunr.submitted.v1";
 const PROFILE_KEY = "tunr.profile.v1";
 const TOS_KEY = "tunr.tos.v1";
+const SIGNUP_SOURCE_KEY = "tunr.signup_source.v1";
 
 // Bumped when the terms change in a way that affects anyone's rights, which
 // re-prompts accounts that accepted an earlier version.
@@ -361,6 +362,8 @@ export async function loadProfile(userId = null) {
         isAdmin: Boolean(data.is_admin),
         isMember: Boolean(data.is_member),
         memberSince: data.member_since || null,
+        dayOne: Boolean(data.day_one),
+        dayOneNumber: data.day_one_number ?? null,
       };
     }
     return { username: "", city: "Atlanta, GA", isAdmin: false, isMember: false };
@@ -436,6 +439,68 @@ export async function isUsernameTaken(username) {
   return Boolean(data);
 }
 
+// ---------- signup source ----------
+
+// /join?ref=tiktok remembers "tiktok" until the account exists. Kept on the
+// device because Google sign-in leaves the page and comes back, and also put
+// in the account's metadata for email sign-ups, whose confirmation link often
+// opens in a different browser.
+export function cleanSignupSource(value) {
+  const s = String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "")
+    .slice(0, 32);
+  return s || null;
+}
+
+export function rememberSignupSource(value) {
+  const s = cleanSignupSource(value);
+  if (s) write(SIGNUP_SOURCE_KEY, s);
+}
+
+function pendingSignupSource(user = null) {
+  return cleanSignupSource(user?.user_metadata?.signup_source) || read(SIGNUP_SOURCE_KEY, null);
+}
+
+function clearSignupSource() {
+  try {
+    localStorage.removeItem(SIGNUP_SOURCE_KEY);
+  } catch {
+    // nothing to clear
+  }
+}
+
+// Whether accounts created now still get the Day 1 badge.
+export async function dayOneOpen() {
+  if (!supabase) return true;
+  const { data } = await supabase
+    .from("launch_settings")
+    .select("day_one_closes_at")
+    .maybeSingle();
+  if (!data || !data.day_one_closes_at) return true;
+  return new Date(data.day_one_closes_at) > new Date();
+}
+
+// Admin only — the view returns nothing for anyone else.
+export async function loadSignupStats() {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("signup_stats")
+    .select("source,signups,day_one,last_7_days")
+    .order("signups", { ascending: false });
+  if (error || !Array.isArray(data)) return [];
+  return data;
+}
+
+// Where an emailed link or Google sends people back to. Signing up from /join
+// returns to /join, so they land on their badge rather than the bare app.
+// Needs <site>/join in Supabase's redirect URLs; without it Supabase falls
+// back to the site URL, which is where everyone went before.
+function returnUrl() {
+  const onJoin = /^\/join\/?$/.test(window.location.pathname);
+  return window.location.origin + (onJoin ? "/join" : "");
+}
+
 export async function signUpWithPassword(email, password, username) {
   if (!supabase) throw new Error("Backend not configured");
 
@@ -443,12 +508,13 @@ export async function signUpWithPassword(email, password, username) {
     throw new Error("That username is taken — pick another.");
   }
 
+  const source = pendingSignupSource();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { username },
-      emailRedirectTo: window.location.origin,
+      data: source ? { username, signup_source: source } : { username },
+      emailRedirectTo: returnUrl(),
     },
   });
   if (error) throw new Error(friendlyAuthError(error));
@@ -458,7 +524,8 @@ export async function signUpWithPassword(email, password, username) {
 
   await supabase
     .from("profiles")
-    .upsert({ id: data.user.id, username, city: "Atlanta, GA" });
+    .upsert({ id: data.user.id, username, city: "Atlanta, GA", ...(source && { signup_source: source }) });
+  clearSignupSource();
   return { signedIn: true };
 }
 
@@ -499,20 +566,39 @@ function friendlyAuthError(error) {
 }
 
 // Ensures a profile row exists for a freshly confirmed account, carrying the
-// username chosen at sign-up.
+// username and the link they signed up from.
 export async function ensureProfile(user) {
   if (!supabase || !user) return;
-  const { data } = await supabase.from("profiles").select("id").eq("id", user.id).maybeSingle();
-  if (data) return;
+  const source = pendingSignupSource(user);
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (data) {
+    // Another call created the row first; fill the source in if it's missing.
+    // The database ignores this once a source is set. Only for a row made in
+    // the last day, so an old account that taps the bio link and logs in
+    // isn't counted as a new sign-up from it.
+    const fresh = Date.now() - new Date(data.created_at).getTime() < 24 * 60 * 60 * 1000;
+    if (source && fresh && !data.signup_source) {
+      await supabase.from("profiles").update({ signup_source: source }).eq("id", user.id);
+    }
+    if (source) clearSignupSource();
+    return;
+  }
   const username = user.user_metadata?.username || null;
-  await supabase.from("profiles").upsert({ id: user.id, username, city: "Atlanta, GA" });
+  const { error } = await supabase
+    .from("profiles")
+    .upsert({ id: user.id, username, city: "Atlanta, GA", ...(source && { signup_source: source }) });
+  if (!error && source) clearSignupSource();
 }
 
 export async function signInWithGoogle() {
   if (!supabase) throw new Error("Backend not configured");
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: window.location.origin },
+    options: { redirectTo: returnUrl() },
   });
   if (error) throw new Error(friendlyAuthError(error));
 }

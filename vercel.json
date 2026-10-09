@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/m/:slug", "destination": "/api/m/:slug" },
-    { "source": "/hosts", "destination": "/api/hosts" }
+    { "source": "/hosts", "destination": "/api/hosts" },
+    { "source": "/join", "destination": "/api/join" }
   ]
 }

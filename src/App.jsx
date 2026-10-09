@@ -38,6 +38,7 @@ import HostProfile from "./components/HostProfile.jsx";
 import TodayStrip from "./components/TodayStrip.jsx";
 import HostPitch from "./components/HostPitch.jsx";
 import PerksTab from "./components/PerksTab.jsx";
+import JoinPage from "./components/JoinPage.jsx";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -58,10 +59,13 @@ export default function App() {
   const [showSubmit, setShowSubmit] = useState(false);
   const [toast, setToast] = useState(null);
   const [tosAccepted, setTosAccepted] = useState(hasAcceptedCurrentTos);
-  // /hosts is the pitch page sent to prospective hosts. Kept as plain path
-  // matching rather than a router — it's the only extra route in the app.
+  // /hosts is the pitch page sent to prospective hosts, /join the link in the
+  // bio. Kept as plain path matching rather than a router.
   const [showHostPitch, setShowHostPitch] = useState(
     () => typeof window !== "undefined" && /^\/hosts\/?$/.test(window.location.pathname)
+  );
+  const [showJoin, setShowJoin] = useState(
+    () => typeof window !== "undefined" && /^\/join\/?$/.test(window.location.pathname)
   );
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
@@ -285,6 +289,22 @@ export default function App() {
             window.history.replaceState({}, document.title, "/");
             setShowHostPitch(false);
             setTab("profile");
+          }}
+        />
+      </>
+    );
+  }
+
+  if (showJoin) {
+    return (
+      <>
+        <GlobalStyles />
+        <JoinPage
+          user={user}
+          onEnter={() => {
+            window.history.replaceState({}, document.title, "/");
+            setShowJoin(false);
+            setTab("discover");
           }}
         />
       </>
