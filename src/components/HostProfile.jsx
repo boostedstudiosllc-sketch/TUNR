@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { loadHostFollowerCount, track } from "../lib/store.js";
 import { isPast, sortKey } from "../lib/dates.js";
 import MeetCard from "./MeetCard.jsx";
+import Badge from "./Badge.jsx";
 
 export default function HostProfile({
   host,
@@ -34,6 +35,7 @@ export default function HostProfile({
     .filter((e) => !isPast(e, now))
     .sort((a, b) => sortKey(a, now) - sortKey(b, now));
   const verified = hostEvents.some((e) => e.verified);
+  const founding = hostEvents.some((e) => e.foundingHost);
 
   return (
     <div
@@ -127,6 +129,11 @@ export default function HostProfile({
               >
                 {host}
                 {verified && <span style={{ color: "#FF4500" }}> ✓</span>}
+                {founding && (
+                  <span style={{ marginLeft: 7 }}>
+                    <Badge kind="founding_host" size={20} />
+                  </span>
+                )}
               </div>
               <div style={{ fontSize: 12, color: "#FF7A00", marginTop: 2 }}>@{host}</div>
             </div>

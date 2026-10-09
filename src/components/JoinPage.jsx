@@ -9,7 +9,7 @@ import {
 } from "../lib/store.js";
 import { isPast } from "../lib/dates.js";
 import AuthForm from "./AuthForm.jsx";
-import DayOneBadge from "./DayOneBadge.jsx";
+import Badge from "./Badge.jsx";
 import TermsOfService from "./TermsOfService.jsx";
 import PrivacyPolicy from "./PrivacyPolicy.jsx";
 
@@ -130,13 +130,13 @@ export default function JoinPage({ user, onEnter }) {
                   marginBottom: 20,
                 }}
               >
-                <DayOneBadge size="large" />
+                <Badge kind="day_one" size={30} />
                 <div style={{ fontSize: 18, fontWeight: 900, marginTop: 10, letterSpacing: 0.3 }}>
                   GET IN BEFORE LAUNCH
                 </div>
                 <div style={{ ...paragraph, marginTop: 6, fontSize: 13.5 }}>
-                  Sign up now and your profile carries a numbered Day 1 badge — next to your name
-                  everywhere you comment. It stops being handed out at launch, and nobody can get
+                  Sign up now and your profile carries the Day 1 badge, numbered in the order
+                  people joined — next to your name everywhere you comment. It stops being handed out at launch, and nobody can get
                   one after.
                 </div>
               </div>
@@ -200,7 +200,7 @@ function Welcome({ profile, onEnter, onShare, copied }) {
             YOU'RE IN
           </div>
           <div style={{ marginTop: 14 }}>
-            <DayOneBadge number={profile.dayOneNumber} size="large" />
+            <Badge kind="day_one" number={profile.dayOneNumber} size={56} />
           </div>
           <div style={{ fontSize: 26, fontWeight: 900, marginTop: 14, lineHeight: 1.1 }}>
             {profile.dayOneNumber ? `Day 1 member #${profile.dayOneNumber}` : "You're Day 1"}

@@ -5,6 +5,9 @@ import {
   withdrawVerification,
   loadPendingVerifications,
   decideVerification,
+  createHostInvite,
+  loadHostInvites,
+  hostInviteUrl,
   track,
 } from "../lib/store.js";
 
@@ -29,9 +32,10 @@ const bodyStyle = {
   fontFamily: "'Barlow', sans-serif",
 };
 
-// Shown to every signed-in account. Hosts ask to be verified here; the code
-// they get has to appear on the Instagram account they claim to run, which is
-// the part a stranger can't fake.
+// Shown to every signed-in account. Hosts ask to be verified here, and an
+// admin answers with an invite link DMed to the Instagram account they named.
+// Only that account's inbox sees the link, which is the part a stranger can't
+// fake — and nobody has to touch their bio.
 export default function HostVerification({ user, profile, onToast }) {
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +63,7 @@ export default function HostVerification({ user, profile, onToast }) {
       const created = await requestVerification(host, handle, user.id);
       setRequest(created);
       track("verification_requested", { host });
-      onToast("Request sent — put the code on your Instagram");
+      onToast("Request sent — we'll DM you on Instagram");
     } catch (e) {
       onToast(e.message || "Couldn't send that request.");
     } finally {
@@ -70,15 +74,6 @@ export default function HostVerification({ user, profile, onToast }) {
   async function withdraw() {
     await withdrawVerification(request.id);
     setRequest(null);
-  }
-
-  async function copyCode() {
-    try {
-      await navigator.clipboard.writeText(request.code);
-      onToast("Code copied");
-    } catch {
-      onToast(`Code: ${request.code}`);
-    }
   }
 
   if (loading) return null;
@@ -99,30 +94,8 @@ export default function HostVerification({ user, profile, onToast }) {
       {request?.status === "pending" && (
         <>
           <div style={bodyStyle}>
-            Put this code in the bio or a story on <strong>@{request.instagram_handle}</strong>, then
-            leave it up until you're approved. That's how we know the account is yours.
-          </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <div
-              style={{
-                flex: 1,
-                background: "#0C0C0C",
-                border: "1px dashed #FF4500",
-                borderRadius: 8,
-                padding: "11px 0",
-                textAlign: "center",
-                fontSize: 17,
-                fontWeight: 900,
-                letterSpacing: 3,
-                color: "#FF4500",
-                fontFamily: "'Barlow Condensed', sans-serif",
-              }}
-            >
-              {request.code}
-            </div>
-            <button className="action-btn" onClick={copyCode} style={pillStyle("#888", "#2A2A2A")}>
-              COPY
-            </button>
+            We'll DM <strong>@{request.instagram_handle}</strong> on Instagram with a link. Open it
+            while you're signed in here and you're verified — nothing to put in your bio.
           </div>
           <button
             className="action-btn"
@@ -216,6 +189,23 @@ export function VerificationQueue({ onToast }) {
     refresh();
   }, []);
 
+  // Approving means DMing the Instagram account a one-time link; opening it
+  // is what verifies them. Copies the whole message so it's one paste.
+  async function sendInvite(row) {
+    setBusyId(row.id);
+    try {
+      const token = await createHostInvite(row.instagram_handle);
+      const message = inviteMessage(row.instagram_handle, token);
+      await copyText(message);
+      onToast(`Invite for @${row.instagram_handle} copied — paste it in their DMs`);
+      window.open(instagramUrl(row.instagram_handle), "_blank", "noopener");
+    } catch (e) {
+      onToast(e.message || "Couldn't create that invite.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function decide(row, approve) {
     setBusyId(row.id);
     try {
@@ -241,7 +231,8 @@ export function VerificationQueue({ onToast }) {
         Verification queue · {rows.length}
       </div>
       <div style={bodyStyle}>
-        Open the Instagram account and check the code is in the bio or a story before approving.
+        Invite copies a DM with their one-time link and opens their Instagram. They're verified
+        when they open it — the request clears itself.
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
         {rows.map((row) => (
@@ -258,7 +249,7 @@ export function VerificationQueue({ onToast }) {
             <div style={{ fontSize: 12, color: "#777", marginTop: 2 }}>
               claims{" "}
               <a
-                href={`https://www.instagram.com/${encodeURIComponent(row.instagram_handle)}/`}
+                href={instagramUrl(row.instagram_handle)}
                 target="_blank"
                 rel="noreferrer"
                 style={{ color: "#FF4500" }}
@@ -266,26 +257,14 @@ export function VerificationQueue({ onToast }) {
                 @{row.instagram_handle} ↗
               </a>
             </div>
-            <div
-              style={{
-                fontSize: 13,
-                fontWeight: 900,
-                letterSpacing: 2,
-                color: "#FF4500",
-                marginTop: 6,
-                fontFamily: "'Barlow Condensed', sans-serif",
-              }}
-            >
-              {row.code}
-            </div>
             <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
               <button
                 className="action-btn"
                 disabled={busyId === row.id}
-                onClick={() => decide(row, true)}
+                onClick={() => sendInvite(row)}
                 style={{ ...pillStyle("#10B981", "#10B981"), flex: 1 }}
               >
-                APPROVE
+                INVITE
               </button>
               <button
                 className="action-btn"
@@ -301,6 +280,133 @@ export function VerificationQueue({ onToast }) {
       </div>
     </Card>
   );
+}
+
+// Admin-only. Make an invite for any Instagram account — the main way hosts
+// get on: you DM the pages you want, they tap the link, they're verified.
+export function HostInvites({ onToast }) {
+  const [handle, setHandle] = useState("");
+  const [rows, setRows] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  async function refresh() {
+    setRows(await loadHostInvites());
+  }
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  async function create() {
+    const clean = handle.trim().replace(/^@/, "").toLowerCase();
+    if (busy || !clean) return;
+    setBusy(true);
+    try {
+      const token = await createHostInvite(clean);
+      await copyText(inviteMessage(clean, token));
+      onToast(`Invite for @${clean} copied — paste it in their DMs`);
+      track("host_invite_created", {});
+      setHandle("");
+      await refresh();
+    } catch (e) {
+      onToast(e.message || "Couldn't create that invite.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function copyAgain(row) {
+    await copyText(inviteMessage(row.instagram_handle, row.token));
+    onToast("Copied");
+  }
+
+  const now = new Date();
+
+  return (
+    <Card>
+      <div style={{ fontSize: 15, fontWeight: 800 }}>Invite a host</div>
+      <div style={bodyStyle}>
+        Enter the Instagram account you're DMing. You get a one-time link (good for 14 days) to
+        paste in the chat — whoever opens it from that inbox is verified as a host.
+      </div>
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        <input
+          style={inputStyle}
+          placeholder="@instagram_handle"
+          value={handle}
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          onChange={(e) => setHandle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") create();
+          }}
+        />
+        <button
+          className="action-btn"
+          onClick={create}
+          disabled={busy || !handle.trim()}
+          style={{
+            ...pillStyle(handle.trim() ? "#fff" : "#555", handle.trim() ? "#FF4500" : "#2A2A2A"),
+            background: handle.trim() ? "#FF4500" : "transparent",
+            flexShrink: 0,
+          }}
+        >
+          {busy ? "…" : "COPY LINK"}
+        </button>
+      </div>
+
+      {rows && rows.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 14 }}>
+          {rows.map((row) => {
+            const expired = !row.used_at && new Date(row.expires_at) < now;
+            return (
+              <div
+                key={row.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: 12.5,
+                  fontFamily: "'Barlow', sans-serif",
+                  color: "#BBB",
+                }}
+              >
+                <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+                  @{row.instagram_handle}
+                </span>
+                {row.used_at ? (
+                  <span style={{ color: "#10B981" }}>✓ joined as @{row.used_host}</span>
+                ) : expired ? (
+                  <span style={{ color: "#666" }}>expired</span>
+                ) : (
+                  <button onClick={() => copyAgain(row)} style={{ ...pillStyle("#888", "#2A2A2A"), padding: "4px 9px" }}>
+                    COPY AGAIN
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function inviteMessage(handle, token) {
+  return `Hey @${handle} — we're putting every car meet in Atlanta on one map at TUNR, and we'd love yours on it. This link sets you up as a verified host (it's just for your page, works once): ${hostInviteUrl(token)}`;
+}
+
+function instagramUrl(handle) {
+  return `https://www.instagram.com/${encodeURIComponent(handle)}/`;
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    window.prompt("Copy this:", text);
+  }
 }
 
 function pillStyle(color, border) {

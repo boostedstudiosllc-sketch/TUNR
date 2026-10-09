@@ -285,10 +285,12 @@ export default function App() {
       <>
         <GlobalStyles />
         <HostPitch
-          onStart={() => {
+          user={user}
+          onStart={(postMeet) => {
             window.history.replaceState({}, document.title, "/");
             setShowHostPitch(false);
-            setTab("profile");
+            if (postMeet) setShowSubmit(true);
+            else setTab("profile");
           }}
         />
       </>

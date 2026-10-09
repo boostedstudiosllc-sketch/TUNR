@@ -1,23 +1,55 @@
 import { useEffect, useState } from "react";
-import { loadEvents, track } from "../lib/store.js";
+import {
+  loadEvents,
+  track,
+  rememberSignupSource,
+  rememberHostInvite,
+  pendingHostInvite,
+  peekHostInvite,
+} from "../lib/store.js";
 import { isPast } from "../lib/dates.js";
+import HostSetup from "./HostSetup.jsx";
 
-// The page you send a host. It IS the pitch — no separate waitlist, no form.
-// Reached at /hosts, and the only way out is into signup.
+// The page you send a host. It IS the pitch — no separate waitlist.
+// Reached at /hosts, and the only way out is into signup and verification.
+//
+// /hosts?invite=<token> is the link an admin DMs to a host's Instagram. The
+// page greets them by handle, and signing up through it verifies them.
 //
 // Deliberately honest about what doesn't exist yet: hosts will notice missing
 // notifications within a day, and finding out after signing up is worse than
 // being told up front.
-export default function HostPitch({ onStart }) {
+export default function HostPitch({ user, onStart }) {
   const [count, setCount] = useState(null);
+  const [token] = useState(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get("invite");
+    if (fromUrl) rememberHostInvite(fromUrl);
+    return fromUrl || pendingHostInvite();
+  });
+  const [invite, setInvite] = useState(null);
+  // Someone coming back from Google sign-in, or opening their invite while
+  // already signed in, goes straight to setup.
+  const [setup, setSetup] = useState(false);
 
   useEffect(() => {
-    track("host_pitch_viewed", {});
+    track("host_pitch_viewed", { invited: Boolean(token) });
+    rememberSignupSource("hosts");
     const now = new Date();
     loadEvents(null)
       .then((events) => setCount(events.filter((e) => !isPast(e, now)).length))
       .catch(() => {});
+    if (token) peekHostInvite(token).then(setInvite).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (user && token) setSetup(true);
+  }, [user?.id]);
+
+  const invited = invite?.status === "valid";
+
+  if (setup) {
+    return <HostSetup user={user} token={token} invite={invite} onStart={onStart} />;
+  }
 
   return (
     <div
@@ -44,6 +76,25 @@ export default function HostPitch({ onStart }) {
         <div style={{ fontSize: 10.5, color: "#555", letterSpacing: 2.5, marginTop: 3 }}>
           FOR HOSTS · ATLANTA, GA
         </div>
+
+        {invited && (
+          <div
+            style={{
+              marginTop: 22,
+              background: "rgba(255,69,0,0.1)",
+              border: "1px solid #FF4500",
+              borderRadius: 10,
+              padding: "11px 14px",
+              fontSize: 14,
+              fontFamily: "'Barlow', sans-serif",
+              color: "#DDD",
+              lineHeight: 1.5,
+            }}
+          >
+            <strong style={{ color: "#FF7A00" }}>@{invite.instagram_handle}</strong>, you're
+            invited. Sign up through this link and your page is verified on the spot.
+          </div>
+        )}
 
         <div
           style={{
@@ -80,8 +131,9 @@ export default function HostPitch({ onStart }) {
             until someone's in — enforced by the database, not just the screen.
           </Point>
           <Point icon="✓" title="Your name, reserved">
-            Get verified and nobody else can post under your handle. No impersonation, no fake
-            listings using your name.
+            Get verified and nobody else can post under your name. No impersonation, no fake
+            listings using your name. Verifying is a link we DM to your page — nothing to put in
+            your bio.
           </Point>
         </Section>
 
@@ -138,8 +190,9 @@ export default function HostPitch({ onStart }) {
         <button
           className="action-btn"
           onClick={() => {
-            track("host_pitch_cta", {});
-            onStart();
+            track("host_pitch_cta", { invited });
+            window.scrollTo(0, 0);
+            setSetup(true);
           }}
           style={{
             width: "100%",
@@ -155,7 +208,7 @@ export default function HostPitch({ onStart }) {
             boxShadow: "0 6px 26px rgba(255,69,0,0.4)",
           }}
         >
-          POST YOUR FIRST MEET →
+          {invited ? "CLAIM YOUR HOST SPOT →" : "GET STARTED →"}
         </button>
         <div
           style={{

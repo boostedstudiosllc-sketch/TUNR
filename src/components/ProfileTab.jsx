@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { loadProfile, saveProfile, hasBackend, signOut } from "../lib/store.js";
 import AuthForm from "./AuthForm.jsx";
-import HostVerification, { VerificationQueue } from "./HostVerification.jsx";
+import HostVerification, { VerificationQueue, HostInvites } from "./HostVerification.jsx";
 import AccountSettings from "./AccountSettings.jsx";
 import Garage from "./Garage.jsx";
 import ModerationQueue from "./ModerationQueue.jsx";
-import DayOneBadge from "./DayOneBadge.jsx";
+import { Badges } from "./Badge.jsx";
 import SignupStats from "./SignupStats.jsx";
 
 const inputStyle = {
@@ -124,9 +124,14 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onShowPri
                 </div>
                 <div style={{ fontSize: 12, color: "#FF4500", marginTop: 2 }}>
                   @{profile.username || "your_handle"}
-                  {profile.dayOne && (
+                  {(profile.dayOne || profile.foundingHost) && (
                     <span style={{ marginLeft: 7 }}>
-                      <DayOneBadge number={profile.dayOneNumber} />
+                      <Badges
+                        dayOne={profile.dayOne}
+                        dayOneNumber={profile.dayOneNumber}
+                        foundingHost={profile.foundingHost}
+                        size={18}
+                      />
                     </span>
                   )}
                 </div>
@@ -257,6 +262,8 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onShowPri
         {hasBackend() && user && profile.isAdmin && <ModerationQueue onToast={onToast} />}
 
         {hasBackend() && user && profile.isAdmin && <VerificationQueue onToast={onToast} />}
+
+        {hasBackend() && user && profile.isAdmin && <HostInvites onToast={onToast} />}
 
         {hasBackend() && user && <Garage user={user} onToast={onToast} />}
 

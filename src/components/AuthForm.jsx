@@ -29,9 +29,9 @@ const label = {
   fontFamily: "'Barlow Condensed', sans-serif",
 };
 
-export default function AuthForm({ onDone }) {
+export default function AuthForm({ onDone, initialUsername = "" }) {
   const [mode, setMode] = useState("signup"); // signup | login | reset
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(initialUsername);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);

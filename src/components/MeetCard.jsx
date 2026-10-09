@@ -1,4 +1,5 @@
 import { VIBES } from "../data/events.js";
+import ProfileBadge from "./Badge.jsx";
 import { displayDate, displayTime, startsInLabel, isHappeningNow } from "../lib/dates.js";
 
 export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now, index = 0 }) {
@@ -92,6 +93,11 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
           }}
         >
           @{event.host} {event.verified && "✓"}
+          {event.foundingHost && (
+            <span style={{ marginLeft: 5 }}>
+              <ProfileBadge kind="founding_host" size={14} />
+            </span>
+          )}
         </div>
         <div
           style={{

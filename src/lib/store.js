@@ -15,6 +15,7 @@ const SUBMITTED_KEY = "tunr.submitted.v1";
 const PROFILE_KEY = "tunr.profile.v1";
 const TOS_KEY = "tunr.tos.v1";
 const SIGNUP_SOURCE_KEY = "tunr.signup_source.v1";
+const HOST_INVITE_KEY = "tunr.host_invite.v1";
 
 // Bumped when the terms change in a way that affects anyone's rights, which
 // re-prompts accounts that accepted an earlier version.
@@ -98,9 +99,10 @@ export async function loadEvents(userId = null) {
   if (!supabase) {
     return [...read(SUBMITTED_KEY, []), ...seedEvents];
   }
-  let [eventsRes, countsRes] = await Promise.all([
+  let [eventsRes, countsRes, foundingRes] = await Promise.all([
     supabase.from("events_public").select("*"),
     supabase.from("event_rsvp_counts").select("*"),
+    supabase.from("verified_hosts").select("host").eq("founding", true),
   ]);
 
   // events_public arrives with migration 008. Until that has been run, read
@@ -122,7 +124,20 @@ export async function loadEvents(userId = null) {
   const counts = new Map(
     countRows.filter((r) => r && r.event_id).map((r) => [r.event_id, r])
   );
-  return rows.map((r) => rowToEvent(r, counts, userId));
+  // Founding hosts are a badge on the card, so they're decorative too.
+  const founding = new Set(
+    (Array.isArray(foundingRes?.data) ? foundingRes.data : []).map((r) => normalizeHost(r.host))
+  );
+  return rows.map((r) => {
+    const event = rowToEvent(r, counts, userId);
+    event.foundingHost = founding.has(normalizeHost(r.host));
+    return event;
+  });
+}
+
+// Same rule as public.normalize_host(): host names match case-insensitively.
+function normalizeHost(host) {
+  return String(host || "").trim().toLowerCase();
 }
 
 export async function submitEvent(draft, userId = null) {
@@ -354,7 +369,11 @@ export function loadLocalProfile() {
 
 export async function loadProfile(userId = null) {
   if (supabase && userId) {
-    const { data } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+    const [{ data }, { data: hostRows }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+      supabase.from("verified_hosts").select("founding").eq("user_id", userId),
+    ]);
+    const foundingHost = Array.isArray(hostRows) && hostRows.some((r) => r.founding);
     if (data) {
       return {
         username: data.username || "",
@@ -364,6 +383,7 @@ export async function loadProfile(userId = null) {
         memberSince: data.member_since || null,
         dayOne: Boolean(data.day_one),
         dayOneNumber: data.day_one_number ?? null,
+        foundingHost,
       };
     }
     return { username: "", city: "Atlanta, GA", isAdmin: false, isMember: false };
@@ -493,12 +513,17 @@ export async function loadSignupStats() {
 }
 
 // Where an emailed link or Google sends people back to. Signing up from /join
-// returns to /join, so they land on their badge rather than the bare app.
-// Needs <site>/join in Supabase's redirect URLs; without it Supabase falls
-// back to the site URL, which is where everyone went before.
+// or /hosts returns there, so they land on the next step rather than the bare
+// app. Needs <site>/join and <site>/hosts in Supabase's redirect URLs; without
+// them Supabase falls back to the site URL, which is where everyone went before.
+// Adding <site>/** covers both, query string included.
 function returnUrl() {
-  const onJoin = /^\/join\/?$/.test(window.location.pathname);
-  return window.location.origin + (onJoin ? "/join" : "");
+  const match = /^\/(join|hosts)\/?$/.exec(window.location.pathname);
+  if (!match) return window.location.origin;
+  // A confirmation email often opens in another browser, which won't have
+  // the invite saved — so it goes back in the link.
+  const invite = match[1] === "hosts" ? pendingHostInvite() : null;
+  return `${window.location.origin}/${match[1]}${invite ? `?invite=${encodeURIComponent(invite)}` : ""}`;
 }
 
 export async function signUpWithPassword(email, password, username) {
@@ -731,6 +756,70 @@ export async function requestVerification(host, instagramHandle, userId) {
 export async function withdrawVerification(id) {
   if (!supabase) return;
   await supabase.from("host_verifications").delete().eq("id", id);
+}
+
+// ---------- host invites ----------
+
+// The token rides in the URL, but Google sign-in leaves the page and comes
+// back to a bare /hosts — so it's kept on the device until it's spent.
+export function rememberHostInvite(token) {
+  if (token) write(HOST_INVITE_KEY, String(token).slice(0, 64));
+}
+
+export function pendingHostInvite() {
+  return read(HOST_INVITE_KEY, null);
+}
+
+export function clearHostInvite() {
+  try {
+    localStorage.removeItem(HOST_INVITE_KEY);
+  } catch {
+    // nothing to clear
+  }
+}
+
+// { instagram_handle, status: valid | used | expired } or null if unknown.
+export async function peekHostInvite(token) {
+  if (!supabase || !token) return null;
+  const { data, error } = await supabase.rpc("peek_host_invite", { p_token: token });
+  if (error || !Array.isArray(data) || !data.length) return null;
+  return data[0];
+}
+
+// verified | already_yours | used | expired | not_found | needs_username |
+// host_taken | not_signed_in
+export async function redeemHostInvite(token) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { data, error } = await supabase.rpc("redeem_host_invite", { p_token: token });
+  if (error) throw new Error("Couldn't use that invite. Try again.");
+  return data;
+}
+
+export function hostInviteUrl(token) {
+  return `${window.location.origin}/hosts?invite=${encodeURIComponent(token)}`;
+}
+
+// Admin-only.
+export async function createHostInvite(handle) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { data, error } = await supabase.rpc("create_host_invite", { p_handle: handle });
+  if (error) {
+    if (/bad_handle/.test(error.message)) throw new Error("That isn't a valid Instagram handle.");
+    throw new Error("Couldn't create that invite.");
+  }
+  return data;
+}
+
+// Admin-only; RLS returns nothing for everyone else.
+export async function loadHostInvites() {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("host_invites")
+    .select("id,token,instagram_handle,created_at,expires_at,used_at,used_host")
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error || !Array.isArray(data)) return [];
+  return data;
 }
 
 // Admin-only; RLS returns nothing for everyone else.
