@@ -192,7 +192,7 @@ function JoinCard({ count, user, onNeedAccount }) {
   );
 }
 
-function PerkCard({ perk, revealed, onReveal, user, onNeedAccount }) {
+export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount }) {
   const locked = !perk.unlocked;
   const free = perk.members_only === false;
 

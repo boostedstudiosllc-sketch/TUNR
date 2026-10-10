@@ -1,15 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   loadEvents,
   loadProfile,
   ensureProfile,
   dayOneOpen,
   rememberSignupSource,
+  loadPerks,
+  recordRedemption,
   track,
 } from "../lib/store.js";
 import { isPast } from "../lib/dates.js";
 import AuthForm from "./AuthForm.jsx";
 import Badge from "./Badge.jsx";
+import { PerkCard } from "./PerksTab.jsx";
 
 // The link in the bio. Signing up here makes a real account, not a waitlist
 // entry, so there's nothing to convert at launch. /join?ref=tiktok records
@@ -19,6 +22,10 @@ export default function JoinPage({ user, onEnter }) {
   const [open, setOpen] = useState(true);
   const [profile, setProfile] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [freePerks, setFreePerks] = useState([]);
+  const [revealed, setRevealed] = useState({});
+  const [codeCopied, setCodeCopied] = useState("");
+  const formRef = useRef(null);
 
   useEffect(() => {
     const ref = new URLSearchParams(window.location.search).get("ref");
@@ -47,6 +54,60 @@ export default function JoinPage({ user, onEnter }) {
       alive = false;
     };
   }, [user?.id]);
+
+  // The perks any account gets. Reloaded on sign-in, when the database starts
+  // returning the code.
+  useEffect(() => {
+    let alive = true;
+    loadPerks()
+      .then((rows) => alive && setFreePerks(rows.filter((p) => p.members_only === false)))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [user?.id]);
+
+  function toSignup() {
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function reveal(perk) {
+    if (!user) return toSignup();
+    if (!perk.unlocked) return;
+    setRevealed((r) => ({ ...r, [perk.id]: true }));
+    recordRedemption(perk.id, user.id);
+    track("perk_revealed", { perkId: perk.id, partner: perk.partner_name, via: "join" });
+    if (perk.redemption_type === "code" && perk.code) {
+      try {
+        await navigator.clipboard.writeText(perk.code);
+        setCodeCopied(perk.code);
+      } catch {
+        // The code is on screen; copying is a convenience.
+      }
+    }
+  }
+
+  const perkList = (perks) => (
+    <>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {perks.map((perk) => (
+          <PerkCard
+            key={perk.id}
+            perk={perk}
+            user={user}
+            revealed={revealed[perk.id]}
+            onReveal={() => reveal(perk)}
+            onNeedAccount={toSignup}
+          />
+        ))}
+      </div>
+      {codeCopied && (
+        <div style={{ ...paragraph, fontSize: 12.5, marginTop: 8, textAlign: "center", color: "#10B981" }}>
+          {codeCopied} copied — paste it at checkout.
+        </div>
+      )}
+    </>
+  );
 
   async function share() {
     const url = `${window.location.origin}/join`;
@@ -113,7 +174,13 @@ export default function JoinPage({ user, onEnter }) {
 
       <div style={{ padding: "24px 22px 0" }}>
         {user && profile ? (
-          <Welcome profile={profile} onEnter={onEnter} onShare={share} copied={copied} />
+          <Welcome
+            profile={profile}
+            perks={freePerks.some((p) => p.unlocked) ? perkList(freePerks.filter((p) => p.unlocked)) : null}
+            onEnter={onEnter}
+            onShare={share}
+            copied={copied}
+          />
         ) : (
           <>
             {open && (
@@ -138,11 +205,20 @@ export default function JoinPage({ user, onEnter }) {
               </div>
             )}
 
-            {user ? (
-              <div style={{ ...paragraph, textAlign: "center" }}>Setting up your account…</div>
-            ) : (
-              <AuthForm />
+            {freePerks.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={sectionLabel}>FREE WITH YOUR ACCOUNT</div>
+                {perkList(freePerks)}
+              </div>
             )}
+
+            <div ref={formRef} style={{ scrollMarginTop: 16 }}>
+              {user ? (
+                <div style={{ ...paragraph, textAlign: "center" }}>Setting up your account…</div>
+              ) : (
+                <AuthForm />
+              )}
+            </div>
 
             <button
               onClick={onEnter}
@@ -164,7 +240,7 @@ export default function JoinPage({ user, onEnter }) {
   );
 }
 
-function Welcome({ profile, onEnter, onShare, copied }) {
+function Welcome({ profile, perks, onEnter, onShare, copied }) {
   return (
     <div style={{ textAlign: "center", animation: "fadeIn 0.3s ease" }}>
       {profile.dayOne ? (
@@ -188,6 +264,13 @@ function Welcome({ profile, onEnter, onShare, copied }) {
           <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.1 }}>You're in</div>
           <div style={paragraph}>Your account is ready — RSVP to meets and add your car.</div>
         </>
+      )}
+
+      {perks && (
+        <div style={{ textAlign: "left", marginTop: 22 }}>
+          <div style={sectionLabel}>UNLOCKED WITH YOUR ACCOUNT</div>
+          {perks}
+        </div>
       )}
 
       <button
@@ -239,6 +322,14 @@ const paragraph = {
   lineHeight: 1.7,
   marginTop: 14,
   fontFamily: "'Barlow', sans-serif",
+};
+
+const sectionLabel = {
+  fontSize: 11,
+  color: "#10B981",
+  letterSpacing: 2.2,
+  fontWeight: 800,
+  marginBottom: 8,
 };
 
 const linkButton = {
