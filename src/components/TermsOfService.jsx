@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CONTACT_EMAIL, LEGAL_ENTITY } from "../lib/contact.js";
 
 // Shown at the top. Change it whenever TOS_VERSION in lib/store.js changes.
@@ -27,7 +27,21 @@ const warn = {
 };
 
 export default function TermsOfService({ onAccept, onClose, readOnly = false }) {
+  // The agree button sits at the very end of the terms and stays disabled
+  // until the reader has scrolled there: agreeing has to come after the text,
+  // not instead of it.
   const [scrolledToEnd, setScrolledToEnd] = useState(false);
+  const scrollRef = useRef(null);
+
+  function checkEnd() {
+    const el = scrollRef.current;
+    if (el && el.scrollHeight - el.scrollTop - el.clientHeight < 24) setScrolledToEnd(true);
+  }
+
+  // A screen tall enough to show everything has nothing to scroll.
+  useEffect(() => {
+    checkEnd();
+  }, []);
 
   return (
     <div
@@ -79,10 +93,8 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
       </div>
 
       <div
-        onScroll={(e) => {
-          const el = e.target;
-          if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) setScrolledToEnd(true);
-        }}
+        ref={scrollRef}
+        onScroll={checkEnd}
         style={{ flex: 1, overflowY: "auto", padding: "20px 20px 0" }}
       >
         <div style={body}>
@@ -275,61 +287,59 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
             {CONTACT_EMAIL}
           </a>
         </div>
-        <div style={{ height: 40 }} />
-      </div>
-
-      {!readOnly && (
-        <div
-          style={{
-            padding: "16px 20px 32px",
-            borderTop: "1px solid #1A1A1A",
-            flexShrink: 0,
-            background: "#0A0A0A",
-          }}
-        >
-          {!scrolledToEnd && (
+        {readOnly ? (
+          <div style={{ height: 40 }} />
+        ) : (
+          <div style={{ padding: "28px 0 36px" }}>
+            <button
+              className="action-btn"
+              onClick={() => scrolledToEnd && onAccept()}
+              disabled={!scrolledToEnd}
+              style={{
+                width: "100%",
+                padding: "16px 0",
+                background: scrolledToEnd ? "#FF4500" : "#1E1E1E",
+                color: scrolledToEnd ? "#fff" : "#555",
+                border: "none",
+                borderRadius: 12,
+                fontSize: 15,
+                fontWeight: 900,
+                letterSpacing: 2,
+                boxShadow: scrolledToEnd ? "0 4px 24px rgba(255,69,0,0.4)" : "none",
+                fontFamily: "'Barlow Condensed', sans-serif",
+              }}
+            >
+              I AGREE — LET'S GO 🔥
+            </button>
             <div
               style={{
                 textAlign: "center",
                 fontSize: 11,
-                color: "#444",
+                color: "#555",
                 fontFamily: "'Barlow', sans-serif",
-                marginBottom: 10,
+                marginTop: 10,
               }}
             >
-              ↑ Scroll to read all terms
+              By tapping agree you confirm you are 18 or older
             </div>
-          )}
-          <button
-            className="action-btn"
-            onClick={onAccept}
-            style={{
-              width: "100%",
-              padding: "16px 0",
-              background: "#FF4500",
-              color: "#fff",
-              border: "none",
-              borderRadius: 12,
-              fontSize: 15,
-              fontWeight: 900,
-              letterSpacing: 2,
-              boxShadow: "0 4px 24px rgba(255,69,0,0.4)",
-              fontFamily: "'Barlow Condensed', sans-serif",
-            }}
-          >
-            I AGREE — LET'S GO 🔥
-          </button>
-          <div
-            style={{
-              textAlign: "center",
-              fontSize: 11,
-              color: "#333",
-              fontFamily: "'Barlow', sans-serif",
-              marginTop: 10,
-            }}
-          >
-            By tapping agree you confirm you are 18 or older
           </div>
+        )}
+      </div>
+
+      {!readOnly && !scrolledToEnd && (
+        <div
+          style={{
+            padding: "12px 20px 26px",
+            borderTop: "1px solid #1A1A1A",
+            flexShrink: 0,
+            background: "#0A0A0A",
+            textAlign: "center",
+            fontSize: 12,
+            color: "#777",
+            fontFamily: "'Barlow', sans-serif",
+          }}
+        >
+          ↓ Scroll to the end to agree
         </div>
       )}
     </div>
