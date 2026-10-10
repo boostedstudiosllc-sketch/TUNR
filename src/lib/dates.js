@@ -117,6 +117,13 @@ export function parseLocal(iso, tz = DEFAULT_TZ) {
 }
 
 // The day (YYYY-MM-DD in event tz) this event next happens on/after `from`.
+// A seasonal series (a summer cruise-in, a run that pauses for winter) stops
+// after its last date. Past that there is no next occurrence, and the meet
+// drops off the feed until someone sets the new season.
+function inSeason(event, key) {
+  return !event.recurrenceUntil || key <= event.recurrenceUntil;
+}
+
 export function nextOccurrenceKey(event, from = new Date()) {
   const parts = wallParts(event);
   if (!parts) return null;
@@ -132,7 +139,7 @@ export function nextOccurrenceKey(event, from = new Date()) {
     const target = DAY_INDEX[a];
     let key = todayKey;
     for (let i = 0; i < 8; i++) {
-      if (dowOfKey(key) === target && key >= todayKey) return key;
+      if (dowOfKey(key) === target && key >= todayKey) return inSeason(event, key) ? key : null;
       key = addDaysToKey(key, 1);
     }
     return startKey;
@@ -146,7 +153,7 @@ export function nextOccurrenceKey(event, from = new Date()) {
       [m === 12 ? y + 1 : y, m === 12 ? 1 : m + 1],
     ]) {
       const key = nthWeekdayOfMonth(yy, mm, target, a);
-      if (key && key >= todayKey) return key;
+      if (key && key >= todayKey) return inSeason(event, key) ? key : null;
     }
     return startKey;
   }
@@ -232,7 +239,10 @@ export function isThisWeekend(event, now = new Date()) {
 
 export function isPast(event, now = new Date()) {
   if (!event) return false;
-  if (event.recurrence) return false;
+  // A recurring meet is only over when its season has ended.
+  if (event.recurrence) {
+    return Boolean(event.recurrenceUntil) && nextOccurrenceKey(event, now) === null;
+  }
   if (!event.start) return false; // date TBC events are never "past"
   const tz = tzOf(event);
   const endSrc = event.end || event.start;

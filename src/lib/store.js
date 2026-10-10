@@ -81,6 +81,8 @@ function rowToEvent(row, counts, userId) {
     start: isoInTz(row.start_at, tz),
     end: isoInTz(row.end_at, tz),
     recurrence: row.recurrence,
+    // Last day a seasonal series runs ("YYYY-MM-DD"), or null if it doesn't stop.
+    recurrenceUntil: row.recurrence_until || null,
     vibe: row.vibe,
     going: (row.base_going || 0) + c.going,
     interested: (row.base_interested || 0) + c.interested,

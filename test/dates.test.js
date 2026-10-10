@@ -174,3 +174,38 @@ test("a month with no fifth weekday rolls forward instead of breaking", () => {
   const fourthMon = ev({ start: "2027-02-22T18:00", recurrence: "monthly:fourth:MON" });
   assert.equal(nextOccurrenceKey(fourthMon, new Date("2027-02-01T12:00:00Z")), "2027-02-22");
 });
+
+// --- seasonal series ---------------------------------------------------------
+
+test("a seasonal weekly series stops after its last date", () => {
+  const seasonal = ev({
+    start: "2026-08-13T18:00",
+    end: "2026-08-13T21:00",
+    recurrence: "weekly:THU",
+    recurrenceUntil: "2026-11-05",
+  });
+  // Sat Oct 31 2026: the Nov 5 session is still in season.
+  const oct31 = new Date("2026-10-31T16:00:00Z");
+  assert.equal(nextOccurrenceKey(seasonal, oct31), "2026-11-05");
+  assert.equal(isPast(seasonal, oct31), false);
+  // Sat Nov 7: the next Thursday (Nov 12) is past the season.
+  const nov7 = new Date("2026-11-07T16:00:00Z");
+  assert.equal(nextOccurrenceKey(seasonal, nov7), null);
+  assert.equal(isPast(seasonal, nov7), true);
+  assert.equal(isToday(seasonal, nov7), false);
+});
+
+test("a monthly series that ended in September is past by October", () => {
+  const tinCup = ev({
+    start: "2026-08-06T18:00",
+    end: "2026-08-06T20:00",
+    recurrence: "monthly:first:THU",
+    recurrenceUntil: "2026-09-03",
+  });
+  assert.equal(isPast(tinCup, new Date("2026-10-10T14:00:00Z")), true);
+  assert.equal(isPast(tinCup, new Date("2026-09-01T14:00:00Z")), false);
+});
+
+test("a series without a last date never goes past", () => {
+  assert.equal(isPast(localsLegends, new Date("2027-06-01T14:00:00Z")), false);
+});
