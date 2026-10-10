@@ -36,7 +36,7 @@ export default function PrivacyPolicy({ onClose }) {
           <div>
             <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 0.5 }}>PRIVACY POLICY</div>
             <div style={{ fontSize: 11, color: "#555", letterSpacing: 1.5, marginTop: 2 }}>
-              LAST UPDATED AUGUST 2026
+              LAST UPDATED OCTOBER 2026
             </div>
           </div>
           <button
@@ -66,12 +66,16 @@ export default function PrivacyPolicy({ onClose }) {
         <div style={heading}>WHAT WE COLLECT</div>
         <div style={body}>
           <strong>If you create an account:</strong> your email address, the username you pick, and
-          the city on your profile.
+          the city on your profile. If you sign in with Google, Google shares your name and email
+          address with us. We also record which link you signed up through (for example, one
+          posted on TikTok or Instagram), and each time you agree to our terms: which version, when,
+          and how.
           <br />
           <br />
           <strong>What you do in the app:</strong> the meets you RSVP to, meets you post, comments
-          you write, hosts you follow, accounts you block, photos you upload, and any request to
-          join a private meet or to be verified as a host.
+          you write, hosts you follow, accounts you block, photos you upload, perks you redeem, and
+          any request to join a private meet or to be verified as a host — including the Instagram
+          account you tell us runs your meets.
           <br />
           <br />
           <strong>Location:</strong> only if you tap to show distances, and only while the app is
@@ -93,8 +97,10 @@ export default function PrivacyPolicy({ onClose }) {
 
         <div style={heading}>WHAT'S PUBLIC</div>
         <div style={body}>
-          Your username, your profile, the cars in your garage, the meets you post, and your
-          comments are visible to everyone. Your email address is never shown to other users.
+          Your username, your profile, the cars in your garage, the meets you post, your comments,
+          and your badges (Day 1 and its member number, founding host) are visible to everyone. If
+          you're a verified host, the Instagram account linked to your host name is public too.
+          Your email address is never shown to other users.
           <br />
           <br />
           <strong>RSVPs:</strong> when you RSVP with a car, that meet's attendee list shows the
@@ -104,20 +110,33 @@ export default function PrivacyPolicy({ onClose }) {
           <br />
           The address of a private meet, and its attendee list, are only visible to its host and to
           people who have been let in.
+          <br />
+          <br />
+          <strong>Perks:</strong> when you redeem a perk we record that you did. Partner businesses
+          are only ever told how many times their offer was used — never who used it.
         </div>
 
         <div style={heading}>WHO ELSE HANDLES IT</div>
         <div style={body}>
           <strong>Supabase</strong> stores the database, accounts and uploaded photos.{" "}
           <strong>Vercel</strong> hosts and serves the app. <strong>Mapbox</strong> renders maps —
-          when a map loads, Mapbox receives the coordinates of the area being displayed. Each is a
-          processor acting on our behalf, and each has its own privacy policy.
+          when a map loads, Mapbox receives the coordinates of the area being displayed.{" "}
+          <strong>Google</strong> handles sign-in if you choose "Continue with Google". When paid
+          membership launches, payments are handled by a payment processor; we never see or store
+          your full card number. Each is a processor acting on our behalf, and each has its own
+          privacy policy.
+          <br />
+          <br />
+          <strong>Instagram:</strong> if you ask to be verified as a host, we may contact the
+          Instagram account you named through Instagram direct messages, from our own account.
         </div>
 
         <div style={heading}>HOW LONG WE KEEP IT</div>
         <div style={body}>
           Your account data is kept until you delete your account. Reports of a meet are kept after
           the meet is gone so repeated problems can be spotted. Usage events are kept in aggregate.
+          The record of which terms you agreed to, and when, is kept for as long as your account
+          exists.
         </div>
 
         <div style={heading}>DELETING YOUR ACCOUNT</div>
@@ -137,8 +156,9 @@ export default function PrivacyPolicy({ onClose }) {
 
         <div style={heading}>CHILDREN</div>
         <div style={body}>
-          TUNR isn't intended for anyone under 13, and we don't knowingly collect data from
-          children. If you believe a child has created an account, email us and we'll remove it.
+          TUNR is for adults — you must be 18 or older to use it — and we don't knowingly collect
+          data from anyone younger. If you believe someone under 18 has created an account, email us
+          and we'll remove it.
         </div>
 
         <div style={heading}>CHANGES</div>

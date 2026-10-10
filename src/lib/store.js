@@ -19,7 +19,9 @@ const HOST_INVITE_KEY = "tunr.host_invite.v1";
 
 // Bumped when the terms change in a way that affects anyone's rights, which
 // re-prompts accounts that accepted an earlier version.
-export const TOS_VERSION = 2;
+// 3: 18+, verification and badges, perks, membership, warranties,
+// indemnity, termination, governing law (October 2026).
+export const TOS_VERSION = 3;
 
 function read(key, fallback) {
   try {
@@ -415,32 +417,80 @@ export function hasAcceptedCurrentTos() {
   return Boolean(record && Number(record.version) >= TOS_VERSION);
 }
 
-export async function saveTosAccepted(userId = null) {
-  const record = { acceptedAt: new Date().toISOString(), version: TOS_VERSION };
+// method: "terms_screen" (the full terms, agreed to) or "account_form" (the
+// "By continuing you agree…" line beside the sign-up and log-in buttons).
+export async function saveTosAccepted(userId = null, method = "terms_screen") {
+  const record = { acceptedAt: new Date().toISOString(), version: TOS_VERSION, method };
   write(TOS_KEY, record);
-  if (supabase && userId) {
-    await supabase
-      .from("profiles")
-      .upsert({ id: userId, tos_accepted_at: record.acceptedAt, tos_version: TOS_VERSION });
-  }
+  if (supabase && userId) await recordTermsAcceptance(userId, record);
   return record;
 }
 
-// Called after sign-in: persist a device-local ToS acceptance to the account.
-export async function syncTosToAccount(userId) {
-  if (!supabase || !userId) return;
-  const local = loadTosAccepted();
-  if (!local) return;
-  const { data } = await supabase
-    .from("profiles")
-    .select("tos_accepted_at")
-    .eq("id", userId)
-    .maybeSingle();
-  if (!data || !data.tos_accepted_at) {
-    await supabase
-      .from("profiles")
-      .upsert({ id: userId, tos_accepted_at: local.acceptedAt, tos_version: local.version });
+// The account form counts as agreeing, but a full read of the terms on this
+// device is the better record, so it isn't overwritten.
+export function noteTosAcceptedAtAccountForm() {
+  if (hasAcceptedCurrentTos()) return;
+  write(TOS_KEY, { acceptedAt: new Date().toISOString(), version: TOS_VERSION, method: "account_form" });
+}
+
+async function recordTermsAcceptance(userId, record) {
+  // The server stamps the time; the device's is kept alongside as evidence.
+  const { error } = await supabase.from("terms_acceptances").insert({
+    user_id: userId,
+    version: record.version,
+    method: record.method === "account_form" ? "account_form" : "terms_screen",
+    client_accepted_at: record.acceptedAt || null,
+  });
+  return !error;
+}
+
+const syncing = new Map();
+
+// Called on every sign-in. Records an agreement made on this device (maybe
+// before the account existed) if the account doesn't have that version yet,
+// and returns true when the account has agreed to the current terms — so a
+// new device doesn't ask again.
+export function syncTosToAccount(user) {
+  if (!supabase || !user) return Promise.resolve(false);
+  // Auth fires several events on sign-in; one sync per account at a time.
+  if (!syncing.has(user.id)) {
+    const run = doSyncTos(user).finally(() => syncing.delete(user.id));
+    syncing.set(user.id, run);
   }
+  return syncing.get(user.id);
+}
+
+async function doSyncTos(user) {
+  const { data, error } = await supabase
+    .from("terms_acceptances")
+    .select("version,accepted_at")
+    .eq("user_id", user.id)
+    .order("version", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) return false;
+  let accountVersion = data?.version || 0;
+
+  // On this device, or carried in the sign-up for an email confirmed elsewhere.
+  const meta = user.user_metadata || {};
+  const fromSignup = meta.tos_version
+    ? { version: meta.tos_version, acceptedAt: meta.tos_accepted_at, method: "account_form" }
+    : null;
+  const onDevice = loadTosAccepted();
+  const local =
+    onDevice && Number(onDevice.version) >= Number(fromSignup?.version || 0) ? onDevice : fromSignup;
+
+  if (local && Number(local.version) > accountVersion) {
+    if (await recordTermsAcceptance(user.id, local)) accountVersion = Number(local.version);
+  }
+
+  if (accountVersion >= TOS_VERSION) {
+    if (!hasAcceptedCurrentTos()) {
+      write(TOS_KEY, { acceptedAt: data?.accepted_at || new Date().toISOString(), version: accountVersion });
+    }
+    return true;
+  }
+  return false;
 }
 
 // ---------- auth ----------
@@ -538,7 +588,14 @@ export async function signUpWithPassword(email, password, username) {
     email,
     password,
     options: {
-      data: source ? { username, signup_source: source } : { username },
+      data: {
+        username,
+        ...(source && { signup_source: source }),
+        // Agreed to beside the button; recorded once the account is signed in,
+        // which may be in whatever browser opens the confirmation email.
+        tos_version: TOS_VERSION,
+        tos_accepted_at: new Date().toISOString(),
+      },
       emailRedirectTo: returnUrl(),
     },
   });

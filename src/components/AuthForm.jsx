@@ -5,7 +5,10 @@ import {
   sendPasswordReset,
   signInWithGoogle,
   googleEnabled,
+  noteTosAcceptedAtAccountForm,
 } from "../lib/store.js";
+import TermsOfService from "./TermsOfService.jsx";
+import PrivacyPolicy from "./PrivacyPolicy.jsx";
 
 const input = {
   width: "100%",
@@ -38,6 +41,8 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [showGoogle, setShowGoogle] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -67,6 +72,8 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
     setError("");
     setNotice("");
     try {
+      // The line under the button says continuing is agreeing.
+      if (mode !== "reset") noteTosAcceptedAtAccountForm();
       if (mode === "signup") {
         const res = await signUpWithPassword(email.trim(), password, cleanUsername);
         if (res.needsConfirmation) {
@@ -100,6 +107,7 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
             onClick={async () => {
               setError("");
               try {
+                noteTosAcceptedAtAccountForm();
                 await signInWithGoogle();
               } catch (e) {
                 setError(e.message);
@@ -310,6 +318,30 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
           : "SEND RESET LINK"}
       </button>
 
+      {mode !== "reset" && (
+        <div
+          style={{
+            marginTop: 10,
+            fontSize: 11.5,
+            color: "#666",
+            textAlign: "center",
+            lineHeight: 1.6,
+            fontFamily: "'Barlow', sans-serif",
+          }}
+        >
+          By continuing{showGoogle ? ", with email or Google," : ""} you confirm you're 18 or older and
+          agree to the{" "}
+          <button type="button" onClick={() => setShowTerms(true)} style={legalLink}>
+            Terms of Service
+          </button>{" "}
+          and{" "}
+          <button type="button" onClick={() => setShowPrivacy(true)} style={legalLink}>
+            Privacy Policy
+          </button>
+          .
+        </div>
+      )}
+
       <div style={{ marginTop: 10, textAlign: "center" }}>
         {mode === "login" && (
           <button
@@ -349,6 +381,19 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
           </button>
         )}
       </div>
+      {showTerms && <TermsOfService readOnly onClose={() => setShowTerms(false)} />}
+      {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
     </div>
   );
 }
+
+const legalLink = {
+  background: "none",
+  border: "none",
+  padding: 0,
+  color: "#999",
+  textDecoration: "underline",
+  cursor: "pointer",
+  fontSize: "inherit",
+  fontFamily: "'Barlow', sans-serif",
+};

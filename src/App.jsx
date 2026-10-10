@@ -90,7 +90,8 @@ export default function App() {
       setUser(u);
       if (u) {
         ensureProfile(u);
-        syncTosToAccount(u.id);
+        // Agreed on another device: don't ask again here.
+        syncTosToAccount(u).then((ok) => ok && setTosAccepted(true));
       }
     });
     return unsubscribe;

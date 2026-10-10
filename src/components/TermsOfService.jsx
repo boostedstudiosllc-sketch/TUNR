@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { CONTACT_EMAIL, LEGAL_ENTITY } from "../lib/contact.js";
 
+// Shown at the top. Change it whenever TOS_VERSION in lib/store.js changes.
+const TERMS_UPDATED = "October 2026";
+
 const body = { fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "#AAA", lineHeight: 1.7 };
 const heading = {
   fontFamily: "'Barlow Condensed', sans-serif",
@@ -49,7 +52,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
             </div>
             <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4 }}>Terms of Service</div>
             <div style={{ fontSize: 12, color: "#555", marginTop: 2, fontFamily: "'Barlow', sans-serif" }}>
-              {readOnly ? "You accepted these terms" : "Please read before continuing"}
+              {readOnly ? `Last updated ${TERMS_UPDATED}` : "Please read before continuing"}
             </div>
           </div>
           {readOnly && (
@@ -83,12 +86,14 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
         style={{ flex: 1, overflowY: "auto", padding: "20px 20px 0" }}
       >
         <div style={body}>
-          Welcome to TUNR. TUNR is operated by {LEGAL_ENTITY} ("we", "us"). By using this app you
-          agree to the following terms.
+          Welcome to TUNR. TUNR is operated by {LEGAL_ENTITY} ("we", "us"). These terms are an
+          agreement between you and us. By creating an account or using the app you agree to them.
           <br />
           <br />
-          <strong>You must be 13 or older to use TUNR.</strong> If you're under 13, don't create an
-          account. If we learn an account belongs to someone under 13 we'll remove it.
+          <strong>You must be 18 or older to use TUNR.</strong> TUNR is built around attending car
+          events in person, and these terms — including the release of liability below — are an
+          agreement only an adult can make. If you're under 18, don't create an account. If we learn
+          an account belongs to someone under 18 we'll remove it.
         </div>
         <div style={warn}>
           ⚠️ TUNR is a discovery platform only. We do not organize or endorse any listed event.
@@ -130,13 +135,39 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           marked "Community Sourced" have not been verified.
         </div>
 
-        <div style={heading}>4. USER CONDUCT</div>
+        <div style={heading}>4. YOUR ACCOUNT</div>
         <div style={body}>
-          You agree not to post hateful, threatening, sexually explicit, or defamatory content. TUNR
-          reserves the right to remove any content and restrict any user at any time.
+          Use accurate information, keep your password to yourself, and don't create an account for
+          someone else or pretend to be someone you're not. You're responsible for what happens on
+          your account. You can delete it at any time from your profile.
+          <br />
+          <br />
+          We can suspend or close an account that breaks these terms, puts other people at risk, or
+          that we're required to close by law. Where it's practical and safe, we'll tell you why.
         </div>
 
-        <div style={heading}>5. YOUR CONTENT</div>
+        <div style={heading}>5. HOST NAMES, VERIFICATION &amp; BADGES</div>
+        <div style={body}>
+          A verified check (✓) means we confirmed the account controls the Instagram page linked to
+          that host name. It does <strong>not</strong> mean we endorse the host, check their events,
+          or vouch for anyone's safety. A verified host name is reserved for that account; we can
+          take it back, or give it to its rightful owner, in cases of impersonation, a dispute over
+          who runs a page, or a breach of these terms.
+          <br />
+          <br />
+          Badges such as Day 1 and founding host are recognition only. They have no cash value,
+          can't be sold or transferred, and can be removed from an account that breaks these terms.
+        </div>
+
+        <div style={heading}>6. USER CONDUCT</div>
+        <div style={body}>
+          You agree not to post hateful, threatening, sexually explicit, or defamatory content; not
+          to spam, scrape, or interfere with the app; and not to get around anything that keeps
+          content private or restricted. TUNR reserves the right to remove any content and restrict
+          any user at any time.
+        </div>
+
+        <div style={heading}>7. YOUR CONTENT</div>
         <div style={body}>
           Anything you post — meet listings, comments, photos — stays yours. By posting it you give
           us permission to display, store, resize and share it inside TUNR and in links to TUNR, for
@@ -147,7 +178,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           rights to. Don't post a flyer, photo or logo you don't have permission to use.
         </div>
 
-        <div style={heading}>6. COPYRIGHT &amp; TAKEDOWN</div>
+        <div style={heading}>8. COPYRIGHT &amp; TAKEDOWN</div>
         <div style={body}>
           If something on TUNR infringes your copyright, email{" "}
           <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#FF4500" }}>
@@ -163,15 +194,53 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           notice to the same address. Accounts that repeatedly infringe are terminated.
         </div>
 
-        <div style={heading}>7. RELEASE OF LIABILITY</div>
+        <div style={heading}>9. PERKS &amp; PARTNER OFFERS</div>
+        <div style={body}>
+          Discounts and offers in the Perks tab come from the businesses named on them, not from us.
+          Each business sets its own terms, decides whether to honor an offer, and is responsible
+          for its products and services. Offers can change, run out, or end at any time. Unless a
+          perk says so, listing a business doesn't mean it endorses TUNR or that we endorse it.
+        </div>
+
+        <div style={heading}>10. PAID MEMBERSHIP</div>
+        <div style={body}>
+          Finding meets is free. If you choose a paid membership, the price, what it includes, and
+          how often you're billed are shown before you pay. Memberships renew automatically until
+          you cancel; you can cancel at any time and keep your benefits until the end of the period
+          you've paid for. Payments aren't refundable except where the law requires it or we say
+          otherwise at the time. If the price changes, we'll tell you before it applies to your next
+          renewal.
+        </div>
+
+        <div style={heading}>11. THE APP IS PROVIDED "AS IS"</div>
+        <div style={body}>
+          TUNR is provided "as is" and "as available". To the extent the law allows, we make no
+          promise that it will be accurate, uninterrupted, or error-free, or that any event,
+          listing, host, or offer is what it claims to be, and we disclaim all implied warranties,
+          including merchantability, fitness for a particular purpose, and non-infringement.
+        </div>
+
+        <div style={heading}>12. RELEASE &amp; LIMIT OF LIABILITY</div>
         <div style={body}>
           TO THE MAXIMUM EXTENT PERMITTED BY LAW, {LEGAL_ENTITY.toUpperCase()}, ITS OWNERS,
           EMPLOYEES AND AGENTS ARE NOT LIABLE FOR ANY INJURY, DEATH, PROPERTY DAMAGE, OR OTHER HARM
           ARISING FROM YOUR USE OF THIS APP OR ATTENDANCE AT ANY LISTED EVENT. YOU ATTEND ANY EVENT
           AT YOUR SOLE RISK.
+          <br />
+          <br />
+          TO THE SAME EXTENT, WE ARE NOT LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR
+          CONSEQUENTIAL DAMAGES, AND OUR TOTAL LIABILITY FOR ANY CLAIM ABOUT TUNR IS LIMITED TO THE
+          GREATER OF $50 OR WHAT YOU PAID US IN THE 12 MONTHS BEFORE THE CLAIM.
         </div>
 
-        <div style={heading}>8. REPORTING</div>
+        <div style={heading}>13. INDEMNITY</div>
+        <div style={body}>
+          If someone brings a claim against us because of a meet you hosted, content you posted, or
+          your breach of these terms or the law, you agree to cover our reasonable costs of dealing
+          with it, including legal fees.
+        </div>
+
+        <div style={heading}>14. REPORTING</div>
         <div style={body}>
           If you witness illegal activity at a TUNR-listed meet, report it to local law enforcement
           immediately. TUNR will cooperate fully with law enforcement investigations.
@@ -182,7 +251,23 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           breaks these terms.
         </div>
 
-        <div style={heading}>9. CONTACT</div>
+        <div style={heading}>15. CHANGES TO THESE TERMS</div>
+        <div style={body}>
+          If we change these terms in a way that matters, we'll ask you to agree to the new version
+          in the app before you carry on. If you don't agree, you can stop using TUNR and delete your
+          account.
+        </div>
+
+        <div style={heading}>16. GOVERNING LAW</div>
+        <div style={body}>
+          These terms are governed by the laws of the State of Georgia, USA. Any dispute about TUNR
+          will be handled in the state or federal courts located in Georgia, and you and we agree to
+          those courts' jurisdiction — except that either of us may bring a claim in small claims
+          court where it qualifies. If any part of these terms can't be enforced, the rest still
+          applies.
+        </div>
+
+        <div style={heading}>17. CONTACT</div>
         <div style={body}>
           TUNR is operated by {LEGAL_ENTITY}. Questions, complaints, or anything that needs a
           human:{" "}
@@ -243,7 +328,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
               marginTop: 10,
             }}
           >
-            By tapping agree you confirm you are 16 or older
+            By tapping agree you confirm you are 18 or older
           </div>
         </div>
       )}

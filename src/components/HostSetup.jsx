@@ -13,8 +13,6 @@ import {
 import { INSTAGRAM_HANDLE } from "../lib/contact.js";
 import AuthForm from "./AuthForm.jsx";
 import Badge from "./Badge.jsx";
-import TermsOfService from "./TermsOfService.jsx";
-import PrivacyPolicy from "./PrivacyPolicy.jsx";
 
 // The /hosts flow after the pitch: account → host name → verified.
 //
@@ -28,8 +26,6 @@ export default function HostSetup({ user, token, invite, onStart }) {
   const [profile, setProfile] = useState(null);
   const [result, setResult] = useState(null); // redeem result
   const [request, setRequest] = useState(undefined); // undefined = loading
-  const [showTerms, setShowTerms] = useState(false);
-  const [showPrivacy, setShowPrivacy] = useState(false);
 
   async function refreshProfile() {
     const p = await loadProfile(user.id);
@@ -87,7 +83,6 @@ export default function HostSetup({ user, token, invite, onStart }) {
           }
         />
         <AuthForm initialUsername={suggested} />
-        <Legal onTerms={() => setShowTerms(true)} onPrivacy={() => setShowPrivacy(true)} />
       </>
     );
   } else if (!profile || request === undefined) {
@@ -133,8 +128,6 @@ export default function HostSetup({ user, token, invite, onStart }) {
         FOR HOSTS
       </div>
       {body}
-      {showTerms && <TermsOfService readOnly onClose={() => setShowTerms(false)} />}
-      {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
     </div>
   );
 }
@@ -310,22 +303,6 @@ function Heading({ title, sub }) {
 
 function Muted({ children }) {
   return <div style={{ ...paragraph, textAlign: "center", marginTop: 30 }}>{children}</div>;
-}
-
-function Legal({ onTerms, onPrivacy }) {
-  return (
-    <div style={{ ...small, color: "#555", textAlign: "center", marginTop: 14 }}>
-      Free for hosts. By creating an account you agree to the{" "}
-      <button style={linkButton} onClick={onTerms}>
-        Terms
-      </button>{" "}
-      and{" "}
-      <button style={linkButton} onClick={onPrivacy}>
-        Privacy Policy
-      </button>
-      .
-    </div>
-  );
 }
 
 function PrimaryButton({ children, onClick, disabled = false }) {

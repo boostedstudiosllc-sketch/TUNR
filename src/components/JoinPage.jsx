@@ -10,8 +10,6 @@ import {
 import { isPast } from "../lib/dates.js";
 import AuthForm from "./AuthForm.jsx";
 import Badge from "./Badge.jsx";
-import TermsOfService from "./TermsOfService.jsx";
-import PrivacyPolicy from "./PrivacyPolicy.jsx";
 
 // The link in the bio. Signing up here makes a real account, not a waitlist
 // entry, so there's nothing to convert at launch. /join?ref=tiktok records
@@ -20,8 +18,6 @@ export default function JoinPage({ user, onEnter }) {
   const [count, setCount] = useState(null);
   const [open, setOpen] = useState(true);
   const [profile, setProfile] = useState(null);
-  const [showTerms, setShowTerms] = useState(false);
-  const [showPrivacy, setShowPrivacy] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -148,27 +144,6 @@ export default function JoinPage({ user, onEnter }) {
               <AuthForm />
             )}
 
-            <div
-              style={{
-                fontSize: 11.5,
-                color: "#555",
-                textAlign: "center",
-                marginTop: 14,
-                lineHeight: 1.6,
-                fontFamily: "'Barlow', sans-serif",
-              }}
-            >
-              Free, always. By creating an account you agree to the{" "}
-              <button style={linkButton} onClick={() => setShowTerms(true)}>
-                Terms
-              </button>{" "}
-              and{" "}
-              <button style={linkButton} onClick={() => setShowPrivacy(true)}>
-                Privacy Policy
-              </button>
-              .
-            </div>
-
             <button
               onClick={onEnter}
               style={{
@@ -185,8 +160,6 @@ export default function JoinPage({ user, onEnter }) {
         )}
       </div>
 
-      {showTerms && <TermsOfService readOnly onClose={() => setShowTerms(false)} />}
-      {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
     </div>
   );
 }
