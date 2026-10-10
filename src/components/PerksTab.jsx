@@ -59,7 +59,10 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
     }
   }
 
-  const totalSaving = perks.length;
+  // Membership is pitched on the perks it actually adds; free ones come with
+  // any account. Rows from before members_only existed count as members-only.
+  const memberPerks = perks.filter((p) => p.members_only !== false).length;
+  const freePerks = perks.length - memberPerks;
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease" }}>
@@ -74,7 +77,9 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
         <div style={{ fontSize: 13, color: "#888", marginTop: 4, fontFamily: "'Barlow', sans-serif" }}>
           {isMember
             ? "Your member discounts at Atlanta shops."
-            : "Discounts at Atlanta shops for TUNR members."}
+            : memberPerks === 0 && freePerks > 0
+            ? "Discounts for everyone with a free TUNR account."
+            : "Discounts at Atlanta shops. Some are free with an account; the rest are for members."}
         </div>
 
         {isMember && (
@@ -98,7 +103,7 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
       </div>
 
       <div style={{ padding: "16px 20px 20px" }}>
-        {!isMember && totalSaving > 0 && <JoinCard count={totalSaving} onNeedAccount={onNeedAccount} user={user} />}
+        {!isMember && memberPerks > 0 && <JoinCard count={memberPerks} onNeedAccount={onNeedAccount} user={user} />}
 
         {loading ? (
           <Empty title="Loading perks…" sub="" />
@@ -189,6 +194,7 @@ function JoinCard({ count, user, onNeedAccount }) {
 
 function PerkCard({ perk, revealed, onReveal, user, onNeedAccount }) {
   const locked = !perk.unlocked;
+  const free = perk.members_only === false;
 
   return (
     <div
@@ -244,6 +250,11 @@ function PerkCard({ perk, revealed, onReveal, user, onNeedAccount }) {
           }}
         >
           {perk.discount_text}
+          {free && (
+            <div style={{ fontSize: 9.5, color: "#10B981", letterSpacing: 1.2, fontWeight: 800, textAlign: "right", marginTop: 2 }}>
+              FREE
+            </div>
+          )}
         </div>
       </div>
 
@@ -263,7 +274,11 @@ function PerkCard({ perk, revealed, onReveal, user, onNeedAccount }) {
       )}
 
       <div style={{ marginTop: 12 }}>
-        {locked ? (
+        {locked && free ? (
+          <button className="action-btn" onClick={onNeedAccount} style={unlockButton}>
+            FREE WITH AN ACCOUNT — SIGN UP TO GET THE CODE
+          </button>
+        ) : locked ? (
           <button
             className="action-btn"
             onClick={() => (user ? null : onNeedAccount())}
