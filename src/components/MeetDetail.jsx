@@ -7,6 +7,7 @@ import PrivateAccess from "./PrivateAccess.jsx";
 import Attendees from "./Attendees.jsx";
 import MeetPhotos from "./MeetPhotos.jsx";
 import { track } from "../lib/store.js";
+import { directionsUrl } from "../lib/geo.js";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -49,6 +50,7 @@ export default function MeetDetail({
   const going = rsvp === "going";
   const interested = rsvp === "interested";
   const hasCoords = event.lat != null && event.lng != null;
+  const directions = directionsUrl(event);
 
   return (
     <div
@@ -280,9 +282,9 @@ export default function MeetDetail({
 
           {!locked && (
             <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-              {hasCoords && (
+              {directions && (
                 <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${event.lat},${event.lng}&travelmode=driving`}
+                  href={directions}
                   target="_blank"
                   rel="noreferrer"
                   onClick={(e) => e.stopPropagation()}

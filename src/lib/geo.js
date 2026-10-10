@@ -43,3 +43,22 @@ export function withDistances(events, position) {
       : { ...event, distanceMi: miles, distanceLabel: formatMiles(miles) };
   });
 }
+
+// Where the Directions button sends people. A street address beats the map
+// pin: Google geocodes "1828 Jonesboro Rd, McDonough, GA" to the door, while
+// a pin entered from a flyer can be a few hundred metres off. Venue names
+// without a street number ("Historic District") fall back to the pin, and a
+// meet with neither ("spot announced a week before") gets no button.
+export function directionsUrl(event) {
+  if (!event) return null;
+  const base = "https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=";
+  const location = (event.location || "").trim();
+  if (/\d/.test(location)) {
+    const place = event.city ? `${location}, ${event.city}` : location;
+    return base + encodeURIComponent(place);
+  }
+  if (typeof event.lat === "number" && typeof event.lng === "number") {
+    return base + `${event.lat},${event.lng}`;
+  }
+  return null;
+}

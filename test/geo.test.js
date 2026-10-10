@@ -63,3 +63,17 @@ test("withDistances skips events missing coordinates", () => {
   const [result] = withDistances(events, ATL);
   assert.equal(result.distanceMi, undefined);
 });
+
+test("directions go to the street address when there is one", async () => {
+  const { directionsUrl } = await import("../src/lib/geo.js");
+  const url = directionsUrl({ location: "Sweet Auburn BBQ, 1828 Jonesboro Rd", city: "McDonough, GA", lat: 33.46, lng: -84.21 });
+  assert.ok(url.includes(encodeURIComponent("Sweet Auburn BBQ, 1828 Jonesboro Rd, McDonough, GA")));
+  assert.ok(!url.includes("33.46"));
+});
+
+test("directions fall back to the pin, then to nothing", async () => {
+  const { directionsUrl } = await import("../src/lib/geo.js");
+  assert.ok(directionsUrl({ location: "Historic District", city: "Jekyll Island, GA", lat: 31.06, lng: -81.42 }).endsWith("31.06,-81.42"));
+  assert.equal(directionsUrl({ location: "Buford, exact spot posted a week before", city: "Buford, GA", lat: null, lng: null }), null);
+  assert.equal(directionsUrl({ location: null, lat: null, lng: null }), null);
+});
