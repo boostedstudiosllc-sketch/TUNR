@@ -93,6 +93,9 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
           }}
         >
           @{event.host} {event.verified && "✓"}
+          {event.cohosts && event.cohosts.length > 0 && (
+            <span style={{ color: "#888" }}> +{event.cohosts.length}</span>
+          )}
           {event.foundingHost && (
             <span style={{ marginLeft: 5 }}>
               <ProfileBadge kind="founding_host" size={14} />

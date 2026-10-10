@@ -2,6 +2,7 @@ import { useState } from "react";
 import { VIBES } from "../data/events.js";
 import { updateEvent, uploadEventPhoto, track } from "../lib/store.js";
 import { compressImage } from "../lib/image.js";
+import { CohostsSection } from "./Cohosts.jsx";
 
 const input = {
   width: "100%",
@@ -25,7 +26,7 @@ const label = {
   fontFamily: "'Barlow Condensed', sans-serif",
 };
 
-export default function EditMeet({ event, user, onClose, onSaved }) {
+export default function EditMeet({ event, user, onClose, onSaved, onToast, onCohostChange }) {
   const [title, setTitle] = useState(event.title || "");
   const [location, setLocation] = useState(event.location || "");
   const [city, setCity] = useState(event.city || "");
@@ -105,7 +106,7 @@ export default function EditMeet({ event, user, onClose, onSaved }) {
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-          <div style={{ fontSize: 24, fontWeight: 900 }}>EDIT YOUR MEET</div>
+          <div style={{ fontSize: 24, fontWeight: 900 }}>{event.submittedByUser ? "EDIT YOUR MEET" : "EDIT MEET"}</div>
           <button
             className="close-btn"
             onClick={onClose}
@@ -225,6 +226,19 @@ export default function EditMeet({ event, user, onClose, onSaved }) {
             />
           </div>
         </div>
+
+        {user && (
+          <CohostsSection
+            event={event}
+            user={user}
+            onToast={onToast || (() => {})}
+            onChanged={onCohostChange}
+            onSteppedDown={async () => {
+              onClose();
+              if (onCohostChange) await onCohostChange();
+            }}
+          />
+        )}
 
         {error && (
           <div style={{ marginTop: 10, fontSize: 12.5, color: "#EF4444", fontFamily: "'Barlow', sans-serif" }}>

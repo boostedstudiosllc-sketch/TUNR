@@ -154,14 +154,15 @@ export default function App() {
       .filter((e) => !isPast(e, now))
       .filter((e) => {
         if (filter === "All") return true;
-        if (filter === "Following") return follows.includes(e.host);
+        if (filter === "Following")
+          return follows.includes(e.host) || (e.cohosts || []).some((c) => follows.includes(c));
         if (filter === "Today") return isToday(e, now);
         if (filter === "This Weekend") return isThisWeekend(e, now);
         return e.vibe === filter;
       })
       .filter((e) => {
         if (!q) return true;
-        const haystack = [e.title, e.host, e.location, e.city, ...(e.tags || [])]
+        const haystack = [e.title, e.host, e.location, e.city, ...(e.tags || []), ...(e.cohosts || [])]
           .join(" ")
           .toLowerCase();
         return haystack.includes(q);
@@ -773,6 +774,7 @@ export default function App() {
           onShowTerms={() => setShowTerms(true)}
           onShowPrivacy={() => setShowPrivacy(true)}
           onToast={showToast}
+          onCohostChange={refreshEvents}
           onOpenHost={(h) => {
             setSelected(null);
             setHostView(h);
@@ -930,6 +932,8 @@ export default function App() {
         <EditMeet
           event={editing}
           user={user}
+          onToast={showToast}
+          onCohostChange={refreshEvents}
           onClose={() => setEditing(null)}
           onSaved={async () => {
             setEditing(null);

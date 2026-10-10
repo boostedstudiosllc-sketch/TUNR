@@ -145,6 +145,11 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           Listings may be sourced from public event pages, community submissions, or hosts. Details
           can change or be inaccurate — always confirm with the host before traveling. Listings
           marked "Community Sourced" have not been verified.
+          <br />
+          <br />
+          If we listed your meet and you'd like it removed, corrected or handed over to you, use
+          "Is this your meet?" on the listing or email us. We act on removal requests within 24
+          hours.
         </div>
 
         <div style={heading}>4. YOUR ACCOUNT</div>

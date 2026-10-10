@@ -3,6 +3,7 @@ import { displayDate, displayTime } from "../lib/dates.js";
 import { CarSilhouette } from "./MeetCard.jsx";
 import Comments from "./Comments.jsx";
 import ReportMeet from "./ReportMeet.jsx";
+import ListingRequest from "./ListingRequest.jsx";
 import PrivateAccess from "./PrivateAccess.jsx";
 import Attendees from "./Attendees.jsx";
 import MeetPhotos from "./MeetPhotos.jsx";
@@ -25,7 +26,9 @@ export default function MeetDetail({
   onOpenHost,
   onJoined,
 }) {
-  const canEdit = Boolean(user && event.submittedByUser);
+  // The owner or an accepted co-host.
+  const canEdit = Boolean(user && event.canManage);
+  const cohosts = event.cohosts || [];
   // Private meet the viewer isn't in: the address fields arrive as null from
   // the database, so everything that would expose a location stays out.
   const locked = Boolean(event.locked);
@@ -164,6 +167,22 @@ export default function MeetDetail({
             >
               Hosted by @{event.host} {event.verified && "✓"}
             </div>
+            {cohosts.length > 0 && (
+              <div style={{ fontSize: 12.5, color: "#999", width: "100%", marginTop: -4 }}>
+                with{" "}
+                {cohosts.map((c, i) => (
+                  <span key={c}>
+                    {i > 0 && ", "}
+                    <span
+                      onClick={() => onOpenHost && onOpenHost(c)}
+                      style={{ color: "#FF7A00", cursor: onOpenHost ? "pointer" : "default" }}
+                    >
+                      @{c}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            )}
             <button
               className="action-btn"
               onClick={() => (user ? onToggleFollow(event.host) : onNeedAccount())}
@@ -446,6 +465,8 @@ export default function MeetDetail({
               onToast={onToast}
             />
           )}
+
+          {event.imported && !locked && <ListingRequest event={event} />}
 
           <ReportMeet eventId={event.id} user={user} onNeedAccount={onNeedAccount} />
 

@@ -94,6 +94,13 @@ function rowToEvent(row, counts, userId) {
     lat: row.lat,
     photoUrl: row.photo_url || null,
     submittedByUser: Boolean(userId && row.created_by === userId),
+    // The owner or an accepted co-host: may edit, approve requests, see the
+    // passcode. Only the owner (submittedByUser) deletes or manages co-hosts.
+    canManage: Boolean(userId && (row.created_by === userId || row.viewer_is_host)),
+    // Listed by TUNR rather than posted by an account — the organizer can
+    // ask for it to be removed, corrected or handed over.
+    imported: !row.created_by,
+    cohosts: Array.isArray(row.cohosts) ? row.cohosts : [],
   };
 }
 
@@ -214,6 +221,7 @@ export async function submitEvent(draft, userId = null) {
     accessMode: draft.accessMode || "both",
     locked: false,
     submittedByUser: true,
+    canManage: true,
   };
   write(SUBMITTED_KEY, [event, ...submitted]);
   return event;
@@ -776,8 +784,107 @@ export async function updateEvent(eventId, fields) {
   if (fields.start !== undefined) {
     payload.start_at = fields.start ? parseLocal(fields.start, DEFAULT_TZ).toISOString() : null;
   }
-  const { error } = await supabase.from("events").update(payload).eq("id", eventId);
+  // Row-level security turns an update you're no longer allowed to make into
+  // "0 rows changed", not an error — so check something was actually saved.
+  const { data, error } = await supabase.from("events").update(payload).eq("id", eventId).select("id");
   if (error) throw new Error("Couldn't save those changes.");
+  if (!data || !data.length) throw new Error("You can't edit this meet any more.");
+}
+
+// ---------- co-hosts ----------
+
+// invited | not_owner | no_such_user | self | already | limit | not_found
+export async function inviteCohost(eventId, username) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { data, error } = await supabase.rpc("invite_cohost", {
+    p_event_id: eventId,
+    p_username: username,
+  });
+  if (error) throw new Error("Couldn't send that invite.");
+  return data;
+}
+
+// Everyone on a meet: accepted for anyone, pending too for the owner.
+export async function loadEventCohosts(eventId) {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("event_cohosts")
+    .select("id,host,user_id,status")
+    .eq("event_id", eventId)
+    .order("created_at");
+  if (error || !Array.isArray(data)) return [];
+  return data;
+}
+
+export async function removeCohost(id) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { error } = await supabase.from("event_cohosts").delete().eq("id", id);
+  if (error) throw new Error("Couldn't remove that co-host.");
+}
+
+// Invites waiting on this account, with the meet they're for.
+export async function loadMyCohostInvites(userId) {
+  if (!supabase || !userId) return [];
+  const { data, error } = await supabase
+    .from("event_cohosts")
+    .select("id,event_id")
+    .eq("user_id", userId)
+    .eq("status", "invited");
+  if (error || !Array.isArray(data) || !data.length) return [];
+  const { data: events } = await supabase
+    .from("events_public")
+    .select("id,title,host,start_at,city")
+    .in("id", data.map((r) => r.event_id));
+  const byId = new Map((events || []).map((e) => [e.id, e]));
+  return data.map((r) => ({ ...r, event: byId.get(r.event_id) || null }));
+}
+
+// accepted | declined | not_found
+export async function respondCohostInvite(id, accept) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { data, error } = await supabase.rpc("respond_cohost_invite", {
+    p_id: id,
+    p_accept: accept,
+  });
+  if (error) throw new Error("Couldn't answer that invite.");
+  return data;
+}
+
+// ---------- listing requests ----------
+
+// Anyone can file one, signed in or not. Not read back: only admins can see
+// requests, so the insert can't ask for the row.
+export async function fileListingRequest({ eventId, kind, name, contact, details }) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { error } = await supabase.from("listing_requests").insert({
+    event_id: eventId,
+    kind,
+    requester_name: (name || "").trim() || null,
+    contact: (contact || "").trim(),
+    details: (details || "").trim() || null,
+  });
+  if (error) throw new Error(friendlyWriteError(error, "Couldn't send that. Try again, or email us."));
+}
+
+// Admin-only; RLS returns nothing for everyone else.
+export async function loadListingRequests() {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("listing_requests_queue")
+    .select("*")
+    .eq("status", "open")
+    .order("created_at", { ascending: true });
+  if (error || !Array.isArray(data)) return [];
+  return data;
+}
+
+export async function resolveListingRequest(id, status, adminId) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { error } = await supabase
+    .from("listing_requests")
+    .update({ status, resolved_at: new Date().toISOString(), resolved_by: adminId })
+    .eq("id", id);
+  if (error) throw new Error("Couldn't update that request.");
 }
 
 // ---------- host verification ----------
@@ -859,11 +966,18 @@ export function hostInviteUrl(token) {
 }
 
 // Admin-only.
-export async function createHostInvite(handle) {
+// With a listing (and the request that asked for it), redeeming the invite
+// also hands that listing over to the organizer.
+export async function createHostInvite(handle, eventId = null, requestId = null) {
   if (!supabase) throw new Error("Backend not configured");
-  const { data, error } = await supabase.rpc("create_host_invite", { p_handle: handle });
+  const { data, error } = await supabase.rpc("create_host_invite", {
+    p_handle: handle,
+    p_event_id: eventId,
+    p_request_id: requestId,
+  });
   if (error) {
     if (/bad_handle/.test(error.message)) throw new Error("That isn't a valid Instagram handle.");
+    if (/not_claimable/.test(error.message)) throw new Error("That listing already has an owner.");
     throw new Error("Couldn't create that invite.");
   }
   return data;
@@ -943,12 +1057,14 @@ export async function loadJoinRequests(eventId) {
 
 export async function approveJoinRequest(eventId, userId) {
   if (!supabase) throw new Error("Backend not configured");
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("event_members")
     .update({ status: "approved", decided_at: new Date().toISOString() })
     .eq("event_id", eventId)
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .select("user_id");
   if (error) throw new Error("Couldn't approve that request.");
+  if (!data || !data.length) throw new Error("You can't manage this meet any more.");
 }
 
 export async function denyJoinRequest(eventId, userId) {

@@ -53,3 +53,9 @@ test("maps the photo limit markers to distinct copy", () => {
   assert.match(perMeet, /one meet/);
   assert.notEqual(hourly, perMeet);
 });
+
+test("listing-request errors get readable copy", async () => {
+  const { friendlyWriteError } = await import("../src/lib/errors.js");
+  assert.match(friendlyWriteError({ message: "not_listable" }, "x"), /Report/);
+  assert.match(friendlyWriteError({ message: "duplicate_request" }, "x"), /already sent/);
+});

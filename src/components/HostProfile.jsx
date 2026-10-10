@@ -30,12 +30,16 @@ export default function HostProfile({
   }, [host]);
 
   const now = new Date();
-  const hostEvents = events.filter((e) => e.host === host);
+  // Meets this host runs, including ones they co-host.
+  const hostEvents = events.filter((e) => e.host === host || (e.cohosts || []).includes(host));
   const upcoming = hostEvents
     .filter((e) => !isPast(e, now))
     .sort((a, b) => sortKey(a, now) - sortKey(b, now));
-  const verified = hostEvents.some((e) => e.verified);
-  const founding = hostEvents.some((e) => e.foundingHost);
+  // Badges belong to a meet's main host, so they come only from meets this
+  // host runs themselves — co-hosting a verified host's meet isn't a badge.
+  const ownEvents = events.filter((e) => e.host === host);
+  const verified = ownEvents.some((e) => e.verified);
+  const founding = ownEvents.some((e) => e.foundingHost);
 
   return (
     <div

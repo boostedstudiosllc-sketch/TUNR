@@ -15,7 +15,7 @@ export default function PrivateAccess({ event, user, onNeedAccount, onToast, onJ
   if (event.locked) {
     return <AccessGate event={event} user={user} onNeedAccount={onNeedAccount} onToast={onToast} onJoined={onJoined} />;
   }
-  if (event.visibility === "private" && event.submittedByUser) {
+  if (event.visibility === "private" && event.canManage) {
     return <HostPanel event={event} onToast={onToast} />;
   }
   return null;

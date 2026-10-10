@@ -15,6 +15,11 @@ const WRITE_ERROR_COPY = {
   rate_limit_photos:
     "You're posting photos quickly — give it a few minutes and try again.",
   photo_limit_per_meet: "That's the photo limit for one meet.",
+  rate_limit_requests:
+    "We've had several requests about this recently. Email us instead and we'll sort it out.",
+  not_listable:
+    "That meet was posted by its organizer — use Report on the meet instead.",
+  duplicate_request: "You've already sent us that request — we'll be in touch.",
   host_reserved:
     "That host name belongs to a verified host. Post under your own handle.",
 };

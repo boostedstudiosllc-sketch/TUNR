@@ -7,6 +7,8 @@ import Garage from "./Garage.jsx";
 import ModerationQueue from "./ModerationQueue.jsx";
 import { Badges } from "./Badge.jsx";
 import SignupStats from "./SignupStats.jsx";
+import { CohostInvites } from "./Cohosts.jsx";
+import { ListingRequestsQueue } from "./ListingRequest.jsx";
 
 const inputStyle = {
   background: "#161616",
@@ -34,7 +36,7 @@ const legalButton = {
   fontFamily: "'Barlow Condensed', sans-serif",
 };
 
-export default function ProfileTab({ events, rsvps, user, onShowTerms, onShowPrivacy, onToast }) {
+export default function ProfileTab({ events, rsvps, user, onShowTerms, onShowPrivacy, onToast, onCohostChange }) {
   const [profile, setProfile] = useState({ username: "", city: "Atlanta, GA" });
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ username: "", city: "Atlanta, GA" });
@@ -256,6 +258,10 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onShowPri
             </button>
           </div>
         )}
+
+        {hasBackend() && user && <CohostInvites user={user} onToast={onToast} onChanged={onCohostChange} />}
+
+        {hasBackend() && user && profile.isAdmin && <ListingRequestsQueue user={user} onToast={onToast} />}
 
         {hasBackend() && user && profile.isAdmin && <SignupStats />}
 

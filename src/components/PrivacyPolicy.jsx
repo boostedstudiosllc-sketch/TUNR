@@ -72,6 +72,11 @@ export default function PrivacyPolicy({ onClose }) {
           and how.
           <br />
           <br />
+          <strong>Requests about a listing:</strong> if you ask us to remove, fix or hand over a
+          meet we listed, we keep the name and contact details you give us so we can reply, and
+          the IP address the request came from, so we can limit spam.
+          <br />
+          <br />
           <strong>What you do in the app:</strong> the meets you RSVP to, meets you post, comments
           you write, hosts you follow, accounts you block, photos you upload, perks you redeem, and
           any request to join a private meet or to be verified as a host — including the Instagram
