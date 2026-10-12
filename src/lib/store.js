@@ -93,6 +93,7 @@ function rowToEvent(row, counts, userId) {
     lng: row.lng,
     lat: row.lat,
     photoUrl: row.photo_url || null,
+    flyerUrl: row.flyer_url || null,
     submittedByUser: Boolean(userId && row.created_by === userId),
     // The owner or an accepted co-host: may edit, approve requests, see the
     // passcode. Only the owner (submittedByUser) deletes or manages co-hosts.
@@ -179,6 +180,7 @@ export async function submitEvent(draft, userId = null) {
         source: draft.igLink ? "instagram" : null,
         source_url: draft.igLink || null,
         photo_url: draft.photoUrl || null,
+        flyer_url: draft.flyerUrl || null,
         lng: draft.lng ?? -84.39,
         lat: draft.lat ?? 33.75,
         timezone: DEFAULT_TZ,
@@ -215,6 +217,7 @@ export async function submitEvent(draft, userId = null) {
     source: draft.igLink ? "instagram" : null,
     sourceUrl: draft.igLink || null,
     photoUrl: draft.photoUrl || null,
+    flyerUrl: draft.flyerUrl || null,
     lng: draft.lng ?? -84.39,
     lat: draft.lat ?? 33.75,
     visibility: draft.visibility === "private" ? "private" : "public",
@@ -781,6 +784,7 @@ export async function updateEvent(eventId, fields) {
   if (fields.description !== undefined) payload.description = fields.description;
   if (fields.vibe !== undefined) payload.vibe = fields.vibe;
   if (fields.photoUrl !== undefined) payload.photo_url = fields.photoUrl;
+  if (fields.flyerUrl !== undefined) payload.flyer_url = fields.flyerUrl;
   if (fields.start !== undefined) {
     payload.start_at = fields.start ? parseLocal(fields.start, DEFAULT_TZ).toISOString() : null;
   }
@@ -1092,6 +1096,36 @@ export async function uploadEventPhoto(file, userId) {
   if (error) throw new Error("Upload failed. Try a different image.");
   const { data } = supabase.storage.from("event-photos").getPublicUrl(path);
   return data.publicUrl;
+}
+
+// Has Claude read a flyer the user just uploaded (see api/read-flyer.js) and
+// returns the fields it found, for the post-a-meet form to fill in.
+export async function readFlyer(imageUrl, caption = "") {
+  if (!supabase) throw new Error("Reading flyers needs the live app.");
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  if (!token) throw new Error("Sign in first.");
+  let res;
+  try {
+    res = await fetch("/api/read-flyer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ imageUrl, caption }),
+    });
+  } catch {
+    throw new Error("Couldn't reach TUNR. Check your connection and try again.");
+  }
+  const body = await res.json().catch(() => ({}));
+  if (res.ok && body.flyer) return body.flyer;
+  throw new Error(
+    {
+      rate_limit_flyers: "That's a lot of flyers for one day. Fill this one in by hand, or try again later.",
+      unreadable: "We couldn't read that image. Fill the details in by hand.",
+      busy: "The flyer reader is busy. Try again in a minute.",
+      not_configured: "Flyer reading isn't switched on yet. Fill the details in by hand.",
+      not_signed_in: "Sign in first.",
+    }[body.error] || "Couldn't read the flyer. Fill the details in by hand."
+  );
 }
 
 // ---------- comments ----------

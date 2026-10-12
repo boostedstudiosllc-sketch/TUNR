@@ -30,12 +30,18 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
           background: `linear-gradient(135deg, ${color}22, #0a0a0a 65%)`,
         }}
       >
-        {event.photoUrl ? (
+        {event.photoUrl || event.flyerUrl ? (
           <img
-            src={event.photoUrl}
+            src={event.photoUrl || event.flyerUrl}
             alt=""
             loading="lazy"
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: event.photoUrl ? "center" : "top",
+              display: "block",
+            }}
           />
         ) : (
           <CarSilhouette color={color} />

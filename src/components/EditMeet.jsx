@@ -33,25 +33,26 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
   const [description, setDescription] = useState(event.description || "");
   const [vibe, setVibe] = useState(event.vibe || "JDM");
   const [photoUrl, setPhotoUrl] = useState(event.photoUrl || "");
-  const [uploading, setUploading] = useState(false);
+  const [flyerUrl, setFlyerUrl] = useState(event.flyerUrl || "");
+  const [uploading, setUploading] = useState(""); // "photo" | "flyer" | ""
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  async function pickPhoto(e) {
+  const pickImage = (kind, setUrl) => async (e) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-    setUploading(true);
+    setUploading(kind);
     setError("");
     try {
       const compressed = await compressImage(file);
-      const url = await uploadEventPhoto(compressed, user.id);
-      setPhotoUrl(url);
+      setUrl(await uploadEventPhoto(compressed, user.id));
     } catch (err) {
       setError(err.message);
     } finally {
-      setUploading(false);
+      setUploading("");
     }
-  }
+  };
 
   async function save() {
     if (busy) return;
@@ -65,6 +66,7 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
         description: description.trim(),
         vibe,
         photoUrl: photoUrl || null,
+        flyerUrl: flyerUrl || null,
       });
       track("meet_edited", { eventId: event.id });
       onSaved();
@@ -128,55 +130,25 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
-          <div>
-            <div style={label}>PHOTO</div>
-            {photoUrl ? (
-              <div style={{ position: "relative", marginBottom: 8 }}>
-                <img
-                  src={photoUrl}
-                  alt=""
-                  style={{ width: "100%", height: 150, objectFit: "cover", borderRadius: 8, display: "block" }}
-                />
-                <button
-                  onClick={() => setPhotoUrl("")}
-                  style={{
-                    position: "absolute",
-                    top: 8,
-                    right: 8,
-                    background: "rgba(0,0,0,0.75)",
-                    border: "1px solid #444",
-                    color: "#fff",
-                    borderRadius: 6,
-                    padding: "4px 9px",
-                    fontSize: 11,
-                    cursor: "pointer",
-                    fontFamily: "'Barlow Condensed', sans-serif",
-                  }}
-                >
-                  REMOVE
-                </button>
-              </div>
-            ) : null}
-            <label
-              style={{
-                display: "block",
-                textAlign: "center",
-                padding: "12px 0",
-                background: "#161616",
-                border: "1px dashed #2A2A2A",
-                borderRadius: 8,
-                color: "#888",
-                fontSize: 12.5,
-                fontWeight: 700,
-                letterSpacing: 1,
-                cursor: "pointer",
-                fontFamily: "'Barlow Condensed', sans-serif",
-              }}
-            >
-              {uploading ? "UPLOADING…" : photoUrl ? "REPLACE PHOTO" : "📷 ADD A PHOTO OR FLYER"}
-              <input type="file" accept="image/*" onChange={pickPhoto} style={{ display: "none" }} />
-            </label>
-          </div>
+          <ImageField
+            title="COVER PHOTO"
+            url={photoUrl}
+            onRemove={() => setPhotoUrl("")}
+            onPick={pickImage("photo", setPhotoUrl)}
+            busy={uploading === "photo"}
+            addLabel="📷 ADD A COVER PHOTO"
+            fit="cover"
+          />
+          <ImageField
+            title="FLYER"
+            url={flyerUrl}
+            onRemove={() => setFlyerUrl("")}
+            onPick={pickImage("flyer", setFlyerUrl)}
+            busy={uploading === "flyer"}
+            addLabel="📄 ADD THE FLYER"
+            fit="contain"
+            hint="Shown whole on the meet page, so people can read it."
+          />
 
           <div>
             <div style={label}>TITLE</div>
@@ -267,6 +239,72 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
           {busy ? "SAVING…" : "SAVE CHANGES"}
         </button>
       </div>
+    </div>
+  );
+}
+
+function ImageField({ title, url, onRemove, onPick, busy, addLabel, fit, hint }) {
+  return (
+    <div>
+      <div style={label}>{title}</div>
+      {url ? (
+        <div style={{ position: "relative", marginBottom: 8 }}>
+          <img
+            src={url}
+            alt=""
+            style={{
+              width: "100%",
+              height: fit === "contain" ? 220 : 150,
+              objectFit: fit,
+              background: "#0A0A0A",
+              borderRadius: 8,
+              display: "block",
+            }}
+          />
+          <button
+            onClick={onRemove}
+            style={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              background: "rgba(0,0,0,0.75)",
+              border: "1px solid #444",
+              color: "#fff",
+              borderRadius: 6,
+              padding: "4px 9px",
+              fontSize: 11,
+              cursor: "pointer",
+              fontFamily: "'Barlow Condensed', sans-serif",
+            }}
+          >
+            REMOVE
+          </button>
+        </div>
+      ) : null}
+      <label
+        style={{
+          display: "block",
+          textAlign: "center",
+          padding: "12px 0",
+          background: "#161616",
+          border: "1px dashed #2A2A2A",
+          borderRadius: 8,
+          color: "#888",
+          fontSize: 12.5,
+          fontWeight: 700,
+          letterSpacing: 1,
+          cursor: "pointer",
+          fontFamily: "'Barlow Condensed', sans-serif",
+        }}
+      >
+        {busy ? "UPLOADING…" : url ? `REPLACE ${title}` : addLabel}
+        <input type="file" accept="image/*" onChange={onPick} style={{ display: "none" }} />
+      </label>
+      {hint && !url && (
+        <div style={{ fontSize: 11, color: "#555", marginTop: 6, fontFamily: "'Barlow', sans-serif" }}>
+          {hint}
+        </div>
+      )}
     </div>
   );
 }

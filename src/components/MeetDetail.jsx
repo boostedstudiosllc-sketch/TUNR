@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { VIBES } from "../data/events.js";
 import { displayDate, displayTime } from "../lib/dates.js";
 import { CarSilhouette } from "./MeetCard.jsx";
@@ -91,11 +92,17 @@ export default function MeetDetail({
             background: `linear-gradient(135deg, ${color}26, #0a0a0a 70%)`,
           }}
         >
-          {event.photoUrl ? (
+          {event.photoUrl || event.flyerUrl ? (
             <img
-              src={event.photoUrl}
+              src={event.photoUrl || event.flyerUrl}
               alt=""
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: event.photoUrl ? "center" : "top",
+                display: "block",
+              }}
             />
           ) : (
             <CarSilhouette color={color} width={190} />
@@ -278,6 +285,8 @@ export default function MeetDetail({
               </div>
             </div>
           )}
+
+          {!locked && event.flyerUrl && <Flyer url={event.flyerUrl} title={event.title} />}
 
           <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
             {event.tags.map((tag) => (
@@ -529,6 +538,77 @@ function StatBox({ label, value }) {
     >
       <div style={{ fontSize: 9, color: "#555", letterSpacing: 1.5, marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 14, fontWeight: 700 }}>{value}</div>
+    </div>
+  );
+}
+
+// The organizer's flyer, whole. Tap for full screen to read the fine print.
+function Flyer({ url, title }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, marginBottom: 8 }}>FLYER</div>
+      <button
+        onClick={() => setOpen(true)}
+        aria-label="Open the flyer full screen"
+        style={{
+          display: "block",
+          width: "100%",
+          padding: 0,
+          background: "#0A0A0A",
+          border: "1px solid #222",
+          borderRadius: 10,
+          overflow: "hidden",
+          cursor: "zoom-in",
+        }}
+      >
+        <img
+          src={url}
+          alt={`Flyer for ${title}`}
+          loading="lazy"
+          style={{ width: "100%", maxHeight: 520, objectFit: "contain", display: "block" }}
+        />
+      </button>
+      {open && (
+        <div
+          onClick={() => setOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 400,
+            background: "rgba(0,0,0,0.95)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 12,
+            cursor: "zoom-out",
+            animation: "fadeIn 0.2s ease",
+          }}
+        >
+          <img
+            src={url}
+            alt={`Flyer for ${title}`}
+            style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              color: "#fff",
+              fontSize: 13,
+              fontWeight: 800,
+              letterSpacing: 1,
+              background: "rgba(0,0,0,0.6)",
+              border: "1px solid #444",
+              borderRadius: 16,
+              padding: "6px 12px",
+            }}
+          >
+            ✕ CLOSE
+          </div>
+        </div>
+      )}
     </div>
   );
 }

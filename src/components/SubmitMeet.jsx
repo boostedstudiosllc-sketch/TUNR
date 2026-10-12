@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { VIBES } from "../data/events.js";
 import { compressImage } from "../lib/image.js";
-import { uploadEventPhoto } from "../lib/store.js";
+import { uploadEventPhoto, readFlyer, track } from "../lib/store.js";
+import { flyerToDraft } from "../lib/flyer.js";
 
 const inputStyle = {
   background: "#161616",
@@ -27,9 +28,13 @@ const labelStyle = {
 
 export default function SubmitMeet({ onClose, onSubmit, user }) {
   const [step, setStep] = useState(1);
-  const [photoUrl, setPhotoUrl] = useState("");
+  const [flyerUrl, setFlyerUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [photoError, setPhotoError] = useState("");
+  // Starting from a flyer: idle | uploading | reading | done | notmeet | error
+  const [reader, setReader] = useState({ status: "idle" });
+  const [caption, setCaption] = useState("");
+  const [showCaption, setShowCaption] = useState(false);
   const [draft, setDraft] = useState({
     title: "",
     location: "",
@@ -52,13 +57,54 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
     setPhotoError("");
     try {
       const compressed = await compressImage(file);
-      setPhotoUrl(await uploadEventPhoto(compressed, user.id));
+      setFlyerUrl(await uploadEventPhoto(compressed, user.id));
     } catch (err) {
       setPhotoError(err.message || "Upload failed.");
     } finally {
       setUploading(false);
     }
   }
+
+  // Upload the flyer, have it read, and fill in whatever it says. The flyer
+  // stays attached to the meet either way.
+  async function startFromFlyer(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setReader({ status: "uploading" });
+    let url;
+    try {
+      url = await uploadEventPhoto(await compressImage(file), user.id);
+    } catch (err) {
+      setReader({ status: "error", error: err.message || "Upload failed." });
+      return;
+    }
+    setFlyerUrl(url);
+    setReader({ status: "reading" });
+    try {
+      const found = await readFlyer(url, caption);
+      if (!found.isMeet) {
+        setReader({ status: "notmeet" });
+        track("flyer_read", { result: "not_meet" });
+        return;
+      }
+      const { filled } = flyerToDraft(found, {});
+      setDraft((d) => flyerToDraft(found, d).draft);
+      setReader({ status: "done", filled, check: found.check });
+      track("flyer_read", { result: "filled", fields: filled.length });
+    } catch (err) {
+      setReader({ status: "error", error: err.message });
+      track("flyer_read", { result: "error" });
+    }
+  }
+
+  const fromFlyer = (field) => reader.status === "done" && reader.filled.includes(field);
+  const label = (text, field) => (
+    <div style={labelStyle}>
+      {text}
+      {fromFlyer(field) && <span style={{ color: "#10B981" }}> · FROM FLYER</span>}
+    </div>
+  );
 
   const canContinue =
     step === 1 ? draft.title.trim().length >= 3 && draft.location.trim().length >= 3 : true;
@@ -77,7 +123,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
       start,
       description: draft.description.trim(),
       igLink: draft.igLink.trim() || null,
-      photoUrl: photoUrl || null,
+      flyerUrl: flyerUrl || null,
       visibility: draft.visibility,
       accessMode: draft.visibility === "private" ? draft.accessMode : "both",
     });
@@ -162,8 +208,19 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
 
         {step === 1 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {user && (
+              <FlyerStart
+                reader={reader}
+                flyerUrl={flyerUrl}
+                onPick={startFromFlyer}
+                caption={caption}
+                setCaption={setCaption}
+                showCaption={showCaption}
+                setShowCaption={setShowCaption}
+              />
+            )}
             <div>
-              <div style={labelStyle}>MEET TITLE</div>
+              {label("MEET TITLE", "title")}
               <input
                 style={inputStyle}
                 placeholder="e.g. Midnight Grid Meet"
@@ -172,7 +229,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
               />
             </div>
             <div>
-              <div style={labelStyle}>LOCATION / ADDRESS</div>
+              {label("LOCATION / ADDRESS", "location")}
               <input
                 style={inputStyle}
                 placeholder="e.g. Ponce City Market"
@@ -181,11 +238,11 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
               />
             </div>
             <div>
-              <div style={labelStyle}>CITY</div>
+              {label("CITY", "city")}
               <input style={inputStyle} value={draft.city} onChange={set("city")} />
             </div>
             <div>
-              <div style={labelStyle}>VIBE</div>
+              {label("VIBE", "vibe")}
               <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
                 {Object.keys(VIBES).map((v) => (
                   <button
@@ -299,16 +356,16 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
 
             <div style={{ display: "flex", gap: 10 }}>
               <div style={{ flex: 1 }}>
-                <div style={labelStyle}>DATE</div>
+                {label("DATE", "date")}
                 <input type="date" style={inputStyle} value={draft.date} onChange={set("date")} />
               </div>
               <div style={{ flex: 1 }}>
-                <div style={labelStyle}>START TIME</div>
+                {label("START TIME", "time")}
                 <input type="time" style={inputStyle} value={draft.time} onChange={set("time")} />
               </div>
             </div>
             <div>
-              <div style={labelStyle}>DESCRIPTION, RULES, WHAT'S WELCOME</div>
+              {label("DESCRIPTION, RULES, WHAT'S WELCOME", "description")}
               <textarea
                 rows={4}
                 style={{ ...inputStyle, resize: "none" }}
@@ -319,16 +376,17 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
             </div>
             {user && (
               <div>
-                <div style={labelStyle}>FLYER PHOTO (OPTIONAL)</div>
-                {photoUrl ? (
+                <div style={labelStyle}>FLYER (OPTIONAL)</div>
+                {flyerUrl ? (
                   <div style={{ position: "relative" }}>
                     <img
-                      src={photoUrl}
-                      alt=""
+                      src={flyerUrl}
+                      alt="Flyer"
                       style={{
                         width: "100%",
-                        height: 150,
-                        objectFit: "cover",
+                        maxHeight: 260,
+                        objectFit: "contain",
+                        background: "#0A0A0A",
                         borderRadius: 8,
                         display: "block",
                         border: "1px solid #2A2A2A",
@@ -336,7 +394,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                     />
                     <button
                       className="action-btn"
-                      onClick={() => setPhotoUrl("")}
+                      onClick={() => setFlyerUrl("")}
                       style={{
                         position: "absolute",
                         top: 8,
@@ -370,7 +428,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                       cursor: "pointer",
                     }}
                   >
-                    {uploading ? "UPLOADING…" : "📷 ADD THE FLYER"}
+                    {uploading ? "UPLOADING…" : "📄 ADD THE FLYER"}
                     <input
                       type="file"
                       accept="image/*"
@@ -412,7 +470,8 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                   lineHeight: 1.5,
                 }}
               >
-                Link the original flyer post so the host gets credit.
+                Link the original flyer post so the host gets credit. The flyer shows on the meet
+                page, whole, so people can read it themselves.
               </div>
             </div>
           </div>
@@ -468,3 +527,144 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
     </div>
   );
 }
+
+function FlyerStart({ reader, flyerUrl, onPick, caption, setCaption, showCaption, setShowCaption }) {
+  const busy = reader.status === "uploading" || reader.status === "reading";
+  const picker = (text) => (
+    <label
+      className="action-btn"
+      style={{
+        display: "block",
+        textAlign: "center",
+        marginTop: 11,
+        padding: "11px 0",
+        borderRadius: 8,
+        background: "rgba(255,69,0,0.12)",
+        border: "1px solid #FF4500",
+        color: "#FF4500",
+        fontSize: 12.5,
+        fontWeight: 800,
+        letterSpacing: 1.2,
+        cursor: "pointer",
+        fontFamily: "'Barlow Condensed', sans-serif",
+      }}
+    >
+      {text}
+      <input type="file" accept="image/*" onChange={onPick} style={{ display: "none" }} />
+    </label>
+  );
+
+  return (
+    <div
+      style={{
+        background: "#131313",
+        border: `1px solid ${reader.status === "done" ? "#10B981" : "rgba(255,69,0,0.45)"}`,
+        borderRadius: 10,
+        padding: "14px 15px",
+      }}
+    >
+      {busy || reader.status === "done" || reader.status === "notmeet" ? (
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+          {flyerUrl && (
+            <img
+              src={flyerUrl}
+              alt="Your flyer"
+              style={{
+                width: 54,
+                height: 68,
+                objectFit: "cover",
+                borderRadius: 6,
+                border: "1px solid #2A2A2A",
+                flexShrink: 0,
+              }}
+            />
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {busy ? (
+              <>
+                <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: 0.4 }}>
+                  {reader.status === "uploading" ? "UPLOADING YOUR FLYER…" : "READING YOUR FLYER…"}
+                </div>
+                <div style={note}>This takes a few seconds.</div>
+              </>
+            ) : reader.status === "done" ? (
+              <>
+                <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: 0.4, color: "#10B981" }}>
+                  ✓ FILLED IN FROM YOUR FLYER
+                </div>
+                <div style={note}>
+                  {reader.filled.length
+                    ? "Check every field before you post — fields marked FROM FLYER came off it."
+                    : "We couldn't pick out any details, so fill them in below."}
+                </div>
+                {reader.check?.length > 0 && (
+                  <ul style={{ ...note, color: "#F59E0B", margin: "6px 0 0", paddingLeft: 16 }}>
+                    {reader.check.map((c) => (
+                      <li key={c}>{c}</li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: 0.4 }}>
+                  THAT DOESN'T LOOK LIKE A MEET FLYER
+                </div>
+                <div style={note}>
+                  Nothing was filled in. It's still attached as the flyer — remove it on the next
+                  step if that's wrong.
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      ) : (
+        <>
+          <div style={{ fontSize: 16, fontWeight: 900, letterSpacing: 0.4 }}>📄 START FROM YOUR FLYER</div>
+          <div style={note}>
+            Upload it and we'll fill this in for you. You check everything before it posts.
+          </div>
+          {reader.status === "error" && (
+            <div style={{ ...note, color: "#FF6B4A" }}>{reader.error}</div>
+          )}
+          {showCaption ? (
+            <textarea
+              rows={3}
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              placeholder="Paste the Instagram caption here, then upload the flyer"
+              maxLength={2200}
+              style={{ ...inputStyle, resize: "none", marginTop: 10, fontSize: 13 }}
+            />
+          ) : (
+            <button
+              onClick={() => setShowCaption(true)}
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                marginTop: 8,
+                color: "#777",
+                fontSize: 11.5,
+                textDecoration: "underline",
+                cursor: "pointer",
+                fontFamily: "'Barlow', sans-serif",
+              }}
+            >
+              Address only in the caption? Paste it first
+            </button>
+          )}
+        </>
+      )}
+      {!busy && picker(reader.status === "idle" || reader.status === "error" ? "UPLOAD FLYER" : "USE A DIFFERENT FLYER")}
+    </div>
+  );
+}
+
+const note = {
+  fontSize: 12,
+  color: "#888",
+  lineHeight: 1.55,
+  marginTop: 4,
+  fontFamily: "'Barlow', sans-serif",
+};

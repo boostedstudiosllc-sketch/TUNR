@@ -126,7 +126,9 @@ export default function PrivacyPolicy({ onClose }) {
           <strong>Supabase</strong> stores the database, accounts and uploaded photos.{" "}
           <strong>Vercel</strong> hosts and serves the app. <strong>Mapbox</strong> renders maps —
           when a map loads, Mapbox receives the coordinates of the area being displayed.{" "}
-          <strong>Google</strong> handles sign-in if you choose "Continue with Google". When paid
+          <strong>Google</strong> handles sign-in if you choose "Continue with Google".{" "}
+          <strong>Anthropic</strong> reads a flyer when you post a meet from one: the flyer image and
+          any caption you paste are sent to its Claude AI to pick out the details. When paid
           membership launches, payments are handled by a payment processor; we never see or store
           your full card number. Each is a processor acting on our behalf, and each has its own
           privacy policy.

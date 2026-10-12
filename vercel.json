@@ -1,7 +1,21 @@
 {
   "rewrites": [
-    { "source": "/m/:slug", "destination": "/api/m/:slug" },
-    { "source": "/hosts", "destination": "/api/hosts" },
-    { "source": "/join", "destination": "/api/join" }
-  ]
+    {
+      "source": "/m/:slug",
+      "destination": "/api/m/:slug"
+    },
+    {
+      "source": "/hosts",
+      "destination": "/api/hosts"
+    },
+    {
+      "source": "/join",
+      "destination": "/api/join"
+    }
+  ],
+  "functions": {
+    "api/read-flyer.js": {
+      "maxDuration": 60
+    }
+  }
 }
