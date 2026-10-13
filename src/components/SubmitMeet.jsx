@@ -1,8 +1,23 @@
 import { useState } from "react";
 import { VIBES } from "../data/events.js";
 import { compressImage } from "../lib/image.js";
-import { uploadEventPhoto, readFlyer, track } from "../lib/store.js";
+import { uploadEventPhoto, readFlyer, findFlyerMatches, track } from "../lib/store.js";
 import { flyerToDraft } from "../lib/flyer.js";
+import { flyerHash } from "../lib/phash.js";
+import { geocodeLocation } from "../lib/geocode.js";
+
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+
+// "2026-10-24" for a stored start time, in Atlanta's time zone.
+const easternDay = (iso) =>
+  iso ? new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/New_York" }) : null;
+const prettyDay = (ymd) =>
+  new Date(`${ymd}T12:00:00Z`).toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
 
 const inputStyle = {
   background: "#161616",
@@ -29,6 +44,12 @@ const labelStyle = {
 export default function SubmitMeet({ onClose, onSubmit, user }) {
   const [step, setStep] = useState(1);
   const [flyerUrl, setFlyerUrl] = useState("");
+  const [flyerFingerprint, setFlyerFingerprint] = useState(null);
+  // Meets already carrying this flyer.
+  const [matches, setMatches] = useState([]);
+  // The online check on the location: { status, lat, lng, checked: "location|city" }
+  const [geo, setGeo] = useState(null);
+  const [checking, setChecking] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [photoError, setPhotoError] = useState("");
   // Starting from a flyer: idle | uploading | reading | done | notmeet | error
@@ -50,6 +71,12 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
 
   const set = (field) => (e) => setDraft((d) => ({ ...d, [field]: e.target.value }));
 
+  async function fingerprint(file) {
+    const hash = await flyerHash(file);
+    setFlyerFingerprint(hash);
+    setMatches(hash ? await findFlyerMatches(hash) : []);
+  }
+
   async function pickPhoto(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -58,6 +85,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
     try {
       const compressed = await compressImage(file);
       setFlyerUrl(await uploadEventPhoto(compressed, user.id));
+      fingerprint(file);
     } catch (err) {
       setPhotoError(err.message || "Upload failed.");
     } finally {
@@ -80,6 +108,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
       return;
     }
     setFlyerUrl(url);
+    fingerprint(file);
     setReader({ status: "reading" });
     try {
       const found = await readFlyer(url, caption);
@@ -107,7 +136,27 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
   );
 
   const canContinue =
-    step === 1 ? draft.title.trim().length >= 3 && draft.location.trim().length >= 3 : true;
+    (step === 1 ? draft.title.trim().length >= 3 && draft.location.trim().length >= 3 : true) &&
+    !checking;
+
+  const placeKey = `${draft.location.trim()}|${draft.city.trim()}`;
+  const geoWarning =
+    geo && geo.checked === placeKey && (geo.status === "none" || geo.status === "outside");
+
+  // Look the place up before moving on. A place we can't find, or one outside
+  // Georgia, gets a warning first; tapping Continue again goes ahead anyway.
+  async function continueFromStep1() {
+    if (!MAPBOX_TOKEN || (geo && geo.checked === placeKey)) {
+      setStep(2);
+      return;
+    }
+    setChecking(true);
+    const result = await geocodeLocation(draft.location, draft.city, { token: MAPBOX_TOKEN });
+    setChecking(false);
+    setGeo({ ...result, checked: placeKey });
+    track("location_checked", { status: result.status });
+    if (result.status === "found" || result.status === "area") setStep(2);
+  }
 
   function finish() {
     // Combine date + time into a local ISO string when both are provided
@@ -124,6 +173,10 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
       description: draft.description.trim(),
       igLink: draft.igLink.trim() || null,
       flyerUrl: flyerUrl || null,
+      flyerHash: flyerUrl ? flyerFingerprint : null,
+      ...(geo && geo.checked === placeKey && (geo.status === "found" || geo.status === "area")
+        ? { lat: geo.lat, lng: geo.lng }
+        : {}),
       visibility: draft.visibility,
       accessMode: draft.visibility === "private" ? draft.accessMode : "both",
     });
@@ -219,6 +272,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                 setShowCaption={setShowCaption}
               />
             )}
+            {matches.length > 0 && <FlyerMatches matches={matches} date={draft.date} />}
             <div>
               {label("MEET TITLE", "title")}
               <input
@@ -240,6 +294,13 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
             <div>
               {label("CITY", "city")}
               <input style={inputStyle} value={draft.city} onChange={set("city")} />
+              {geoWarning && (
+                <div style={{ ...warn, marginTop: 8 }}>
+                  {geo.status === "outside"
+                    ? `That looks like it's outside Georgia (${geo.placeName}). Check the address and city.`
+                    : "We couldn't find that place on the map. Add a street address so people can get there — or continue if it's announced later."}
+                </div>
+              )}
             </div>
             <div>
               {label("VIBE", "vibe")}
@@ -503,7 +564,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
             disabled={!canContinue}
             onClick={() => {
               if (!canContinue) return;
-              if (step === 1) setStep(2);
+              if (step === 1) continueFromStep1();
               else finish();
             }}
             style={{
@@ -520,7 +581,13 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
               boxShadow: canContinue ? "0 4px 20px rgba(255,69,0,0.35)" : "none",
             }}
           >
-            {step === 2 ? "🏁 POST MEET" : "CONTINUE →"}
+            {step === 2
+              ? "🏁 POST MEET"
+              : checking
+              ? "CHECKING THE ADDRESS…"
+              : geoWarning
+              ? "CONTINUE ANYWAY →"
+              : "CONTINUE →"}
           </button>
         </div>
       </div>
@@ -666,5 +733,30 @@ const note = {
   color: "#888",
   lineHeight: 1.55,
   marginTop: 4,
+  fontFamily: "'Barlow', sans-serif",
+};
+
+// The same flyer is already on TUNR. Either it's a duplicate, or — if the
+// dates disagree — one of them is wrong.
+function FlyerMatches({ matches, date }) {
+  const conflicting = date ? matches.filter((m) => !m.recurrence && easternDay(m.start_at) && easternDay(m.start_at) !== date) : [];
+  return (
+    <div style={{ ...warn, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.4)", borderRadius: 8, padding: "10px 12px" }}>
+      <strong>This flyer is already on TUNR:</strong>{" "}
+      {matches
+        .map((m) => `${m.title}${m.start_at ? ` (${prettyDay(easternDay(m.start_at))})` : ""}`)
+        .join(", ")}
+      .{" "}
+      {conflicting.length > 0
+        ? `That listing has a different date from this one — check which is right before posting.`
+        : `Post only if it's a different meet. If that listing is yours but someone else posted it, open it and use "Is this your meet?" or "Something wrong?" to get it handed to you.`}
+    </div>
+  );
+}
+
+const warn = {
+  fontSize: 12,
+  color: "#F59E0B",
+  lineHeight: 1.55,
   fontFamily: "'Barlow', sans-serif",
 };

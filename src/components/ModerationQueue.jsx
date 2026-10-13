@@ -2,11 +2,15 @@ import { useEffect, useState } from "react";
 import { loadReportQueue, moderateEvent, dismissReport, track } from "../lib/store.js";
 
 const REASON_LABELS = {
-  "illegal activity": "🚫 Illegal activity",
-  spam: "🗑 Spam",
-  "wrong info": "❓ Wrong info",
-  duplicate: "⧉ Duplicate",
-  other: "Other",
+  "Wrong date or time": "🕐 Wrong date or time",
+  "Wrong location": "📍 Wrong location",
+  "Cancelled or postponed": "⛔ Cancelled or postponed",
+  Duplicate: "⧉ Duplicate",
+  "Illegal or unsafe": "🚫 Illegal or unsafe",
+  "Illegal activity": "🚫 Illegal activity",
+  "Spam or scam": "🗑 Spam or scam",
+  "Wrong info": "❓ Wrong info",
+  Other: "Other",
 };
 
 // Admin-only. The terms promise reported content is reviewed within 24 hours;
@@ -98,6 +102,11 @@ export default function ModerationQueue({ onToast }) {
             <div style={{ fontSize: 11.5, color: "#777", marginTop: 2 }}>
               @{row.event_host} · {row.event_city} · reported by @{row.reporter}
             </div>
+            {row.suggested && (
+              <div style={{ fontSize: 12.5, color: "#10B981", marginTop: 7, fontFamily: "'Barlow', sans-serif" }}>
+                Says it should be: <strong>{row.suggested}</strong>
+              </div>
+            )}
             {row.note && (
               <div
                 style={{

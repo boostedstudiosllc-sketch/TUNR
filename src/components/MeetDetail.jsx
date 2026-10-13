@@ -209,6 +209,8 @@ export default function MeetDetail({
             </button>
           </div>
 
+          {event.issueFlag && <IssueBanner issue={event.issueFlag} />}
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 }}>
             <StatBox label="📅 DATE" value={displayDate(event)} />
             <StatBox label="🕐 TIME" value={displayTime(event)} />
@@ -609,6 +611,33 @@ function Flyer({ url, title }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+export const ISSUE_TEXT = {
+  "Cancelled or postponed": "Several people say this meet is cancelled or postponed.",
+  "Wrong date or time": "Several people say the date or time here is wrong.",
+  "Wrong location": "Several people say the location here is wrong.",
+};
+
+function IssueBanner({ issue }) {
+  return (
+    <div
+      style={{
+        marginTop: 14,
+        padding: "10px 12px",
+        borderRadius: 8,
+        background: "rgba(245,158,11,0.1)",
+        border: "1px solid rgba(245,158,11,0.5)",
+        color: "#F59E0B",
+        fontSize: 12.5,
+        lineHeight: 1.5,
+        fontFamily: "'Barlow', sans-serif",
+      }}
+    >
+      ⚠ <strong>{ISSUE_TEXT[issue] || "People have reported a problem with this meet."}</strong> We're
+      checking — confirm with the host before you head out.
     </div>
   );
 }

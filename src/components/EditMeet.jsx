@@ -2,6 +2,10 @@ import { useState } from "react";
 import { VIBES } from "../data/events.js";
 import { updateEvent, uploadEventPhoto, track } from "../lib/store.js";
 import { compressImage } from "../lib/image.js";
+import { flyerHash } from "../lib/phash.js";
+import { geocodeLocation } from "../lib/geocode.js";
+
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 import { CohostsSection } from "./Cohosts.jsx";
 
 const input = {
@@ -34,6 +38,7 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
   const [vibe, setVibe] = useState(event.vibe || "JDM");
   const [photoUrl, setPhotoUrl] = useState(event.photoUrl || "");
   const [flyerUrl, setFlyerUrl] = useState(event.flyerUrl || "");
+  const [flyerHashValue, setFlyerHashValue] = useState(undefined); // undefined = unchanged
   const [uploading, setUploading] = useState(""); // "photo" | "flyer" | ""
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -47,6 +52,7 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
     try {
       const compressed = await compressImage(file);
       setUrl(await uploadEventPhoto(compressed, user.id));
+      if (kind === "flyer") setFlyerHashValue(await flyerHash(file));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -59,7 +65,17 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
     setBusy(true);
     setError("");
     try {
+      // A moved meet gets its map pin moved too.
+      let coords = {};
+      const placeChanged =
+        location.trim() !== (event.location || "").trim() || city.trim() !== (event.city || "").trim();
+      if (placeChanged && MAPBOX_TOKEN) {
+        const geo = await geocodeLocation(location, city, { token: MAPBOX_TOKEN });
+        if (geo.status === "found" || geo.status === "area") coords = { lat: geo.lat, lng: geo.lng };
+      }
       await updateEvent(event.id, {
+        ...coords,
+        ...(flyerHashValue !== undefined ? { flyerHash: flyerHashValue } : {}),
         title: title.trim() || event.title,
         location: location.trim(),
         city: city.trim(),
@@ -142,7 +158,10 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
           <ImageField
             title="FLYER"
             url={flyerUrl}
-            onRemove={() => setFlyerUrl("")}
+            onRemove={() => {
+              setFlyerUrl("");
+              setFlyerHashValue(null);
+            }}
             onPick={pickImage("flyer", setFlyerUrl)}
             busy={uploading === "flyer"}
             addLabel="📄 ADD THE FLYER"

@@ -94,6 +94,8 @@ function rowToEvent(row, counts, userId) {
     lat: row.lat,
     photoUrl: row.photo_url || null,
     flyerUrl: row.flyer_url || null,
+    // A discrepancy three or more people have reported, e.g. "Cancelled or postponed".
+    issueFlag: row.issue_flag || null,
     submittedByUser: Boolean(userId && row.created_by === userId),
     // The owner or an accepted co-host: may edit, approve requests, see the
     // passcode. Only the owner (submittedByUser) deletes or manages co-hosts.
@@ -181,6 +183,7 @@ export async function submitEvent(draft, userId = null) {
         source_url: draft.igLink || null,
         photo_url: draft.photoUrl || null,
         flyer_url: draft.flyerUrl || null,
+        flyer_hash: draft.flyerHash || null,
         lng: draft.lng ?? -84.39,
         lat: draft.lat ?? 33.75,
         timezone: DEFAULT_TZ,
@@ -785,6 +788,11 @@ export async function updateEvent(eventId, fields) {
   if (fields.vibe !== undefined) payload.vibe = fields.vibe;
   if (fields.photoUrl !== undefined) payload.photo_url = fields.photoUrl;
   if (fields.flyerUrl !== undefined) payload.flyer_url = fields.flyerUrl;
+  if (fields.flyerHash !== undefined) payload.flyer_hash = fields.flyerHash;
+  if (typeof fields.lat === "number" && typeof fields.lng === "number") {
+    payload.lat = fields.lat;
+    payload.lng = fields.lng;
+  }
   if (fields.start !== undefined) {
     payload.start_at = fields.start ? parseLocal(fields.start, DEFAULT_TZ).toISOString() : null;
   }
@@ -1128,6 +1136,17 @@ export async function readFlyer(imageUrl, caption = "") {
   );
 }
 
+// Meets already carrying (nearly) the same flyer — a duplicate, or another
+// account's copy to check the date against.
+export async function findFlyerMatches(hash, excludeId = null) {
+  if (!supabase || !hash) return [];
+  const { data, error } = await supabase.rpc("find_flyer_matches", {
+    p_hash: hash,
+    p_exclude: excludeId,
+  });
+  return error || !Array.isArray(data) ? [] : data;
+}
+
 // ---------- comments ----------
 
 export async function loadComments(eventId) {
@@ -1347,11 +1366,15 @@ export function track(name, props = {}) {
 
 // ---------- reports ----------
 
-export async function submitReport(eventId, reason, note, userId) {
+export async function submitReport(eventId, reason, note, userId, suggested = "") {
   if (!supabase || !userId) throw new Error("Sign in to report a meet");
-  const { error } = await supabase
-    .from("reports")
-    .insert({ event_id: eventId, reporter_id: userId, reason, note: note?.trim() || null });
+  const { error } = await supabase.from("reports").insert({
+    event_id: eventId,
+    reporter_id: userId,
+    reason,
+    note: note?.trim() || null,
+    suggested: suggested?.trim() || null,
+  });
   if (error) {
     if (error.code === "23505") throw new Error("You already reported this meet — thanks.");
     throw new Error("Couldn't submit the report. Try again.");

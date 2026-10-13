@@ -16,6 +16,7 @@ export const FLYER_SCHEMA = {
     "is_meet",
     "title",
     "date",
+    "weekday",
     "start_time",
     "end_time",
     "venue",
@@ -33,6 +34,7 @@ export const FLYER_SCHEMA = {
     },
     title: nullableString("The event's name as the flyer gives it."),
     date: nullableString("YYYY-MM-DD of the (next) occurrence."),
+    weekday: nullableString("The day of the week exactly as the flyer or caption states it, e.g. 'Saturday'; null if not stated."),
     start_time: nullableString("24-hour HH:MM."),
     end_time: nullableString("24-hour HH:MM."),
     venue: nullableString("The place's name, e.g. 'Home Depot' or 'Gas South Arena'."),
@@ -105,6 +107,17 @@ const validTime = (value) =>
   typeof value === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value) ? value : null;
 
 // Whatever came back, the client gets the same shape with sane values.
+const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
+// "Sat", "SATURDAY", "Saturdays" → 6; anything else → null.
+function weekdayIndex(value) {
+  if (typeof value !== "string") return null;
+  const v = value.trim().toLowerCase();
+  if (v.length < 3) return null;
+  const i = WEEKDAYS.findIndex((d) => d.startsWith(v.slice(0, 3)));
+  return i === -1 ? null : i;
+}
+
 export function normalizeFlyer(raw, now = new Date()) {
   const r = raw && typeof raw === "object" ? raw : {};
   const list = (value, max, len) =>
@@ -112,10 +125,33 @@ export function normalizeFlyer(raw, now = new Date()) {
       .map((v) => clip(v, len))
       .filter(Boolean)
       .slice(0, max);
+  const date = validDate(r.date, now);
+  const check = list(r.check, 6, 200);
+
+  // The flyer's own weekday is a check on the date it gave (or we inferred).
+  const said = weekdayIndex(r.weekday);
+  let dateConflict = false;
+  if (date && said !== null) {
+    const actual = new Date(`${date}T12:00:00Z`).getUTCDay();
+    if (actual !== said) {
+      dateConflict = true;
+      const pretty = new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", {
+        timeZone: "UTC",
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+      });
+      check.unshift(
+        `The flyer says ${WEEKDAYS[said][0].toUpperCase() + WEEKDAYS[said].slice(1)}, but the date read is ${pretty} — check which is right.`
+      );
+    }
+  }
+
   return {
     isMeet: r.is_meet === true,
     title: clip(r.title, 80),
-    date: validDate(r.date, now),
+    date,
+    dateConflict,
     startTime: validTime(r.start_time),
     endTime: validTime(r.end_time),
     venue: clip(r.venue, 100),
@@ -124,6 +160,6 @@ export function normalizeFlyer(raw, now = new Date()) {
     description: clip(r.description, 600),
     vibe: VIBES.includes(r.vibe) ? r.vibe : null,
     hosts: list(r.hosts, 6, 40),
-    check: list(r.check, 6, 200),
+    check: check.slice(0, 6),
   };
 }

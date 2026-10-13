@@ -1,12 +1,24 @@
 import { useState } from "react";
 import { submitReport, track } from "../lib/store.js";
 
-const REASONS = ["Illegal activity", "Spam or scam", "Wrong info", "Other"];
+// The first three are discrepancies: three people reporting the same one puts
+// a warning on the meet until an admin deals with it (see events_public).
+const REASONS = [
+  { id: "Wrong date or time", ask: "What's the right date and time?" },
+  { id: "Wrong location", ask: "What's the right address?" },
+  { id: "Cancelled or postponed", ask: "Where did you hear? (optional)" },
+  { id: "Duplicate", ask: "Which listing is it a copy of? (optional)" },
+  { id: "Illegal or unsafe", ask: null },
+  { id: "Spam or scam", ask: null },
+  { id: "Other", ask: null },
+];
 
 export default function ReportMeet({ eventId, user, onNeedAccount }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [note, setNote] = useState("");
+  const [suggested, setSuggested] = useState("");
+  const chosen = REASONS.find((r) => r.id === reason);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
@@ -24,7 +36,7 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
     setBusy(true);
     setError("");
     try {
-      await submitReport(eventId, reason, note, user.id);
+      await submitReport(eventId, reason, note, user.id, chosen?.ask ? suggested : "");
       track("meet_reported", { eventId, reason });
       setDone(true);
     } catch (e) {
@@ -37,7 +49,8 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
   if (done) {
     return (
       <div style={{ marginTop: 20, fontSize: 12, color: "#666", fontFamily: "'Barlow', sans-serif" }}>
-        ✓ Reported — thanks for the heads up.
+        ✓ Sent to the TUNR team — thanks for the heads up. If others report the same thing, the
+        meet shows a warning straight away.
       </div>
     );
   }
@@ -47,17 +60,22 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
       <button
         onClick={start}
         style={{
-          marginTop: 20,
-          background: "none",
-          border: "none",
-          color: "#444",
-          fontSize: 11.5,
-          letterSpacing: 0.5,
+          display: "block",
+          width: "100%",
+          marginTop: 18,
+          padding: "11px 0",
+          background: "#121212",
+          border: "1px solid #262626",
+          borderRadius: 8,
+          color: "#999",
+          fontSize: 12,
+          fontWeight: 700,
+          letterSpacing: 0.6,
           cursor: "pointer",
-          fontFamily: "'Barlow', sans-serif",
+          fontFamily: "'Barlow Condensed', sans-serif",
         }}
       >
-        🚩 Report this meet
+        ⚠ SOMETHING WRONG WITH THIS MEET? TELL US
       </button>
     );
   }
@@ -72,9 +90,9 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
         padding: "14px 16px",
       }}
     >
-      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10 }}>Report this meet</div>
+      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10 }}>What's wrong?</div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-        {REASONS.map((r) => (
+        {REASONS.map(({ id: r }) => (
           <button
             key={r}
             onClick={() => setReason(r)}
@@ -94,6 +112,27 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
           </button>
         ))}
       </div>
+      {chosen?.ask && (
+        <input
+          value={suggested}
+          onChange={(e) => setSuggested(e.target.value)}
+          placeholder={chosen.ask}
+          maxLength={200}
+          style={{
+            width: "100%",
+            marginBottom: 8,
+            background: "#161616",
+            border: "1px solid #2A2A2A",
+            borderRadius: 8,
+            padding: "9px 11px",
+            color: "#F0F0F0",
+            fontSize: 12.5,
+            outline: "none",
+            fontFamily: "'Barlow', sans-serif",
+            boxSizing: "border-box",
+          }}
+        />
+      )}
       <textarea
         value={note}
         onChange={(e) => setNote(e.target.value)}
@@ -154,7 +193,7 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
             fontFamily: "'Barlow Condensed', sans-serif",
           }}
         >
-          {busy ? "SUBMITTING…" : "SUBMIT REPORT"}
+          {busy ? "SENDING…" : "SEND TO TUNR"}
         </button>
       </div>
     </div>
