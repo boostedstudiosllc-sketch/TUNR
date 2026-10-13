@@ -48,6 +48,9 @@ const SORTS = [
   { id: "nearest", label: "NEAREST" },
 ];
 
+// Going or maybe. "Not going" is an answer, not a saved meet.
+const isSaved = (status) => status === "going" || status === "interested";
+
 export default function App() {
   const [events, setEvents] = useState([]);
   const [rsvps, setRsvps] = useState({});
@@ -189,12 +192,12 @@ export default function App() {
   const todayMine = useMemo(
     () =>
       events
-        .filter((e) => rsvps[e.id] && !e.locked && !isPast(e, now) && isToday(e, now))
+        .filter((e) => isSaved(rsvps[e.id]) && !e.locked && !isPast(e, now) && isToday(e, now))
         .sort((a, b) => sortKey(a, now) - sortKey(b, now)),
     [events, rsvps, now]
   );
 
-  const saved = events.filter((e) => rsvps[e.id]);
+  const saved = events.filter((e) => isSaved(rsvps[e.id]));
 
   // Browsing is open to everyone: meets came from public listings, and a wall
   // in front of them costs reach without buying anything. The account is what
@@ -1004,6 +1007,7 @@ function GlobalStyles() {
       @keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
       @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(14px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
       @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+      @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
       .meet-card { transition: transform 0.18s ease, box-shadow 0.18s ease; cursor: pointer; }
       .meet-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(255,69,0,0.18); }
       .filter-pill { transition: all 0.2s ease; cursor: pointer; border: none; }

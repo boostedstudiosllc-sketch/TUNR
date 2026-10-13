@@ -1,5 +1,12 @@
-import { useEffect, useState } from "react";
-import { loadComments, addComment, deleteComment, blockUser, track } from "../lib/store.js";
+import { useEffect, useRef, useState } from "react";
+import {
+  loadComments,
+  addComment,
+  deleteComment,
+  blockUser,
+  subscribeToComments,
+  track,
+} from "../lib/store.js";
 import { Badges } from "./Badge.jsx";
 
 const commentActionStyle = {
@@ -30,17 +37,28 @@ export default function Comments({ eventId, user, onNeedAccount, onToast }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const listRef = useRef(null);
 
+  // The meet's chat: loaded once, then kept live while the meet is open.
   useEffect(() => {
     let alive = true;
+    const refresh = () => loadComments(eventId).then((c) => alive && setComments(c));
     setLoading(true);
-    loadComments(eventId)
-      .then((c) => alive && setComments(c))
-      .finally(() => alive && setLoading(false));
+    refresh().finally(() => alive && setLoading(false));
+    const unsubscribe = subscribeToComments(eventId, refresh);
     return () => {
       alive = false;
+      unsubscribe();
     };
   }, [eventId]);
+
+  // Oldest at the top, newest at the bottom, like any chat.
+  const messages = [...comments].reverse();
+  const newestId = messages.length ? messages[messages.length - 1].id : null;
+  useEffect(() => {
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [newestId]);
 
   async function post() {
     if (!user) {
@@ -81,131 +99,161 @@ export default function Comments({ eventId, user, onNeedAccount, onToast }) {
     }
   }
 
+  const composer = (
+    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+      <input
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") post();
+        }}
+        onFocus={() => !user && onNeedAccount()}
+        placeholder={user ? "Message the meet…" : "Sign in to join the chat"}
+        maxLength={1000}
+        style={{
+          flex: 1,
+          minWidth: 0,
+          background: "#161616",
+          border: "1px solid #2A2A2A",
+          borderRadius: 20,
+          padding: "11px 16px",
+          color: "#F0F0F0",
+          fontSize: 13.5,
+          outline: "none",
+          fontFamily: "'Barlow', sans-serif",
+        }}
+      />
+      <button
+        className="action-btn"
+        onClick={post}
+        disabled={busy}
+        style={{
+          padding: "0 16px",
+          background: body.trim() && !busy ? "#FF4500" : "#1E1E1E",
+          color: body.trim() && !busy ? "#fff" : "#555",
+          border: "none",
+          borderRadius: 20,
+          fontSize: 12,
+          fontWeight: 800,
+          letterSpacing: 1,
+          fontFamily: "'Barlow Condensed', sans-serif",
+          flexShrink: 0,
+        }}
+      >
+        SEND
+      </button>
+    </div>
+  );
+
   return (
     <div style={{ marginTop: 22 }}>
-      <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, marginBottom: 10 }}>
-        COMMENTS {comments.length > 0 && `· ${comments.length}`}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <span style={{ fontSize: 11, color: "#555", letterSpacing: 2 }}>
+          MEET CHAT {comments.length > 0 && `· ${comments.length}`}
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, color: "#10B981", letterSpacing: 1, fontWeight: 700 }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10B981", animation: "pulse 2s infinite" }} />
+          LIVE
+        </span>
       </div>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-        <input
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") post();
-          }}
-          placeholder={user ? "Add a comment…" : "Sign in to comment"}
-          maxLength={1000}
-          style={{
-            flex: 1,
-            minWidth: 0,
-            background: "#161616",
-            border: "1px solid #2A2A2A",
-            borderRadius: 20,
-            padding: "11px 16px",
-            color: "#F0F0F0",
-            fontSize: 13.5,
-            outline: "none",
-            fontFamily: "'Barlow', sans-serif",
-          }}
-        />
-        <button
-          className="action-btn"
-          onClick={post}
-          disabled={busy}
-          style={{
-            padding: "0 16px",
-            background: body.trim() && !busy ? "#FF4500" : "#1E1E1E",
-            color: body.trim() && !busy ? "#fff" : "#555",
-            border: "none",
-            borderRadius: 20,
-            fontSize: 12,
-            fontWeight: 800,
-            letterSpacing: 1,
-            fontFamily: "'Barlow Condensed', sans-serif",
-            flexShrink: 0,
-          }}
-        >
-          POST
-        </button>
-      </div>
-
-      {error && (
-        <div style={{ fontSize: 12, color: "#EF4444", marginBottom: 10, fontFamily: "'Barlow', sans-serif" }}>
-          {error}
-        </div>
-      )}
-
-      {loading ? (
-        <div style={{ fontSize: 12.5, color: "#555", fontFamily: "'Barlow', sans-serif" }}>
-          Loading comments…
-        </div>
-      ) : comments.length === 0 ? (
-        <div style={{ fontSize: 12.5, color: "#555", fontFamily: "'Barlow', sans-serif" }}>
-          No comments yet — be the first.
-        </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {comments.map((c) => (
-            <div key={c.id} style={{ display: "flex", gap: 10 }}>
-              <div
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: "50%",
-                  background: "linear-gradient(135deg,#FF4500,#FF7A00)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 13,
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                }}
-              >
-                {(c.username || "?")[0].toUpperCase()}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 800, color: "#FF7A00" }}>
-                    @{c.username}
-                  </span>
-                  <Badges
-                    dayOne={c.day_one}
-                    dayOneNumber={c.day_one_number}
-                    foundingHost={c.founding_host}
-                    size={14}
-                  />
-                  <span style={{ fontSize: 10.5, color: "#555" }}>{timeAgo(c.created_at)}</span>
-                  {user && c.user_id === user.id ? (
-                    <button onClick={() => remove(c.id)} style={commentActionStyle}>
-                      delete
-                    </button>
-                  ) : (
-                    user && (
-                      <button onClick={() => block(c)} style={commentActionStyle}>
-                        block
-                      </button>
-                    )
-                  )}
-                </div>
+      <div
+        ref={listRef}
+        style={{
+          background: "#0B0B0B",
+          border: "1px solid #1E1E1E",
+          borderRadius: 10,
+          padding: "12px 12px",
+          maxHeight: 340,
+          overflowY: "auto",
+        }}
+      >
+        {loading ? (
+          <div style={emptyStyle}>Loading the chat…</div>
+        ) : messages.length === 0 ? (
+          <div style={emptyStyle}>
+            No messages yet. Ask who's pulling up, where to park, or if it's still on.
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {messages.map((c) => (
+              <div key={c.id} style={{ display: "flex", gap: 10 }}>
                 <div
                   style={{
-                    fontSize: 13.5,
-                    color: "#CCC",
-                    marginTop: 3,
-                    lineHeight: 1.5,
-                    fontFamily: "'Barlow', sans-serif",
-                    overflowWrap: "anywhere",
+                    width: 30,
+                    height: 30,
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg,#FF4500,#FF7A00)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 13,
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    fontFamily: "'Barlow Condensed', sans-serif",
                   }}
                 >
-                  {c.body}
+                  {(c.username || "?")[0].toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 800, color: "#FF7A00" }}>
+                      @{c.username}
+                    </span>
+                    <Badges
+                      dayOne={c.day_one}
+                      dayOneNumber={c.day_one_number}
+                      foundingHost={c.founding_host}
+                      size={14}
+                    />
+                    <span style={{ fontSize: 10.5, color: "#555" }}>{timeAgo(c.created_at)}</span>
+                    {user && c.user_id === user.id ? (
+                      <button onClick={() => remove(c.id)} style={commentActionStyle}>
+                        delete
+                      </button>
+                    ) : (
+                      user && (
+                        <button onClick={() => block(c)} style={commentActionStyle}>
+                          block
+                        </button>
+                      )
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13.5,
+                      color: "#CCC",
+                      marginTop: 3,
+                      lineHeight: 1.5,
+                      fontFamily: "'Barlow', sans-serif",
+                      overflowWrap: "anywhere",
+                    }}
+                  >
+                    {c.body}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        )}
+      </div>
+
+      {composer}
+
+      {error && (
+        <div style={{ fontSize: 12, color: "#EF4444", marginTop: 8, fontFamily: "'Barlow', sans-serif" }}>
+          {error}
         </div>
       )}
     </div>
   );
 }
+
+const emptyStyle = {
+  fontSize: 12.5,
+  color: "#555",
+  lineHeight: 1.6,
+  textAlign: "center",
+  padding: "14px 6px",
+  fontFamily: "'Barlow', sans-serif",
+};

@@ -265,6 +265,10 @@ export async function saveRsvp(rsvps, eventId, status, userId = null) {
   if (supabase && userId) {
     if (turningOff) {
       await supabase.from("rsvps").delete().eq("user_id", userId).eq("event_id", eventId);
+    } else if (status === "not_going") {
+      await supabase
+        .from("rsvps")
+        .upsert({ user_id: userId, event_id: eventId, status, vehicle_id: null }, { onConflict: "user_id,event_id" });
     } else {
       // Bring your main car by default. A car isn't required to RSVP, so this
       // stays null for anyone who hasn't added one — they just don't appear in
@@ -1159,6 +1163,28 @@ export async function loadComments(eventId) {
     .limit(100);
   if (error || !Array.isArray(data)) return [];
   return data;
+}
+
+// Calls onChange whenever a message is added to or removed from this meet's
+// chat, so an open meet page stays live. Returns the unsubscribe function.
+// Polls as well, in case Realtime is off for the project or the socket drops.
+export function subscribeToComments(eventId, onChange, { pollMs = 20000 } = {}) {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel(`comments:${eventId}`)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "comments", filter: `event_id=eq.${eventId}` },
+      () => onChange()
+    )
+    .subscribe();
+  const timer = setInterval(() => {
+    if (typeof document === "undefined" || document.visibilityState === "visible") onChange();
+  }, pollMs);
+  return () => {
+    clearInterval(timer);
+    supabase.removeChannel(channel);
+  };
 }
 
 export async function addComment(eventId, body, userId) {

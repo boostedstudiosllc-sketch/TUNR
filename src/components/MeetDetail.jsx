@@ -51,8 +51,6 @@ export default function MeetDetail({
 
 
   const color = VIBES[event.vibe] || "#FF4500";
-  const going = rsvp === "going";
-  const interested = rsvp === "interested";
   const hasCoords = event.lat != null && event.lng != null;
   const directions = directionsUrl(event);
 
@@ -153,7 +151,7 @@ export default function MeetDetail({
           </div>
         </div>
 
-        <div style={{ padding: "16px 20px 40px" }}>
+        <div style={{ padding: "16px 20px 0" }}>
           <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.1 }}>{event.title}</div>
           <div
             style={{
@@ -215,7 +213,7 @@ export default function MeetDetail({
             <StatBox label="📅 DATE" value={displayDate(event)} />
             <StatBox label="🕐 TIME" value={displayTime(event)} />
             <StatBox label="👥 GOING" value={`${event.going} confirmed`} />
-            <StatBox label="★ INTERESTED" value={String(event.interested)} />
+            <StatBox label="★ MAYBE" value={String(event.interested)} />
           </div>
 
           {!locked && (
@@ -482,45 +480,11 @@ export default function MeetDetail({
           <ReportMeet eventId={event.id} user={user} onNeedAccount={onNeedAccount} />
 
           {!locked && (
-            <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
-              <button
-                className="action-btn"
-                onClick={() => onRsvp(event.id, "going")}
-                style={{
-                  flex: 1,
-                  padding: "14px 0",
-                  background: going ? "#FF4500" : "#1A1A1A",
-                  color: going ? "#fff" : "#888",
-                  border: going ? "none" : "1px solid #2A2A2A",
-                  borderRadius: 8,
-                  fontSize: 14,
-                  fontWeight: 800,
-                  letterSpacing: 2,
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  boxShadow: going ? "0 4px 20px rgba(255,69,0,0.4)" : "none",
-                }}
-              >
-                {going ? "✓ YOU'RE GOING" : "I'M GOING"}
-              </button>
-              <button
-                className="action-btn"
-                onClick={() => onRsvp(event.id, "interested")}
-                style={{
-                  flex: 1,
-                  padding: "14px 0",
-                  background: interested ? "#1A0800" : "#1A1A1A",
-                  color: interested ? "#FF7A00" : "#666",
-                  border: interested ? "1px solid #FF7A00" : "1px solid #2A2A2A",
-                  borderRadius: 8,
-                  fontSize: 14,
-                  fontWeight: 800,
-                  letterSpacing: 2,
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                }}
-              >
-                {interested ? "★ INTERESTED" : "INTERESTED"}
-              </button>
-            </div>
+            <ActionBar
+              rsvp={rsvp}
+              onRsvp={(status) => onRsvp(event.id, status)}
+              directions={directions}
+            />
           )}
         </div>
       </div>
@@ -638,6 +602,83 @@ function IssueBanner({ issue }) {
     >
       ⚠ <strong>{ISSUE_TEXT[issue] || "People have reported a problem with this meet."}</strong> We're
       checking — confirm with the host before you head out.
+    </div>
+  );
+}
+
+// Stays at the bottom of the meet while you scroll: your answer, and the way there.
+function ActionBar({ rsvp, onRsvp, directions }) {
+  const options = [
+    { id: "going", label: "GOING", on: "✓ GOING", color: "#FF4500", fill: true },
+    { id: "interested", label: "MAYBE", on: "★ MAYBE", color: "#FF7A00" },
+    { id: "not_going", label: "NOT GOING", on: "✕ NOT GOING", color: "#888" },
+  ];
+  return (
+    <div
+      style={{
+        position: "sticky",
+        bottom: 0,
+        margin: "22px -20px 0",
+        padding: "12px 20px 18px",
+        background: "linear-gradient(0deg, #0F0F0F 82%, rgba(15,15,15,0))",
+        display: "flex",
+        gap: 8,
+        zIndex: 2,
+      }}
+    >
+      {options.map((o) => {
+        const active = rsvp === o.id;
+        return (
+          <button
+            key={o.id}
+            className="action-btn"
+            aria-pressed={active}
+            onClick={() => onRsvp(o.id)}
+            style={{
+              flex: o.id === "going" ? 1.25 : 1,
+              padding: "13px 0",
+              background: active ? (o.fill ? o.color : "#1A1A1A") : "#161616",
+              color: active ? (o.fill ? "#fff" : o.color) : "#777",
+              border: active && !o.fill ? `1px solid ${o.color}` : active ? "none" : "1px solid #2A2A2A",
+              borderRadius: 8,
+              fontSize: 12.5,
+              fontWeight: 800,
+              letterSpacing: 1.2,
+              fontFamily: "'Barlow Condensed', sans-serif",
+              boxShadow: active && o.fill ? "0 4px 20px rgba(255,69,0,0.4)" : "none",
+            }}
+          >
+            {active ? o.on : o.label}
+          </button>
+        );
+      })}
+      {directions && (
+        <a
+          href={directions}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Directions"
+          style={{
+            flex: "0 0 48px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: 8,
+            background: "#0F1F0F",
+            border: "1px solid #10B981",
+            color: "#10B981",
+            fontSize: 16,
+            textDecoration: "none",
+            lineHeight: 1,
+          }}
+        >
+          🧭
+          <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: 0.8, marginTop: 3, fontFamily: "'Barlow Condensed', sans-serif" }}>
+            GO
+          </span>
+        </a>
+      )}
     </div>
   );
 }

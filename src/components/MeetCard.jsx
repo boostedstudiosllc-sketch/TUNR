@@ -251,7 +251,7 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
                 fontFamily: "'Barlow Condensed', sans-serif",
               }}
             >
-              {interested ? "★ SAVED" : `INTERESTED · ${event.interested}`}
+              {interested ? "★ MAYBE" : `MAYBE · ${event.interested}`}
             </button>
             </>
           )}
