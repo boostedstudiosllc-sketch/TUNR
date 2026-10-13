@@ -227,3 +227,37 @@ test("occurrencesInMonth lays a meet out across a calendar month", async () => {
   assert.deepEqual(occurrencesInMonth(once, 2026, 11), []);
   assert.deepEqual(occurrencesInMonth({ start: null }, 2026, 10), []);
 });
+
+test("occursBetween matches a meet that overlaps the window", async () => {
+  const { occursBetween, timeWindow } = await import("../src/lib/dates.js");
+  const at = (iso) => new Date(iso);
+  const tz = "America/New_York";
+  // Friday Oct 16 2026, 7 PM–10 PM Eastern (EDT, UTC-4).
+  const fri = { start: "2026-10-16T19:00", end: "2026-10-16T22:00", timezone: tz };
+  assert.equal(occursBetween(fri, at("2026-10-16T21:00:00Z"), at("2026-10-16T23:00:00Z")), true); // 5–7 PM touches 7
+  assert.equal(occursBetween(fri, at("2026-10-16T21:00:00Z"), at("2026-10-16T22:59:00Z")), false); // 5–6:59 PM
+  assert.equal(occursBetween(fri, at("2026-10-17T01:00:00Z"), at("2026-10-17T01:00:00Z")), true); // on at 9 PM
+  assert.equal(occursBetween(fri, at("2026-10-17T02:30:00Z"), at("2026-10-17T02:30:00Z")), false); // over by 10:30
+  // No end time: assume three hours.
+  const noEnd = { start: "2026-10-16T19:00", timezone: tz };
+  assert.equal(occursBetween(noEnd, at("2026-10-17T01:30:00Z"), at("2026-10-17T01:30:00Z")), true); // 9:30 PM
+  assert.equal(occursBetween(noEnd, at("2026-10-17T02:30:00Z"), at("2026-10-17T02:30:00Z")), false); // 10:30 PM
+  // Weekly: every Saturday at 8 AM, from Sep 5.
+  const sat = { start: "2026-09-05T08:00", end: "2026-09-05T11:00", recurrence: "weekly:SAT", timezone: tz };
+  assert.equal(occursBetween(sat, at("2026-10-17T13:00:00Z"), at("2026-10-17T14:00:00Z")), true);
+  assert.equal(occursBetween(sat, at("2026-10-18T13:00:00Z"), at("2026-10-18T14:00:00Z")), false); // Sunday
+  // Custom window: Friday 5–7 PM, and one running past midnight.
+  const w = timeWindow("custom", at("2026-10-13T12:00:00Z"), { date: "2026-10-16", from: "17:00", to: "19:00" });
+  assert.equal(w.from.toISOString(), "2026-10-16T21:00:00.000Z");
+  assert.equal(w.to.toISOString(), "2026-10-16T23:00:00.000Z");
+  const late = timeWindow("custom", at("2026-10-13T12:00:00Z"), { date: "2026-10-16", from: "22:00", to: "02:00" });
+  assert.equal(late.to.toISOString(), "2026-10-17T06:00:00.000Z");
+  // Presets.
+  const now = at("2026-10-13T16:00:00Z"); // Tue noon Eastern
+  assert.equal(timeWindow("any", now), null);
+  assert.equal(timeWindow("2h", now).to.toISOString(), "2026-10-13T18:00:00.000Z");
+  assert.equal(timeWindow("tonight", now).from.toISOString(), "2026-10-13T21:00:00.000Z");
+  assert.equal(timeWindow("weekend", now).from.toISOString(), "2026-10-16T21:00:00.000Z"); // Fri 5 PM
+  assert.equal(timeWindow("weekend", now).to.toISOString(), "2026-10-19T03:59:00.000Z"); // Sun 11:59 PM
+  assert.equal(timeWindow("tomorrow", now).to.toISOString(), "2026-10-15T03:59:00.000Z"); // Wed 11:59 PM
+});

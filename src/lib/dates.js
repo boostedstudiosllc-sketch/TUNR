@@ -216,6 +216,104 @@ export function occurrencesInMonth(event, year, month) {
   return startKey.startsWith(prefix) ? [startKey] : [];
 }
 
+// A meet with no end time is assumed to run this long.
+const DEFAULT_DURATION_MS = 3 * 60 * 60 * 1000;
+
+function occursOnKey(event, key, startKey) {
+  if (!event.recurrence) return key === startKey;
+  if (key < startKey || !inSeason(event, key)) return false;
+  const [kind, a, b] = event.recurrence.split(":");
+  if (kind === "weekly") return dowOfKey(key) === DAY_INDEX[a];
+  if (kind === "monthly" && NTH_INDEX[a] !== undefined) {
+    const { y, m } = keyToParts(key);
+    return nthWeekdayOfMonth(y, m, DAY_INDEX[b], a) === key;
+  }
+  return key === startKey;
+}
+
+// The meet's start and end instants for each time it overlaps [from, to].
+// A zero-length window (from === to) means "on at that moment".
+export function occurrencesBetween(event, from, to) {
+  const parts = wallParts(event);
+  if (!parts || !(from instanceof Date) || !(to instanceof Date) || to < from) return [];
+  const tz = tzOf(event);
+  const startKey = `${parts.y}-${String(parts.m).padStart(2, "0")}-${String(parts.d).padStart(2, "0")}`;
+  const end = event.end ? /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/.exec(event.end) : null;
+
+  const found = [];
+  // Start the day before, for a meet that runs past midnight into the window.
+  let key = addDaysToKey(dayKeyInTz(from, tz), -1);
+  const lastKey = dayKeyInTz(to, tz);
+  for (let i = 0; i < 31 && key <= lastKey; i++, key = addDaysToKey(key, 1)) {
+    if (!occursOnKey(event, key, startKey)) continue;
+    const { y, m, d } = keyToParts(key);
+    const start = instantFrom(y, m, d, parts.h, parts.min, tz);
+    let finish;
+    if (end && !event.recurrence) {
+      finish = instantFrom(
+        Number(end[1]), Number(end[2]), Number(end[3]),
+        end[4] === undefined ? 23 : Number(end[4]),
+        end[5] === undefined ? 59 : Number(end[5]),
+        tz
+      );
+    } else if (end && end[4] !== undefined) {
+      finish = instantFrom(y, m, d, Number(end[4]), Number(end[5]), tz);
+      if (finish <= start) finish = new Date(finish.getTime() + 24 * 60 * 60 * 1000);
+    } else {
+      finish = new Date(start.getTime() + DEFAULT_DURATION_MS);
+    }
+    if (start <= to && finish > from) found.push({ start, end: finish });
+  }
+  return found;
+}
+
+export function occursBetween(event, from, to) {
+  return occurrencesBetween(event, from, to).length > 0;
+}
+
+// Preset windows for "when", in Atlanta time. Returns { from, to } or null
+// for "any time". custom: { date: "YYYY-MM-DD", from: "HH:MM", to: "HH:MM" };
+// a "to" at or before "from" runs past midnight.
+export function timeWindow(preset, now = new Date(), custom = null, tz = DEFAULT_TZ) {
+  const today = dayKeyInTz(now, tz);
+  const at = (key, h, min = 0) => {
+    const { y, m, d } = keyToParts(key);
+    return instantFrom(y, m, d, h, min, tz);
+  };
+  switch (preset) {
+    case "now":
+      return { from: now, to: now };
+    case "2h":
+      return { from: now, to: new Date(now.getTime() + 2 * 60 * 60 * 1000) };
+    case "tonight": {
+      const evening = at(today, 17);
+      return { from: now > evening ? now : evening, to: at(addDaysToKey(today, 1), 3) };
+    }
+    case "tomorrow": {
+      const t = addDaysToKey(today, 1);
+      return { from: at(t, 0), to: at(t, 23, 59) };
+    }
+    case "weekend": {
+      const dow = dowInTz(now, tz);
+      // Friday 5 PM to Sunday 11:59 PM of this week (or the current one).
+      const friKey = dow === 6 ? addDaysToKey(today, -1) : dow === 0 ? addDaysToKey(today, -2) : addDaysToKey(today, 5 - dow);
+      const fri = at(friKey, 17);
+      return { from: now > fri ? now : fri, to: at(addDaysToKey(friKey, 2), 23, 59) };
+    }
+    case "custom": {
+      if (!custom || !/^\d{4}-\d{2}-\d{2}$/.test(custom.date || "")) return null;
+      const [fh, fm] = (custom.from || "00:00").split(":").map(Number);
+      const [th, tm] = (custom.to || "23:59").split(":").map(Number);
+      const from = at(custom.date, fh, fm);
+      let to = at(custom.date, th, tm);
+      if (to <= from) to = at(addDaysToKey(custom.date, 1), th, tm);
+      return { from, to };
+    }
+    default:
+      return null;
+  }
+}
+
 // "YYYY-MM-DD" for today in Atlanta, for calendar highlighting.
 export function todayKey(now = new Date(), tz = DEFAULT_TZ) {
   return dayKeyInTz(now, tz);

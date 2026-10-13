@@ -5,6 +5,9 @@ import {
   isToday,
   isThisWeekend,
   sortKey,
+  occurrencesBetween,
+  timeWindow,
+  todayKey,
   displayDate,
   displayTime,
 } from "./lib/dates.js";
@@ -37,6 +40,7 @@ import AuthForm from "./components/AuthForm.jsx";
 import EditMeet from "./components/EditMeet.jsx";
 import HostProfile from "./components/HostProfile.jsx";
 import CalendarView from "./components/CalendarView.jsx";
+import TimeFilter from "./components/TimeFilter.jsx";
 import PersonProfile from "./components/PersonProfile.jsx";
 import TodayStrip from "./components/TodayStrip.jsx";
 import HostPitch from "./components/HostPitch.jsx";
@@ -86,6 +90,11 @@ export default function App() {
   const [sort, setSort] = useState("soonest");
   // Discover as a list or as a month calendar.
   const [view, setView] = useState("list");
+  // The map's "when": a preset, or a custom date and time range.
+  const [mapWhen, setMapWhen] = useState(() => ({
+    preset: "any",
+    custom: { date: todayKey(), from: "17:00", to: "19:00" },
+  }));
   const [position, setPosition] = useState(null);
   const [locating, setLocating] = useState(false);
 
@@ -200,6 +209,24 @@ export default function App() {
         return sortKey(a, now) - sortKey(b, now);
       });
   }, [matching, sort]);
+
+  // Meets on the map: the Discover filters, narrowed to the chosen time.
+  // Each keeps the start of its occurrence in that window, for the list.
+  const mapWindow = useMemo(
+    () => timeWindow(mapWhen.preset, now, mapWhen.custom),
+    [mapWhen, now]
+  );
+  const mapEvents = useMemo(() => {
+    const shown = visible;
+    if (!mapWindow) return shown;
+    return shown
+      .map((e) => {
+        const hit = occurrencesBetween(e, mapWindow.from, mapWindow.to)[0];
+        return hit ? { ...e, windowStart: hit.start } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.windowStart - b.windowStart);
+  }, [visible, mapWindow]);
 
   const todayCount = useMemo(
     () => events.filter((e) => !isPast(e, now) && isToday(e, now)).length,
@@ -711,12 +738,28 @@ export default function App() {
       {/* Map */}
       {tab === "map" && (
         <div style={{ animation: "fadeIn 0.3s ease", padding: "0 20px" }}>
-          <MapView events={unlocked} onSelect={setSelected} />
+          <div style={{ marginBottom: 10 }}>
+            <TimeFilter
+              value={mapWhen}
+              onChange={(v) => {
+                setMapWhen(v);
+                if (v.preset !== mapWhen.preset) track("map_time_filter", { preset: v.preset });
+              }}
+            />
+          </div>
+          <MapView events={mapEvents} onSelect={setSelected} />
           <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, fontWeight: 700 }}>
-              TAP A PIN OR BROWSE
+              {mapWindow
+                ? `${mapEvents.length} ${mapEvents.length === 1 ? "MEET" : "MEETS"} · ${windowLabel(mapWindow).toUpperCase()}`
+                : "TAP A PIN OR BROWSE"}
             </div>
-            {unlocked.map((event) => (
+            {mapWindow && mapEvents.length === 0 && (
+              <div style={{ fontSize: 13, color: "#666", fontFamily: "'Barlow', sans-serif" }}>
+                Nothing on then. Try a wider time, or clear the vibe filter on Discover.
+              </div>
+            )}
+            {mapEvents.map((event) => (
               <div
                 key={event.id}
                 className="meet-card"
@@ -750,7 +793,8 @@ export default function App() {
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 800, marginTop: 2 }}>{event.title}</div>
                 <div style={{ fontSize: 11, color: "#777", marginTop: 3 }}>
-                  {displayDate(event)} · {displayTime(event)} · {event.city}
+                  {event.windowStart ? whenLabel(event.windowStart) : `${displayDate(event)} · ${displayTime(event)}`} ·{" "}
+                  {event.city}
                 </div>
               </div>
             ))}
@@ -1104,4 +1148,20 @@ function GlobalStyles() {
       }
     `}</style>
   );
+}
+
+// "Fri, Oct 16 · 7:00 PM" for an occurrence on the map list.
+function whenLabel(date) {
+  const day = date.toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric" });
+  const time = date.toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });
+  return `${day} · ${time}`;
+}
+
+// The window the map is showing, e.g. "Fri, Oct 16, 5:00 PM – 7:00 PM".
+function windowLabel({ from, to }) {
+  const opts = { timeZone: "America/New_York" };
+  const day = (d) => d.toLocaleDateString("en-US", { ...opts, weekday: "short", month: "short", day: "numeric" });
+  const time = (d) => d.toLocaleTimeString("en-US", { ...opts, hour: "numeric", minute: "2-digit" });
+  if (from.getTime() === to.getTime()) return `on now · ${time(from)}`;
+  return day(from) === day(to) ? `${day(from)}, ${time(from)} – ${time(to)}` : `${day(from)} ${time(from)} – ${day(to)} ${time(to)}`;
 }
