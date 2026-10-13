@@ -1157,7 +1157,9 @@ export async function readFlyer(imageUrl, caption = "") {
       busy: "The flyer reader is busy. Try again in a minute.",
       not_configured: "Flyer reading isn't switched on yet. Fill the details in by hand.",
       not_signed_in: "Sign in first.",
-    }[body.error] || "Couldn't read the flyer. Fill the details in by hand."
+      bad_key: "Flyer reading isn't set up right (the AI key was refused). Fill the details in by hand.",
+      no_model: "Flyer reading isn't set up right (AI model not found). Fill the details in by hand.",
+    }[body.error] || `Couldn't read the flyer (${body.error || res.status}). Fill the details in by hand.`
   );
 }
 

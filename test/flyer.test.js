@@ -148,7 +148,7 @@ test("reads the caller's own flyer with Gemini and returns the cleaned fields", 
   assert.ok(calls.fetch.indexOf(log) < calls.fetch.findIndex((c) => c.url.includes("generativelanguage")));
 
   const { url, init, body } = calls.gemini[0];
-  assert.match(url, /models\/gemini-2\.5-flash:generateContent$/);
+  assert.match(url, /models\/gemini-flash-latest:generateContent$/);
   assert.equal(init.headers["x-goog-api-key"], "g-test");
   assert.equal(body.contents[0].parts[0].inlineData.mimeType, "image/jpeg");
   assert.equal(body.contents[0].parts[0].inlineData.data, Buffer.from([1, 2, 3]).toString("base64"));
