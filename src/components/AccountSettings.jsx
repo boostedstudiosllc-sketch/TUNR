@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { loadBlockedAccounts, unblockUser, deleteMyAccount, track } from "../lib/store.js";
+import {
+  loadBlockedAccounts,
+  unblockUser,
+  loadRestrictedAccounts,
+  restrictUser,
+  deleteMyAccount,
+  track,
+} from "../lib/store.js";
 
 const bodyStyle = {
   fontSize: 12.5,
@@ -14,6 +21,7 @@ const bodyStyle = {
 // behaviour towards the person using it.
 export default function AccountSettings({ user, onToast }) {
   const [blocked, setBlocked] = useState([]);
+  const [restricted, setRestricted] = useState([]);
   const [confirming, setConfirming] = useState(false);
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
@@ -21,6 +29,7 @@ export default function AccountSettings({ user, onToast }) {
   useEffect(() => {
     let cancelled = false;
     loadBlockedAccounts().then((rows) => !cancelled && setBlocked(rows));
+    loadRestrictedAccounts().then((rows) => !cancelled && setRestricted(rows));
     return () => {
       cancelled = true;
     };
@@ -30,6 +39,12 @@ export default function AccountSettings({ user, onToast }) {
     await unblockUser(user.id, row.blocked_id);
     setBlocked((b) => b.filter((x) => x.blocked_id !== row.blocked_id));
     onToast(`Unblocked @${row.username}`);
+  }
+
+  async function unrestrict(row) {
+    await restrictUser(user.id, row.restricted_id, false);
+    setRestricted((r) => r.filter((x) => x.restricted_id !== row.restricted_id));
+    onToast(`Unrestricted @${row.username}`);
   }
 
   async function destroy() {
@@ -49,10 +64,45 @@ export default function AccountSettings({ user, onToast }) {
 
   return (
     <>
+      {restricted.length > 0 && (
+        <Card>
+          <div style={{ fontSize: 15, fontWeight: 800 }}>Restricted accounts · {restricted.length}</div>
+          <div style={bodyStyle}>
+            On meets you host, their messages are seen only by them, you and your co-hosts.
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+            {restricted.map((row) => (
+              <div key={row.restricted_id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ flex: 1, fontSize: 13.5, fontWeight: 700 }}>@{row.username}</div>
+                <button
+                  className="action-btn"
+                  onClick={() => unrestrict(row)}
+                  style={{
+                    padding: "6px 12px",
+                    background: "transparent",
+                    border: "1px solid #333",
+                    borderRadius: 6,
+                    color: "#888",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: 1,
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                  }}
+                >
+                  UNRESTRICT
+                </button>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {blocked.length > 0 && (
         <Card>
           <div style={{ fontSize: 15, fontWeight: 800 }}>Blocked accounts · {blocked.length}</div>
-          <div style={bodyStyle}>You won't see comments from these accounts.</div>
+          <div style={bodyStyle}>
+            You won't see their messages, they can't message on your meets, and they can't follow you.
+          </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
             {blocked.map((row) => (
               <div

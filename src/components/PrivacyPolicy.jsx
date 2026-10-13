@@ -78,7 +78,7 @@ export default function PrivacyPolicy({ onClose }) {
           <br />
           <br />
           <strong>What you do in the app:</strong> the meets you RSVP to, meets you post, comments
-          you write, hosts you follow, accounts you block, photos you upload, perks you redeem, and
+          you write, hosts and people you follow, who follows you, accounts you block or restrict, your 👍/👎 on messages, photos you upload, perks you redeem, and
           any request to join a private meet or to be verified as a host — including the Instagram
           account you tell us runs your meets.
           <br />

@@ -5,6 +5,7 @@ import {
   deleteComment,
   blockUser,
   subscribeToComments,
+  reactToComment,
   track,
 } from "../lib/store.js";
 import { Badges } from "./Badge.jsx";
@@ -31,7 +32,7 @@ function timeAgo(iso) {
   return new Date(iso).toLocaleDateString();
 }
 
-export default function Comments({ eventId, user, onNeedAccount, onToast }) {
+export default function Comments({ eventId, user, onNeedAccount, onToast, onOpenPerson }) {
   const [comments, setComments] = useState([]);
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
@@ -77,6 +78,31 @@ export default function Comments({ eventId, user, onNeedAccount, onToast }) {
       setError(e.message);
     } finally {
       setBusy(false);
+    }
+  }
+
+  // Optimistic: counts move straight away, then the next refresh confirms.
+  async function react(c, value) {
+    if (!user) return onNeedAccount();
+    const current = c.my_reaction ?? null;
+    const next = current === value ? null : value;
+    setComments((list) =>
+      list.map((x) => {
+        if (x.id !== c.id) return x;
+        let ups = Number(x.ups) || 0;
+        let downs = Number(x.downs) || 0;
+        if (current === 1) ups -= 1;
+        if (current === -1) downs -= 1;
+        if (next === 1) ups += 1;
+        if (next === -1) downs += 1;
+        return { ...x, ups, downs, my_reaction: next };
+      })
+    );
+    try {
+      await reactToComment(c.id, user.id, value, current);
+    } catch (e) {
+      setError(e.message);
+      setComments(await loadComments(eventId));
     }
   }
 
@@ -197,9 +223,21 @@ export default function Comments({ eventId, user, onNeedAccount, onToast }) {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                    <span style={{ fontSize: 12.5, fontWeight: 800, color: "#FF7A00" }}>
+                    <button
+                      onClick={() => onOpenPerson && onOpenPerson(c.user_id)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        padding: 0,
+                        fontSize: 12.5,
+                        fontWeight: 800,
+                        color: "#FF7A00",
+                        cursor: onOpenPerson ? "pointer" : "default",
+                        fontFamily: "inherit",
+                      }}
+                    >
                       @{c.username}
-                    </span>
+                    </button>
                     <Badges
                       dayOne={c.day_one}
                       dayOneNumber={c.day_one_number}
@@ -231,6 +269,27 @@ export default function Comments({ eventId, user, onNeedAccount, onToast }) {
                   >
                     {c.body}
                   </div>
+                  {c.author_restricted && (
+                    <div style={{ fontSize: 10.5, color: "#777", marginTop: 3, fontFamily: "'Barlow', sans-serif" }}>
+                      Restricted — only you, your co-hosts and them can see this.
+                    </div>
+                  )}
+                  <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                    <Thumb
+                      icon="👍"
+                      count={c.ups}
+                      active={c.my_reaction === 1}
+                      onClick={() => react(c, 1)}
+                      label="Thumbs up"
+                    />
+                    <Thumb
+                      icon="👎"
+                      count={c.downs}
+                      active={c.my_reaction === -1}
+                      onClick={() => react(c, -1)}
+                      label="Thumbs down"
+                    />
+                  </div>
                 </div>
               </div>
             ))}
@@ -257,3 +316,31 @@ const emptyStyle = {
   padding: "14px 6px",
   fontFamily: "'Barlow', sans-serif",
 };
+
+function Thumb({ icon, count, active, onClick, label }) {
+  const n = Number(count) || 0;
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      aria-label={`${label}${n ? `, ${n}` : ""}`}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "2px 9px",
+        borderRadius: 12,
+        fontSize: 11.5,
+        cursor: "pointer",
+        background: active ? "rgba(255,69,0,0.14)" : "#141414",
+        border: `1px solid ${active ? "#FF4500" : "#262626"}`,
+        color: active ? "#FF7A00" : "#888",
+        fontFamily: "'Barlow', sans-serif",
+        fontWeight: 700,
+      }}
+    >
+      <span style={{ fontSize: 12 }}>{icon}</span>
+      {n > 0 && n}
+    </button>
+  );
+}

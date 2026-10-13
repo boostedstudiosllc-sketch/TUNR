@@ -22,6 +22,7 @@ import {
   completeSignInFromUrl,
   ensureProfile,
   loadFollows,
+  loadConnections,
   toggleFollow,
   track,
 } from "./lib/store.js";
@@ -35,6 +36,7 @@ import PrivacyPolicy from "./components/PrivacyPolicy.jsx";
 import AuthForm from "./components/AuthForm.jsx";
 import EditMeet from "./components/EditMeet.jsx";
 import HostProfile from "./components/HostProfile.jsx";
+import PersonProfile from "./components/PersonProfile.jsx";
 import TodayStrip from "./components/TodayStrip.jsx";
 import HostPitch from "./components/HostPitch.jsx";
 import PerksTab from "./components/PerksTab.jsx";
@@ -76,6 +78,10 @@ export default function App() {
   const [follows, setFollows] = useState([]);
   const [editing, setEditing] = useState(null);
   const [hostView, setHostView] = useState(null);
+  // A person opened from a chat message (their account id).
+  const [personView, setPersonView] = useState(null);
+  // Accounts you follow; their meets show under Following.
+  const [followingPeople, setFollowingPeople] = useState([]);
   const [sort, setSort] = useState("soonest");
   const [position, setPosition] = useState(null);
   const [locating, setLocating] = useState(false);
@@ -158,7 +164,11 @@ export default function App() {
       .filter((e) => {
         if (filter === "All") return true;
         if (filter === "Following")
-          return follows.includes(e.host) || (e.cohosts || []).some((c) => follows.includes(c));
+          return (
+            follows.includes(e.host) ||
+            (e.cohosts || []).some((c) => follows.includes(c)) ||
+            (e.createdBy && followingPeople.includes(e.createdBy))
+          );
         if (filter === "Today") return isToday(e, now);
         if (filter === "This Weekend") return isThisWeekend(e, now);
         return e.vibe === filter;
@@ -180,7 +190,7 @@ export default function App() {
         }
         return sortKey(a, now) - sortKey(b, now);
       });
-  }, [events, filter, search, follows, sort, position]);
+  }, [events, filter, search, follows, followingPeople, sort, position]);
 
   const todayCount = useMemo(
     () => events.filter((e) => !isPast(e, now) && isToday(e, now)).length,
@@ -204,6 +214,13 @@ export default function App() {
   // gates *acting* — RSVPing, a garage, posting, and eventually reminders.
   const needsAccount = Boolean(hasBackend() && !user);
   const unlocked = visible;
+
+  function refreshFollowingPeople() {
+    if (!user) return setFollowingPeople([]);
+    loadConnections("following").then((rows) => setFollowingPeople(rows.map((r) => r.user_id)));
+  }
+
+  useEffect(refreshFollowingPeople, [user?.id]);
 
   function handleRsvp(eventId, status) {
     // The natural place to ask for an account: they've already decided they
@@ -778,6 +795,8 @@ export default function App() {
           onShowPrivacy={() => setShowPrivacy(true)}
           onToast={showToast}
           onCohostChange={refreshEvents}
+          onOpenPerson={setPersonView}
+          onFollowingChange={refreshFollowingPeople}
           onOpenHost={(h) => {
             setSelected(null);
             setHostView(h);
@@ -901,7 +920,29 @@ export default function App() {
             setSelected(null);
             setHostView(h);
           }}
+          onOpenPerson={setPersonView}
           onJoined={refreshEvents}
+        />
+      )}
+
+      {personView && (
+        <PersonProfile
+          personId={personView}
+          user={user}
+          onClose={() => setPersonView(null)}
+          onToast={showToast}
+          onNeedAccount={() => {
+            setPersonView(null);
+            setSelected(null);
+            setTab("profile");
+            showToast("Create a free account first");
+          }}
+          onOpenHost={(h) => {
+            setPersonView(null);
+            setSelected(null);
+            setHostView(h);
+          }}
+          onChanged={refreshFollowingPeople}
         />
       )}
 

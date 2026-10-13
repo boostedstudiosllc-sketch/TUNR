@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { loadProfile, saveProfile, hasBackend, signOut } from "../lib/store.js";
+import { loadProfile, saveProfile, hasBackend, signOut, getPerson } from "../lib/store.js";
 import AuthForm from "./AuthForm.jsx";
 import HostVerification, { VerificationQueue, HostInvites } from "./HostVerification.jsx";
 import AccountSettings from "./AccountSettings.jsx";
@@ -10,6 +10,7 @@ import SignupStats from "./SignupStats.jsx";
 import Insights from "./Insights.jsx";
 import { CohostInvites } from "./Cohosts.jsx";
 import { ListingRequestsQueue } from "./ListingRequest.jsx";
+import Connections from "./Connections.jsx";
 
 const inputStyle = {
   background: "#161616",
@@ -37,7 +38,26 @@ const legalButton = {
   fontFamily: "'Barlow Condensed', sans-serif",
 };
 
-export default function ProfileTab({ events, rsvps, user, onShowTerms, onShowPrivacy, onToast, onCohostChange }) {
+export default function ProfileTab({
+  events,
+  rsvps,
+  user,
+  onShowTerms,
+  onShowPrivacy,
+  onToast,
+  onCohostChange,
+  onOpenPerson,
+  onFollowingChange,
+}) {
+  // Follower / following counts, and which list is open (null = none).
+  const [social, setSocial] = useState(null);
+  const [connections, setConnections] = useState(null);
+  const refreshSocial = () => user && getPerson(user.id).then(setSocial);
+  useEffect(() => {
+    if (user) refreshSocial();
+    else setSocial(null);
+  }, [user?.id]);
+
   const [profile, setProfile] = useState({ username: "", city: "Atlanta, GA" });
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ username: "", city: "Atlanta, GA" });
@@ -155,7 +175,37 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onShowPri
               <div style={{ fontSize: 9, color: "#555", letterSpacing: 1.5 }}>{l}</div>
             </div>
           ))}
+          {social &&
+            [
+              [social.followers, "FOLLOWERS", "followers"],
+              [social.following, "FOLLOWING", "following"],
+            ].map(([n, l, kind]) => (
+              <button
+                key={l}
+                onClick={() => setConnections(kind)}
+                style={{ textAlign: "center", background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit" }}
+              >
+                <div style={{ fontSize: 24, fontWeight: 900, color: "#F0F0F0" }}>{n}</div>
+                <div style={{ fontSize: 9, color: "#555", letterSpacing: 1.5 }}>{l}</div>
+              </button>
+            ))}
         </div>
+        {connections && (
+          <Connections
+            user={user}
+            initial={connections}
+            onClose={() => setConnections(null)}
+            onToast={onToast}
+            onOpenPerson={(id) => {
+              setConnections(null);
+              onOpenPerson && onOpenPerson(id);
+            }}
+            onChanged={() => {
+              refreshSocial();
+              onFollowingChange && onFollowingChange();
+            }}
+          />
+        )}
 
         <button
           className="action-btn"

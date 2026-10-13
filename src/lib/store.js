@@ -104,6 +104,7 @@ function rowToEvent(row, counts, userId) {
     // Listed by TUNR rather than posted by an account — the organizer can
     // ask for it to be removed, corrected or handed over.
     imported: !row.created_by,
+    createdBy: row.created_by || null,
     cohosts: Array.isArray(row.cohosts) ? row.cohosts : [],
   };
 }
@@ -1270,6 +1271,82 @@ export async function deleteMyAccount() {
 }
 
 // ---------- follows ----------
+
+// ---------- people ----------
+
+// A person's public profile and how you're connected. null if not found;
+// { unavailable: true } if they've blocked you.
+export async function getPerson(personId) {
+  if (!supabase || !personId) return null;
+  const { data, error } = await supabase.rpc("get_person", { p_user: personId });
+  if (error || !Array.isArray(data) || !data.length) return null;
+  return data[0];
+}
+
+export async function followPerson(personId, userId, following) {
+  if (!supabase || !userId) throw new Error("Sign in to follow people");
+  if (following) {
+    await supabase.from("user_follows").delete().eq("follower_id", userId).eq("followee_id", personId);
+    return;
+  }
+  const { error } = await supabase
+    .from("user_follows")
+    .upsert({ follower_id: userId, followee_id: personId }, { onConflict: "follower_id,followee_id" });
+  if (error) throw new Error("Couldn't follow that account.");
+}
+
+export async function removeFollower(personId, userId) {
+  if (!supabase || !userId) return;
+  const { error } = await supabase
+    .from("user_follows")
+    .delete()
+    .eq("follower_id", personId)
+    .eq("followee_id", userId);
+  if (error) throw new Error("Couldn't remove that follower.");
+}
+
+// kind: "followers" | "following" — your own lists only.
+export async function loadConnections(kind) {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("my_connections", { p_kind: kind });
+  return error || !Array.isArray(data) ? [] : data;
+}
+
+export async function restrictUser(userId, personId, restrict) {
+  if (!supabase || !userId) throw new Error("Sign in first");
+  if (restrict) {
+    const { error } = await supabase
+      .from("restrictions")
+      .upsert({ restricter_id: userId, restricted_id: personId }, { onConflict: "restricter_id,restricted_id" });
+    if (error) throw new Error("Couldn't restrict that account.");
+  } else {
+    await supabase.from("restrictions").delete().eq("restricter_id", userId).eq("restricted_id", personId);
+  }
+}
+
+export async function loadRestrictedAccounts() {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("restricted_accounts")
+    .select("*")
+    .order("created_at", { ascending: false });
+  return error || !Array.isArray(data) ? [] : data;
+}
+
+// value: 1 (thumbs up) or -1 (thumbs down). Tapping your current choice
+// again takes it back.
+export async function reactToComment(commentId, userId, value, current) {
+  if (!supabase || !userId) throw new Error("Sign in to react");
+  if (current === value) {
+    await supabase.from("comment_reactions").delete().eq("comment_id", commentId).eq("user_id", userId);
+    return null;
+  }
+  const { error } = await supabase
+    .from("comment_reactions")
+    .upsert({ comment_id: commentId, user_id: userId, value }, { onConflict: "comment_id,user_id" });
+  if (error) throw new Error("Couldn't save that.");
+  return value;
+}
 
 export async function loadFollows(userId) {
   if (!supabase || !userId) return [];

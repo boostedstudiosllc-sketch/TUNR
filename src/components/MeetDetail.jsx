@@ -27,6 +27,7 @@ export default function MeetDetail({
   onNeedAccount,
   onToast,
   onOpenHost,
+  onOpenPerson,
   onJoined,
 }) {
   // The owner or an accepted co-host.
@@ -504,6 +505,7 @@ export default function MeetDetail({
               user={user}
               onNeedAccount={onNeedAccount}
               onToast={onToast}
+              onOpenPerson={onOpenPerson}
             />
           )}
 
