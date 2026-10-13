@@ -209,3 +209,21 @@ test("a monthly series that ended in September is past by October", () => {
 test("a series without a last date never goes past", () => {
   assert.equal(isPast(localsLegends, new Date("2027-06-01T14:00:00Z")), false);
 });
+
+test("occurrencesInMonth lays a meet out across a calendar month", async () => {
+  const { occurrencesInMonth } = await import("../src/lib/dates.js");
+  const weekly = { start: "2026-09-05T19:00", recurrence: "weekly:SAT", timezone: "America/New_York" };
+  assert.deepEqual(occurrencesInMonth(weekly, 2026, 10), ["2026-10-03", "2026-10-10", "2026-10-17", "2026-10-24", "2026-10-31"]);
+  // Not before the series started.
+  assert.deepEqual(occurrencesInMonth(weekly, 2026, 8), []);
+  // Season end cuts it off mid-month.
+  assert.deepEqual(occurrencesInMonth({ ...weekly, recurrenceUntil: "2026-10-17" }, 2026, 10), ["2026-10-03", "2026-10-10", "2026-10-17"]);
+  // Monthly nth weekday, including "last".
+  assert.deepEqual(occurrencesInMonth({ start: "2026-01-10T18:00", recurrence: "monthly:second:SAT" }, 2026, 10), ["2026-10-10"]);
+  assert.deepEqual(occurrencesInMonth({ start: "2026-01-10T18:00", recurrence: "monthly:last:FRI" }, 2026, 10), ["2026-10-30"]);
+  // One-off: only in its own month.
+  const once = { start: "2026-10-24T18:00" };
+  assert.deepEqual(occurrencesInMonth(once, 2026, 10), ["2026-10-24"]);
+  assert.deepEqual(occurrencesInMonth(once, 2026, 11), []);
+  assert.deepEqual(occurrencesInMonth({ start: null }, 2026, 10), []);
+});

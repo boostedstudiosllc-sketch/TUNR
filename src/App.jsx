@@ -36,6 +36,7 @@ import PrivacyPolicy from "./components/PrivacyPolicy.jsx";
 import AuthForm from "./components/AuthForm.jsx";
 import EditMeet from "./components/EditMeet.jsx";
 import HostProfile from "./components/HostProfile.jsx";
+import CalendarView from "./components/CalendarView.jsx";
 import PersonProfile from "./components/PersonProfile.jsx";
 import TodayStrip from "./components/TodayStrip.jsx";
 import HostPitch from "./components/HostPitch.jsx";
@@ -83,6 +84,8 @@ export default function App() {
   // Accounts you follow; their meets show under Following.
   const [followingPeople, setFollowingPeople] = useState([]);
   const [sort, setSort] = useState("soonest");
+  // Discover as a list or as a month calendar.
+  const [view, setView] = useState("list");
   const [position, setPosition] = useState(null);
   const [locating, setLocating] = useState(false);
 
@@ -157,10 +160,11 @@ export default function App() {
     };
   }, [user?.id]);
 
-  const visible = useMemo(() => {
+  // Meets matching the chosen filter and search, past ones included (the
+  // calendar shows earlier days of the month); the list drops those.
+  const matching = useMemo(() => {
     const q = search.trim().toLowerCase();
     return withDistances(events, position)
-      .filter((e) => !isPast(e, now))
       .filter((e) => {
         if (filter === "All") return true;
         if (filter === "Following")
@@ -179,7 +183,12 @@ export default function App() {
           .join(" ")
           .toLowerCase();
         return haystack.includes(q);
-      })
+      });
+  }, [events, filter, search, follows, followingPeople, position]);
+
+  const visible = useMemo(() => {
+    return matching
+      .filter((e) => !isPast(e, now))
       .sort((a, b) => {
         if (sort === "popular") return (b.going || 0) - (a.going || 0);
         if (sort === "nearest") {
@@ -190,7 +199,7 @@ export default function App() {
         }
         return sortKey(a, now) - sortKey(b, now);
       });
-  }, [events, filter, search, follows, followingPeople, sort, position]);
+  }, [matching, sort]);
 
   const todayCount = useMemo(
     () => events.filter((e) => !isPast(e, now) && isToday(e, now)).length,
@@ -517,9 +526,9 @@ export default function App() {
                 flexShrink: 0,
               }}
             >
-              SORT
+              {view === "list" ? "SORT" : ""}
             </span>
-            {SORTS.map((s) => (
+            {view === "list" && SORTS.map((s) => (
               <button
                 key={s.id}
                 className="filter-pill"
@@ -544,6 +553,35 @@ export default function App() {
                 {s.label}
               </button>
             ))}
+            <div style={{ marginLeft: "auto", display: "flex", border: "1px solid #242424", borderRadius: 16, overflow: "hidden", flexShrink: 0 }}>
+              {[
+                ["list", "☰ LIST"],
+                ["calendar", "📅 MONTH"],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  onClick={() => {
+                    setView(id);
+                    track("discover_view", { view: id });
+                  }}
+                  aria-pressed={view === id}
+                  style={{
+                    padding: "5px 10px",
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    letterSpacing: 0.6,
+                    whiteSpace: "nowrap",
+                    border: "none",
+                    background: view === id ? "rgba(255,69,0,0.14)" : "transparent",
+                    color: view === id ? "#FF4500" : "#666",
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    cursor: "pointer",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {!position && (
@@ -609,6 +647,9 @@ export default function App() {
             </div>
           )}
 
+          {view === "calendar" ? (
+            <CalendarView events={matching} rsvps={rsvps} onOpen={setSelected} now={now} />
+          ) : (
           <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 14 }}>
             {loading ? (
               <EmptyState title="Loading meets…" sub="Pulling the latest events" />
@@ -663,6 +704,7 @@ export default function App() {
               </>
             )}
           </div>
+          )}
         </div>
       )}
 

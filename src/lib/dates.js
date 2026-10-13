@@ -187,6 +187,40 @@ function nthWeekdayOfMonth(year, month, targetDow, nth) {
     : null;
 }
 
+// Every day ("YYYY-MM-DD", venue time) the meet happens in a calendar month
+// (month is 1–12). A series counts from its first date and stops at the end
+// of its season; a one-off is just its own date.
+export function occurrencesInMonth(event, year, month) {
+  const parts = wallParts(event);
+  if (!parts) return [];
+  const startKey = `${parts.y}-${String(parts.m).padStart(2, "0")}-${String(parts.d).padStart(2, "0")}`;
+  const prefix = `${year}-${String(month).padStart(2, "0")}`;
+  const keep = (key) => key >= startKey && inSeason(event, key);
+
+  if (!event.recurrence) return startKey.startsWith(prefix) ? [startKey] : [];
+
+  const [kind, a, b] = event.recurrence.split(":");
+  if (kind === "weekly" && DAY_INDEX[a] !== undefined) {
+    const days = [];
+    const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = `${prefix}-${String(d).padStart(2, "0")}`;
+      if (dowOfKey(key) === DAY_INDEX[a] && keep(key)) days.push(key);
+    }
+    return days;
+  }
+  if (kind === "monthly" && NTH_INDEX[a] !== undefined && DAY_INDEX[b] !== undefined) {
+    const key = nthWeekdayOfMonth(year, month, DAY_INDEX[b], a);
+    return key && keep(key) ? [key] : [];
+  }
+  return startKey.startsWith(prefix) ? [startKey] : [];
+}
+
+// "YYYY-MM-DD" for today in Atlanta, for calendar highlighting.
+export function todayKey(now = new Date(), tz = DEFAULT_TZ) {
+  return dayKeyInTz(now, tz);
+}
+
 export function nextOccurrence(event, from = new Date()) {
   const parts = wallParts(event);
   const key = nextOccurrenceKey(event, from);
