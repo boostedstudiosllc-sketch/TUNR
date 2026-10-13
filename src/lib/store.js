@@ -96,6 +96,7 @@ function rowToEvent(row, counts, userId) {
     flyerUrl: row.flyer_url || null,
     // A discrepancy three or more people have reported, e.g. "Cancelled or postponed".
     issueFlag: row.issue_flag || null,
+    issueCount: row.issue_count || 0,
     submittedByUser: Boolean(userId && row.created_by === userId),
     // The owner or an accepted co-host: may edit, approve requests, see the
     // passcode. Only the owner (submittedByUser) deletes or manages co-hosts.

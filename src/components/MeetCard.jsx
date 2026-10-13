@@ -1,6 +1,7 @@
 import { VIBES } from "../data/events.js";
 import ProfileBadge from "./Badge.jsx";
 import { displayDate, displayTime, startsInLabel, isHappeningNow } from "../lib/dates.js";
+import IssueFlag from "./IssueFlag.jsx";
 
 export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now, index = 0 }) {
   const color = VIBES[event.vibe] || "#FF4500";
@@ -152,22 +153,7 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
           )}
         </div>
         <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
-          {event.issueFlag && (
-            <span
-              style={{
-                background: "rgba(245,158,11,0.12)",
-                border: "1px solid rgba(245,158,11,0.5)",
-                color: "#F59E0B",
-                fontSize: 10,
-                padding: "3px 8px",
-                borderRadius: 4,
-                letterSpacing: 0.6,
-                fontWeight: 800,
-              }}
-            >
-              ⚠ {event.issueFlag === "Cancelled or postponed" ? "MAY BE CANCELLED" : "DETAILS DISPUTED"}
-            </span>
-          )}
+          {event.issueFlag && <IssueFlag issue={event.issueFlag} count={event.issueCount} />}
           {event.tags.map((tag) => (
             <span
               key={tag}

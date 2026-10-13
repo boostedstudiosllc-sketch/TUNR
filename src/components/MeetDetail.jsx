@@ -8,6 +8,7 @@ import ListingRequest from "./ListingRequest.jsx";
 import PrivateAccess from "./PrivateAccess.jsx";
 import Attendees from "./Attendees.jsx";
 import MeetPhotos from "./MeetPhotos.jsx";
+import IssueFlag from "./IssueFlag.jsx";
 import { track } from "../lib/store.js";
 import { directionsUrl } from "../lib/geo.js";
 
@@ -207,7 +208,11 @@ export default function MeetDetail({
             </button>
           </div>
 
-          {event.issueFlag && <IssueBanner issue={event.issueFlag} />}
+          {event.issueFlag && (
+            <div style={{ marginTop: 14 }}>
+              <IssueFlag issue={event.issueFlag} count={event.issueCount} size="large" />
+            </div>
+          )}
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 }}>
             <StatBox label="📅 DATE" value={displayDate(event)} />
@@ -575,33 +580,6 @@ function Flyer({ url, title }) {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-export const ISSUE_TEXT = {
-  "Cancelled or postponed": "Several people say this meet is cancelled or postponed.",
-  "Wrong date or time": "Several people say the date or time here is wrong.",
-  "Wrong location": "Several people say the location here is wrong.",
-};
-
-function IssueBanner({ issue }) {
-  return (
-    <div
-      style={{
-        marginTop: 14,
-        padding: "10px 12px",
-        borderRadius: 8,
-        background: "rgba(245,158,11,0.1)",
-        border: "1px solid rgba(245,158,11,0.5)",
-        color: "#F59E0B",
-        fontSize: 12.5,
-        lineHeight: 1.5,
-        fontFamily: "'Barlow', sans-serif",
-      }}
-    >
-      ⚠ <strong>{ISSUE_TEXT[issue] || "People have reported a problem with this meet."}</strong> We're
-      checking — confirm with the host before you head out.
     </div>
   );
 }
