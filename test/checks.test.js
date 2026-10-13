@@ -36,20 +36,23 @@ const feature = (over) => ({
   ],
 });
 
-test("an address in Georgia is found, with its coordinates", () => {
+test("an address is found, with its coordinates and state", () => {
   assert.deepEqual(judgeGeocode(feature({})), {
     status: "found",
     lat: 33.39,
     lng: -84.29,
+    state: "GA",
     placeName: "1500 Tara Pl, Hampton, Georgia 30228, United States",
   });
   assert.equal(judgeGeocode(feature({ place_type: ["poi"] })).status, "found");
   assert.equal(judgeGeocode(feature({ place_type: ["place"] })).status, "area");
 });
 
-test("outside Georgia, weak matches and empty results are caught", () => {
-  const sc = feature({ context: [{ id: "region.7", short_code: "US-SC", text: "South Carolina" }] });
-  assert.equal(judgeGeocode(sc).status, "outside");
+test("outside Georgia still pins; weak matches and empty results are caught", () => {
+  const sc = judgeGeocode(feature({ center: [-82.2, 34.9], context: [{ id: "region.7", short_code: "US-SC", text: "South Carolina" }] }));
+  assert.equal(sc.status, "found");
+  assert.equal(sc.state, "SC");
+  assert.equal(sc.lat, 34.9);
   assert.equal(judgeGeocode(feature({ relevance: 0.5 })).status, "none");
   assert.equal(judgeGeocode({ features: [] }).status, "none");
   // A match on the state itself carries its code in properties.

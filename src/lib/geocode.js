@@ -1,13 +1,11 @@
 // The online check on a meet's location: look it up on Mapbox and see
-// whether it's a real place, and whether it's in Georgia. Also gives the map
-// pin real coordinates instead of the middle of Atlanta.
+// whether it's a real place. Also gives the map pin real coordinates instead
+// of the middle of Atlanta. Anywhere in the US is fine — TUNR is marketed in
+// Georgia but works nationally — so the state is reported, not judged.
 //
-//   found   — a street address or a named place, in Georgia
-//   area    — only a city or neighbourhood matched, in Georgia (pin is rough)
-//   outside — the best match isn't in Georgia
-//   none    — nothing matched well enough, or the lookup failed
-
-const GEORGIA = "US-GA";
+//   found — a street address or a named place
+//   area  — only a city or neighbourhood matched (the pin is rough)
+//   none  — nothing matched well enough, or the lookup failed
 
 const regionOf = (feature) => {
   if (String(feature.id || "").startsWith("region.")) return feature.properties?.short_code || null;
@@ -21,8 +19,8 @@ export function judgeGeocode(json) {
     return { status: "none" };
   }
   const [lng, lat] = feature.center;
-  const result = { lat, lng, placeName: feature.place_name || "" };
-  if (String(regionOf(feature) || "").toUpperCase() !== GEORGIA) return { status: "outside", ...result };
+  const state = String(regionOf(feature) || "").toUpperCase().replace(/^US-/, "") || null;
+  const result = { lat, lng, state, placeName: feature.place_name || "" };
   const types = feature.place_type || [];
   const precise = types.includes("address") || types.includes("poi");
   return { status: precise ? "found" : "area", ...result };

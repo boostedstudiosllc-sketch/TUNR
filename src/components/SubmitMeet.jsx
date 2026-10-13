@@ -1,23 +1,12 @@
 import { useState } from "react";
 import { VIBES } from "../data/events.js";
 import { compressImage } from "../lib/image.js";
-import { uploadEventPhoto, readFlyer, findFlyerMatches, track } from "../lib/store.js";
+import { uploadEventPhoto, readFlyer, track } from "../lib/store.js";
 import { flyerToDraft } from "../lib/flyer.js";
 import { flyerHash } from "../lib/phash.js";
 import { geocodeLocation } from "../lib/geocode.js";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
-
-// "2026-10-24" for a stored start time, in Atlanta's time zone.
-const easternDay = (iso) =>
-  iso ? new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/New_York" }) : null;
-const prettyDay = (ymd) =>
-  new Date(`${ymd}T12:00:00Z`).toLocaleDateString("en-US", {
-    timeZone: "UTC",
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
 
 const inputStyle = {
   background: "#161616",
@@ -45,8 +34,6 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
   const [step, setStep] = useState(1);
   const [flyerUrl, setFlyerUrl] = useState("");
   const [flyerFingerprint, setFlyerFingerprint] = useState(null);
-  // Meets already carrying this flyer.
-  const [matches, setMatches] = useState([]);
   // The online check on the location: { status, lat, lng, checked: "location|city" }
   const [geo, setGeo] = useState(null);
   const [checking, setChecking] = useState(false);
@@ -71,10 +58,10 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
 
   const set = (field) => (e) => setDraft((d) => ({ ...d, [field]: e.target.value }));
 
+  // Stored with the meet, so the automatic import can recognise this flyer
+  // when it turns up on another account and skip it as a duplicate.
   async function fingerprint(file) {
-    const hash = await flyerHash(file);
-    setFlyerFingerprint(hash);
-    setMatches(hash ? await findFlyerMatches(hash) : []);
+    setFlyerFingerprint(await flyerHash(file));
   }
 
   async function pickPhoto(e) {
@@ -140,11 +127,10 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
     !checking;
 
   const placeKey = `${draft.location.trim()}|${draft.city.trim()}`;
-  const geoWarning =
-    geo && geo.checked === placeKey && (geo.status === "none" || geo.status === "outside");
+  const geoWarning = geo && geo.checked === placeKey && geo.status === "none";
 
-  // Look the place up before moving on. A place we can't find, or one outside
-  // Georgia, gets a warning first; tapping Continue again goes ahead anyway.
+  // Look the place up before moving on, to pin it on the map. A place we
+  // can't find gets a warning first; tapping Continue again goes ahead anyway.
   async function continueFromStep1() {
     if (!MAPBOX_TOKEN || (geo && geo.checked === placeKey)) {
       setStep(2);
@@ -272,7 +258,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                 setShowCaption={setShowCaption}
               />
             )}
-            {matches.length > 0 && <FlyerMatches matches={matches} date={draft.date} />}
+
             <div>
               {label("MEET TITLE", "title")}
               <input
@@ -296,9 +282,8 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
               <input style={inputStyle} value={draft.city} onChange={set("city")} />
               {geoWarning && (
                 <div style={{ ...warn, marginTop: 8 }}>
-                  {geo.status === "outside"
-                    ? `That looks like it's outside Georgia (${geo.placeName}). Check the address and city.`
-                    : "We couldn't find that place on the map. Add a street address so people can get there — or continue if it's announced later."}
+                  We couldn't find that place on the map. Add a street address so people can get
+                  there — or continue if it's announced later.
                 </div>
               )}
             </div>
@@ -735,24 +720,6 @@ const note = {
   marginTop: 4,
   fontFamily: "'Barlow', sans-serif",
 };
-
-// The same flyer is already on TUNR. Either it's a duplicate, or — if the
-// dates disagree — one of them is wrong.
-function FlyerMatches({ matches, date }) {
-  const conflicting = date ? matches.filter((m) => !m.recurrence && easternDay(m.start_at) && easternDay(m.start_at) !== date) : [];
-  return (
-    <div style={{ ...warn, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.4)", borderRadius: 8, padding: "10px 12px" }}>
-      <strong>This flyer is already on TUNR:</strong>{" "}
-      {matches
-        .map((m) => `${m.title}${m.start_at ? ` (${prettyDay(easternDay(m.start_at))})` : ""}`)
-        .join(", ")}
-      .{" "}
-      {conflicting.length > 0
-        ? `That listing has a different date from this one — check which is right before posting.`
-        : `Post only if it's a different meet. If that listing is yours but someone else posted it, open it and use "Is this your meet?" or "Something wrong?" to get it handed to you.`}
-    </div>
-  );
-}
 
 const warn = {
   fontSize: 12,
