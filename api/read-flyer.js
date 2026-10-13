@@ -78,7 +78,7 @@ export function createHandler({
     });
     if (result.error) {
       const status = { busy: 503, unreadable: 422 }[result.error] || 502;
-      return res.status(status).json({ error: result.error });
+      return res.status(status).json({ error: result.error, detail: result.detail || null });
     }
     const parsed = result.parsed;
 

@@ -7,7 +7,7 @@ import { FLYER_SCHEMA, SYSTEM_PROMPT, buildUserText } from "./flyer.js";
 // "gemini-flash-latest" follows Google's current Flash model; the pinned
 // names are fallbacks if an alias isn't available to the key.
 export const DEFAULT_MODEL = "gemini-flash-latest";
-const FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"];
+const FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"];
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 // JSON Schema (with anyOf [x, null]) -> Gemini responseSchema (nullable).
@@ -53,22 +53,32 @@ export async function readFlyerWithGemini({ apiKey, model = DEFAULT_MODEL, image
     generationConfig: { responseMimeType: "application/json", responseSchema: RESPONSE_SCHEMA, temperature: 0 },
   });
   let res;
-  // A model that's been retired or renamed answers 404; try the next one.
+  // A model that's retired (404) or has no free quota on this key (429)
+  // gets skipped for the next one.
   for (const name of [model, ...FALLBACK_MODELS.filter((m) => m !== model)]) {
     res = await fetchImpl(
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(name)}:generateContent`,
       { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey }, body }
     );
-    if (res.status !== 404) break;
+    if (res.status !== 404 && res.status !== 429) break;
   }
 
   if (!res.ok) {
-    console.error("read-flyer gemini:", res.status, (await res.text()).slice(0, 300));
-    if (res.status === 429 || res.status === 503) return { error: "busy" };
-    if (res.status === 401 || res.status === 403) return { error: "bad_key" };
-    if (res.status === 404) return { error: "no_model" };
-    if (res.status === 400) return { error: "unreadable" };
-    return { error: "ai_failed" };
+    const text = await res.text();
+    console.error("read-flyer gemini:", res.status, text.slice(0, 500));
+    // Google's own explanation, shown to the user.
+    let detail = `HTTP ${res.status}`;
+    try {
+      detail = JSON.parse(text)?.error?.message || detail;
+    } catch {
+      // not JSON; keep the status
+    }
+    detail = detail.replace(/\s+/g, " ").slice(0, 200);
+    if (res.status === 429 || res.status === 503) return { error: "busy", detail };
+    if (res.status === 401 || res.status === 403) return { error: "bad_key", detail };
+    if (res.status === 404) return { error: "no_model", detail };
+    if (res.status === 400) return { error: "unreadable", detail };
+    return { error: "ai_failed", detail };
   }
   const data = await res.json();
   if (data.promptFeedback?.blockReason) return { error: "unreadable" };

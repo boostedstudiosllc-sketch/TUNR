@@ -1154,17 +1154,18 @@ export async function readFlyer(imageUrl, caption = "") {
   }
   const body = await res.json().catch(() => ({}));
   if (res.ok && body.flyer) return body.flyer;
-  throw new Error(
+  const message =
     {
       rate_limit_flyers: "That's a lot of flyers for one day. Fill this one in by hand, or try again later.",
       unreadable: "We couldn't read that image. Fill the details in by hand.",
-      busy: "The flyer reader is busy. Try again in a minute.",
+      busy: "The flyer reader hit Google's limit.",
       not_configured: "Flyer reading isn't switched on yet. Fill the details in by hand.",
       not_signed_in: "Sign in first.",
       bad_key: "Flyer reading isn't set up right (the AI key was refused). Fill the details in by hand.",
       no_model: "Flyer reading isn't set up right (AI model not found). Fill the details in by hand.",
-    }[body.error] || `Couldn't read the flyer (${body.error || res.status}). Fill the details in by hand.`
-  );
+    }[body.error] || `Couldn't read the flyer (${body.error || res.status}). Fill the details in by hand.`;
+  // Say what actually happened, in Google's words when it gave a reason.
+  throw new Error(body.detail ? `${message} (${body.detail})` : message);
 }
 
 // The meet's going count after every RSVP change, for its ticker chart.
