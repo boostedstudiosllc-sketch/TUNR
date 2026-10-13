@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { VIBES } from "../data/events.js";
 import { displayDate, displayTime } from "../lib/dates.js";
 import { CarSilhouette } from "./MeetCard.jsx";
@@ -34,6 +34,11 @@ export default function MeetDetail({
   // Private meet the viewer isn't in: the address fields arrive as null from
   // the database, so everything that would expose a location stays out.
   const locked = Boolean(event.locked);
+
+  // Counted for hosts' traction in the admin insights.
+  useEffect(() => {
+    track("meet_viewed", { eventId: event.id });
+  }, [event.id]);
 
   async function share() {
     const url = `${window.location.origin}/m/${event.slug || event.id}`;

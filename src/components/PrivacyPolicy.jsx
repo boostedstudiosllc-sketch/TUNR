@@ -142,6 +142,9 @@ export default function PrivacyPolicy({ onClose }) {
         <div style={body}>
           Your account data is kept until you delete your account. Reports of a meet are kept after
           the meet is gone so repeated problems can be spotted. Usage events are kept in aggregate.
+          We keep a running tally of RSVPs (which meet, which answer, and when — never who) and of
+          meet views, so hosts' numbers survive people changing their answer or leaving; it can't
+          be traced back to you.
           The record of which terms you agreed to, and when, is kept for as long as your account
           exists.
         </div>

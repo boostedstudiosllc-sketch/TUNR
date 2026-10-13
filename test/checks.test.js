@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { dHashFromGrey, hammingHex } from "../src/lib/phash.js";
 import { judgeGeocode, geocodeLocation } from "../src/lib/geocode.js";
 import { normalizeFlyer } from "../api/_lib/flyer.js";
+import { toCsv } from "../src/lib/csv.js";
 
 const NOW = new Date("2026-10-12T16:00:00Z");
 
@@ -85,4 +86,13 @@ test("a weekday that disagrees with the date is flagged first in the check list"
   assert.equal(bad.dateConflict, true);
   assert.match(bad.check[0], /says Saturday, but the date read is Friday, Oct 23/);
   assert.equal(normalizeFlyer({ is_meet: true, date: "2026-10-23", weekday: "tonight" }, NOW).dateConflict, false);
+});
+
+test("CSV export quotes commas, quotes and newlines, and keeps every column", () => {
+  const csv = toCsv([
+    { host: "Cars, Coffee", going: 3, note: 'say "hi"' },
+    { host: "x", going: null, note: "two\nlines" },
+  ]);
+  assert.equal(csv, 'host,going,note\n"Cars, Coffee",3,"say ""hi"""\nx,,"two\nlines"');
+  assert.equal(toCsv([]), "");
 });

@@ -7,6 +7,7 @@ import Garage from "./Garage.jsx";
 import ModerationQueue from "./ModerationQueue.jsx";
 import { Badges } from "./Badge.jsx";
 import SignupStats from "./SignupStats.jsx";
+import Insights from "./Insights.jsx";
 import { CohostInvites } from "./Cohosts.jsx";
 import { ListingRequestsQueue } from "./ListingRequest.jsx";
 
@@ -260,6 +261,8 @@ export default function ProfileTab({ events, rsvps, user, onShowTerms, onShowPri
         )}
 
         {hasBackend() && user && <CohostInvites user={user} onToast={onToast} onChanged={onCohostChange} />}
+
+        {hasBackend() && user && profile.isAdmin && <Insights />}
 
         {hasBackend() && user && profile.isAdmin && <ListingRequestsQueue user={user} onToast={onToast} />}
 

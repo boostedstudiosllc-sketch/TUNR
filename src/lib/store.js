@@ -583,6 +583,25 @@ export async function loadSignupStats() {
   return data;
 }
 
+// Admin-only (the views return nothing for anyone else): headline numbers,
+// the last 60 days, and per-host and per-meet traction.
+export async function loadAdminInsights() {
+  if (!supabase) return null;
+  const [overview, daily, hosts, meets] = await Promise.all([
+    supabase.from("admin_overview").select("*").maybeSingle(),
+    supabase.from("admin_daily").select("*").order("day"),
+    supabase.from("admin_host_stats").select("*"),
+    supabase.from("admin_meet_stats").select("*"),
+  ]);
+  if (overview.error || !overview.data) return null;
+  return {
+    overview: overview.data,
+    daily: daily.data || [],
+    hosts: hosts.data || [],
+    meets: meets.data || [],
+  };
+}
+
 // Where an emailed link or Google sends people back to. Signing up from /join
 // or /hosts returns there, so they land on the next step rather than the bare
 // app. Needs <site>/join and <site>/hosts in Supabase's redirect URLs; without
