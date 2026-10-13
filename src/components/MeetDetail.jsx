@@ -9,7 +9,8 @@ import PrivateAccess from "./PrivateAccess.jsx";
 import Attendees from "./Attendees.jsx";
 import MeetPhotos from "./MeetPhotos.jsx";
 import IssueFlag from "./IssueFlag.jsx";
-import { track } from "../lib/store.js";
+import { track, loadGoingHistory } from "../lib/store.js";
+import GoingTicker from "./GoingTicker.jsx";
 import { directionsUrl } from "../lib/geo.js";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -39,6 +40,21 @@ export default function MeetDetail({
   useEffect(() => {
     track("meet_viewed", { eventId: event.id });
   }, [event.id]);
+
+  // The going chart. Reloaded shortly after this viewer changes their
+  // answer, once the RSVP has been saved.
+  const [history, setHistory] = useState([]);
+  useEffect(() => {
+    let alive = true;
+    const timer = setTimeout(
+      () => loadGoingHistory(event.id).then((h) => alive && setHistory(h)),
+      history.length ? 700 : 0
+    );
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [event.id, rsvp]);
 
   async function share() {
     const url = `${window.location.origin}/m/${event.slug || event.id}`;
@@ -225,6 +241,12 @@ export default function MeetDetail({
             <StatBox label="👥 GOING" value={`${event.going} confirmed`} />
             <StatBox label="★ MAYBE" value={String(event.interested)} />
           </div>
+
+          {!locked && history.length > 1 && (
+            <div style={{ marginTop: 10 }}>
+              <GoingTicker points={history} current={event.going} />
+            </div>
+          )}
 
           {!locked && (
             <div

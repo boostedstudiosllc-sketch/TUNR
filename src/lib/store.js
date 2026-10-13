@@ -1160,6 +1160,13 @@ export async function readFlyer(imageUrl, caption = "") {
   );
 }
 
+// The meet's going count after every RSVP change, for its ticker chart.
+export async function loadGoingHistory(eventId) {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("meet_going_history", { p_event_id: eventId });
+  return error || !Array.isArray(data) ? [] : data;
+}
+
 // Meets already carrying (nearly) the same flyer — a duplicate, or another
 // account's copy to check the date against.
 export async function findFlyerMatches(hash, excludeId = null) {

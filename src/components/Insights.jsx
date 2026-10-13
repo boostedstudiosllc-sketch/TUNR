@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { loadAdminInsights } from "../lib/store.js";
 import { toCsv } from "../lib/csv.js";
+import GoingTicker from "./GoingTicker.jsx";
 
 // Admin-only, top of the Profile tab: is TUNR growing, and which hosts are
 // pulling people. The numbers come from views that return nothing to anyone
@@ -66,7 +67,9 @@ export default function Insights() {
     <Card>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
         <div style={{ fontSize: 15, fontWeight: 800 }}>📊 Insights</div>
-        <div style={{ fontSize: 11, color: "#666", fontFamily: "'Barlow', sans-serif" }}>last 30 days</div>
+        <div style={{ fontSize: 11, color: "#666", fontFamily: "'Barlow', sans-serif" }}>
+          last 30 days · end users only
+        </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
@@ -76,6 +79,17 @@ export default function Insights() {
         <Tile label="Meet views" value={o.views_30d} now={o.views_30d} prev={o.views_prev_30d} />
         <Tile label="Chat messages" value={o.chat_30d} />
         <Tile label="Meets posted" value={o.meets_posted_30d} sub={`${compact(o.verified_hosts)} verified hosts`} />
+      </div>
+
+      {o.admin_going_30d + o.admin_views_30d + o.admin_chat_30d > 0 && (
+        <Muted small>
+          Not counted — admin activity (you): {compact(o.admin_going_30d)} going, {compact(o.admin_views_30d)}{" "}
+          views, {compact(o.admin_chat_30d)} chat messages.
+        </Muted>
+      )}
+
+      <div style={{ marginTop: 16 }}>
+        <GoingTicker points={cumulative(data.daily)} label="GOING RSVPS · ALL MEETS" allWord="in 60 days" />
       </div>
 
       <div style={{ marginTop: 18 }}>
@@ -386,4 +400,13 @@ function downloadCsv(name, rows) {
   a.download = name;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// Running total of going RSVPs by day, as ticker points (end of each day).
+function cumulative(daily) {
+  let total = 0;
+  return daily.map((d) => {
+    total += Number(d.going) || 0;
+    return { at: `${d.day}T23:59:00-05:00`, going: total };
+  });
 }
