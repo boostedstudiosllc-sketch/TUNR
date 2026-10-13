@@ -1,4 +1,4 @@
-// Reading a meet flyer with Claude: the prompt, the output schema, and the
+// Reading a meet flyer with AI: the prompt, the output schema, and the
 // clean-up of what comes back. Kept apart from the request handler so it can
 // be tested without the network. (Vercel doesn't route files under api/_lib.)
 

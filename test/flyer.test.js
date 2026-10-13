@@ -1,6 +1,5 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import Anthropic from "@anthropic-ai/sdk";
 import { FLYER_SCHEMA, buildUserText, normalizeFlyer } from "../api/_lib/flyer.js";
 import { createHandler } from "../api/read-flyer.js";
 import { flyerToDraft } from "../src/lib/flyer.js";
@@ -106,39 +105,27 @@ function fakeRes() {
   };
 }
 
-function setup({ userOk = true, logStatus = 201, logBody = "", claude } = {}) {
-  const calls = { fetch: [], claude: [] };
+function setup({ userOk = true, logStatus = 201, logBody = "", gemini } = {}) {
+  const calls = { fetch: [], gemini: [] };
   const fetchImpl = async (url, init = {}) => {
     calls.fetch.push({ url, init });
     if (url.endsWith("/auth/v1/user")) {
       return new Response(JSON.stringify(userOk ? { id: UID } : { msg: "bad jwt" }), { status: userOk ? 200 : 401 });
     }
     if (url.endsWith("/rest/v1/flyer_reads")) return new Response(logBody, { status: logStatus });
+    if (url === IMG) return new Response(new Uint8Array([1, 2, 3]), { headers: { "content-type": "image/jpeg" } });
+    if (url.includes("generativelanguage.googleapis.com")) {
+      calls.gemini.push({ url, init, body: JSON.parse(init.body) });
+      if (gemini) return gemini();
+      return new Response(
+        JSON.stringify({ candidates: [{ finishReason: "STOP", content: { parts: [{ text: JSON.stringify(RAW) }] } }] })
+      );
+    }
     throw new Error("unexpected fetch " + url);
   };
-  const makeClient = (apiKey) => ({
-    beta: {
-      messages: {
-        create: async (params) => {
-          calls.claude.push({ apiKey, params });
-          if (claude instanceof Error) throw claude;
-          return (
-            claude || {
-              stop_reason: "end_turn",
-              content: [
-                { type: "thinking", thinking: "" },
-                { type: "text", text: JSON.stringify(RAW) },
-              ],
-            }
-          );
-        },
-      },
-    },
-  });
   const handler = createHandler({
-    env: { VITE_SUPABASE_URL: SUPA, VITE_SUPABASE_ANON_KEY: "anon", ANTHROPIC_API_KEY: "sk-test" },
+    env: { VITE_SUPABASE_URL: SUPA, VITE_SUPABASE_ANON_KEY: "anon", GEMINI_API_KEY: "g-test" },
     fetchImpl,
-    makeClient,
     now: () => NOW,
   });
   const run = async (body, headers = { authorization: "Bearer user-jwt" }, method = "POST") => {
@@ -149,26 +136,26 @@ function setup({ userOk = true, logStatus = 201, logBody = "", claude } = {}) {
   return { run, calls };
 }
 
-test("reads the caller's own flyer and returns the cleaned fields", async () => {
+test("reads the caller's own flyer with Gemini and returns the cleaned fields", async () => {
   const { run, calls } = setup();
   const res = await run({ imageUrl: IMG, caption: "Avalon lot B" });
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.flyer.title, "Spooky Supercars");
 
-  // Logged as the caller, before Claude was called.
   const log = calls.fetch.find((c) => c.url.endsWith("/rest/v1/flyer_reads"));
   assert.equal(log.init.headers.Authorization, "Bearer user-jwt");
-  assert.deepEqual(JSON.parse(log.init.body), { user_id: UID, image_url: IMG });
+  // Logged before the AI was asked.
+  assert.ok(calls.fetch.indexOf(log) < calls.fetch.findIndex((c) => c.url.includes("generativelanguage")));
 
-  const { apiKey, params } = calls.claude[0];
-  assert.equal(apiKey, "sk-test");
-  assert.equal(params.model, "claude-opus-5-5");
-  assert.equal(params.fallbacks, "default");
-  assert.deepEqual(params.betas, ["server-side-fallback-2026-07-01"]);
-  assert.equal(params.output_config.format.type, "json_schema");
-  assert.equal(params.thinking, undefined, "Opus 5.5 rejects disabled thinking; leave it unset");
-  assert.deepEqual(params.messages[0].content[0], { type: "image", source: { type: "url", url: IMG } });
-  assert.match(params.messages[0].content[1].text, /Avalon lot B/);
+  const { url, init, body } = calls.gemini[0];
+  assert.match(url, /models\/gemini-2\.5-flash:generateContent$/);
+  assert.equal(init.headers["x-goog-api-key"], "g-test");
+  assert.equal(body.contents[0].parts[0].inlineData.mimeType, "image/jpeg");
+  assert.equal(body.contents[0].parts[0].inlineData.data, Buffer.from([1, 2, 3]).toString("base64"));
+  assert.match(body.contents[0].parts[1].text, /Avalon lot B/);
+  assert.equal(body.generationConfig.responseMimeType, "application/json");
+  assert.equal(body.generationConfig.responseSchema.properties.title.nullable, true);
+  assert.equal(body.generationConfig.responseSchema.properties.vibe.enum.length, 5);
 });
 
 test("refuses anything but the caller's own upload, before spending", async () => {
@@ -183,7 +170,7 @@ test("refuses anything but the caller's own upload, before spending", async () =
     const { run, calls } = setup();
     const res = await run({ imageUrl });
     assert.equal(res.statusCode, 400, imageUrl);
-    assert.equal(calls.claude.length, 0);
+    assert.equal(calls.gemini.length, 0);
     assert.equal(calls.fetch.filter((c) => c.url.includes("flyer_reads")).length, 0);
   }
 });
@@ -193,27 +180,28 @@ test("needs a valid session", async () => {
   assert.equal((await run({ imageUrl: IMG }, {})).statusCode, 401);
   ({ run, calls } = setup({ userOk: false }));
   assert.equal((await run({ imageUrl: IMG })).statusCode, 401);
-  assert.equal(calls.claude.length, 0);
+  assert.equal(calls.gemini.length, 0);
 });
 
-test("over the limit: 429 and Claude is never called", async () => {
+test("over the limit: 429 and Gemini is never called", async () => {
   const { run, calls } = setup({ logStatus: 400, logBody: '{"code":"P0001","message":"rate_limit_flyers"}' });
   const res = await run({ imageUrl: IMG });
   assert.equal(res.statusCode, 429);
-  assert.equal(res.body.error, "rate_limit_flyers");
-  assert.equal(calls.claude.length, 0);
+  assert.equal(calls.gemini.length, 0);
 });
 
-test("refusals, truncation, bad JSON and API errors map to clean errors", async () => {
+test("blocks, truncation, bad JSON and API errors map to clean errors", async () => {
+  const json = (b, status = 200) => () => new Response(JSON.stringify(b), { status });
   const cases = [
-    [{ stop_reason: "refusal", content: [] }, 422],
-    [{ stop_reason: "max_tokens", content: [{ type: "text", text: "{" }] }, 502],
-    [{ stop_reason: "end_turn", content: [{ type: "text", text: "not json" }] }, 502],
-    [new Anthropic.RateLimitError(429, { error: {} }, "slow down", new Headers()), 503],
-    [new Anthropic.InternalServerError(500, { error: {} }, "boom", new Headers()), 502],
+    [json({ promptFeedback: { blockReason: "SAFETY" } }), 422],
+    [json({ candidates: [{ finishReason: "SAFETY" }] }), 422],
+    [json({ candidates: [{ finishReason: "MAX_TOKENS", content: { parts: [{ text: "{" }] } }] }), 502],
+    [json({ candidates: [{ finishReason: "STOP", content: { parts: [{ text: "not json" }] } }] }), 502],
+    [json({ error: {} }, 429), 503],
+    [json({ error: {} }, 500), 502],
   ];
-  for (const [claude, status] of cases) {
-    const { run } = setup({ claude });
+  for (const [gemini, status] of cases) {
+    const { run } = setup({ gemini });
     const original = console.error;
     console.error = () => {};
     try {

@@ -1131,7 +1131,7 @@ export async function uploadEventPhoto(file, userId) {
   return data.publicUrl;
 }
 
-// Has Claude read a flyer the user just uploaded (see api/read-flyer.js) and
+// Has the AI (Gemini) read a flyer the user just uploaded (see api/read-flyer.js) and
 // returns the fields it found, for the post-a-meet form to fill in.
 export async function readFlyer(imageUrl, caption = "") {
   if (!supabase) throw new Error("Reading flyers needs the live app.");

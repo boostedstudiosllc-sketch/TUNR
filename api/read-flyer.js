@@ -1,18 +1,17 @@
 // POST /api/read-flyer  { imageUrl, caption? }  (Authorization: Bearer <session>)
 //
-// Reads a meet flyer the signed-in user has already uploaded and returns the
+// Reads (with Google Gemini) a meet flyer the signed-in user has already uploaded and returns the
 // fields for the "post a meet" form. Only images in the caller's own folder
 // of the event-photos bucket are accepted, and every read is logged as the
 // caller first, so the database's per-account limit applies before anything
 // is spent.
 
-import Anthropic from "@anthropic-ai/sdk";
-import { FLYER_SCHEMA, SYSTEM_PROMPT, buildUserText, normalizeFlyer } from "./_lib/flyer.js";
+import { normalizeFlyer } from "./_lib/flyer.js";
+import { readFlyerWithGemini, DEFAULT_MODEL } from "./_lib/gemini.js";
 
 export function createHandler({
   env = process.env,
   fetchImpl = fetch,
-  makeClient = (apiKey) => new Anthropic({ apiKey }),
   now = () => new Date(),
 } = {}) {
   return async function handler(req, res) {
@@ -23,7 +22,7 @@ export function createHandler({
 
     const supabaseUrl = (env.VITE_SUPABASE_URL || "").replace(/\/+$/, "");
     const anonKey = env.VITE_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !anonKey || !env.ANTHROPIC_API_KEY) {
+    if (!supabaseUrl || !anonKey || !env.GEMINI_API_KEY) {
       return res.status(503).json({ error: "not_configured" });
     }
 
@@ -69,48 +68,19 @@ export function createHandler({
       return res.status(502).json({ error: "log_failed" });
     }
 
-    const client = makeClient(env.ANTHROPIC_API_KEY);
-    let response;
-    try {
-      response = await client.beta.messages.create({
-        model: "claude-opus-5-5",
-        max_tokens: 16000,
-        // If a safety classifier declines, re-run on Anthropic's recommended
-        // fallback model instead of failing the read.
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
-        output_config: {
-          effort: "medium",
-          format: { type: "json_schema", schema: FLYER_SCHEMA },
-        },
-        system: SYSTEM_PROMPT,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "image", source: { type: "url", url: imageUrl } },
-              { type: "text", text: buildUserText({ caption, now: now() }) },
-            ],
-          },
-        ],
-      });
-    } catch (err) {
-      console.error("read-flyer:", err?.status, err?.message);
-      if (err instanceof Anthropic.RateLimitError) return res.status(503).json({ error: "busy" });
-      if (err instanceof Anthropic.BadRequestError) return res.status(422).json({ error: "unreadable" });
-      if (err instanceof Anthropic.APIError) return res.status(502).json({ error: "ai_failed" });
-      throw err;
+    const result = await readFlyerWithGemini({
+      apiKey: env.GEMINI_API_KEY,
+      model: env.GEMINI_MODEL || DEFAULT_MODEL,
+      imageUrl,
+      caption,
+      now: now(),
+      fetchImpl,
+    });
+    if (result.error) {
+      const status = { busy: 503, unreadable: 422 }[result.error] || 502;
+      return res.status(status).json({ error: result.error });
     }
-
-    if (response.stop_reason === "refusal") return res.status(422).json({ error: "unreadable" });
-    if (response.stop_reason === "max_tokens") return res.status(502).json({ error: "ai_failed" });
-
-    const text = (response.content || [])
-      .filter((block) => block.type === "text")
-      .map((block) => block.text)
-      .join("");
-    const parsed = safeJson(text);
-    if (!parsed) return res.status(502).json({ error: "ai_failed" });
+    const parsed = result.parsed;
 
     return res.status(200).json({ flyer: normalizeFlyer(parsed, now()) });
   };
