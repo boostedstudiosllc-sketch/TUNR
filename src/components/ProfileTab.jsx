@@ -91,8 +91,8 @@ export default function ProfileTab({
       // isAdmin isn't editable here; keep it rather than dropping it.
       setProfile((p) => ({ ...p, ...next }));
       setEditing(false);
-    } catch {
-      onToast("Couldn't save profile — that username may be taken.");
+    } catch (e) {
+      onToast(e.message || "Couldn't save your profile.");
     }
   }
 

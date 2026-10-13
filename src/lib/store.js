@@ -7,7 +7,7 @@
 import { seedEvents } from "../data/events.js";
 import { supabase } from "./supabase.js";
 import { DEFAULT_TZ, parseLocal } from "./dates.js";
-import { friendlyWriteError } from "./errors.js";
+import { friendlyWriteError, withReason } from "./errors.js";
 import { normalizePasscode } from "./passcode.js";
 
 const RSVP_KEY = "tunr.rsvps.v1";
@@ -338,7 +338,7 @@ export async function saveVehicle(vehicle, ownerId) {
     ? supabase.from("vehicles").update(payload).eq("id", vehicle.id)
     : supabase.from("vehicles").insert(payload);
   const { error } = await query;
-  if (error) throw new Error("Couldn't save that car. Try again.");
+  if (error) throw new Error(withReason("Couldn't save that car. Try again.", error));
 }
 
 export async function deleteVehicle(vehicleId) {
@@ -353,7 +353,7 @@ export async function setPrimaryVehicle(vehicleId) {
     .from("vehicles")
     .update({ is_primary: true })
     .eq("id", vehicleId);
-  if (error) throw new Error("Couldn't set that as your main car.");
+  if (error) throw new Error(withReason("Couldn't set that as your main car.", error));
 }
 
 export async function uploadVehiclePhoto(file, userId) {
@@ -367,7 +367,7 @@ export async function uploadVehiclePhoto(file, userId) {
     cacheControl: "31536000",
     upsert: false,
   });
-  if (error) throw new Error("Upload failed. Try a different image.");
+  if (error) throw new Error(withReason("Upload failed. Try a different image.", error));
   return supabase.storage.from("vehicle-photos").getPublicUrl(path).data.publicUrl;
 }
 
@@ -417,9 +417,13 @@ export async function loadProfile(userId = null) {
 
 export async function saveProfile(profile, userId = null) {
   if (supabase && userId) {
-    await supabase
+    const { error } = await supabase
       .from("profiles")
       .upsert({ id: userId, username: profile.username || null, city: profile.city });
+    if (error) {
+      if (error.code === "23505") throw new Error("That username is taken — pick another.");
+      throw new Error(friendlyWriteError(error, "Couldn't save your profile."));
+    }
     return profile;
   }
   write(PROFILE_KEY, profile);
@@ -824,7 +828,7 @@ export async function updateEvent(eventId, fields) {
   // Row-level security turns an update you're no longer allowed to make into
   // "0 rows changed", not an error — so check something was actually saved.
   const { data, error } = await supabase.from("events").update(payload).eq("id", eventId).select("id");
-  if (error) throw new Error("Couldn't save those changes.");
+  if (error) throw new Error(withReason("Couldn't save those changes.", error));
   if (!data || !data.length) throw new Error("You can't edit this meet any more.");
 }
 
@@ -837,7 +841,7 @@ export async function inviteCohost(eventId, username) {
     p_event_id: eventId,
     p_username: username,
   });
-  if (error) throw new Error("Couldn't send that invite.");
+  if (error) throw new Error(withReason("Couldn't send that invite.", error));
   return data;
 }
 
@@ -856,7 +860,7 @@ export async function loadEventCohosts(eventId) {
 export async function removeCohost(id) {
   if (!supabase) throw new Error("Backend not configured");
   const { error } = await supabase.from("event_cohosts").delete().eq("id", id);
-  if (error) throw new Error("Couldn't remove that co-host.");
+  if (error) throw new Error(withReason("Couldn't remove that co-host.", error));
 }
 
 // Invites waiting on this account, with the meet they're for.
@@ -883,7 +887,7 @@ export async function respondCohostInvite(id, accept) {
     p_id: id,
     p_accept: accept,
   });
-  if (error) throw new Error("Couldn't answer that invite.");
+  if (error) throw new Error(withReason("Couldn't answer that invite.", error));
   return data;
 }
 
@@ -921,7 +925,7 @@ export async function resolveListingRequest(id, status, adminId) {
     .from("listing_requests")
     .update({ status, resolved_at: new Date().toISOString(), resolved_by: adminId })
     .eq("id", id);
-  if (error) throw new Error("Couldn't update that request.");
+  if (error) throw new Error(withReason("Couldn't update that request.", error));
 }
 
 // ---------- host verification ----------
@@ -951,7 +955,7 @@ export async function requestVerification(host, instagramHandle, userId) {
     .single();
   if (error) {
     if (error.code === "23505") throw new Error("You've already requested this. Check back soon.");
-    throw new Error("Couldn't send that request. Try again.");
+    throw new Error(withReason("Couldn't send that request. Try again.", error));
   }
   return data;
 }
@@ -994,7 +998,7 @@ export async function peekHostInvite(token) {
 export async function redeemHostInvite(token) {
   if (!supabase) throw new Error("Backend not configured");
   const { data, error } = await supabase.rpc("redeem_host_invite", { p_token: token });
-  if (error) throw new Error("Couldn't use that invite. Try again.");
+  if (error) throw new Error(withReason("Couldn't use that invite. Try again.", error));
   return data;
 }
 
@@ -1015,7 +1019,7 @@ export async function createHostInvite(handle, eventId = null, requestId = null)
   if (error) {
     if (/bad_handle/.test(error.message)) throw new Error("That isn't a valid Instagram handle.");
     if (/not_claimable/.test(error.message)) throw new Error("That listing already has an owner.");
-    throw new Error("Couldn't create that invite.");
+    throw new Error(withReason("Couldn't create that invite.", error));
   }
   return data;
 }
@@ -1051,7 +1055,7 @@ export async function decideVerification(id, approve, note = null) {
     p_approve: approve,
     p_note: note,
   });
-  if (error) throw new Error("Couldn't record that decision.");
+  if (error) throw new Error(withReason("Couldn't record that decision.", error));
   return data;
 }
 
@@ -1076,7 +1080,7 @@ export async function requestToJoin(eventId, userId) {
     .insert({ event_id: eventId, user_id: userId, status: "pending" });
   if (error) {
     if (error.code === "23505") throw new Error("You've already asked to join this meet.");
-    throw new Error("Couldn't send that request. Try again.");
+    throw new Error(withReason("Couldn't send that request. Try again.", error));
   }
 }
 
@@ -1100,7 +1104,7 @@ export async function approveJoinRequest(eventId, userId) {
     .eq("event_id", eventId)
     .eq("user_id", userId)
     .select("user_id");
-  if (error) throw new Error("Couldn't approve that request.");
+  if (error) throw new Error(withReason("Couldn't approve that request.", error));
   if (!data || !data.length) throw new Error("You can't manage this meet any more.");
 }
 
@@ -1111,7 +1115,7 @@ export async function denyJoinRequest(eventId, userId) {
     .delete()
     .eq("event_id", eventId)
     .eq("user_id", userId);
-  if (error) throw new Error("Couldn't update that request.");
+  if (error) throw new Error(withReason("Couldn't update that request.", error));
 }
 
 // ---------- photos ----------
@@ -1126,7 +1130,7 @@ export async function uploadEventPhoto(file, userId) {
     cacheControl: "31536000",
     upsert: false,
   });
-  if (error) throw new Error("Upload failed. Try a different image.");
+  if (error) throw new Error(withReason("Upload failed. Try a different image.", error));
   const { data } = supabase.storage.from("event-photos").getPublicUrl(path);
   return data.publicUrl;
 }
@@ -1145,8 +1149,8 @@ export async function readFlyer(imageUrl, caption = "") {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ imageUrl, caption }),
     });
-  } catch {
-    throw new Error("Couldn't reach TUNR. Check your connection and try again.");
+  } catch (error) {
+    throw new Error(withReason("Couldn't reach TUNR. Check your connection and try again.", error));
   }
   const body = await res.json().catch(() => ({}));
   if (res.ok && body.flyer) return body.flyer;
@@ -1243,7 +1247,7 @@ export async function blockUser(userId, blockedId) {
   const { error } = await supabase
     .from("blocks")
     .upsert({ blocker_id: userId, blocked_id: blockedId }, { onConflict: "blocker_id,blocked_id" });
-  if (error) throw new Error("Couldn't block that account.");
+  if (error) throw new Error(withReason("Couldn't block that account.", error));
 }
 
 export async function unblockUser(userId, blockedId) {
@@ -1268,7 +1272,7 @@ export async function loadBlockedAccounts() {
 export async function deleteMyAccount() {
   if (!supabase) throw new Error("Backend not configured");
   const { error } = await supabase.rpc("delete_my_account");
-  if (error) throw new Error("Couldn't delete the account. Try again.");
+  if (error) throw new Error(withReason("Couldn't delete the account. Try again.", error));
   await supabase.auth.signOut();
 }
 
@@ -1294,7 +1298,7 @@ export async function followPerson(personId, userId, following) {
   const { error } = await supabase
     .from("user_follows")
     .upsert({ follower_id: userId, followee_id: personId }, { onConflict: "follower_id,followee_id" });
-  if (error) throw new Error("Couldn't follow that account.");
+  if (error) throw new Error(withReason("Couldn't follow that account.", error));
 }
 
 export async function removeFollower(personId, userId) {
@@ -1304,7 +1308,7 @@ export async function removeFollower(personId, userId) {
     .delete()
     .eq("follower_id", personId)
     .eq("followee_id", userId);
-  if (error) throw new Error("Couldn't remove that follower.");
+  if (error) throw new Error(withReason("Couldn't remove that follower.", error));
 }
 
 // kind: "followers" | "following" — your own lists only.
@@ -1320,7 +1324,7 @@ export async function restrictUser(userId, personId, restrict) {
     const { error } = await supabase
       .from("restrictions")
       .upsert({ restricter_id: userId, restricted_id: personId }, { onConflict: "restricter_id,restricted_id" });
-    if (error) throw new Error("Couldn't restrict that account.");
+    if (error) throw new Error(withReason("Couldn't restrict that account.", error));
   } else {
     await supabase.from("restrictions").delete().eq("restricter_id", userId).eq("restricted_id", personId);
   }
@@ -1346,7 +1350,7 @@ export async function reactToComment(commentId, userId, value, current) {
   const { error } = await supabase
     .from("comment_reactions")
     .upsert({ comment_id: commentId, user_id: userId, value }, { onConflict: "comment_id,user_id" });
-  if (error) throw new Error("Couldn't save that.");
+  if (error) throw new Error(withReason("Couldn't save that.", error));
   return value;
 }
 
@@ -1401,7 +1405,7 @@ export async function uploadMeetPhoto(file, userId) {
     cacheControl: "31536000",
     upsert: false,
   });
-  if (error) throw new Error("Upload failed. Try a different image.");
+  if (error) throw new Error(withReason("Upload failed. Try a different image.", error));
   return supabase.storage.from("meet-photos").getPublicUrl(path).data.publicUrl;
 }
 
@@ -1467,7 +1471,7 @@ export async function moderateEvent(eventId, hidden) {
     p_event_id: eventId,
     p_hidden: hidden,
   });
-  if (error) throw new Error("Couldn't apply that.");
+  if (error) throw new Error(withReason("Couldn't apply that.", error));
   return data;
 }
 
@@ -1477,7 +1481,7 @@ export async function dismissReport(reportId) {
     .from("reports")
     .update({ resolved_at: new Date().toISOString(), outcome: "dismissed" })
     .eq("id", reportId);
-  if (error) throw new Error("Couldn't dismiss that report.");
+  if (error) throw new Error(withReason("Couldn't dismiss that report.", error));
 }
 
 // ---------- analytics ----------
@@ -1509,6 +1513,6 @@ export async function submitReport(eventId, reason, note, userId, suggested = ""
   });
   if (error) {
     if (error.code === "23505") throw new Error("You already reported this meet — thanks.");
-    throw new Error("Couldn't submit the report. Try again.");
+    throw new Error(withReason("Couldn't submit the report. Try again.", error));
   }
 }

@@ -24,12 +24,29 @@ const WRITE_ERROR_COPY = {
     "That host name belongs to a verified host. Post under your own handle.",
 };
 
-// `fallback` is what the caller would have said anyway, so unrelated failures
-// keep their existing wording.
+// The short reason behind a failure, for showing next to the friendly
+// message: "Couldn't save that car. (permission denied for table vehicles)".
+// Every error the app shows says what actually went wrong.
+export function errorReason(error) {
+  if (!error) return "";
+  if (typeof error === "string") return error.slice(0, 140);
+  const raw = String(error.message || error.error_description || error.error || error.code || error.status || "").trim();
+  if (/failed to fetch|networkerror|load failed|network request failed/i.test(raw)) return "no connection";
+  return raw.replace(/\s+/g, " ").slice(0, 140);
+}
+
+export function withReason(message, error) {
+  const reason = errorReason(error);
+  return reason ? `${message} (${reason})` : message;
+}
+
+// `fallback` is what the caller would have said anyway; known database
+// errors get their own wording, anything else gets the fallback plus the
+// reason.
 export function friendlyWriteError(error, fallback) {
   const message = (error && error.message) || "";
   for (const marker of Object.keys(WRITE_ERROR_COPY)) {
     if (message.includes(marker)) return WRITE_ERROR_COPY[marker];
   }
-  return fallback;
+  return withReason(fallback, error);
 }

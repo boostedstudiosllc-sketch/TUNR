@@ -34,7 +34,7 @@ export default function ModerationQueue({ onToast }) {
     try {
       const result = await moderateEvent(row.event_id, true);
       track("meet_removed", { eventId: row.event_id, reason: row.reason });
-      onToast(result === "removed" ? `"${row.event_title}" pulled down` : "Couldn't apply that.");
+      onToast(result === "removed" ? `"${row.event_title}" pulled down` : `Couldn't apply that (${result}).`);
       await refresh();
     } catch (e) {
       onToast(e.message);

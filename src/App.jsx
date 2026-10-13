@@ -325,9 +325,13 @@ export default function App() {
         setLocating(false);
         track("location_granted", {});
       },
-      () => {
+      (err) => {
         setLocating(false);
-        showToast("Couldn't get your location — check browser permissions.");
+        showToast(
+          err && err.code === 1
+            ? "Couldn't get your location — location access is turned off for this site in your browser settings."
+            : `Couldn't get your location (${(err && err.message) || "timed out"}).`
+        );
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
     );

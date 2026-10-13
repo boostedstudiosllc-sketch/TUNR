@@ -29,8 +29,10 @@ test("maps the reserved host marker", () => {
   assert.match(friendlyWriteError(error, FALLBACK), /verified host/);
 });
 
-test("falls back for unrelated errors", () => {
-  assert.equal(friendlyWriteError({ message: "connection reset" }, FALLBACK), FALLBACK);
+test("unrelated errors keep the fallback and say what went wrong", () => {
+  assert.equal(friendlyWriteError({ message: "connection reset" }, FALLBACK), `${FALLBACK} (connection reset)`);
+  assert.equal(friendlyWriteError({ message: "TypeError: Failed to fetch" }, FALLBACK), `${FALLBACK} (no connection)`);
+  assert.equal(friendlyWriteError({ code: "42501" }, FALLBACK), `${FALLBACK} (42501)`);
 });
 
 test("falls back for null, undefined, and message-less errors", () => {

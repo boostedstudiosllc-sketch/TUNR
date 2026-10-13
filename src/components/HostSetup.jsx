@@ -25,6 +25,7 @@ export default function HostSetup({ user, token, invite, onStart }) {
 
   const [profile, setProfile] = useState(null);
   const [result, setResult] = useState(null); // redeem result
+  const [inviteError, setInviteError] = useState("");
   const [request, setRequest] = useState(undefined); // undefined = loading
 
   async function refreshProfile() {
@@ -67,7 +68,10 @@ export default function HostSetup({ user, token, invite, onStart }) {
           clearHostInvite();
         }
       })
-      .catch(() => setResult("error"));
+      .catch((e) => {
+        setInviteError(e.message);
+        setResult("error");
+      });
   }, [user?.id, profile?.username, token, invite?.status]);
 
   let body;
@@ -96,7 +100,7 @@ export default function HostSetup({ user, token, invite, onStart }) {
   } else {
     body = (
       <>
-        {result && <InviteProblem result={result} username={profile.username} />}
+        {result && <InviteProblem result={result} username={profile.username} detail={inviteError} />}
         <RequestAccess
           user={user}
           host={profile.username}
@@ -149,7 +153,9 @@ function PickName({ suggested, userId, onSaved }) {
       }
       await saveProfile({ username: clean, city: "Atlanta, GA" }, userId);
       const p = await onSaved();
-      if (!p?.username) setError("Couldn't save that name. Try another.");
+      if (!p?.username) setError("Couldn't save that name — it didn't stick. Try another.");
+    } catch (e) {
+      setError(e.message);
     } finally {
       setBusy(false);
     }
@@ -204,13 +210,13 @@ function Verified({ profile, onStart }) {
   );
 }
 
-function InviteProblem({ result, username }) {
+function InviteProblem({ result, username, detail }) {
   const message = {
     used: "That invite link has already been used. If that wasn't you, tell us below and we'll send a fresh one.",
     expired: "That invite link has expired. Tell us your Instagram below and we'll send a fresh one.",
     not_found: "That invite link isn't valid. Tell us your Instagram below and we'll send a fresh one.",
     host_taken: `Another account is already verified as @${username}. If that name is yours, reply to our DM and we'll sort it out.`,
-    error: "Something went wrong using your invite. Refresh to try again.",
+    error: `Something went wrong using your invite${detail ? ` (${detail})` : ""}. Refresh to try again.`,
   }[result];
   if (!message) return null;
   return (

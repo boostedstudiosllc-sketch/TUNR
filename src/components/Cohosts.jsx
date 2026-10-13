@@ -41,7 +41,7 @@ export function CohostsSection({ event, user, onToast, onChanged, onSteppedDown 
     setBusy(true);
     try {
       const result = await inviteCohost(event.id, name);
-      onToast(INVITE_RESULT[result] || "Couldn't send that invite.");
+      onToast(INVITE_RESULT[result] || `Couldn't send that invite (${result}).`);
       if (result === "invited") {
         track("cohost_invited", { eventId: event.id });
         setUsername("");
