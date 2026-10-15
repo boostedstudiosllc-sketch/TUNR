@@ -65,7 +65,7 @@ export const SYSTEM_PROMPT = `You read car meet flyers for TUNR, an app that lis
 
 Report only what the flyer or caption says. Leave a field null rather than guess at a venue, address or time; a wrong address sends people to the wrong lot, while a blank one just gets filled in by the organizer. When you do have to infer something, such as the year or which date "this Saturday" means, fill it in and say so in "check".
 
-Dates: work them out relative to when the flyer was posted. A weekday with no date means the next one on or after the post date; a month and day with no year means the next one on or after the post date. For a recurring meet ("every Thursday"), give the next occurrence and mention the schedule in the description.
+Dates: the year is always the current year. A weekday with no date means the next one on or after the post date. For a recurring meet ("every Thursday"), give the next occurrence and mention the schedule in the description.
 
 If the image isn't announcing an event (a car photo, a recap, a meme), set is_meet to false and leave the rest empty.`;
 
@@ -94,38 +94,6 @@ const clip = (value, max) => {
   return v ? v.slice(0, max) : null;
 };
 
-function validDate(value, now) {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-  const d = new Date(`${value}T12:00:00Z`);
-  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== value) return null;
-  // Nothing more than a few weeks back or more than a year out.
-  const days = (d.getTime() - now.getTime()) / 86400000;
-  return days < -45 || days > 400 ? null : value;
-}
-
-// "YYYY-MM-DD" for now (UTC) shifted by some days.
-function todayUtcKey(now, offsetDays = 0) {
-  return new Date(now.getTime() + offsetDays * 86400000).toISOString().slice(0, 10);
-}
-
-// The next month/day on or after about a week ago, this year or next; when
-// the flyer names a weekday, the year where that date falls on it wins.
-function nextMonthDay(month, day, now, weekday) {
-  const floor = todayUtcKey(now, -7);
-  const year = now.getUTCFullYear();
-  const options = [year, year + 1]
-    .map((y) => `${y}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`)
-    .filter((key) => {
-      const d = new Date(`${key}T12:00:00Z`);
-      return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === key && key >= floor;
-    });
-  if (!options.length) return null;
-  if (weekday !== null && weekday !== undefined) {
-    const match = options.find((key) => new Date(`${key}T12:00:00Z`).getUTCDay() === weekday);
-    if (match) return match;
-  }
-  return options[0];
-}
 
 const validTime = (value) =>
   typeof value === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value) ? value : null;
@@ -150,17 +118,15 @@ export function normalizeFlyer(raw, now = new Date()) {
       .filter(Boolean)
       .slice(0, max);
   const check = list(r.check, 6, 200);
-  let date = validDate(r.date, now);
-  // Flyers rarely print the year, and the AI can guess the wrong one. Keep
-  // its month and day and put it on the next upcoming one, preferring the
-  // year whose weekday matches what the flyer says.
+  // Flyers rarely print the year, and the AI can guess the wrong one, so the
+  // year is always the current one; only the month and day come from the
+  // flyer.
+  let date = null;
   const md = typeof r.date === "string" && /^\d{4}-(\d{2})-(\d{2})$/.exec(r.date);
-  if (md && (!date || date < todayUtcKey(now, -7))) {
-    const fixed = nextMonthDay(Number(md[1]), Number(md[2]), now, weekdayIndex(r.weekday));
-    if (fixed && fixed !== date) {
-      date = fixed;
-      check.unshift(`Year not on the flyer — set to ${fixed.slice(0, 4)}.`);
-    }
+  if (md) {
+    const key = `${now.getUTCFullYear()}-${md[1]}-${md[2]}`;
+    const d = new Date(`${key}T12:00:00Z`);
+    if (!Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === key) date = key;
   }
 
   // The flyer's own weekday is a check on the date it gave (or we inferred).
