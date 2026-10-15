@@ -103,6 +103,30 @@ function validDate(value, now) {
   return days < -45 || days > 400 ? null : value;
 }
 
+// "YYYY-MM-DD" for now (UTC) shifted by some days.
+function todayUtcKey(now, offsetDays = 0) {
+  return new Date(now.getTime() + offsetDays * 86400000).toISOString().slice(0, 10);
+}
+
+// The next month/day on or after about a week ago, this year or next; when
+// the flyer names a weekday, the year where that date falls on it wins.
+function nextMonthDay(month, day, now, weekday) {
+  const floor = todayUtcKey(now, -7);
+  const year = now.getUTCFullYear();
+  const options = [year, year + 1]
+    .map((y) => `${y}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`)
+    .filter((key) => {
+      const d = new Date(`${key}T12:00:00Z`);
+      return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === key && key >= floor;
+    });
+  if (!options.length) return null;
+  if (weekday !== null && weekday !== undefined) {
+    const match = options.find((key) => new Date(`${key}T12:00:00Z`).getUTCDay() === weekday);
+    if (match) return match;
+  }
+  return options[0];
+}
+
 const validTime = (value) =>
   typeof value === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value) ? value : null;
 
@@ -125,8 +149,19 @@ export function normalizeFlyer(raw, now = new Date()) {
       .map((v) => clip(v, len))
       .filter(Boolean)
       .slice(0, max);
-  const date = validDate(r.date, now);
   const check = list(r.check, 6, 200);
+  let date = validDate(r.date, now);
+  // Flyers rarely print the year, and the AI can guess the wrong one. Keep
+  // its month and day and put it on the next upcoming one, preferring the
+  // year whose weekday matches what the flyer says.
+  const md = typeof r.date === "string" && /^\d{4}-(\d{2})-(\d{2})$/.exec(r.date);
+  if (md && (!date || date < todayUtcKey(now, -7))) {
+    const fixed = nextMonthDay(Number(md[1]), Number(md[2]), now, weekdayIndex(r.weekday));
+    if (fixed && fixed !== date) {
+      date = fixed;
+      check.unshift(`Year not on the flyer — set to ${fixed.slice(0, 4)}.`);
+    }
+  }
 
   // The flyer's own weekday is a check on the date it gave (or we inferred).
   const said = weekdayIndex(r.weekday);

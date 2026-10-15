@@ -57,7 +57,7 @@ test("normalizeFlyer tidies good output and drops bad values", () => {
   assert.deepEqual(bad.hosts, []);
   assert.deepEqual(bad.check, []);
 
-  assert.equal(normalizeFlyer({ ...RAW, date: "2025-10-23" }, NOW).date, null, "a year back is a misread");
+  assert.equal(normalizeFlyer({ ...RAW, date: "2025-10-23" }, NOW).date, "2026-10-23", "a year back is a misread year");
   assert.equal(normalizeFlyer(null, NOW).isMeet, false);
 });
 
@@ -219,4 +219,21 @@ test("not configured or wrong method", async () => {
   assert.equal(res.statusCode, 503);
   const { run } = setup();
   assert.equal((await run({}, {}, "GET")).statusCode, 405);
+});
+
+test("a date with the wrong year (flyers rarely print one) lands on the next upcoming one", () => {
+  const now = new Date("2026-10-15T16:00:00Z");
+  // AI guessed last year: "Saturday October 17th" → Sat Oct 17, 2026.
+  const a = normalizeFlyer({ is_meet: true, date: "2025-10-17", weekday: "Saturday" }, now);
+  assert.equal(a.date, "2026-10-17");
+  assert.match(a.check[0], /Year not on the flyer — set to 2026/);
+  assert.equal(a.dateConflict, false);
+  // Already right: untouched, no note.
+  const b = normalizeFlyer({ is_meet: true, date: "2026-10-17", weekday: "SAT", check: [] }, now);
+  assert.equal(b.date, "2026-10-17");
+  assert.equal(b.check.length, 0);
+  // Month/day already passed this year → next year.
+  assert.equal(normalizeFlyer({ is_meet: true, date: "2024-03-07" }, now).date, "2027-03-07");
+  // Garbage stays empty.
+  assert.equal(normalizeFlyer({ is_meet: true, date: "2026-13-40" }, now).date, null);
 });
