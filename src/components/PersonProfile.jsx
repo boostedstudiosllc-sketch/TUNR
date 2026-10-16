@@ -9,6 +9,7 @@ import {
   track,
 } from "../lib/store.js";
 import { Badges } from "./Badge.jsx";
+import { photoPageLink } from "../lib/photographer.js";
 
 // Someone's profile, opened from their name in a meet chat: follow them,
 // see their cars, or block or restrict them.
@@ -118,6 +119,7 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
                     dayOne={person.day_one}
                     dayOneNumber={person.day_one_number}
                     foundingHost={person.founding_host}
+                    photographer={person.is_photographer}
                     size={18}
                   />
                 </div>
@@ -125,6 +127,16 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
                   {[person.city, `joined ${monthYear(person.joined)}`].filter(Boolean).join(" · ")}
                   {person.follows_me && !isMe && <span style={{ color: "#999" }}> · follows you</span>}
                 </div>
+                {person.is_photographer && photoPageLink(person.photo_page) && (
+                  <a
+                    href={photoPageLink(person.photo_page).href}
+                    target="_blank"
+                    rel="noreferrer nofollow"
+                    style={{ display: "inline-block", fontSize: 12, color: "#38BDF8", marginTop: 4, fontWeight: 700, textDecoration: "none" }}
+                  >
+                    📸 {photoPageLink(person.photo_page).label}
+                  </a>
+                )}
               </div>
             </div>
 

@@ -59,7 +59,7 @@ function isoInTz(ts, tz) {
 }
 
 function rowToEvent(row, counts, userId) {
-  const c = counts.get(row.id) || { going: 0, interested: 0 };
+  const c = counts.get(row.id) || { going: 0, interested: 0, cars: 0, photographers: 0 };
   const tz = row.timezone || DEFAULT_TZ;
   // events_public already blanked the address fields for private meets the
   // viewer isn't in; `locked` just tells the UI to show the teaser treatment.
@@ -86,6 +86,9 @@ function rowToEvent(row, counts, userId) {
     vibe: row.vibe,
     going: (row.base_going || 0) + c.going,
     interested: (row.base_interested || 0) + c.interested,
+    // Of the people going (real RSVPs only): bringing a car, and shooting.
+    cars: Number(c.cars) || 0,
+    photographers: Number(c.photographers) || 0,
     tags: row.tags || [],
     description: row.description,
     source: row.source,
@@ -258,7 +261,31 @@ export async function loadRsvps(userId = null) {
   return loadLocalRsvps();
 }
 
-export async function saveRsvp(rsvps, eventId, status, userId = null) {
+// How you're going to each meet you've said yes to: { eventId: "car" | … }.
+export async function loadGoingAs(userId) {
+  if (!supabase || !userId) return {};
+  const { data, error } = await supabase.from("rsvps").select("event_id,going_as").eq("user_id", userId);
+  if (error || !Array.isArray(data)) return {};
+  return Object.fromEntries(data.map((r) => [r.event_id, r.going_as || "car"]));
+}
+
+// Change how you're going to a meet you've already said yes to. Coming only
+// to shoot brings no car; otherwise your main car comes along.
+export async function saveGoingAs(eventId, goingAs, userId) {
+  if (!supabase || !userId) return;
+  const { data: primary } =
+    goingAs === "photographer"
+      ? { data: null }
+      : await supabase.from("vehicles").select("id").eq("owner_id", userId).eq("is_primary", true).maybeSingle();
+  const { error } = await supabase
+    .from("rsvps")
+    .update({ going_as: goingAs, vehicle_id: primary?.id || null })
+    .eq("user_id", userId)
+    .eq("event_id", eventId);
+  if (error) throw new Error(withReason("Couldn't change how you're going.", error));
+}
+
+export async function saveRsvp(rsvps, eventId, status, userId = null, goingAs = "car") {
   const turningOff = rsvps[eventId] === status;
   const next = { ...rsvps };
   if (turningOff) delete next[eventId];
@@ -266,30 +293,37 @@ export async function saveRsvp(rsvps, eventId, status, userId = null) {
 
   if (supabase && userId) {
     if (turningOff) {
-      await supabase.from("rsvps").delete().eq("user_id", userId).eq("event_id", eventId);
+      const { error } = await supabase.from("rsvps").delete().eq("user_id", userId).eq("event_id", eventId);
+      if (error) throw new Error(withReason("Couldn't clear your RSVP.", error));
     } else if (status === "not_going") {
-      await supabase
+      const { error } = await supabase
         .from("rsvps")
         .upsert({ user_id: userId, event_id: eventId, status, vehicle_id: null }, { onConflict: "user_id,event_id" });
+      if (error) throw new Error(withReason("Couldn't save your RSVP.", error));
     } else {
       // Bring your main car by default. A car isn't required to RSVP, so this
       // stays null for anyone who hasn't added one — they just don't appear in
-      // the meet's car list.
-      const { data: primary } = await supabase
-        .from("vehicles")
-        .select("id")
-        .eq("owner_id", userId)
-        .eq("is_primary", true)
-        .maybeSingle();
-      await supabase.from("rsvps").upsert(
+      // the meet's car list. Going only as a photographer brings no car.
+      const withCar = goingAs !== "photographer";
+      const { data: primary } = withCar
+        ? await supabase
+            .from("vehicles")
+            .select("id")
+            .eq("owner_id", userId)
+            .eq("is_primary", true)
+            .maybeSingle()
+        : { data: null };
+      const { error } = await supabase.from("rsvps").upsert(
         {
           user_id: userId,
           event_id: eventId,
           status,
-          ...(primary?.id ? { vehicle_id: primary.id } : {}),
+          going_as: goingAs,
+          vehicle_id: withCar ? primary?.id || null : null,
         },
         { onConflict: "user_id,event_id" }
       );
+      if (error) throw new Error(withReason("Couldn't save your RSVP.", error));
     }
   } else {
     write(RSVP_KEY, next);
@@ -408,6 +442,8 @@ export async function loadProfile(userId = null) {
         dayOne: Boolean(data.day_one),
         dayOneNumber: data.day_one_number ?? null,
         foundingHost,
+        isPhotographer: Boolean(data.is_photographer),
+        photoPage: data.photo_page || "",
       };
     }
     return { username: "", city: "Atlanta, GA", isAdmin: false, isMember: false };
@@ -419,7 +455,13 @@ export async function saveProfile(profile, userId = null) {
   if (supabase && userId) {
     const { error } = await supabase
       .from("profiles")
-      .upsert({ id: userId, username: profile.username || null, city: profile.city });
+      .upsert({
+        id: userId,
+        username: profile.username || null,
+        city: profile.city,
+        ...(profile.isPhotographer !== undefined ? { is_photographer: Boolean(profile.isPhotographer) } : {}),
+        ...(profile.photoPage !== undefined ? { photo_page: profile.photoPage.trim() || null } : {}),
+      });
     if (error) {
       if (error.code === "23505") throw new Error("That username is taken — pick another.");
       throw new Error(friendlyWriteError(error, "Couldn't save your profile."));

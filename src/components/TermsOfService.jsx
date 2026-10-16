@@ -174,6 +174,8 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           <br />
           Badges such as Day 1 and founding host are recognition only. They have no cash value,
           can't be sold or transferred, and can be removed from an account that breaks these terms.
+          The photographer badge is self-declared: TUNR doesn't check anyone's work, rates or
+          conduct, so any shoot you arrange with someone is between you and them.
         </div>
 
         <div style={heading}>6. USER CONDUCT</div>

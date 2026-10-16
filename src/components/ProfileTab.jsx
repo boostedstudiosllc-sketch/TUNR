@@ -85,6 +85,8 @@ export default function ProfileTab({
     const next = {
       username: draft.username.trim().toLowerCase().replace(/[^a-z0-9_.]/g, ""),
       city: draft.city.trim() || "Atlanta, GA",
+      isPhotographer: Boolean(draft.isPhotographer),
+      photoPage: draft.isPhotographer ? (draft.photoPage || "").trim().slice(0, 200) : "",
     };
     try {
       await saveProfile(next, user?.id || null);
@@ -139,6 +141,26 @@ export default function ProfileTab({
                   value={draft.city}
                   onChange={(e) => setDraft((d) => ({ ...d, city: e.target.value }))}
                 />
+                {user && (
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#CCC", cursor: "pointer", fontFamily: "'Barlow', sans-serif" }}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(draft.isPhotographer)}
+                      onChange={(e) => setDraft((d) => ({ ...d, isPhotographer: e.target.checked }))}
+                      style={{ accentColor: "#38BDF8", width: 16, height: 16 }}
+                    />
+                    📸 I'm a car photographer
+                  </label>
+                )}
+                {user && draft.isPhotographer && (
+                  <input
+                    style={inputStyle}
+                    placeholder="@yourphotopage or website (optional)"
+                    maxLength={200}
+                    value={draft.photoPage || ""}
+                    onChange={(e) => setDraft((d) => ({ ...d, photoPage: e.target.value }))}
+                  />
+                )}
               </div>
             ) : (
               <>
@@ -147,12 +169,13 @@ export default function ProfileTab({
                 </div>
                 <div style={{ fontSize: 12, color: "#FF4500", marginTop: 2 }}>
                   @{profile.username || "your_handle"}
-                  {(profile.dayOne || profile.foundingHost) && (
+                  {(profile.dayOne || profile.foundingHost || profile.isPhotographer) && (
                     <span style={{ marginLeft: 7 }}>
                       <Badges
                         dayOne={profile.dayOne}
                         dayOneNumber={profile.dayOneNumber}
                         foundingHost={profile.foundingHost}
+                        photographer={profile.isPhotographer}
                         size={18}
                       />
                     </span>

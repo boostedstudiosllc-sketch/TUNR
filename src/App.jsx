@@ -16,6 +16,8 @@ import {
   loadEvents,
   loadRsvps,
   saveRsvp,
+  loadGoingAs,
+  saveGoingAs,
   submitEvent,
   hasAcceptedCurrentTos,
   saveTosAccepted,
@@ -61,6 +63,8 @@ const isSaved = (status) => status === "going" || status === "interested";
 export default function App() {
   const [events, setEvents] = useState([]);
   const [rsvps, setRsvps] = useState({});
+  // How you're going to each meet you said yes to: "car" | "photographer" | "both".
+  const [goingAs, setGoingAs] = useState({});
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("discover");
@@ -154,12 +158,14 @@ export default function App() {
       loadEvents(user?.id || null),
       loadRsvps(user?.id || null),
       loadFollows(user?.id || null),
+      loadGoingAs(user?.id || null),
     ])
-      .then(([evts, r, f]) => {
+      .then(([evts, r, f, g]) => {
         if (cancelled) return;
         setEvents(evts);
         setRsvps(r);
         setFollows(f);
+        setGoingAs(g);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -274,9 +280,23 @@ export default function App() {
       const next = { ...prev };
       if (turningOff) delete next[eventId];
       else next[eventId] = status;
-      saveRsvp(prev, eventId, status, user?.id || null).catch(() => {});
+      saveRsvp(prev, eventId, status, user?.id || null, goingAs[eventId] || "car").catch((e) => {
+        // Put the answer back so the screen doesn't claim something unsaved.
+        setRsvps(prev);
+        showToast(e.message);
+      });
       if (!turningOff) track("rsvp", { eventId, status });
       return next;
+    });
+  }
+
+  function handleGoingAs(eventId, as) {
+    const before = goingAs[eventId] || "car";
+    if (as === before) return;
+    setGoingAs((g) => ({ ...g, [eventId]: as }));
+    saveGoingAs(eventId, as, user?.id || null).catch((e) => {
+      setGoingAs((g) => ({ ...g, [eventId]: before }));
+      showToast(e.message);
     });
   }
 
@@ -994,6 +1014,8 @@ export default function App() {
         <MeetDetail
           event={selected}
           rsvp={rsvps[selected.id]}
+          goingAs={goingAs[selected.id] || "car"}
+          onGoingAs={(as) => handleGoingAs(selected.id, as)}
           onClose={() => setSelected(null)}
           onRsvp={handleRsvp}
           user={user}

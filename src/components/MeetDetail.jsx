@@ -12,12 +12,15 @@ import IssueFlag from "./IssueFlag.jsx";
 import { track, loadGoingHistory } from "../lib/store.js";
 import GoingTicker from "./GoingTicker.jsx";
 import { directionsUrl } from "../lib/geo.js";
+import { GOING_AS, crowdLine } from "../lib/photographer.js";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 export default function MeetDetail({
   event,
   rsvp,
+  goingAs = "car",
+  onGoingAs,
   onClose,
   onRsvp,
   user,
@@ -239,7 +242,11 @@ export default function MeetDetail({
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 }}>
             <StatBox label="📅 DATE" value={displayDate(event)} />
             <StatBox label="🕐 TIME" value={displayTime(event)} />
-            <StatBox label="👥 GOING" value={`${event.going} confirmed`} />
+            <StatBox
+              label="👥 GOING"
+              value={`${event.going} confirmed`}
+              sub={!locked ? crowdLine(event) : ""}
+            />
             <StatBox label="★ MAYBE" value={String(event.interested)} />
           </div>
 
@@ -517,6 +524,8 @@ export default function MeetDetail({
             <ActionBar
               rsvp={rsvp}
               onRsvp={(status) => onRsvp(event.id, status)}
+              goingAs={goingAs}
+              onGoingAs={onGoingAs}
               directions={directions}
             />
           )}
@@ -526,7 +535,7 @@ export default function MeetDetail({
   );
 }
 
-function StatBox({ label, value }) {
+function StatBox({ label, value, sub }) {
   return (
     <div
       style={{
@@ -538,6 +547,7 @@ function StatBox({ label, value }) {
     >
       <div style={{ fontSize: 9, color: "#555", letterSpacing: 1.5, marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 14, fontWeight: 700 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: "#888", marginTop: 2, fontFamily: "'Barlow', sans-serif" }}>{sub}</div>}
     </div>
   );
 }
@@ -614,7 +624,7 @@ function Flyer({ url, title }) {
 }
 
 // Stays at the bottom of the meet while you scroll: your answer, and the way there.
-function ActionBar({ rsvp, onRsvp, directions }) {
+function ActionBar({ rsvp, onRsvp, goingAs, onGoingAs, directions }) {
   const options = [
     { id: "going", label: "GOING", on: "✓ GOING", color: "#FF4500", fill: true },
     { id: "interested", label: "MAYBE", on: "★ MAYBE", color: "#FF7A00" },
@@ -628,64 +638,95 @@ function ActionBar({ rsvp, onRsvp, directions }) {
         margin: "22px -20px 0",
         padding: "12px 20px 18px",
         background: "linear-gradient(0deg, #0F0F0F 82%, rgba(15,15,15,0))",
-        display: "flex",
-        gap: 8,
         zIndex: 2,
       }}
     >
-      {options.map((o) => {
-        const active = rsvp === o.id;
-        return (
-          <button
-            key={o.id}
-            className="action-btn"
-            aria-pressed={active}
-            onClick={() => onRsvp(o.id)}
+      {rsvp === "going" && onGoingAs && (
+        <div role="group" aria-label="Going as" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+          <span style={{ fontSize: 10, color: "#666", letterSpacing: 1.2, fontWeight: 700, flexShrink: 0 }}>GOING AS</span>
+          {GOING_AS.map((g) => {
+            const active = goingAs === g.id;
+            return (
+              <button
+                key={g.id}
+                aria-pressed={active}
+                onClick={() => onGoingAs(g.id)}
+                style={{
+                  flex: 1,
+                  padding: "7px 0",
+                  borderRadius: 16,
+                  fontSize: 10.5,
+                  fontWeight: 800,
+                  letterSpacing: 0.6,
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                  background: active ? "rgba(255,69,0,0.16)" : "#161616",
+                  color: active ? "#FF7A00" : "#888",
+                  border: `1px solid ${active ? "#FF4500" : "#2A2A2A"}`,
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                }}
+              >
+                {g.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 8 }}>
+        {options.map((o) => {
+          const active = rsvp === o.id;
+          return (
+            <button
+              key={o.id}
+              className="action-btn"
+              aria-pressed={active}
+              onClick={() => onRsvp(o.id)}
+              style={{
+                flex: o.id === "going" ? 1.25 : 1,
+                padding: "13px 0",
+                background: active ? (o.fill ? o.color : "#1A1A1A") : "#161616",
+                color: active ? (o.fill ? "#fff" : o.color) : "#777",
+                border: active && !o.fill ? `1px solid ${o.color}` : active ? "none" : "1px solid #2A2A2A",
+                borderRadius: 8,
+                fontSize: 12.5,
+                fontWeight: 800,
+                letterSpacing: 1.2,
+                fontFamily: "'Barlow Condensed', sans-serif",
+                boxShadow: active && o.fill ? "0 4px 20px rgba(255,69,0,0.4)" : "none",
+              }}
+            >
+              {active ? o.on : o.label}
+            </button>
+          );
+        })}
+        {directions && (
+          <a
+            href={directions}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Directions"
             style={{
-              flex: o.id === "going" ? 1.25 : 1,
-              padding: "13px 0",
-              background: active ? (o.fill ? o.color : "#1A1A1A") : "#161616",
-              color: active ? (o.fill ? "#fff" : o.color) : "#777",
-              border: active && !o.fill ? `1px solid ${o.color}` : active ? "none" : "1px solid #2A2A2A",
+              flex: "0 0 48px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
               borderRadius: 8,
-              fontSize: 12.5,
-              fontWeight: 800,
-              letterSpacing: 1.2,
-              fontFamily: "'Barlow Condensed', sans-serif",
-              boxShadow: active && o.fill ? "0 4px 20px rgba(255,69,0,0.4)" : "none",
+              background: "#0F1F0F",
+              border: "1px solid #10B981",
+              color: "#10B981",
+              fontSize: 16,
+              textDecoration: "none",
+              lineHeight: 1,
             }}
           >
-            {active ? o.on : o.label}
-          </button>
-        );
-      })}
-      {directions && (
-        <a
-          href={directions}
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Directions"
-          style={{
-            flex: "0 0 48px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 8,
-            background: "#0F1F0F",
-            border: "1px solid #10B981",
-            color: "#10B981",
-            fontSize: 16,
-            textDecoration: "none",
-            lineHeight: 1,
-          }}
-        >
-          🧭
-          <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: 0.8, marginTop: 3, fontFamily: "'Barlow Condensed', sans-serif" }}>
-            GO
-          </span>
-        </a>
-      )}
+            🧭
+            <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: 0.8, marginTop: 3, fontFamily: "'Barlow Condensed', sans-serif" }}>
+              GO
+            </span>
+          </a>
+        )}
+      </div>
     </div>
   );
 }

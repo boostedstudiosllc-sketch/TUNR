@@ -5,6 +5,19 @@ import { createPortal } from "react-dom";
 // what it's for. The database decides who has them, so showing them is all
 // the client ever does.
 const BADGES = {
+  photographer: {
+    title: "Photographer",
+    gradient: "linear-gradient(135deg, #38BDF8, #2563EB)",
+    explain: () =>
+      "Shoots cars at meets. Self-declared on their profile, so check their work before you book.",
+    glyph: (
+      // A camera.
+      <g fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round">
+        <path d="M4 8h3.5l1.5-2.5h6L16.5 8H20v11H4z" />
+        <circle cx="12" cy="13.2" r="3.3" />
+      </g>
+    ),
+  },
   day_one: {
     title: "Day 1",
     gradient: "linear-gradient(135deg, #FFC53D, #FF8A00)",
@@ -84,12 +97,13 @@ export default function Badge({ kind, number = null, size = 16 }) {
 }
 
 // Badges can sit next to each other; this keeps the gap consistent.
-export function Badges({ dayOne, dayOneNumber, foundingHost, size = 16 }) {
-  if (!dayOne && !foundingHost) return null;
+export function Badges({ dayOne, dayOneNumber, foundingHost, photographer, size = 16 }) {
+  if (!dayOne && !foundingHost && !photographer) return null;
   return (
     <span style={{ display: "inline-flex", gap: 4, alignItems: "center", verticalAlign: "middle" }}>
       {foundingHost && <Badge kind="founding_host" size={size} />}
       {dayOne && <Badge kind="day_one" number={dayOneNumber} size={size} />}
+      {photographer && <Badge kind="photographer" size={size} />}
     </span>
   );
 }
