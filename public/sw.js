@@ -3,7 +3,7 @@
 // good way to serve a stale bundle for days after a deploy, and the point here
 // is installability, not offline support.
 
-const CACHE = "tunr-shell-v1";
+const CACHE = "tunr-shell-v2";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -32,5 +32,46 @@ self.addEventListener("fetch", (event) => {
         return response;
       })
       .catch(() => caches.match("/").then((cached) => cached || Response.error()))
+  );
+});
+
+// ---------- alerts ----------
+// The server sends { title, body, link }; tapping opens the app on that
+// linkup, meet or profile (App.jsx reads ?open=).
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    data = { title: "TUNR", body: event.data ? event.data.text() : "" };
+  }
+  const title = data.title || "TUNR";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || "",
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      tag: data.link || undefined,
+      renotify: Boolean(data.link),
+      data: { link: data.link || null },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const link = event.notification.data && event.notification.data.link;
+  const url = link ? `/?open=${encodeURIComponent(link)}` : "/";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      for (const w of windows) {
+        if (new URL(w.url).origin === self.location.origin) {
+          w.postMessage({ type: "open", link });
+          return w.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    })
   );
 });

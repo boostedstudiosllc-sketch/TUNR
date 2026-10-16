@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { CONTACT_EMAIL, LEGAL_ENTITY } from "../lib/contact.js";
+import { LINKUP_RULES } from "../lib/linkupRules.js";
 
 // Shown at the top. Change it whenever TOS_VERSION in lib/store.js changes.
 const TERMS_UPDATED = "October 2026";
@@ -186,7 +187,22 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           any user at any time.
         </div>
 
-        <div style={heading}>7. YOUR CONTENT</div>
+        <div style={heading}>7. LINKUPS</div>
+        <div style={body}>
+          Linkups are get-togethers people post for the next couple of hours. Before you post or
+          join one, you agree to these rules:
+          {LINKUP_RULES.map(([title, text]) => (
+            <span key={title} style={{ display: "block", marginTop: 8 }}>
+              <strong>{title}</strong> {text}
+            </span>
+          ))}
+          <span style={{ display: "block", marginTop: 8 }}>
+            Sections 13 and 14 (release, limit of liability and indemnity) apply to linkups exactly
+            as they do to meets.
+          </span>
+        </div>
+
+        <div style={heading}>8. YOUR CONTENT</div>
         <div style={body}>
           Anything you post — meet listings, comments, photos — stays yours. By posting it you give
           us permission to display, store, resize and share it inside TUNR and in links to TUNR, for
@@ -197,7 +213,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           rights to. Don't post a flyer, photo or logo you don't have permission to use.
         </div>
 
-        <div style={heading}>8. COPYRIGHT &amp; TAKEDOWN</div>
+        <div style={heading}>9. COPYRIGHT &amp; TAKEDOWN</div>
         <div style={body}>
           If something on TUNR infringes your copyright, email{" "}
           <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#FF4500" }}>
@@ -213,7 +229,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           notice to the same address. Accounts that repeatedly infringe are terminated.
         </div>
 
-        <div style={heading}>9. PERKS &amp; PARTNER OFFERS</div>
+        <div style={heading}>10. PERKS &amp; PARTNER OFFERS</div>
         <div style={body}>
           Discounts and offers in the Perks tab come from the businesses named on them, not from us.
           Each business sets its own terms, decides whether to honor an offer, and is responsible
@@ -221,7 +237,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           perk says so, listing a business doesn't mean it endorses TUNR or that we endorse it.
         </div>
 
-        <div style={heading}>10. PAID MEMBERSHIP</div>
+        <div style={heading}>11. PAID MEMBERSHIP</div>
         <div style={body}>
           Finding meets is free. If you choose a paid membership, the price, what it includes, and
           how often you're billed are shown before you pay. Memberships renew automatically until
@@ -231,7 +247,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           renewal.
         </div>
 
-        <div style={heading}>11. THE APP IS PROVIDED "AS IS"</div>
+        <div style={heading}>12. THE APP IS PROVIDED "AS IS"</div>
         <div style={body}>
           TUNR is provided "as is" and "as available". To the extent the law allows, we make no
           promise that it will be accurate, uninterrupted, or error-free, or that any event,
@@ -239,12 +255,12 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           including merchantability, fitness for a particular purpose, and non-infringement.
         </div>
 
-        <div style={heading}>12. RELEASE &amp; LIMIT OF LIABILITY</div>
+        <div style={heading}>13. RELEASE &amp; LIMIT OF LIABILITY</div>
         <div style={body}>
           TO THE MAXIMUM EXTENT PERMITTED BY LAW, {LEGAL_ENTITY.toUpperCase()}, ITS OWNERS,
           EMPLOYEES AND AGENTS ARE NOT LIABLE FOR ANY INJURY, DEATH, PROPERTY DAMAGE, OR OTHER HARM
-          ARISING FROM YOUR USE OF THIS APP OR ATTENDANCE AT ANY LISTED EVENT. YOU ATTEND ANY EVENT
-          AT YOUR SOLE RISK.
+          ARISING FROM YOUR USE OF THIS APP OR ATTENDANCE AT ANY LISTED EVENT OR LINKUP. YOU ATTEND
+          ANY EVENT OR LINKUP AT YOUR SOLE RISK.
           <br />
           <br />
           TO THE SAME EXTENT, WE ARE NOT LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR
@@ -252,14 +268,15 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           GREATER OF $50 OR WHAT YOU PAID US IN THE 12 MONTHS BEFORE THE CLAIM.
         </div>
 
-        <div style={heading}>13. INDEMNITY</div>
+        <div style={heading}>14. INDEMNITY</div>
         <div style={body}>
-          If someone brings a claim against us because of a meet you hosted, content you posted, or
+          If someone brings a claim against us because of a meet you hosted, a linkup you posted or
+          went to, content you posted, or
           your breach of these terms or the law, you agree to cover our reasonable costs of dealing
           with it, including legal fees.
         </div>
 
-        <div style={heading}>14. REPORTING</div>
+        <div style={heading}>15. REPORTING</div>
         <div style={body}>
           If you witness illegal activity at a TUNR-listed meet, report it to local law enforcement
           immediately. TUNR will cooperate fully with law enforcement investigations.
@@ -270,14 +287,14 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           breaks these terms.
         </div>
 
-        <div style={heading}>15. CHANGES TO THESE TERMS</div>
+        <div style={heading}>16. CHANGES TO THESE TERMS</div>
         <div style={body}>
           If we change these terms in a way that matters, we'll ask you to agree to the new version
           in the app before you carry on. If you don't agree, you can stop using TUNR and delete your
           account.
         </div>
 
-        <div style={heading}>16. GOVERNING LAW</div>
+        <div style={heading}>17. GOVERNING LAW</div>
         <div style={body}>
           These terms are governed by the laws of the State of Georgia, USA. Any dispute about TUNR
           will be handled in the state or federal courts located in Georgia, and you and we agree to
@@ -286,7 +303,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           applies.
         </div>
 
-        <div style={heading}>17. CONTACT</div>
+        <div style={heading}>18. CONTACT</div>
         <div style={body}>
           TUNR is operated by {LEGAL_ENTITY}. Questions, complaints, or anything that needs a
           human:{" "}

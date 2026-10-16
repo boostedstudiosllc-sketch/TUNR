@@ -22,6 +22,20 @@ const WRITE_ERROR_COPY = {
   duplicate_request: "You've already sent us that request — we'll be in touch.",
   host_reserved:
     "That host name belongs to a verified host. Post under your own handle.",
+  linkup_terms_required: "Agree to the linkup rules first.",
+  linkup_starts_within_2_hours: "A linkup has to start within the next 2 hours.",
+  linkup_already_live: "You already have a live linkup. End or cancel it before starting another.",
+  rate_limit_linkups: "That's 6 linkups today — the limit. Try again tomorrow.",
+  linkup_over: "That linkup is over or was cancelled.",
+  linkup_is_yours: "That's your own linkup — you're already in.",
+  linkup_unavailable: "You can't join that linkup.",
+  linkup_chat_closed: "This linkup's chat has closed.",
+  rate_limit_messages: "You're sending messages quickly — wait a minute and try again.",
+  needs_a_car: "Add your car to your garage first — confirmations come from car owners.",
+  not_a_photographer: "They haven't turned on the photographer badge.",
+  confirmation_blocked: "You can't confirm this photographer.",
+  rate_limit_confirmations: "That's 10 confirmations today — the limit. Try again tomorrow.",
+  admins_only: "Only TUNR admins can do that.",
 };
 
 // The short reason behind a failure, for showing next to the friendly

@@ -243,6 +243,7 @@ export default function Comments({ eventId, user, onNeedAccount, onToast, onOpen
                       dayOneNumber={c.day_one_number}
                       foundingHost={c.founding_host}
                       photographer={c.photographer}
+                      photographerVerified={c.photographer_verified}
                       size={14}
                     />
                     <span style={{ fontSize: 10.5, color: "#555" }}>{timeAgo(c.created_at)}</span>

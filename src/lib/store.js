@@ -6,9 +6,10 @@
 
 import { seedEvents } from "../data/events.js";
 import { supabase } from "./supabase.js";
-import { DEFAULT_TZ, parseLocal } from "./dates.js";
+import { DEFAULT_TZ, parseLocal, isoInTz } from "./dates.js";
 import { friendlyWriteError, withReason } from "./errors.js";
 import { normalizePasscode } from "./passcode.js";
+import { kickPush } from "./alerts.js";
 
 const RSVP_KEY = "tunr.rsvps.v1";
 const SUBMITTED_KEY = "tunr.submitted.v1";
@@ -40,23 +41,6 @@ function write(key, value) {
   }
 }
 
-function isoInTz(ts, tz) {
-  // timestamptz -> "YYYY-MM-DDTHH:MM" wall clock in the event's own timezone,
-  // which is the shape the date helpers expect.
-  if (!ts) return null;
-  const d = new Date(ts);
-  if (isNaN(d.getTime())) return null;
-  const p = new Intl.DateTimeFormat("en-CA", {
-    timeZone: tz,
-    hour12: false,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit",
-  })
-    .formatToParts(d)
-    .reduce((acc, x) => ((acc[x.type] = x.value), acc), {});
-  const hour = String(Number(p.hour) % 24).padStart(2, "0");
-  return `${p.year}-${p.month}-${p.day}T${hour}:${p.minute}`;
-}
 
 function rowToEvent(row, counts, userId) {
   const c = counts.get(row.id) || { going: 0, interested: 0, cars: 0, photographers: 0 };
@@ -1558,4 +1542,36 @@ export async function submitReport(eventId, reason, note, userId, suggested = ""
     if (error.code === "23505") throw new Error("You already reported this meet — thanks.");
     throw new Error(withReason("Couldn't submit the report. Try again.", error));
   }
+}
+
+// ---------- verified photographers ----------
+
+export async function confirmPhotographer(photographerId, userId) {
+  if (!supabase || !userId) throw new Error("Sign in first.");
+  const { error } = await supabase
+    .from("photographer_confirmations")
+    .insert({ photographer_id: photographerId, confirmer_id: userId });
+  if (error) {
+    if (error.code === "23505") throw new Error("You've already confirmed them.");
+    throw new Error(friendlyWriteError(error, "Couldn't confirm that."));
+  }
+  kickPush();
+}
+
+export async function unconfirmPhotographer(photographerId, userId) {
+  if (!supabase || !userId) throw new Error("Sign in first.");
+  const { error } = await supabase
+    .from("photographer_confirmations")
+    .delete()
+    .eq("photographer_id", photographerId)
+    .eq("confirmer_id", userId);
+  if (error) throw new Error(withReason("Couldn't take back your confirmation.", error));
+}
+
+// Admins: "verified", "revoked", or "auto" (back to counting confirmations).
+export async function setPhotographerStatus(userId, status) {
+  if (!supabase) throw new Error("Sign in first.");
+  const { error } = await supabase.rpc("set_photographer_status", { p_user: userId, p_status: status });
+  if (error) throw new Error(friendlyWriteError(error, "Couldn't change their photographer check."));
+  kickPush();
 }

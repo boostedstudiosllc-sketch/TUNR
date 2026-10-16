@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { loadAdminInsights } from "../lib/store.js";
+import { loadLinkupStats } from "../lib/linkups.js";
 import { toCsv } from "../lib/csv.js";
 import GoingTicker from "./GoingTicker.jsx";
 
@@ -36,9 +37,19 @@ export default function Insights() {
   const [metric, setMetric] = useState("going");
   const [hostSort, setHostSort] = useState("going_30d");
   const [allHosts, setAllHosts] = useState(false);
+  const [error, setError] = useState("");
+  const [linkups, setLinkups] = useState(null);
 
   useEffect(() => {
-    loadAdminInsights().then(setData).catch(() => setData(null));
+    loadAdminInsights()
+      .then(setData)
+      .catch((e) => {
+        setError(e.message || String(e));
+        setData(null);
+      });
+    loadLinkupStats()
+      .then(setLinkups)
+      .catch((e) => setError(e.message));
   }, []);
 
   const hosts = useMemo(() => {
@@ -57,7 +68,7 @@ export default function Insights() {
   }, [data]);
 
   if (data === undefined) return <Card><Muted>Loading insights…</Muted></Card>;
-  if (data === null) return null;
+  if (data === null) return error ? <Card><Muted>Insights didn't load: {error}</Muted></Card> : null;
 
   const o = data.overview;
   const daily = data.daily.slice(-30);
@@ -138,6 +149,17 @@ export default function Insights() {
           </>
         )}
       </Section>
+
+      {linkups && (
+        <Section title="Linkups">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <Tile label="Live or starting soon" value={linkups.live_now} sub="right now" />
+            <Tile label="Posted" value={linkups.posted_7d} sub={`7 days · ${linkups.posted_30d} in 30`} />
+            <Tile label="People joined" value={linkups.joins_30d} sub="30 days" />
+            <Tile label="Biggest" value={linkups.biggest_30d} sub="people, 30 days" />
+          </div>
+        </Section>
+      )}
 
       <Section title="Top meets now">
         {meets.length === 0 ? (

@@ -18,6 +18,21 @@ const BADGES = {
       </g>
     ),
   },
+  photographer_verified: {
+    title: "Verified photographer",
+    gradient: "linear-gradient(135deg, #22D3EE, #1D4ED8)",
+    explain: () =>
+      "A photographer five car owners have confirmed shot their cars, or one TUNR checked. Still worth looking at their work first.",
+    glyph: (
+      // A camera with a check.
+      <g fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
+        <path d="M3.5 8h3.5l1.5-2.5h5L15 8h3.5v6.5" />
+        <path d="M3.5 8v11H13" />
+        <circle cx="10.5" cy="13" r="3" />
+        <path d="M15.5 18.5l2 2 4-4.5" />
+      </g>
+    ),
+  },
   day_one: {
     title: "Day 1",
     gradient: "linear-gradient(135deg, #FFC53D, #FF8A00)",
@@ -97,13 +112,17 @@ export default function Badge({ kind, number = null, size = 16 }) {
 }
 
 // Badges can sit next to each other; this keeps the gap consistent.
-export function Badges({ dayOne, dayOneNumber, foundingHost, photographer, size = 16 }) {
-  if (!dayOne && !foundingHost && !photographer) return null;
+export function Badges({ dayOne, dayOneNumber, foundingHost, photographer, photographerVerified, size = 16 }) {
+  if (!dayOne && !foundingHost && !photographer && !photographerVerified) return null;
   return (
     <span style={{ display: "inline-flex", gap: 4, alignItems: "center", verticalAlign: "middle" }}>
       {foundingHost && <Badge kind="founding_host" size={size} />}
       {dayOne && <Badge kind="day_one" number={dayOneNumber} size={size} />}
-      {photographer && <Badge kind="photographer" size={size} />}
+      {photographerVerified ? (
+        <Badge kind="photographer_verified" size={size} />
+      ) : (
+        photographer && <Badge kind="photographer" size={size} />
+      )}
     </span>
   );
 }

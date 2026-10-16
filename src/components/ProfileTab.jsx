@@ -42,6 +42,7 @@ export default function ProfileTab({
   events,
   rsvps,
   user,
+  onOpenAlerts,
   onShowTerms,
   onShowPrivacy,
   onToast,
@@ -176,12 +177,23 @@ export default function ProfileTab({
                         dayOneNumber={profile.dayOneNumber}
                         foundingHost={profile.foundingHost}
                         photographer={profile.isPhotographer}
+                        photographerVerified={profile.isPhotographer && social?.photographer_verified}
                         size={18}
                       />
                     </span>
                   )}
                 </div>
                 <div style={{ fontSize: 12, color: "#555", marginTop: 3 }}>📍 {profile.city}</div>
+                {profile.isPhotographer && social && (
+                  <button
+                    onClick={() => onOpenPerson && onOpenPerson(user.id)}
+                    style={{ background: "none", border: "none", padding: 0, marginTop: 4, color: "#7DD3FC", fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "'Barlow', sans-serif" }}
+                  >
+                    {social.photographer_verified
+                      ? "📸✓ Verified photographer"
+                      : `📸 ${social.photo_confirmations || 0} of 5 confirmations for the ✓ →`}
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -331,6 +343,35 @@ export default function ProfileTab({
               SIGN OUT
             </button>
           </div>
+        )}
+
+        {hasBackend() && user && (
+          <button
+            onClick={onOpenAlerts}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              textAlign: "left",
+              background: "#111",
+              border: "1px solid #2A2A2A",
+              borderRadius: 10,
+              padding: "14px 18px",
+              marginBottom: 12,
+              color: "#F0F0F0",
+              cursor: "pointer",
+            }}
+          >
+            <span style={{ fontSize: 22 }}>🔔</span>
+            <span style={{ flex: 1 }}>
+              <span style={{ display: "block", fontSize: 13, fontWeight: 800 }}>Alerts</span>
+              <span style={{ display: "block", fontSize: 12, color: "#666", marginTop: 2, fontFamily: "'Barlow', sans-serif" }}>
+                Phone alerts, linkups near you, meet-day reminders
+              </span>
+            </span>
+            <span style={{ color: "#555" }}>›</span>
+          </button>
         )}
 
         {hasBackend() && user && <CohostInvites user={user} onToast={onToast} onChanged={onCohostChange} />}

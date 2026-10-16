@@ -80,12 +80,25 @@ export default function PrivacyPolicy({ onClose }) {
           <strong>What you do in the app:</strong> the meets you RSVP to, meets you post, comments
           you write, hosts and people you follow, who follows you, accounts you block or restrict, your 👍/👎 on messages, photos you upload, perks you redeem, and
           any request to join a private meet or to be verified as a host — including the Instagram
-          account you tell us runs your meets.
+          account you tell us runs your meets. If you turn on the photographer badge, the photo page
+          you link, and which car owners confirmed you shot their car.
           <br />
           <br />
-          <strong>Location:</strong> only if you tap to show distances, and only while the app is
-          open. Your coordinates are used in your browser to work out how far away meets are. They
-          are not sent to us and not stored.
+          <strong>Linkups:</strong> linkups you post (the spot, its map pin, the time and your note),
+          the ones you join or ask to join, how you're coming, and messages in linkup chats.
+          <br />
+          <br />
+          <strong>Location:</strong> only when you tap for it, and only while the app is open.
+          Showing distances to meets uses your coordinates in your browser only; they aren't sent
+          to us. If you set your location for linkup alerts, we save it rounded to about half a
+          mile, with the distance you chose, to work out which linkups are near you; it's never
+          shown to anyone. If you tap "I'm here now" when posting a linkup, that spot is the
+          linkup's location.
+          <br />
+          <br />
+          <strong>Alerts:</strong> the alerts we've sent you, whether you've read them, your alert
+          settings, and, for each device you turn alerts on, the delivery address your browser
+          gives us for it.
           <br />
           <br />
           <strong>Usage events:</strong> basic records of actions like opening the app, searching,
@@ -117,6 +130,13 @@ export default function PrivacyPolicy({ onClose }) {
           people who have been let in.
           <br />
           <br />
+          <strong>Linkups</strong> are only shown to signed-in users. On a public linkup, the spot
+          and who's in are visible to them; on a private one, only the kind, rough area and time
+          are, until the poster accepts you. Linkup chats are visible only to the people in the
+          linkup. Your 📸 photographer badge, its link and how many confirmations you have are
+          public; who confirmed you isn't.
+          <br />
+          <br />
           <strong>Perks:</strong> when you redeem a perk we record that you did. Partner businesses
           are only ever told how many times their offer was used — never who used it.
         </div>
@@ -130,7 +150,9 @@ export default function PrivacyPolicy({ onClose }) {
           <strong>Google</strong> also reads a flyer when you post a meet from one: the flyer image and
           any caption you paste are sent to its Gemini AI to pick out the details. On the free tier
           we use, Google may use what's sent to improve its products, so only use it for flyers that
-          are public anyway. When paid
+          are public anyway. <strong>Apple, Google and Mozilla</strong> carry alerts to your device
+          if you turn them on — their push services receive the alert (encrypted) and deliver it.
+          When paid
           membership launches, payments are handled by a payment processor; we never see or store
           your full card number. Each is a processor acting on our behalf, and each has its own
           privacy policy.
@@ -146,7 +168,8 @@ export default function PrivacyPolicy({ onClose }) {
           the meet is gone so repeated problems can be spotted. Usage events are kept in aggregate.
           We keep a running tally of RSVPs (which meet, which answer, and when — never who) and of
           meet views, so hosts' numbers survive people changing their answer or leaving; it can't
-          be traced back to you.
+          be traced back to you. Alerts are deleted after 60 days. Linkups and their chats are kept
+          after they end so problems can be looked into, and are removed with your account.
           The record of which terms you agreed to, and when, is kept for as long as your account
           exists.
         </div>

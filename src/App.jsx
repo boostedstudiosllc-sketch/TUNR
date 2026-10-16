@@ -48,6 +48,10 @@ import TodayStrip from "./components/TodayStrip.jsx";
 import HostPitch from "./components/HostPitch.jsx";
 import PerksTab from "./components/PerksTab.jsx";
 import JoinPage from "./components/JoinPage.jsx";
+import LinkupTab from "./components/LinkupTab.jsx";
+import NotificationBell from "./components/NotificationBell.jsx";
+import AlertSettings from "./components/AlertSettings.jsx";
+import HomeScreenPrompt from "./components/HomeScreenPrompt.jsx";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -100,6 +104,13 @@ export default function App() {
     custom: { date: todayKey(), from: "17:00", to: "19:00" },
   }));
   const [position, setPosition] = useState(null);
+  const [showAlerts, setShowAlerts] = useState(false);
+  // A linkup to open, from an alert.
+  const [openLinkupId, setOpenLinkupId] = useState(null);
+  // An alert tapped before the meets had loaded ("meet:<id>").
+  const [pendingLink, setPendingLink] = useState(
+    () => (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("open")) || null
+  );
   const [locating, setLocating] = useState(false);
 
   // Ticks so the "starts in" countdowns stay honest while the app is open.
@@ -333,6 +344,49 @@ export default function App() {
     if (fresh) setSelected(fresh);
   }
 
+  // Where an alert points: "linkup:<id>", "meet:<id>" or "person:<id>".
+  function openLink(link) {
+    const [type, id] = String(link || "").split(":");
+    if (!id) return;
+    if (type === "linkup") {
+      setSelected(null);
+      setPersonView(null);
+      setTab("linkup");
+      setOpenLinkupId(id);
+    } else if (type === "person") {
+      setPersonView(id);
+    } else if (type === "meet") {
+      const found = events.find((e) => e.id === id);
+      if (found) {
+        setTab("discover");
+        setSelected(found);
+      } else if (loading) {
+        setPendingLink(link);
+      } else {
+        showToast("That meet isn't listed any more.");
+      }
+    }
+  }
+
+  // Opened by tapping an alert (?open=…), once there's something to open.
+  useEffect(() => {
+    if (!pendingLink || loading) return;
+    const link = pendingLink;
+    setPendingLink(null);
+    if (window.location.search.includes("open=")) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+    openLink(link);
+  }, [pendingLink, loading]);
+
+  // An alert tapped while the app was already open.
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const onMessage = (e) => e.data && e.data.type === "open" && setPendingLink(e.data.link);
+    navigator.serviceWorker.addEventListener("message", onMessage);
+    return () => navigator.serviceWorker.removeEventListener("message", onMessage);
+  }, []);
+
   function requestLocation() {
     if (!navigator.geolocation) {
       showToast("This browser can't share your location.");
@@ -445,6 +499,8 @@ export default function App() {
             ATLANTA, GA
           </div>
         </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <NotificationBell user={user} onOpenLink={openLink} onToast={showToast} onOpenSettings={() => setShowAlerts(true)} />
         <button
           className="action-btn"
           onClick={() => {
@@ -468,11 +524,13 @@ export default function App() {
         >
           + POST MEET
         </button>
+        </div>
       </div>
 
       {/* Discover */}
       {tab === "discover" && (
         <div style={{ animation: "fadeIn 0.3s ease" }}>
+          <HomeScreenPrompt />
           <TodayStrip events={todayMine} rsvps={rsvps} now={now} onOpen={setSelected} />
 
           <div style={{ padding: "0 20px 12px", position: "relative" }}>
@@ -883,6 +941,26 @@ export default function App() {
         </div>
       )}
 
+      {/* Linkups */}
+      {tab === "linkup" && (
+        <LinkupTab
+          user={user}
+          position={position}
+          openId={openLinkupId}
+          onOpened={() => setOpenLinkupId(null)}
+          onNeedAccount={() => {
+            setTab("profile");
+            showToast("Create a free account first");
+          }}
+          onToast={showToast}
+          onOpenPerson={setPersonView}
+          onShowTerms={() => setShowTerms(true)}
+          onOpenAlerts={() => setShowAlerts(true)}
+        />
+      )}
+
+      {showAlerts && user && <AlertSettings user={user} onClose={() => setShowAlerts(false)} onToast={showToast} />}
+
       {/* Perks */}
       {tab === "perks" && (
         <PerksTab
@@ -903,6 +981,7 @@ export default function App() {
           user={user}
           onShowTerms={() => setShowTerms(true)}
           onShowPrivacy={() => setShowPrivacy(true)}
+          onOpenAlerts={() => setShowAlerts(true)}
           onToast={showToast}
           onCohostChange={refreshEvents}
           onOpenPerson={setPersonView}
@@ -933,6 +1012,7 @@ export default function App() {
         {[
           { id: "discover", icon: "≡", label: "DISCOVER" },
           { id: "map", icon: "◎", label: "MAP" },
+          { id: "linkup", icon: "⚡", label: "LINKUP" },
           { id: "saved", icon: "★", label: "MY MEETS" },
           { id: "perks", icon: "🎟", label: "PERKS" },
           { id: "profile", icon: "◉", label: "PROFILE" },

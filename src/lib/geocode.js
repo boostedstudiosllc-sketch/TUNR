@@ -41,3 +41,40 @@ export async function geocodeLocation(location, city, { token, fetchImpl = fetch
     return { status: "none" };
   }
 }
+
+// The other way: a spot (from the phone's GPS) to an address and the area
+// it's in, e.g. { placeName: "250 Jackson St NE", area: "Old Fourth Ward, Atlanta" }.
+export function judgeReverse(json) {
+  const feature = json?.features?.[0];
+  if (!feature) return { placeName: "", area: "" };
+  const ctx = feature.context || [];
+  const pick = (prefix) => {
+    if (String(feature.id || "").startsWith(prefix)) return feature.text || "";
+    return (ctx.find((c) => String(c.id || "").startsWith(prefix)) || {}).text || "";
+  };
+  const hood = pick("neighborhood.") || pick("locality.");
+  const city = pick("place.");
+  const area = [hood, city].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(", ");
+  const types = feature.place_type || [];
+  const street = types.includes("address")
+    ? [feature.address, feature.text].filter(Boolean).join(" ")
+    : types.includes("poi")
+      ? feature.text || ""
+      : "";
+  return { placeName: street, area };
+}
+
+export async function reverseGeocode(lat, lng, { token, fetchImpl = fetch } = {}) {
+  if (!token || !Number.isFinite(lat) || !Number.isFinite(lng)) return { placeName: "", area: "" };
+  const url =
+    `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng.toFixed(5)},${lat.toFixed(5)}.json` +
+    `?types=address,poi,neighborhood,locality,place&limit=1&access_token=${encodeURIComponent(token)}`;
+  try {
+    const res = await fetchImpl(url);
+    if (!res.ok) return { placeName: "", area: "" };
+    return judgeReverse(await res.json());
+  } catch (e) {
+    console.warn("reverse geocode:", e?.message);
+    return { placeName: "", area: "" };
+  }
+}

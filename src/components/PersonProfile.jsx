@@ -6,6 +6,10 @@ import {
   unblockUser,
   restrictUser,
   loadVehicles,
+  loadProfile,
+  confirmPhotographer,
+  unconfirmPhotographer,
+  setPhotographerStatus,
   track,
 } from "../lib/store.js";
 import { Badges } from "./Badge.jsx";
@@ -19,6 +23,7 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
   const [busy, setBusy] = useState(false);
   const [menu, setMenu] = useState(false);
   const [confirmBlock, setConfirmBlock] = useState(false);
+  const [viewerIsAdmin, setViewerIsAdmin] = useState(false);
 
   async function refresh() {
     const p = await getPerson(personId);
@@ -31,6 +36,10 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
     refresh();
     loadVehicles(personId).then(setCars);
   }, [personId]);
+
+  useEffect(() => {
+    if (user) loadProfile(user.id).then((p) => setViewerIsAdmin(Boolean(p.isAdmin)));
+  }, [user?.id]);
 
   const isMe = user && user.id === personId;
 
@@ -120,6 +129,7 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
                     dayOneNumber={person.day_one_number}
                     foundingHost={person.founding_host}
                     photographer={person.is_photographer}
+                    photographerVerified={person.photographer_verified}
                     size={18}
                   />
                 </div>
@@ -219,6 +229,22 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
               </div>
             )}
 
+            {person.is_photographer && !person.i_blocked && (
+              <PhotographerCheck
+                person={person}
+                isMe={isMe}
+                busy={busy}
+                isAdmin={viewerIsAdmin}
+                onConfirm={() =>
+                  act(
+                    () => (person.i_confirmed ? unconfirmPhotographer(personId, user.id) : confirmPhotographer(personId, user.id)),
+                    person.i_confirmed ? "Confirmation taken back" : `Confirmed — thanks for vouching for ${name}`
+                  )
+                }
+                onAdmin={(status) => act(() => setPhotographerStatus(personId, status), `Photographer check: ${status}`)}
+              />
+            )}
+
             {person.host_name && onOpenHost && (
               <button onClick={() => onOpenHost(person.host_name)} style={{ ...wideButton, width: "100%", marginTop: 10 }}>
                 SEE THEIR MEETS (@{person.host_name}) →
@@ -250,6 +276,71 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+// The road to 📸✓: five car owners saying "they shot my car", or an admin.
+function PhotographerCheck({ person, isMe, busy, isAdmin, onConfirm, onAdmin }) {
+  const n = person.photo_confirmations || 0;
+  const status = person.photographer_status;
+  return (
+    <div style={{ marginTop: 14, background: "#0E1622", border: "1px solid #1E3A5F", borderRadius: 10, padding: "12px 14px" }}>
+      <div style={{ fontSize: 13, fontWeight: 800, color: "#7DD3FC", letterSpacing: 0.4 }}>
+        {person.photographer_verified ? "📸✓ VERIFIED PHOTOGRAPHER" : "📸 PHOTOGRAPHER"}
+      </div>
+      <div style={{ fontSize: 12, color: "#8BA3BF", marginTop: 3, lineHeight: 1.5, fontFamily: "'Barlow', sans-serif" }}>
+        {status === "revoked"
+          ? "An admin removed the verified check."
+          : person.photographer_verified && n < 5
+            ? "Verified by TUNR."
+            : person.photographer_verified
+              ? `${n} car owners confirmed they shot their cars.`
+              : `${n} of 5 car owners have confirmed${isMe ? " you" : ""}. Five gets the verified ✓.`}
+        {isMe && !person.photographer_verified && " Ask the people you shoot to open your profile and tap “They shot my car.”"}
+      </div>
+      {!isMe && (
+        <button
+          disabled={busy}
+          onClick={onConfirm}
+          style={{
+            ...wideButton,
+            width: "100%",
+            marginTop: 10,
+            background: person.i_confirmed ? "#13202F" : "#1D4ED8",
+            color: "#fff",
+            border: person.i_confirmed ? "1px solid #1E3A5F" : "none",
+          }}
+        >
+          {person.i_confirmed ? "✓ YOU CONFIRMED · UNDO" : "📸 THEY SHOT MY CAR"}
+        </button>
+      )}
+      {isAdmin && (
+        <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+          {[
+            ["verified", "VERIFY"],
+            ["revoked", "REVOKE"],
+            ["auto", "AUTO (5)"],
+          ].map(([id, text]) => (
+            <button
+              key={id}
+              disabled={busy}
+              onClick={() => onAdmin(id)}
+              aria-pressed={(status || "auto") === id}
+              style={{
+                ...wideButton,
+                flex: 1,
+                padding: "8px 0",
+                fontSize: 11,
+                color: (status || "auto") === id ? "#FF7A00" : "#888",
+                border: `1px solid ${(status || "auto") === id ? "#FF4500" : "#2A2A2A"}`,
+              }}
+            >
+              ADMIN: {text}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -9,6 +9,24 @@
 
 export const DEFAULT_TZ = "America/New_York";
 
+export function isoInTz(ts, tz) {
+  // timestamptz -> "YYYY-MM-DDTHH:MM" wall clock in the event's own timezone,
+  // which is the shape the date helpers expect.
+  if (!ts) return null;
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return null;
+  const p = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit",
+  })
+    .formatToParts(d)
+    .reduce((acc, x) => ((acc[x.type] = x.value), acc), {});
+  const hour = String(Number(p.hour) % 24).padStart(2, "0");
+  return `${p.year}-${p.month}-${p.day}T${hour}:${p.minute}`;
+}
+
 const DAY_CODES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const DAY_INDEX = { SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6 };
 // Offsets from the first matching weekday of the month; "last" is handled
