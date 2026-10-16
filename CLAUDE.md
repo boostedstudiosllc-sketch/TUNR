@@ -9,3 +9,8 @@ Every error the user sees must state its cause, not just "Couldn't do that."
   `catch (e)` and show `e.message`.
 - API routes return a specific error code (`bad_key`, `rate_limit_flyers`, …) and the
   client shows either a message for that code or the code itself.
+
+## Talking to the owner
+End every reply with a short **Summary**: a few plain bullets covering what was done
+or decided, anything the owner needs to do (marked clearly), and what's next. Keep the
+important details, skip the jargon.
