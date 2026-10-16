@@ -228,4 +228,9 @@ test("the year is always the current year; month and day come from the flyer", (
   assert.equal(normalizeFlyer({ is_meet: true, date: "2026-10-17", weekday: "SAT" }, now).dateConflict, false);
   assert.equal(normalizeFlyer({ is_meet: true, date: "2025-02-29" }, now).date, null); // 2026 has no Feb 29
   assert.equal(normalizeFlyer({ is_meet: true, date: "2026-13-40" }, now).date, null);
+  // January read in December is next January; December stays this year.
+  const dec = new Date("2026-12-20T16:00:00Z");
+  assert.equal(normalizeFlyer({ is_meet: true, date: "2026-01-09" }, dec).date, "2027-01-09");
+  assert.equal(normalizeFlyer({ is_meet: true, date: "2026-12-31" }, dec).date, "2026-12-31");
+  assert.equal(normalizeFlyer({ is_meet: true, date: "2026-02-05" }, dec).date, "2026-02-05");
 });

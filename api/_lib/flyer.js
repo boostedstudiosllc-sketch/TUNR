@@ -65,7 +65,7 @@ export const SYSTEM_PROMPT = `You read car meet flyers for TUNR, an app that lis
 
 Report only what the flyer or caption says. Leave a field null rather than guess at a venue, address or time; a wrong address sends people to the wrong lot, while a blank one just gets filled in by the organizer. When you do have to infer something, such as the year or which date "this Saturday" means, fill it in and say so in "check".
 
-Dates: the year is always the current year. A weekday with no date means the next one on or after the post date. For a recurring meet ("every Thursday"), give the next occurrence and mention the schedule in the description.
+Dates: the year is always the current year, except a January date read in December, which is next year. A weekday with no date means the next one on or after the post date. For a recurring meet ("every Thursday"), give the next occurrence and mention the schedule in the description.
 
 If the image isn't announcing an event (a car photo, a recap, a meme), set is_meet to false and leave the rest empty.`;
 
@@ -119,12 +119,14 @@ export function normalizeFlyer(raw, now = new Date()) {
       .slice(0, max);
   const check = list(r.check, 6, 200);
   // Flyers rarely print the year, and the AI can guess the wrong one, so the
-  // year is always the current one; only the month and day come from the
-  // flyer.
+  // year is always the current one (next year for January in December);
+  // only the month and day come from the flyer.
   let date = null;
   const md = typeof r.date === "string" && /^\d{4}-(\d{2})-(\d{2})$/.exec(r.date);
   if (md) {
-    const key = `${now.getUTCFullYear()}-${md[1]}-${md[2]}`;
+    // Except a January meet read in December, which is next January.
+    const year = now.getUTCFullYear() + (now.getUTCMonth() === 11 && md[1] === "01" ? 1 : 0);
+    const key = `${year}-${md[1]}-${md[2]}`;
     const d = new Date(`${key}T12:00:00Z`);
     if (!Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === key) date = key;
   }
