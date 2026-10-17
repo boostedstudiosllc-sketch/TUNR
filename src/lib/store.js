@@ -7,7 +7,7 @@
 import { seedEvents } from "../data/events.js";
 import { supabase } from "./supabase.js";
 import { DEFAULT_TZ, parseLocal, isoInTz } from "./dates.js";
-import { friendlyWriteError, withReason } from "./errors.js";
+import { friendlyWriteError, withReason, authErrorMessage } from "./errors.js";
 import { normalizePasscode } from "./passcode.js";
 import { kickPush } from "./alerts.js";
 
@@ -704,18 +704,7 @@ export async function updatePassword(password) {
 }
 
 function friendlyAuthError(error) {
-  const msg = (error && error.message) || "";
-  const code = (error && error.code) || "";
-  if (/invalid login credentials/i.test(msg)) return "Wrong email or password.";
-  if (/email not confirmed/i.test(msg)) return "Confirm your email first — check your inbox.";
-  if (/already registered|already been registered/i.test(msg))
-    return "That email already has an account. Log in instead.";
-  if (/password/i.test(msg) && /(short|least|6)/i.test(msg))
-    return "Password must be at least 6 characters.";
-  if (/rate|too many/i.test(msg) || code === "over_email_send_rate_limit")
-    return "Too many attempts. Wait a few minutes and try again.";
-  if (/invalid/i.test(msg) && /email/i.test(msg)) return "That email address isn't valid.";
-  return msg || "Something went wrong. Try again.";
+  return authErrorMessage(error);
 }
 
 // Ensures a profile row exists for a freshly confirmed account, carrying the

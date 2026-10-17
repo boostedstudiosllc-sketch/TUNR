@@ -64,3 +64,28 @@ export function friendlyWriteError(error, fallback) {
   }
   return withReason(fallback, error);
 }
+
+// Sign-up and log-in failures from Supabase Auth, in plain words with the
+// real reason after them, e.g. "Sign-up emails are maxed out … (email rate
+// limit exceeded)".
+export function authErrorMessage(error) {
+  const msg = (error && error.message) || "";
+  const code = (error && error.code) || "";
+  if (/invalid login credentials/i.test(msg)) return "Wrong email or password.";
+  if (/email not confirmed/i.test(msg)) return "Confirm your email first — check your inbox (and spam).";
+  if (/already registered|already been registered/i.test(msg) || code === "user_already_exists")
+    return "That email already has an account. Tap LOG IN instead.";
+  if (/password/i.test(msg) && /(short|least|6)/i.test(msg)) return withReason("Password must be at least 6 characters.", error);
+  if (code === "over_email_send_rate_limit" || /email rate limit/i.test(msg))
+    return withReason(
+      "TUNR has hit its limit on sign-up emails for now, so new accounts can't be created for a bit. This isn't your fault — try again in an hour, or log in if you already have an account.",
+      error
+    );
+  if (code === "over_request_rate_limit" || /rate limit|too many/i.test(msg))
+    return withReason("Too many tries from this device. Wait a few minutes and try again.", error);
+  if (code === "email_address_not_authorized" || /not authorized/i.test(msg))
+    return withReason("TUNR can't send a confirmation email to that address yet.", error);
+  if (code === "email_address_invalid" || (/invalid/i.test(msg) && /email/i.test(msg)))
+    return withReason("The sign-up service rejected that email address.", error);
+  return withReason("Couldn't sign you in.", error);
+}

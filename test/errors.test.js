@@ -61,3 +61,17 @@ test("listing-request errors get readable copy", async () => {
   assert.match(friendlyWriteError({ message: "not_listable" }, "x"), /Report/);
   assert.match(friendlyWriteError({ message: "duplicate_request" }, "x"), /already sent/);
 });
+
+test("sign-in errors say what actually happened", async () => {
+  const { authErrorMessage } = await import("../src/lib/errors.js");
+  assert.match(
+    authErrorMessage({ message: "email rate limit exceeded", code: "over_email_send_rate_limit" }),
+    /limit on sign-up emails.*\(email rate limit exceeded\)$/
+  );
+  assert.match(
+    authErrorMessage({ message: 'Email address "a@b.co" is invalid', code: "email_address_invalid" }),
+    /rejected that email address\. \(Email address "a@b\.co" is invalid\)$/
+  );
+  assert.equal(authErrorMessage({ message: "Invalid login credentials" }), "Wrong email or password.");
+  assert.equal(authErrorMessage({ message: "boom" }), "Couldn't sign you in. (boom)");
+});
