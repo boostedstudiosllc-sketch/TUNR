@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { loadAdminInsights } from "../lib/store.js";
 import { loadLinkupStats } from "../lib/linkups.js";
+import { loadCleanupStats } from "../lib/account.js";
 import { toCsv } from "../lib/csv.js";
 import GoingTicker from "./GoingTicker.jsx";
 
@@ -39,6 +40,7 @@ export default function Insights() {
   const [allHosts, setAllHosts] = useState(false);
   const [error, setError] = useState("");
   const [linkups, setLinkups] = useState(null);
+  const [cleanup, setCleanup] = useState(null);
 
   useEffect(() => {
     loadAdminInsights()
@@ -49,6 +51,9 @@ export default function Insights() {
       });
     loadLinkupStats()
       .then(setLinkups)
+      .catch((e) => setError(e.message));
+    loadCleanupStats()
+      .then(setCleanup)
       .catch((e) => setError(e.message));
   }, []);
 
@@ -157,6 +162,16 @@ export default function Insights() {
             <Tile label="Posted" value={linkups.posted_7d} sub={`7 days · ${linkups.posted_30d} in 30`} />
             <Tile label="People joined" value={linkups.joins_30d} sub="30 days" />
             <Tile label="Biggest" value={linkups.biggest_30d} sub="people, 30 days" />
+          </div>
+        </Section>
+      )}
+
+      {cleanup && (
+        <Section title="Unconfirmed accounts">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            <Tile label="Waiting to confirm" value={cleanup.unconfirmed_now} sub="right now" />
+            <Tile label="Removed" value={cleanup.deleted_7d} sub="7 days" />
+            <Tile label="Removed" value={cleanup.deleted_30d} sub="30 days" />
           </div>
         </Section>
       )}

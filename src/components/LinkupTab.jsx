@@ -8,6 +8,7 @@ import LinkupForm from "./LinkupForm.jsx";
 import LinkupDetail from "./LinkupDetail.jsx";
 import LinkupTerms from "./LinkupTerms.jsx";
 import { muted, bigButton, quietButton } from "./Sheet.jsx";
+import { useAccount } from "../lib/account.js";
 
 // Linkups: who's heading out in the next two hours, and starting your own.
 export default function LinkupTab({ user, position, openId, onOpened, onNeedAccount, onToast, onOpenPerson, onShowTerms, onOpenAlerts }) {
@@ -17,6 +18,8 @@ export default function LinkupTab({ user, position, openId, onOpened, onNeedAcco
   const [openLinkup, setOpenLinkup] = useState(null);
   const [termsThen, setTermsThen] = useState(null);
   const [home, setHome] = useState(null);
+  const account = useAccount();
+  const unconfirmed = Boolean(account && !account.confirmed);
 
   function refresh() {
     if (!user) return Promise.resolve();
@@ -79,9 +82,16 @@ export default function LinkupTab({ user, position, openId, onOpened, onNeedAcco
   return (
     <div style={{ padding: "8px 20px", animation: "fadeIn 0.3s ease" }}>
       <Header />
-      <button onClick={() => requireTerms(() => setCreating(true))} style={{ ...bigButton, marginTop: 12 }}>
-        ⚡ START A LINKUP
-      </button>
+      {unconfirmed ? (
+        <div style={{ ...muted, marginTop: 12, background: "#1F1405", border: "1px solid #5A3A0A", borderRadius: 10, padding: "10px 12px", color: "#C9A46A" }}>
+          ✉️ Confirm your email to start or join linkups and see where they are. It keeps exact meet-up spots between
+          real, confirmed members.
+        </div>
+      ) : (
+        <button onClick={() => requireTerms(() => setCreating(true))} style={{ ...bigButton, marginTop: 12 }}>
+          ⚡ START A LINKUP
+        </button>
+      )}
       {!home && (
         <button onClick={onOpenAlerts} style={{ ...quietButton, marginTop: 8, padding: "10px 0", fontSize: 12 }}>
           🔔 GET ALERTED WHEN ONE STARTS NEAR YOU

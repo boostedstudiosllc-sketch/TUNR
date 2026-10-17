@@ -18,6 +18,8 @@ import { GOING_AS } from "../lib/photographer.js";
 import { CONTACT_EMAIL } from "../lib/contact.js";
 import { formatMiles } from "../lib/geo.js";
 import { Badges } from "./Badge.jsx";
+import { useAccount } from "../lib/account.js";
+import { ConfirmToChat } from "./ConfirmEmail.jsx";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton, Chip } from "./Sheet.jsx";
 
 const AS_TEXT = { car: "🚗", photographer: "📸", both: "🚗📸" };
@@ -255,6 +257,7 @@ function Chat({ linkup, user, messages, onSent, onToast, onOpenPerson, closed })
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const end = useRef(null);
+  const account = useAccount();
 
   useEffect(() => {
     end.current?.scrollIntoView({ block: "nearest" });
@@ -313,7 +316,8 @@ function Chat({ linkup, user, messages, onSent, onToast, onOpenPerson, closed })
         )}
         <div ref={end} />
       </div>
-      {!closed && (
+      {!closed && account && !account.confirmed && <ConfirmToChat />}
+      {!closed && !(account && !account.confirmed) && (
         <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
           <input
             style={{ ...field, flex: 1 }}

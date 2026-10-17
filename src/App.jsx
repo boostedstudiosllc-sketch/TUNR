@@ -52,6 +52,8 @@ import LinkupTab from "./components/LinkupTab.jsx";
 import NotificationBell from "./components/NotificationBell.jsx";
 import AlertSettings from "./components/AlertSettings.jsx";
 import HomeScreenPrompt from "./components/HomeScreenPrompt.jsx";
+import ConfirmEmailBanner from "./components/ConfirmEmail.jsx";
+import { AccountContext, confirmMyEmail } from "./lib/account.js";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -105,6 +107,8 @@ export default function App() {
   }));
   const [position, setPosition] = useState(null);
   const [showAlerts, setShowAlerts] = useState(false);
+  // Whether this account's email is confirmed (null while unknown).
+  const [account, setAccount] = useState(null);
   // A linkup to open, from an alert.
   const [openLinkupId, setOpenLinkupId] = useState(null);
   // An alert tapped before the meets had loaded ("meet:<id>").
@@ -132,6 +136,27 @@ export default function App() {
     });
     return unsubscribe;
   }, []);
+
+  // Confirmed yet? Arriving from the emailed link confirms it right here.
+  useEffect(() => {
+    if (!user || !hasBackend()) {
+      setAccount(null);
+      return;
+    }
+    let alive = true;
+    confirmMyEmail()
+      .then((a) => {
+        if (!alive) return;
+        setAccount((prev) => {
+          if (prev && !prev.confirmed && a.confirmed) showToast("✅ Email confirmed — chat, posting and linkups are unlocked");
+          return a;
+        });
+      })
+      .catch((e) => console.warn(e.message));
+    return () => {
+      alive = false;
+    };
+  }, [user?.id, user?.last_sign_in_at]);
 
   // Record a session start once.
   useEffect(() => {
@@ -464,6 +489,7 @@ export default function App() {
   }
 
   return (
+    <AccountContext.Provider value={account}>
     <div
       style={{
         fontFamily: "'Barlow Condensed', sans-serif",
@@ -526,6 +552,9 @@ export default function App() {
         </button>
         </div>
       </div>
+
+      {/* Every tab: until the email's confirmed. */}
+      <ConfirmEmailBanner account={account} onToast={showToast} />
 
       {/* Discover */}
       {tab === "discover" && (
@@ -1209,6 +1238,7 @@ export default function App() {
         </div>
       )}
     </div>
+    </AccountContext.Provider>
   );
 }
 

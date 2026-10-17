@@ -162,6 +162,19 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           <br />
           We can suspend or close an account that breaks these terms, puts other people at risk, or
           that we're required to close by law. Where it's practical and safe, we'll tell you why.
+          <br />
+          <br />
+          <strong>Confirming your email.</strong> You must confirm the email address on your account
+          by opening the link we send to it. Until you do, the account is limited: you can browse
+          and RSVP, but not chat, post, or start or join linkups. We email the link when you sign up
+          and send one reminder a few days later. <strong>An account whose email isn't confirmed
+          within 7 days of sign-up is permanently deleted</strong>, along with anything saved to it,
+          on the date stated in the reminder (never sooner than 7 days after sign-up, and never
+          before both emails have been sent). We do this because an address that's never confirmed
+          may have been mistyped or used without its owner's permission; deleting those accounts
+          protects the real owner of the address, keeps the community made up of real members, and
+          means we don't keep personal information we can't connect to the person it belongs to.
+          You're welcome to sign up again at any time.
         </div>
 
         <div style={heading}>5. HOST NAMES, VERIFICATION &amp; BADGES</div>

@@ -40,7 +40,7 @@ export function createPushService({ env = process.env, fetchImpl = fetch, webpus
       body = text;
     }
     if (!res.ok) {
-      const reason = (body && (body.message || body.error || body.hint)) || text || `HTTP ${res.status}`;
+      const reason = (body && (body.msg || body.message || body.error_description || body.error || body.hint)) || text || `HTTP ${res.status}`;
       const err = new Error(String(reason).slice(0, 200));
       err.status = res.status;
       throw err;

@@ -36,6 +36,8 @@ const WRITE_ERROR_COPY = {
   confirmation_blocked: "You can't confirm this photographer.",
   rate_limit_confirmations: "That's 10 confirmations today — the limit. Try again tomorrow.",
   admins_only: "Only TUNR admins can do that.",
+  confirm_email_first:
+    "Confirm your email first — tap the link we emailed you (or “Resend email” at the top of the app).",
 };
 
 // The short reason behind a failure, for showing next to the friendly

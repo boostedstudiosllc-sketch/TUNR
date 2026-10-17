@@ -7,6 +7,8 @@ import {
   googleEnabled,
   noteTosAcceptedAtAccountForm,
 } from "../lib/store.js";
+import { checkEmail, domainExists } from "../lib/emailCheck.js";
+import { requestConfirmationEmail, CLEANUP_WHY } from "../lib/account.js";
 import TermsOfService from "./TermsOfService.jsx";
 import PrivacyPolicy from "./PrivacyPolicy.jsx";
 
@@ -43,6 +45,8 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
   const [showGoogle, setShowGoogle] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [emailProblem, setEmailProblem] = useState(null);
+  const [showWhy, setShowWhy] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -75,6 +79,17 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
       // The line under the button says continuing is agreeing.
       if (mode !== "reset") noteTosAcceptedAtAccountForm();
       if (mode === "signup") {
+        // Typos and throwaway addresses never get an account: it could
+        // never be confirmed, and would be removed a week later.
+        const check = checkEmail(email);
+        if (!check.ok) {
+          setEmailProblem(check);
+          return;
+        }
+        if (!(await domainExists(email))) {
+          setEmailProblem({ ok: false, message: `“${email.trim().split("@")[1]}” isn't a real email domain — check the part after the @.` });
+          return;
+        }
         const res = await signUpWithPassword(email.trim(), password, cleanUsername);
         if (res.needsConfirmation) {
           setNotice(
@@ -82,7 +97,12 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
           );
           setMode("login");
           setPassword("");
-        } else if (onDone) onDone();
+        } else {
+          // The confirm-your-email message. If it can't go out now, the
+          // banner at the top says why and the daily job tries again.
+          requestConfirmationEmail().catch((e) => console.warn("confirmation email:", e.message));
+          if (onDone) onDone();
+        }
       } else if (mode === "login") {
         await signInWithPassword(email.trim(), password);
         if (onDone) onDone();
@@ -237,8 +257,34 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
             autoComplete="email"
             placeholder="you@email.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setEmailProblem(null);
+            }}
+            onBlur={() => {
+              if (mode === "signup" && email.trim()) {
+                const check = checkEmail(email);
+                setEmailProblem(check.ok ? null : check);
+              }
+            }}
           />
+          {emailProblem && mode === "signup" && (
+            <div style={{ marginTop: 6, fontSize: 12.5, color: "#F59E0B", lineHeight: 1.5, fontFamily: "'Barlow', sans-serif" }}>
+              ⚠️ {emailProblem.message}
+              {emailProblem.suggestion && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail(emailProblem.suggestion);
+                    setEmailProblem(null);
+                  }}
+                  style={{ display: "block", marginTop: 6, background: "#1F1405", border: "1px solid #5A3A0A", borderRadius: 6, padding: "6px 10px", color: "#F59E0B", fontWeight: 800, fontSize: 12, cursor: "pointer" }}
+                >
+                  Use {emailProblem.suggestion}
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {mode !== "reset" && (
@@ -317,6 +363,30 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
           ? "LOG IN"
           : "SEND RESET LINK"}
       </button>
+
+      {mode === "signup" && (
+        <div
+          style={{
+            marginTop: 12,
+            background: "#141414",
+            border: "1px solid #2A2A2A",
+            borderRadius: 8,
+            padding: "10px 12px",
+            fontSize: 12,
+            color: "#AAA",
+            lineHeight: 1.55,
+            fontFamily: "'Barlow', sans-serif",
+          }}
+        >
+          ✉️ <b style={{ color: "#DDD" }}>You'll need to confirm your email.</b> We'll email you a link right away and a
+          reminder after a few days. Accounts that aren't confirmed within 7 days are deleted automatically. Until
+          then you can browse and RSVP; chatting, posting and linkups unlock once you confirm.{" "}
+          <button type="button" onClick={() => setShowWhy((v) => !v)} style={{ ...legalLink, color: "#FF7A00" }}>
+            {showWhy ? "Hide" : "Why?"}
+          </button>
+          {showWhy && <div style={{ marginTop: 6, color: "#888" }}>{CLEANUP_WHY}</div>}
+        </div>
+      )}
 
       {mode !== "reset" && (
         <div

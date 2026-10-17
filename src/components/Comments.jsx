@@ -9,6 +9,8 @@ import {
   track,
 } from "../lib/store.js";
 import { Badges } from "./Badge.jsx";
+import { useAccount } from "../lib/account.js";
+import { ConfirmToChat } from "./ConfirmEmail.jsx";
 
 const commentActionStyle = {
   marginLeft: "auto",
@@ -125,7 +127,10 @@ export default function Comments({ eventId, user, onNeedAccount, onToast, onOpen
     }
   }
 
-  const composer = (
+  const account = useAccount();
+  const composer = user && account && !account.confirmed ? (
+    <ConfirmToChat />
+  ) : (
     <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
       <input
         value={body}

@@ -1,6 +1,6 @@
-// GET /api/reminders — run once a day by Vercel Cron (vercel.json), in the
-// morning Eastern time. Everyone going to a meet that happens today gets
-// "Today: <meet> · 7:00 PM", in the inbox and, if they turned alerts on, on
+// GET /api/reminders — meet-day reminders on their own (the daily cron runs
+// them through api/daily.js, in the morning Eastern time). Everyone going to
+// a meet that happens today gets "Today: <meet> · 7:00 PM", in the inbox and, if they turned alerts on, on
 // their phone. Weekly and monthly meets count on each day they run.
 //
 // Safe to run twice: each reminder is one per person, per meet, per day, so a
@@ -38,6 +38,28 @@ export function remindersFor(rows, now = new Date()) {
   return items;
 }
 
+// Queue today's reminders. Returns how many.
+export async function queueMeetReminders(service, now = new Date()) {
+  // Everyone's "going" answers with their meet, a page at a time.
+  const rows = [];
+  for (let from = 0; from < 50000; from += 1000) {
+    const page = await service.rest(
+      "/rest/v1/rsvps?status=eq.going&select=user_id,events(id,title,city,start_at,end_at,recurrence,recurrence_until,timezone,hidden)",
+      { headers: { Range: `${from}-${from + 999}` } }
+    );
+    rows.push(...(page || []));
+    if (!page || page.length < 1000) break;
+  }
+  const items = remindersFor(rows, now);
+  for (let i = 0; i < items.length; i += 500) {
+    await service.rest("/rest/v1/rpc/notify_many", {
+      method: "POST",
+      body: JSON.stringify({ p_items: items.slice(i, i + 500) }),
+    });
+  }
+  return items.length;
+}
+
 export function createHandler({ env = process.env, fetchImpl = fetch, webpushImpl, now = () => new Date() } = {}) {
   return async function handler(req, res) {
     if (env.CRON_SECRET && req.headers.authorization !== `Bearer ${env.CRON_SECRET}`) {
@@ -48,25 +70,9 @@ export function createHandler({ env = process.env, fetchImpl = fetch, webpushImp
       return res.status(503).json({ error: service.config.error, detail: service.config.detail });
     }
     try {
-      // Everyone's "going" answers with their meet, a page at a time.
-      const rows = [];
-      for (let from = 0; from < 50000; from += 1000) {
-        const page = await service.rest(
-          "/rest/v1/rsvps?status=eq.going&select=user_id,events(id,title,city,start_at,end_at,recurrence,recurrence_until,timezone,hidden)",
-          { headers: { Range: `${from}-${from + 999}` } }
-        );
-        rows.push(...(page || []));
-        if (!page || page.length < 1000) break;
-      }
-      const items = remindersFor(rows, now());
-      for (let i = 0; i < items.length; i += 500) {
-        await service.rest("/rest/v1/rpc/notify_many", {
-          method: "POST",
-          body: JSON.stringify({ p_items: items.slice(i, i + 500) }),
-        });
-      }
+      const reminders = await queueMeetReminders(service, now());
       const delivered = await service.flush();
-      return res.status(200).json({ reminders: items.length, ...delivered });
+      return res.status(200).json({ reminders, ...delivered });
     } catch (e) {
       console.error("reminders", e);
       return res.status(502).json({ error: "reminders_failed", detail: String(e?.message || e).slice(0, 200) });

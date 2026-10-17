@@ -168,7 +168,9 @@ export default function PrivacyPolicy({ onClose }) {
           the meet is gone so repeated problems can be spotted. Usage events are kept in aggregate.
           We keep a running tally of RSVPs (which meet, which answer, and when — never who) and of
           meet views, so hosts' numbers survive people changing their answer or leaving; it can't
-          be traced back to you. Alerts are deleted after 60 days. Linkups and their chats are kept
+          be traced back to you. If you don't confirm your email within 7 days of signing up, your
+          account and everything saved to it are deleted automatically (after a reminder email); we
+          keep only a daily count of how many accounts were removed. Alerts are deleted after 60 days. Linkups and their chats are kept
           after they end so problems can be looked into, and are removed with your account.
           The record of which terms you agreed to, and when, is kept for as long as your account
           exists.
