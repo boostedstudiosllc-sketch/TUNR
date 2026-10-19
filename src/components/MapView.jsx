@@ -3,7 +3,7 @@ import { VIBES } from "../data/events.js";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
-export default function MapView({ events, onSelect }) {
+export default function MapView({ events, onSelect, spots = [], onSelectSpot }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
@@ -85,7 +85,22 @@ export default function MapView({ events, onSelect }) {
           .addTo(map);
         markersRef.current.push(marker);
       });
-  }, [events, onSelect]);
+
+    // Photo spots from the forums: a camera, smaller than a meet pin.
+    spots.forEach((spot) => {
+      const el = document.createElement("div");
+      el.title = spot.title;
+      el.style.cssText = `
+        width: 26px; height: 26px; border-radius: 50%;
+        background: #0E1622; border: 2px solid #38BDF8;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 13px; cursor: pointer; box-shadow: 0 2px 10px #38BDF855;
+      `;
+      el.textContent = "📸";
+      el.addEventListener("click", () => onSelectSpot && onSelectSpot(spot));
+      markersRef.current.push(new window.mapboxgl.Marker(el).setLngLat([spot.lng, spot.lat]).addTo(map));
+    });
+  }, [events, onSelect, spots, onSelectSpot]);
 
   if (!MAPBOX_TOKEN) {
     return (

@@ -84,6 +84,11 @@ export default function PrivacyPolicy({ onClose }) {
           you link, and which car owners confirmed you shot their car.
           <br />
           <br />
+          <strong>Forums and clubs:</strong> forums and clubs you start, your posts, comments,
+          photos and votes, the forums you follow, the clubs you're in (and your role), club chat
+          messages, and anything you report.
+          <br />
+          <br />
           <strong>Linkups:</strong> linkups you post (the spot, its map pin, the time and your note),
           the ones you join or ask to join, how you're coming, and messages in linkup chats.
           <br />
@@ -133,7 +138,11 @@ export default function PrivacyPolicy({ onClose }) {
           <strong>Linkups</strong> are only shown to signed-in users. On a public linkup, the spot
           and who's in are visible to them; on a private one, only the kind, rough area and time
           are, until the poster accepts you. Linkup chats are visible only to the people in the
-          linkup. Your 📸 photographer badge, its link and how many confirmations you have are
+          linkup. Forum posts and comments, and who wrote them, are public; votes are counted
+          but who voted isn't shown, and the forums you follow are private. A public club's member
+          list is public; a private club's is visible only to its members. Clubs you're in show on
+          your profile unless you turn that off. Club chat is visible only to the club's members.
+          Your 📸 photographer badge, its link and how many confirmations you have are
           public; who confirmed you isn't.
           <br />
           <br />

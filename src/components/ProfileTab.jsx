@@ -5,6 +5,7 @@ import HostVerification, { VerificationQueue, HostInvites } from "./HostVerifica
 import AccountSettings from "./AccountSettings.jsx";
 import Garage from "./Garage.jsx";
 import ModerationQueue from "./ModerationQueue.jsx";
+import CommunityReports from "./CommunityReports.jsx";
 import { Badges } from "./Badge.jsx";
 import SignupStats from "./SignupStats.jsx";
 import Insights from "./Insights.jsx";
@@ -43,6 +44,7 @@ export default function ProfileTab({
   rsvps,
   user,
   onOpenAlerts,
+  onOpenLink,
   onShowTerms,
   onShowPrivacy,
   onToast,
@@ -383,6 +385,8 @@ export default function ProfileTab({
         {hasBackend() && user && profile.isAdmin && <SignupStats />}
 
         {hasBackend() && user && profile.isAdmin && <ModerationQueue onToast={onToast} />}
+
+        {hasBackend() && user && profile.isAdmin && <CommunityReports onToast={onToast} onOpenLink={(l) => onOpenLink && onOpenLink(l)} />}
 
         {hasBackend() && user && profile.isAdmin && <VerificationQueue onToast={onToast} />}
 

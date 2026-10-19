@@ -198,6 +198,15 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           to spam, scrape, or interfere with the app; and not to get around anything that keeps
           content private or restricted. TUNR reserves the right to remove any content and restrict
           any user at any time.
+          <br />
+          <br />
+          <strong>Forums and clubs.</strong> Forums and public clubs are open for anyone to read. Don't
+          use them to buy or sell anything, organize street racing or stunts, share anyone's
+          private information (including where someone lives), or post repair advice you know is
+          unsafe. Advice in the forums comes from other members, not from TUNR: check it with a
+          qualified mechanic before you rely on it, and you work on your car at your own risk. The
+          person who starts a forum moderates it, and a club's owner and admins run their club; we
+          can remove any forum, club, post or comment, and anyone can report one to us.
         </div>
 
         <div style={heading}>7. LINKUPS</div>

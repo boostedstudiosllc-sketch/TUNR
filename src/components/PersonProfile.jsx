@@ -14,6 +14,8 @@ import {
 } from "../lib/store.js";
 import { Badges } from "./Badge.jsx";
 import { photoPageLink } from "../lib/photographer.js";
+import { loadPersonClubs, kindLabel } from "../lib/community.js";
+import { Logo } from "./CommunityBits.jsx";
 
 // Someone's profile, opened from their name in a meet chat: follow them,
 // see their cars, or block or restrict them.
@@ -24,6 +26,7 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
   const [menu, setMenu] = useState(false);
   const [confirmBlock, setConfirmBlock] = useState(false);
   const [viewerIsAdmin, setViewerIsAdmin] = useState(false);
+  const [clubs, setClubs] = useState([]);
 
   async function refresh() {
     const p = await getPerson(personId);
@@ -35,6 +38,9 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
     track("person_profile_opened", {});
     refresh();
     loadVehicles(personId).then(setCars);
+    loadPersonClubs(personId)
+      .then(setClubs)
+      .catch((e) => console.warn(e.message));
   }, [personId]);
 
   useEffect(() => {
@@ -74,7 +80,8 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
         left: "50%",
         transform: "translateX(-50%)",
         background: "rgba(0,0,0,0.88)",
-        zIndex: 260,
+        // Above Community's sheets, which open people from posts and chats.
+        zIndex: 300,
         display: "flex",
         alignItems: "flex-end",
       }}
@@ -249,6 +256,23 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
               <button onClick={() => onOpenHost(person.host_name)} style={{ ...wideButton, width: "100%", marginTop: 10 }}>
                 SEE THEIR MEETS (@{person.host_name}) →
               </button>
+            )}
+
+            {clubs.length > 0 && (
+              <div style={{ marginTop: 20 }}>
+                <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, marginBottom: 8 }}>CLUBS</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {clubs.map((c) => (
+                    <div key={c.id} style={{ display: "flex", gap: 8, alignItems: "center", background: "#141414", border: "1px solid #222", borderRadius: 10, padding: "6px 10px 6px 6px" }}>
+                      <Logo url={c.logo_url} fallback={kindLabel(c.kind).split(" ")[0]} size={30} />
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 800 }}>{c.name}</div>
+                        {c.role !== "member" && <div style={{ fontSize: 9.5, color: "#FF7A00", fontWeight: 800, letterSpacing: 0.8 }}>{c.role.toUpperCase()}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
 
             {cars.length > 0 && (

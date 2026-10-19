@@ -48,12 +48,13 @@ import TodayStrip from "./components/TodayStrip.jsx";
 import HostPitch from "./components/HostPitch.jsx";
 import PerksTab from "./components/PerksTab.jsx";
 import JoinPage from "./components/JoinPage.jsx";
-import LinkupTab from "./components/LinkupTab.jsx";
+import CommunityTab from "./components/CommunityTab.jsx";
 import NotificationBell from "./components/NotificationBell.jsx";
 import AlertSettings from "./components/AlertSettings.jsx";
 import HomeScreenPrompt from "./components/HomeScreenPrompt.jsx";
 import ConfirmEmailBanner from "./components/ConfirmEmail.jsx";
 import { AccountContext, confirmMyEmail } from "./lib/account.js";
+import { loadPhotoSpots } from "./lib/community.js";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -107,10 +108,13 @@ export default function App() {
   }));
   const [position, setPosition] = useState(null);
   const [showAlerts, setShowAlerts] = useState(false);
+  // The map's photo-spot layer (forum posts tagged 📸 with a pin).
+  const [showSpots, setShowSpots] = useState(false);
+  const [spots, setSpots] = useState([]);
   // Whether this account's email is confirmed (null while unknown).
   const [account, setAccount] = useState(null);
-  // A linkup to open, from an alert.
-  const [openLinkupId, setOpenLinkupId] = useState(null);
+  // Something in Community to open, from an alert: { type, id }.
+  const [communityOpen, setCommunityOpen] = useState(null);
   // An alert tapped before the meets had loaded ("meet:<id>").
   const [pendingLink, setPendingLink] = useState(
     () => (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("open")) || null
@@ -373,11 +377,11 @@ export default function App() {
   function openLink(link) {
     const [type, id] = String(link || "").split(":");
     if (!id) return;
-    if (type === "linkup") {
+    if (type === "linkup" || type === "post" || type === "forum" || type === "club") {
       setSelected(null);
       setPersonView(null);
-      setTab("linkup");
-      setOpenLinkupId(id);
+      setTab("community");
+      setCommunityOpen({ type, id });
     } else if (type === "person") {
       setPersonView(id);
     } else if (type === "meet") {
@@ -858,7 +862,28 @@ export default function App() {
               }}
             />
           </div>
-          <MapView events={mapEvents} onSelect={setSelected} />
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "#AAA", marginBottom: 8, cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={showSpots}
+              onChange={(e) => {
+                setShowSpots(e.target.checked);
+                if (e.target.checked && !spots.length) {
+                  loadPhotoSpots()
+                    .then(setSpots)
+                    .catch((err) => showToast(err.message));
+                }
+              }}
+              style={{ accentColor: "#38BDF8" }}
+            />
+            📸 Show photo spots from the forums
+          </label>
+          <MapView
+            events={mapEvents}
+            onSelect={setSelected}
+            spots={showSpots ? spots : []}
+            onSelectSpot={(spot) => openLink(`post:${spot.id}`)}
+          />
           <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, fontWeight: 700 }}>
               {mapWindow
@@ -971,12 +996,14 @@ export default function App() {
       )}
 
       {/* Linkups */}
-      {tab === "linkup" && (
-        <LinkupTab
+      {tab === "community" && (
+        <CommunityTab
           user={user}
+          events={events}
           position={position}
-          openId={openLinkupId}
-          onOpened={() => setOpenLinkupId(null)}
+          open={communityOpen}
+          onOpened={() => setCommunityOpen(null)}
+          onOpenMeet={(e) => setSelected(e)}
           onNeedAccount={() => {
             setTab("profile");
             showToast("Create a free account first");
@@ -1011,6 +1038,7 @@ export default function App() {
           onShowTerms={() => setShowTerms(true)}
           onShowPrivacy={() => setShowPrivacy(true)}
           onOpenAlerts={() => setShowAlerts(true)}
+          onOpenLink={openLink}
           onToast={showToast}
           onCohostChange={refreshEvents}
           onOpenPerson={setPersonView}
@@ -1041,7 +1069,7 @@ export default function App() {
         {[
           { id: "discover", icon: "≡", label: "DISCOVER" },
           { id: "map", icon: "◎", label: "MAP" },
-          { id: "linkup", icon: "⚡", label: "LINKUP" },
+          { id: "community", icon: "👥", label: "COMMUNITY" },
           { id: "saved", icon: "★", label: "MY MEETS" },
           { id: "perks", icon: "🎟", label: "PERKS" },
           { id: "profile", icon: "◉", label: "PROFILE" },
