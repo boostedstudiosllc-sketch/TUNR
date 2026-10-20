@@ -16,36 +16,154 @@ const bodyStyle = {
   fontFamily: "'Barlow', sans-serif",
 };
 
-// Blocked accounts and account deletion. Both exist because an app with
-// user-generated content and sign-up needs them; both are also just decent
-// behaviour towards the person using it.
+const smallButton = {
+  padding: "6px 12px",
+  background: "transparent",
+  border: "1px solid #333",
+  borderRadius: 6,
+  color: "#888",
+  fontSize: 11,
+  fontWeight: 800,
+  letterSpacing: 1,
+  fontFamily: "'Barlow Condensed', sans-serif",
+};
+
+// Blocked accounts, restricted accounts and account deletion. They exist
+// because an app with user-generated content and sign-up needs them; they're
+// also just decent behaviour towards the person using it. Settings shows each
+// on its own page; the default export still renders all three together.
 export default function AccountSettings({ user, onToast }) {
-  const [blocked, setBlocked] = useState([]);
-  const [restricted, setRestricted] = useState([]);
-  const [confirming, setConfirming] = useState(false);
-  const [typed, setTyped] = useState("");
-  const [busy, setBusy] = useState(false);
+  return (
+    <>
+      <RestrictedAccounts user={user} onToast={onToast} />
+      <BlockedAccounts user={user} onToast={onToast} />
+      <DeleteAccount onToast={onToast} />
+    </>
+  );
+}
+
+// showEmpty: render the card even with nobody on the list (Settings' own page).
+export function RestrictedAccounts({ user, onToast, showEmpty = false }) {
+  const [restricted, setRestricted] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-    loadBlockedAccounts().then((rows) => !cancelled && setBlocked(rows));
-    loadRestrictedAccounts().then((rows) => !cancelled && setRestricted(rows));
+    loadRestrictedAccounts()
+      .then((rows) => !cancelled && setRestricted(rows))
+      .catch((e) => {
+        if (cancelled) return;
+        setRestricted([]);
+        onToast(e.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  async function unrestrict(row) {
+    try {
+      await restrictUser(user.id, row.restricted_id, false);
+      setRestricted((r) => r.filter((x) => x.restricted_id !== row.restricted_id));
+      onToast(`Unrestricted @${row.username}`);
+    } catch (e) {
+      onToast(e.message);
+    }
+  }
+
+  if (!restricted) return showEmpty ? <Card><div style={bodyStyle}>Loading…</div></Card> : null;
+  if (restricted.length === 0 && !showEmpty) return null;
+
+  return (
+    <Card>
+      <div style={{ fontSize: 15, fontWeight: 800 }}>
+        Restricted accounts{restricted.length > 0 && ` · ${restricted.length}`}
+      </div>
+      <div style={bodyStyle}>
+        On meets you host, their messages are seen only by them, you and your co-hosts.
+      </div>
+      {restricted.length === 0 ? (
+        <div style={{ ...bodyStyle, color: "#999" }}>
+          You haven't restricted anyone. To restrict someone, open their profile and tap ⋯.
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+          {restricted.map((row) => (
+            <div key={row.restricted_id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 700, overflowWrap: "anywhere" }}>@{row.username}</div>
+              <button className="action-btn" onClick={() => unrestrict(row)} style={smallButton}>
+                UNRESTRICT
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+export function BlockedAccounts({ user, onToast, showEmpty = false }) {
+  const [blocked, setBlocked] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadBlockedAccounts()
+      .then((rows) => !cancelled && setBlocked(rows))
+      .catch((e) => {
+        if (cancelled) return;
+        setBlocked([]);
+        onToast(e.message);
+      });
     return () => {
       cancelled = true;
     };
   }, [user?.id]);
 
   async function unblock(row) {
-    await unblockUser(user.id, row.blocked_id);
-    setBlocked((b) => b.filter((x) => x.blocked_id !== row.blocked_id));
-    onToast(`Unblocked @${row.username}`);
+    try {
+      await unblockUser(user.id, row.blocked_id);
+      setBlocked((b) => b.filter((x) => x.blocked_id !== row.blocked_id));
+      onToast(`Unblocked @${row.username}`);
+    } catch (e) {
+      onToast(e.message);
+    }
   }
 
-  async function unrestrict(row) {
-    await restrictUser(user.id, row.restricted_id, false);
-    setRestricted((r) => r.filter((x) => x.restricted_id !== row.restricted_id));
-    onToast(`Unrestricted @${row.username}`);
-  }
+  if (!blocked) return showEmpty ? <Card><div style={bodyStyle}>Loading…</div></Card> : null;
+  if (blocked.length === 0 && !showEmpty) return null;
+
+  return (
+    <Card>
+      <div style={{ fontSize: 15, fontWeight: 800 }}>
+        Blocked accounts{blocked.length > 0 && ` · ${blocked.length}`}
+      </div>
+      <div style={bodyStyle}>
+        You won't see their messages, they can't message on your meets, and they can't follow you.
+      </div>
+      {blocked.length === 0 ? (
+        <div style={{ ...bodyStyle, color: "#999" }}>
+          You haven't blocked anyone. To block someone, open their profile and tap ⋯.
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+          {blocked.map((row) => (
+            <div key={row.blocked_id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 700, overflowWrap: "anywhere" }}>@{row.username}</div>
+              <button className="action-btn" onClick={() => unblock(row)} style={smallButton}>
+                UNBLOCK
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// Permanent, so it asks for DELETE to be typed first.
+export function DeleteAccount({ onToast }) {
+  const [confirming, setConfirming] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [busy, setBusy] = useState(false);
 
   async function destroy() {
     if (typed.trim().toUpperCase() !== "DELETE" || busy) return;
@@ -63,160 +181,90 @@ export default function AccountSettings({ user, onToast }) {
   }
 
   return (
-    <>
-      {restricted.length > 0 && (
-        <Card>
-          <div style={{ fontSize: 15, fontWeight: 800 }}>Restricted accounts · {restricted.length}</div>
+    <Card danger>
+      <div style={{ fontSize: 15, fontWeight: 800, color: "#EF4444" }}>Delete account</div>
+      {!confirming ? (
+        <>
           <div style={bodyStyle}>
-            On meets you host, their messages are seen only by them, you and your co-hosts.
+            Removes your profile, RSVPs, comments, follows and any meets you've posted. It can't
+            be undone.
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
-            {restricted.map((row) => (
-              <div key={row.restricted_id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ flex: 1, fontSize: 13.5, fontWeight: 700 }}>@{row.username}</div>
-                <button
-                  className="action-btn"
-                  onClick={() => unrestrict(row)}
-                  style={{
-                    padding: "6px 12px",
-                    background: "transparent",
-                    border: "1px solid #333",
-                    borderRadius: 6,
-                    color: "#888",
-                    fontSize: 11,
-                    fontWeight: 800,
-                    letterSpacing: 1,
-                    fontFamily: "'Barlow Condensed', sans-serif",
-                  }}
-                >
-                  UNRESTRICT
-                </button>
-              </div>
-            ))}
+          <button
+            className="action-btn"
+            onClick={() => setConfirming(true)}
+            style={dangerButton}
+          >
+            DELETE MY ACCOUNT
+          </button>
+        </>
+      ) : (
+        <>
+          <div style={{ ...bodyStyle, color: "#EF4444" }}>
+            This is permanent. Type <strong>DELETE</strong> to confirm.
           </div>
-        </Card>
-      )}
-
-      {blocked.length > 0 && (
-        <Card>
-          <div style={{ fontSize: 15, fontWeight: 800 }}>Blocked accounts · {blocked.length}</div>
-          <div style={bodyStyle}>
-            You won't see their messages, they can't message on your meets, and they can't follow you.
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
-            {blocked.map((row) => (
-              <div
-                key={row.blocked_id}
-                style={{ display: "flex", alignItems: "center", gap: 8 }}
-              >
-                <div style={{ flex: 1, fontSize: 13.5, fontWeight: 700 }}>@{row.username}</div>
-                <button
-                  className="action-btn"
-                  onClick={() => unblock(row)}
-                  style={{
-                    padding: "6px 12px",
-                    background: "transparent",
-                    border: "1px solid #333",
-                    borderRadius: 6,
-                    color: "#888",
-                    fontSize: 11,
-                    fontWeight: 800,
-                    letterSpacing: 1,
-                    fontFamily: "'Barlow Condensed', sans-serif",
-                  }}
-                >
-                  UNBLOCK
-                </button>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      <Card danger>
-        <div style={{ fontSize: 15, fontWeight: 800, color: "#EF4444" }}>Delete account</div>
-        {!confirming ? (
-          <>
-            <div style={bodyStyle}>
-              Removes your profile, RSVPs, comments, follows and any meets you've posted. It can't
-              be undone.
-            </div>
+          <input
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            placeholder="DELETE"
+            aria-label="Type DELETE to confirm"
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
+            style={{
+              width: "100%",
+              marginTop: 10,
+              background: "#0F0F0F",
+              border: "1px solid rgba(239,68,68,0.4)",
+              borderRadius: 8,
+              padding: "11px 13px",
+              color: "#F0F0F0",
+              fontSize: 14,
+              letterSpacing: 2,
+              textAlign: "center",
+              outline: "none",
+              fontFamily: "'Barlow Condensed', sans-serif",
+              boxSizing: "border-box",
+            }}
+          />
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
             <button
               className="action-btn"
-              onClick={() => setConfirming(true)}
-              style={dangerButton}
-            >
-              DELETE MY ACCOUNT
-            </button>
-          </>
-        ) : (
-          <>
-            <div style={{ ...bodyStyle, color: "#EF4444" }}>
-              This is permanent. Type <strong>DELETE</strong> to confirm.
-            </div>
-            <input
-              value={typed}
-              onChange={(e) => setTyped(e.target.value)}
-              placeholder="DELETE"
-              autoCapitalize="characters"
-              autoCorrect="off"
-              spellCheck={false}
-              style={{
-                width: "100%",
-                marginTop: 10,
-                background: "#0F0F0F",
-                border: "1px solid rgba(239,68,68,0.4)",
-                borderRadius: 8,
-                padding: "11px 13px",
-                color: "#F0F0F0",
-                fontSize: 14,
-                letterSpacing: 2,
-                textAlign: "center",
-                outline: "none",
-                fontFamily: "'Barlow Condensed', sans-serif",
-                boxSizing: "border-box",
+              onClick={() => {
+                setConfirming(false);
+                setTyped("");
               }}
-            />
-            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-              <button
-                className="action-btn"
-                onClick={() => {
-                  setConfirming(false);
-                  setTyped("");
-                }}
-                style={{
-                  flex: 1,
-                  padding: "11px 0",
-                  background: "#1A1A1A",
-                  border: "1px solid #2A2A2A",
-                  borderRadius: 8,
-                  color: "#888",
-                  fontSize: 12,
-                  fontWeight: 800,
-                  letterSpacing: 1.2,
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                }}
-              >
-                CANCEL
-              </button>
-              <button
-                className="action-btn"
-                onClick={destroy}
-                disabled={busy || typed.trim().toUpperCase() !== "DELETE"}
-                style={{
-                  ...dangerButton,
-                  marginTop: 0,
-                  flex: 1,
-                  opacity: typed.trim().toUpperCase() === "DELETE" ? 1 : 0.4,
-                }}
-              >
-                {busy ? "DELETING…" : "DELETE FOREVER"}
-              </button>
-            </div>
-          </>
-        )}
-      </Card>
-    </>
+              style={{
+                flex: 1,
+                padding: "11px 0",
+                background: "#1A1A1A",
+                border: "1px solid #2A2A2A",
+                borderRadius: 8,
+                color: "#888",
+                fontSize: 12,
+                fontWeight: 800,
+                letterSpacing: 1.2,
+                fontFamily: "'Barlow Condensed', sans-serif",
+              }}
+            >
+              CANCEL
+            </button>
+            <button
+              className="action-btn"
+              onClick={destroy}
+              disabled={busy || typed.trim().toUpperCase() !== "DELETE"}
+              style={{
+                ...dangerButton,
+                marginTop: 0,
+                flex: 1,
+                opacity: typed.trim().toUpperCase() === "DELETE" ? 1 : 0.4,
+              }}
+            >
+              {busy ? "DELETING…" : "DELETE FOREVER"}
+            </button>
+          </div>
+        </>
+      )}
+    </Card>
   );
 }
 

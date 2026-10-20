@@ -75,7 +75,8 @@ export default function AlertSettings({ user, onClose, onToast }) {
   }
 
   return (
-    <Sheet onClose={onClose} label="Alert settings" zIndex={280}>
+    // Above Settings (290), which opens it too.
+    <Sheet onClose={onClose} label="Alert settings" zIndex={295}>
       <div style={sheetTitle}>ALERT SETTINGS</div>
       {loadError && <div style={{ ...muted, color: "#EF4444", marginTop: 6 }}>{loadError}</div>}
 

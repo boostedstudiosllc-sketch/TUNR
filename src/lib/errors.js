@@ -52,6 +52,8 @@ const WRITE_ERROR_COPY = {
   owner_only: "Only the club's owner can do that.",
   cant_change_owner: "The club's owner can't be removed or changed.",
   not_a_member: "They aren't in this club any more.",
+  profiles_bio_length_check: "Your bio has to be 160 characters or fewer, on 5 lines at most.",
+  profiles_avatar_url_check: "Profile photos have to be uploaded through TUNR — pick the photo again.",
   confirm_email_first:
     "Confirm your email first — tap the link we emailed you (or “Resend email” at the top of the app).",
 };

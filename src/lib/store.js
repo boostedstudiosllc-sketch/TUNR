@@ -10,6 +10,7 @@ import { DEFAULT_TZ, parseLocal, isoInTz } from "./dates.js";
 import { friendlyWriteError, withReason, authErrorMessage } from "./errors.js";
 import { normalizePasscode } from "./passcode.js";
 import { kickPush } from "./alerts.js";
+import { compressImage } from "./image.js";
 
 const RSVP_KEY = "tunr.rsvps.v1";
 const SUBMITTED_KEY = "tunr.submitted.v1";
@@ -428,6 +429,8 @@ export async function loadProfile(userId = null) {
         foundingHost,
         isPhotographer: Boolean(data.is_photographer),
         photoPage: data.photo_page || "",
+        avatarUrl: data.avatar_url || "",
+        bio: data.bio || "",
       };
     }
     return { username: "", city: "Atlanta, GA", isAdmin: false, isMember: false };
@@ -445,6 +448,8 @@ export async function saveProfile(profile, userId = null) {
         city: profile.city,
         ...(profile.isPhotographer !== undefined ? { is_photographer: Boolean(profile.isPhotographer) } : {}),
         ...(profile.photoPage !== undefined ? { photo_page: profile.photoPage.trim() || null } : {}),
+        ...(profile.avatarUrl !== undefined ? { avatar_url: String(profile.avatarUrl ?? "").trim() || null } : {}),
+        ...(profile.bio !== undefined ? { bio: String(profile.bio ?? "").trim() || null } : {}),
       });
     if (error) {
       if (error.code === "23505") throw new Error("That username is taken — pick another.");
@@ -454,6 +459,52 @@ export async function saveProfile(profile, userId = null) {
   }
   write(PROFILE_KEY, profile);
   return profile;
+}
+
+// A profile photo: shrunk to 512px on the device, then stored in your own
+// folder of the avatars bucket (the only place the database accepts a
+// profile photo from, and one you can delete from). Returns the public URL
+// for saveProfile's avatarUrl.
+export async function uploadAvatar(file, userId) {
+  if (!supabase || !userId) throw new Error("Sign in first");
+  if (!file) throw new Error("Couldn't upload your profile photo. (no file picked)");
+  if (!file.type.startsWith("image/")) throw new Error("Pick an image file.");
+  let small;
+  try {
+    small = await compressImage(file, { maxDim: 512 });
+  } catch (e) {
+    throw new Error(withReason("Couldn't shrink that photo for upload.", e));
+  }
+  if (small.size > 6 * 1024 * 1024) throw new Error("Image must be under 6MB.");
+  const ext = small.type === "image/jpeg" ? "jpg" : (small.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const path = `${userId}/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from("avatars").upload(path, small, { cacheControl: "3600", upsert: false });
+  if (error) throw new Error(withReason("Couldn't upload your profile photo.", error));
+  return supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+}
+
+// Delete an old profile photo from storage once it's been replaced or removed.
+// Only ever touches your own folder.
+export async function removeAvatarFile(url, userId) {
+  if (!supabase || !userId || !url) return;
+  const marker = "/storage/v1/object/public/avatars/";
+  const at = url.indexOf(marker);
+  if (at === -1) return;
+  const path = decodeURIComponent(url.slice(at + marker.length));
+  if (!path.startsWith(`${userId}/`)) return;
+  const { error } = await supabase.storage.from("avatars").remove([path]);
+  if (error) throw new Error(withReason("Your profile is saved, but the old photo couldn't be deleted.", error));
+}
+
+// Every profile photo you've uploaded, for account deletion.
+export async function removeAllAvatarFiles(userId) {
+  if (!supabase || !userId) return;
+  const { data, error } = await supabase.storage.from("avatars").list(userId, { limit: 1000 });
+  if (error) throw new Error(withReason("Couldn't delete your profile photos.", error));
+  const paths = (data || []).map((f) => `${userId}/${f.name}`);
+  if (!paths.length) return;
+  const { error: removeError } = await supabase.storage.from("avatars").remove(paths);
+  if (removeError) throw new Error(withReason("Couldn't delete your profile photos.", removeError));
 }
 
 // ---------- terms of service ----------
@@ -776,8 +827,10 @@ export function onAuthChange(callback) {
   // back to signed-out.
   const {
     data: { subscription },
-  } = supabase.auth.onAuthStateChange((_event, session) => {
-    callback(session?.user || null);
+  } = supabase.auth.onAuthStateChange((event, session) => {
+    // The event tells the app when someone arrived from a password-reset
+    // link (PASSWORD_RECOVERY), so it can ask for the new password.
+    callback(session?.user || null, event);
   });
   return () => subscription.unsubscribe();
 }
@@ -1268,7 +1321,8 @@ export async function blockUser(userId, blockedId) {
 
 export async function unblockUser(userId, blockedId) {
   if (!supabase || !userId) return;
-  await supabase.from("blocks").delete().eq("blocker_id", userId).eq("blocked_id", blockedId);
+  const { error } = await supabase.from("blocks").delete().eq("blocker_id", userId).eq("blocked_id", blockedId);
+  if (error) throw new Error(withReason("Couldn't unblock that account.", error));
 }
 
 export async function loadBlockedAccounts() {
@@ -1277,8 +1331,8 @@ export async function loadBlockedAccounts() {
     .from("blocked_accounts")
     .select("*")
     .order("created_at", { ascending: false });
-  if (error || !Array.isArray(data)) return [];
-  return data;
+  if (error) throw new Error(withReason("Couldn't load your blocked accounts.", error));
+  return Array.isArray(data) ? data : [];
 }
 
 // ---------- account deletion ----------
@@ -1287,6 +1341,9 @@ export async function loadBlockedAccounts() {
 // it; the meets they posted go too, since nobody would be left to run them.
 export async function deleteMyAccount() {
   if (!supabase) throw new Error("Backend not configured");
+  // Profile photos live in storage, not the database, so they go first.
+  const { data: who } = await supabase.auth.getUser();
+  if (who?.user) await removeAllAvatarFiles(who.user.id);
   const { error } = await supabase.rpc("delete_my_account");
   if (error) throw new Error(withReason("Couldn't delete the account. Try again.", error));
   await supabase.auth.signOut();
@@ -1342,7 +1399,8 @@ export async function restrictUser(userId, personId, restrict) {
       .upsert({ restricter_id: userId, restricted_id: personId }, { onConflict: "restricter_id,restricted_id" });
     if (error) throw new Error(withReason("Couldn't restrict that account.", error));
   } else {
-    await supabase.from("restrictions").delete().eq("restricter_id", userId).eq("restricted_id", personId);
+    const { error } = await supabase.from("restrictions").delete().eq("restricter_id", userId).eq("restricted_id", personId);
+    if (error) throw new Error(withReason("Couldn't unrestrict that account.", error));
   }
 }
 
@@ -1352,7 +1410,8 @@ export async function loadRestrictedAccounts() {
     .from("restricted_accounts")
     .select("*")
     .order("created_at", { ascending: false });
-  return error || !Array.isArray(data) ? [] : data;
+  if (error) throw new Error(withReason("Couldn't load your restricted accounts.", error));
+  return Array.isArray(data) ? data : [];
 }
 
 // value: 1 (thumbs up) or -1 (thumbs down). Tapping your current choice

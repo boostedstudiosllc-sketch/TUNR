@@ -53,6 +53,7 @@ import NotificationBell from "./components/NotificationBell.jsx";
 import AlertSettings from "./components/AlertSettings.jsx";
 import HomeScreenPrompt from "./components/HomeScreenPrompt.jsx";
 import ConfirmEmailBanner from "./components/ConfirmEmail.jsx";
+import SetPasswordSheet from "./components/SetPassword.jsx";
 import { AccountContext, confirmMyEmail } from "./lib/account.js";
 import { loadPhotoSpots } from "./lib/community.js";
 
@@ -108,6 +109,7 @@ export default function App() {
   }));
   const [position, setPosition] = useState(null);
   const [showAlerts, setShowAlerts] = useState(false);
+  const [settingPassword, setSettingPassword] = useState(false);
   // The map's photo-spot layer (forum posts tagged 📸 with a pin).
   const [showSpots, setShowSpots] = useState(false);
   const [spots, setSpots] = useState([]);
@@ -130,8 +132,10 @@ export default function App() {
 
   // Track auth session
   useEffect(() => {
-    const unsubscribe = onAuthChange((u) => {
+    const unsubscribe = onAuthChange((u, event) => {
       setUser(u);
+      // Arrived from a password-reset email: ask for the new password.
+      if (event === "PASSWORD_RECOVERY") setSettingPassword(true);
       if (u) {
         ensureProfile(u);
         // Agreed on another device: don't ask again here.
@@ -1016,6 +1020,7 @@ export default function App() {
       )}
 
       {showAlerts && user && <AlertSettings user={user} onClose={() => setShowAlerts(false)} onToast={showToast} />}
+      {settingPassword && user && <SetPasswordSheet onClose={() => setSettingPassword(false)} onToast={showToast} />}
 
       {/* Perks */}
       {tab === "perks" && (
@@ -1039,6 +1044,7 @@ export default function App() {
           onShowPrivacy={() => setShowPrivacy(true)}
           onOpenAlerts={() => setShowAlerts(true)}
           onOpenLink={openLink}
+          onOpenMeet={(e) => setSelected(e)}
           onToast={showToast}
           onCohostChange={refreshEvents}
           onOpenPerson={setPersonView}

@@ -15,7 +15,8 @@ import {
 import { Badges } from "./Badge.jsx";
 import { photoPageLink } from "../lib/photographer.js";
 import { loadPersonClubs, kindLabel } from "../lib/community.js";
-import { Logo } from "./CommunityBits.jsx";
+import { Logo, ReportSheet } from "./CommunityBits.jsx";
+import { Avatar } from "./EditProfile.jsx";
 
 // Someone's profile, opened from their name in a meet chat: follow them,
 // see their cars, or block or restrict them.
@@ -27,6 +28,7 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
   const [confirmBlock, setConfirmBlock] = useState(false);
   const [viewerIsAdmin, setViewerIsAdmin] = useState(false);
   const [clubs, setClubs] = useState([]);
+  const [reporting, setReporting] = useState(false);
 
   async function refresh() {
     const p = await getPerson(personId);
@@ -112,22 +114,7 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
         ) : (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: -6 }}>
-              <div
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: "50%",
-                  background: "linear-gradient(135deg,#FF4500,#FF7A00)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 28,
-                  fontWeight: 900,
-                  flexShrink: 0,
-                }}
-              >
-                {(person.username || "?")[0].toUpperCase()}
-              </div>
+              <Avatar url={person.avatar_url} name={person.username || "?"} size={64} />
               <div style={{ minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 22, fontWeight: 900, overflowWrap: "anywhere" }}>@{person.username}</span>
@@ -156,6 +143,22 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
                 )}
               </div>
             </div>
+
+            {person.bio && (
+              <div
+                style={{
+                  fontSize: 13.5,
+                  color: "#DDD",
+                  marginTop: 12,
+                  lineHeight: 1.45,
+                  whiteSpace: "pre-wrap",
+                  overflowWrap: "anywhere",
+                  fontFamily: "'Barlow', sans-serif",
+                }}
+              >
+                {person.bio}
+              </div>
+            )}
 
             <div style={{ display: "flex", gap: 22, marginTop: 16 }}>
               <Count n={person.followers} label="followers" />
@@ -217,6 +220,14 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
                       person.i_restricted ? `Unrestricted ${name}` : `Restricted ${name}`
                     )
                   }
+                />
+                <MenuRow
+                  title="Report profile"
+                  sub="Offensive photo or bio, impersonation, spam. Only TUNR admins see reports."
+                  onClick={() => {
+                    setMenu(false);
+                    setReporting(true);
+                  }}
                 />
                 {confirmBlock ? (
                   <MenuRow
@@ -300,6 +311,7 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
           </>
         )}
       </div>
+      {reporting && <ReportSheet type="profile" id={personId} onClose={() => setReporting(false)} onToast={onToast} />}
     </div>
   );
 }

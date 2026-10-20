@@ -75,12 +75,14 @@ export async function updateForum(forumId, patch) {
 }
 
 // sort: "hot" | "new" | "top". forumIds: limit to these (null = all).
-export async function loadPosts({ forumId = null, forumIds = null, sort = "hot", tag = null, search = "", limit = 40 } = {}) {
+// userId: only that person's posts (their profile).
+export async function loadPosts({ forumId = null, forumIds = null, sort = "hot", tag = null, search = "", limit = 40, userId = null } = {}) {
   if (!supabase) return [];
   let q = supabase.from("forum_posts_feed").select("*").eq("removed", false);
   if (forumId) q = q.eq("forum_id", forumId);
   if (forumIds) q = q.in("forum_id", forumIds.length ? forumIds : ["00000000-0000-0000-0000-000000000000"]);
   if (tag) q = q.eq("tag", tag);
+  if (userId) q = q.eq("user_id", userId);
   if (search.trim()) {
     const term = search.trim().replace(/[%,()]/g, " ");
     q = q.or(`title.ilike.%${term}%,body.ilike.%${term}%`);
