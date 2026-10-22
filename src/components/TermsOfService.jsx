@@ -251,12 +251,25 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           notice to the same address. Accounts that repeatedly infringe are terminated.
         </div>
 
-        <div style={heading}>10. PERKS &amp; PARTNER OFFERS</div>
+        <div style={heading}>10. PERKS, POINTS &amp; REWARDS</div>
         <div style={body}>
           Discounts and offers in the Perks tab come from the businesses named on them, not from us.
           Each business sets its own terms, decides whether to honor an offer, and is responsible
           for its products and services. Offers can change, run out, or end at any time. Unless a
           perk says so, listing a business doesn't mean it endorses TUNR or that we endorse it.
+          <br />
+          <br />
+          <strong>Points and rewards.</strong> You earn points by checking in at meets marked as
+          points meets, and with one-time getting-started bonuses. Rewards are guaranteed when you
+          redeem them: it's a loyalty program, never a drawing, raffle or lottery, and nothing is
+          bought to take part. Points have no cash value and can't be bought, sold, transferred or
+          combined between accounts. Checking in needs the code shown at the meet and your
+          location at that moment; you must actually be there. Using fake locations, sharing codes
+          with people who aren't there, extra accounts, or any other trick to earn points breaks
+          these terms: we can remove those points, cancel rewards claimed with them, and suspend
+          the account. Rewards from a business are provided by that business on its own terms.
+          We can change point values, rewards and the rules, or end the program, at any time;
+          points never become something you own.
         </div>
 
         <div style={heading}>11. PAID MEMBERSHIP</div>

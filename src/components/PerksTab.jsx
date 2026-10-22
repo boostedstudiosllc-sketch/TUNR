@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { loadPerks, recordRedemption, loadProfile, track } from "../lib/store.js";
+import { loadMyPoints } from "../lib/points.js";
+import { RewardsSheet } from "./Rewards.jsx";
 
 const CATEGORY_LABELS = {
   detailing: "DETAILING",
@@ -22,6 +24,20 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState({});
   const [isMember, setIsMember] = useState(false);
+  const [points, setPoints] = useState(null);
+  const [showRewards, setShowRewards] = useState(false);
+
+  // Refreshed when the rewards sheet closes, after anything spent or earned.
+  useEffect(() => {
+    if (!user || showRewards) return;
+    let alive = true;
+    loadMyPoints()
+      .then((p) => alive && setPoints(p))
+      .catch((e) => console.warn(e.message));
+    return () => {
+      alive = false;
+    };
+  }, [user?.id, showRewards]);
 
   // Loaded here rather than lifted into App: only this tab needs it, and the
   // paywall itself is the database's `unlocked` flag, not this boolean.
@@ -103,6 +119,14 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
       </div>
 
       <div style={{ padding: "16px 20px 20px" }}>
+        <PointsCard
+          points={points}
+          onOpen={() => (user ? setShowRewards(true) : onNeedAccount())}
+        />
+        {showRewards && user && (
+          <RewardsSheet user={user} onClose={() => setShowRewards(false)} onToast={onToast} />
+        )}
+
         {!isMember && memberPerks > 0 && <JoinCard count={memberPerks} onNeedAccount={onNeedAccount} user={user} />}
 
         {loading ? (
@@ -128,6 +152,42 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
         )}
       </div>
     </div>
+  );
+}
+
+// Points from showing up at meets, traded for merch and shop discounts.
+function PointsCard({ points, onOpen }) {
+  return (
+    <button
+      className="action-btn"
+      onClick={onOpen}
+      style={{
+        width: "100%",
+        marginBottom: 14,
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "14px 16px",
+        background: "linear-gradient(135deg, #2A1F00, #141414)",
+        border: "1px solid #4A3A00",
+        borderRadius: 12,
+        color: "#F0F0F0",
+        textAlign: "left",
+        cursor: "pointer",
+        fontFamily: "'Barlow Condensed', sans-serif",
+      }}
+    >
+      <span aria-hidden="true" style={{ fontSize: 28 }}>⭐</span>
+      <span style={{ flex: 1 }}>
+        <span style={{ display: "block", fontSize: 17, fontWeight: 900, letterSpacing: 0.5 }}>
+          {points ? `${Number(points.balance || 0).toLocaleString()} POINTS` : "POINTS & REWARDS"}
+        </span>
+        <span style={{ display: "block", fontSize: 12.5, color: "#A08A40", fontFamily: "'Barlow', sans-serif" }}>
+          Check in at meets, trade points for merch and shop deals
+        </span>
+      </span>
+      <span aria-hidden="true" style={{ fontSize: 20, color: "#A08A40" }}>›</span>
+    </button>
   );
 }
 

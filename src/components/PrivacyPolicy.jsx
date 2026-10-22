@@ -93,12 +93,19 @@ export default function PrivacyPolicy({ onClose }) {
           the ones you join or ask to join, how you're coming, and messages in linkup chats.
           <br />
           <br />
+          <strong>Points:</strong> the meets you check in at and when, how far you were from the
+          meet's pin, your points history, and the rewards you claim with their claim codes.
+          <br />
+          <br />
           <strong>Location:</strong> only when you tap for it, and only while the app is open.
           Showing distances to meets uses your coordinates in your browser only; they aren't sent
           to us. If you set your location for linkup alerts, we save it rounded to about half a
           mile, with the distance you chose, to work out which linkups are near you; it's never
           shown to anyone. If you tap "I'm here now" when posting a linkup, that spot is the
           linkup's location.
+          When you check in at a meet for points, your location is sent once to confirm you're
+          within a quarter mile of the meet; we keep only how far you were from it, not where
+          you were.
           <br />
           <br />
           <strong>Alerts:</strong> the alerts we've sent you, whether you've read them, your alert

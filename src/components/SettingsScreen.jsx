@@ -17,10 +17,12 @@ import Insights from "./Insights.jsx";
 import { CohostInvites } from "./Cohosts.jsx";
 import { ListingRequestsQueue } from "./ListingRequest.jsx";
 import { SetPasswordForm } from "./SetPassword.jsx";
+import RewardsPanel, { RewardsAdmin, RedemptionsAdmin, CheckinsAdmin } from "./Rewards.jsx";
 
 const PAGES = {
   email: "Email",
   password: "Password",
+  points: "Points & rewards",
   host: "Host verification",
   restricted: "Restricted accounts",
   blocked: "Blocked accounts",
@@ -32,6 +34,9 @@ const PAGES = {
   verifyQueue: "Host verification queue",
   hostInvites: "Host invites",
   signups: "Sign-up stats",
+  rewardsAdmin: "Rewards",
+  claims: "Reward claims",
+  checkins: "Check-ins",
 };
 
 // Everything you can set or change, in one place, Instagram-style: grouped
@@ -246,6 +251,7 @@ export default function SettingsScreen({
                 onClick={() => open("email")}
               />
               <Row icon="🔑" label="Password" sub="Change your password" onClick={() => open("password")} />
+              <Row icon="⭐" label="Points & rewards" sub="Check in at meets, trade points for merch" onClick={() => open("points")} />
             </Section>
 
             <Section title="VERIFICATION">
@@ -298,6 +304,9 @@ export default function SettingsScreen({
                 <Row icon="✅" label="Host verification queue" onClick={() => open("verifyQueue")} />
                 <Row icon="📨" label="Host invites" onClick={() => open("hostInvites")} />
                 <Row icon="📈" label="Sign-up stats" onClick={() => open("signups")} />
+                <Row icon="🎁" label="Rewards" sub="What points can buy" onClick={() => open("rewardsAdmin")} />
+                <Row icon="🧾" label="Reward claims" sub="Hand over or cancel" onClick={() => open("claims")} />
+                <Row icon="📍" label="Check-ins" sub="Review, remove, adjust points" onClick={() => open("checkins")} />
               </Section>
             )}
 
@@ -347,6 +356,14 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
       return <EmailPage user={user} account={account} onToast={onToast} />;
     case "password":
       return <SetPasswordForm onToast={onToast} />;
+    case "points":
+      return <RewardsPanel user={user} onToast={onToast} />;
+    case "rewardsAdmin":
+      return <RewardsAdmin onToast={onToast} />;
+    case "claims":
+      return <RedemptionsAdmin onToast={onToast} />;
+    case "checkins":
+      return <CheckinsAdmin onToast={onToast} />;
     case "host":
       return (
         <Body empty="Loading…">

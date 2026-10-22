@@ -8,6 +8,7 @@ import ListingRequest from "./ListingRequest.jsx";
 import PrivateAccess from "./PrivateAccess.jsx";
 import Attendees from "./Attendees.jsx";
 import MeetPhotos from "./MeetPhotos.jsx";
+import CheckIn from "./CheckIn.jsx";
 import IssueFlag from "./IssueFlag.jsx";
 import { track, loadGoingHistory } from "../lib/store.js";
 import GoingTicker from "./GoingTicker.jsx";
@@ -454,6 +455,9 @@ export default function MeetDetail({
             )}
           </div>
 
+          {!locked && (
+            <CheckIn event={event} user={user} onNeedAccount={onNeedAccount} onToast={onToast} />
+          )}
 
           {event.source && (
             <div

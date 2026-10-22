@@ -54,6 +54,15 @@ const WRITE_ERROR_COPY = {
   not_a_member: "They aren't in this club any more.",
   profiles_bio_length_check: "Your bio has to be 160 characters or fewer, on 5 lines at most.",
   profiles_avatar_url_check: "Profile photos have to be uploaded through TUNR — pick the photo again.",
+  redemption_already_decided: "That claim was already handed over or cancelled. Refresh to see it.",
+  redemption_not_found: "That claim no longer exists.",
+  checkin_already_voided: "That check-in was already removed.",
+  checkin_not_found: "That check-in no longer exists.",
+  note_required: "Add a reason. The person sees it in their points history.",
+  bad_points_amount: "Use a number of points between -10000 and 10000 (not 0).",
+  rewards_cost_check: "A reward has to cost between 1 and 100,000 points.",
+  rewards_title_check: "Give the reward a name of up to 80 characters.",
+  rewards_per_person_check: "Max per person has to be between 1 and 50.",
   confirm_email_first:
     "Confirm your email first — tap the link we emailed you (or “Resend email” at the top of the app).",
 };
