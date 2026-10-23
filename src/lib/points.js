@@ -59,6 +59,9 @@ export function redeemMessage(result) {
   if (status === "not_enough") {
     return `You need ${result.cost} points and have ${result.balance}.`;
   }
+  if (status === "need_spend") {
+    return `This reward is for people who've spent at least ${dollars(result.min_spend_cents)} on Boosted merch. You've spent ${dollars(result.spent_cents)}.`;
+  }
   return REDEEM_COPY[status] || `Couldn't redeem that. (${status})`;
 }
 
@@ -158,6 +161,8 @@ const REASON_LABELS = {
   starter_profile: "Finished your profile",
   starter_car: "Added your car",
   starter_alerts: "Turned on alerts",
+  purchase: "Boosted purchase",
+  member_bonus: "Membership bonus",
   redeem: "Redeemed",
   refund: "Points returned",
   revoke: "Check-in removed",
@@ -186,7 +191,7 @@ export async function loadRewards() {
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("rewards")
-    .select("id, title, description, kind, cost, how_to_claim, stock, per_person, active, partner_id, partners(name)")
+    .select("id, title, description, kind, cost, min_spend_cents, how_to_claim, stock, per_person, active, partner_id, partners(name)")
     .order("cost");
   if (error) throw new Error(withReason("Couldn't load rewards.", error));
   return (data || []).map((r) => ({ ...r, partnerName: r.partners?.name || "" }));
@@ -219,7 +224,115 @@ export async function loadMyRedemptions(userId) {
   }));
 }
 
+export const dollars = (cents) =>
+  "$" + (Number(cents || 0) / 100).toFixed(2).replace(/\.00$/, "");
+
+// "$35" or "35.50" → cents; null when it isn't a sensible amount.
+export function toCents(text) {
+  const n = Number(String(text || "").replace(/[$,\s]/g, ""));
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) : null;
+}
+
+export const STORES = [
+  { id: "square", label: "Online shop (Square)" },
+  { id: "depop", label: "Depop" },
+  { id: "in_person", label: "In person at a meet" },
+  { id: "other", label: "Somewhere else" },
+];
+
+export async function loadPointsSettings() {
+  if (!supabase) return { points_per_dollar: 10, member_bonus: 500 };
+  const { data, error } = await supabase.from("points_settings").select("points_per_dollar, member_bonus").maybeSingle();
+  if (error) throw new Error(withReason("Couldn't load the points rates.", error));
+  return data || { points_per_dollar: 10, member_bonus: 500 };
+}
+
+const PURCHASE_COPY = {
+  not_signed_in: "Sign in to add a purchase.",
+  unconfirmed: "Confirm your email first. Tap the link we emailed you.",
+  bad_order: "Enter the order number from your receipt (at least 3 characters).",
+  bad_amount: "Enter what you paid, between $1 and $10,000.",
+  rate_limited: "That's 5 purchases added today, the limit. Try again tomorrow.",
+  duplicate: "That order has already been added. Each order counts once.",
+};
+
+export async function submitPurchase(store, orderRef, amountCents) {
+  need();
+  const { data, error } = await supabase.rpc("submit_purchase", {
+    p_store: store,
+    p_order_ref: orderRef,
+    p_amount_cents: amountCents,
+  });
+  if (error) throw new Error(withReason("Couldn't add that purchase.", error));
+  if (data?.status !== "ok") throw new Error(PURCHASE_COPY[data?.status] || `Couldn't add that purchase. (${data?.status})`);
+}
+
+export async function loadMyPurchases(userId) {
+  need();
+  const { data, error } = await supabase
+    .from("purchase_claims")
+    .select("id, store, order_ref, amount_cents, status, points, note, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw new Error(withReason("Couldn't load your purchases.", error));
+  return data || [];
+}
+
 // ============ ADMIN ============
+export async function savePointsSettings(settings) {
+  need();
+  const { error } = await supabase
+    .from("points_settings")
+    .update({
+      points_per_dollar: Number(settings.points_per_dollar),
+      member_bonus: Number(settings.member_bonus),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", true);
+  if (error) throw new Error(friendlyWriteError(error, "Couldn't save the points rates."));
+}
+
+export async function loadPurchaseQueue(status = "pending") {
+  need();
+  const { data, error } = await supabase.rpc("purchase_queue", { p_status: status });
+  if (error) throw new Error(withReason("Couldn't load purchases.", error));
+  return data || [];
+}
+
+export async function decidePurchase(id, approve, amountCents = null, note = null) {
+  need();
+  const { data, error } = await supabase.rpc("decide_purchase", {
+    p_claim: id,
+    p_approve: approve,
+    p_amount_cents: amountCents,
+    p_note: note,
+  });
+  if (error) throw new Error(friendlyWriteError(error, "Couldn't update that purchase."));
+  return data;
+}
+
+export async function recordPurchase(userId, store, orderRef, amountCents) {
+  need();
+  const { data, error } = await supabase.rpc("record_purchase", {
+    p_user: userId,
+    p_store: store,
+    p_order_ref: orderRef,
+    p_amount_cents: amountCents,
+  });
+  if (error) throw new Error(friendlyWriteError(error, "Couldn't record that sale."));
+  return data;
+}
+
+// @username → account id, for the admin forms.
+export async function findUserId(username) {
+  need();
+  const name = String(username || "").trim().replace(/^@/, "").toLowerCase();
+  const { data, error } = await supabase.from("profiles").select("id").eq("username", name).maybeSingle();
+  if (error) throw new Error(withReason("Couldn't look up that username.", error));
+  if (!data) throw new Error(`No account with the username @${name}.`);
+  return data.id;
+}
 export async function saveReward(reward) {
   need();
   const row = {
@@ -231,6 +344,7 @@ export async function saveReward(reward) {
     how_to_claim: reward.howToClaim?.trim() || null,
     stock: reward.stock === "" || reward.stock == null ? null : Number(reward.stock),
     per_person: Number(reward.perPerson || 1),
+    min_spend_cents: toCents(reward.minSpend) || 0,
     active: reward.active !== false,
   };
   const q = reward.id

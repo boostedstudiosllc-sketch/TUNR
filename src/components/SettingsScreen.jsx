@@ -17,7 +17,7 @@ import Insights from "./Insights.jsx";
 import { CohostInvites } from "./Cohosts.jsx";
 import { ListingRequestsQueue } from "./ListingRequest.jsx";
 import { SetPasswordForm } from "./SetPassword.jsx";
-import RewardsPanel, { RewardsAdmin, RedemptionsAdmin, CheckinsAdmin } from "./Rewards.jsx";
+import RewardsPanel, { RewardsAdmin, RedemptionsAdmin, CheckinsAdmin, PurchasesAdmin } from "./Rewards.jsx";
 
 const PAGES = {
   email: "Email",
@@ -36,6 +36,7 @@ const PAGES = {
   signups: "Sign-up stats",
   rewardsAdmin: "Rewards",
   claims: "Reward claims",
+  purchases: "Purchases",
   checkins: "Check-ins",
 };
 
@@ -305,6 +306,7 @@ export default function SettingsScreen({
                 <Row icon="📨" label="Host invites" onClick={() => open("hostInvites")} />
                 <Row icon="📈" label="Sign-up stats" onClick={() => open("signups")} />
                 <Row icon="🎁" label="Rewards" sub="What points can buy" onClick={() => open("rewardsAdmin")} />
+                <Row icon="🛍️" label="Purchases" sub="Approve orders, record sales, set rates" onClick={() => open("purchases")} />
                 <Row icon="🧾" label="Reward claims" sub="Hand over or cancel" onClick={() => open("claims")} />
                 <Row icon="📍" label="Check-ins" sub="Review, remove, adjust points" onClick={() => open("checkins")} />
               </Section>
@@ -362,6 +364,8 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
       return <RewardsAdmin onToast={onToast} />;
     case "claims":
       return <RedemptionsAdmin onToast={onToast} />;
+    case "purchases":
+      return <PurchasesAdmin onToast={onToast} />;
     case "checkins":
       return <CheckinsAdmin onToast={onToast} />;
     case "host":
