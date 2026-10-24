@@ -59,6 +59,7 @@ import { loadPhotoSpots } from "./lib/community.js";
 import { CARD_PARAM, rememberPendingCard, hasPendingCard } from "./lib/points.js";
 import { INVITE_PARAM, rememberPendingInvite, takePendingInvite, claimInvite } from "./lib/invites.js";
 import InviteSheet from "./components/InviteSheet.jsx";
+import { recordSignIn } from "./lib/activity.js";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -191,6 +192,8 @@ export default function App() {
       setUser(u);
       // Arrived from a password-reset email: ask for the new password.
       if (event === "PASSWORD_RECOVERY") setSettingPassword(true);
+      // For Settings → Sign-in history (the database skips repeats).
+      if (u && event === "SIGNED_IN") recordSignIn();
       if (u) {
         ensureProfile(u);
         // Agreed on another device: don't ask again here.

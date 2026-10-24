@@ -376,6 +376,7 @@ Main drivers: how smooth auth deep linking goes (the most fiddly part), whether 
 **Product backlog (not built)**
 - **"Who's down?":** float a linkup idea to see who's interested before setting a time and place. Linkups today must start within 2 hours.
 - **On my way / Open in Waze:** share that you're heading to a meet or linkup (an ETA, possibly live location; see 8.E), and a Waze button beside the Google Maps directions (`directionsUrl()` in `src/lib/geo.js`).
+- **Custom alert sound (native):** the web app plays a member's recorded clip (Settings → Alert sound, stored in `localStorage` as `tunr.alertSound`) only while TUNR is open. In the native app, copy the clip to `Library/Sounds` (iOS, ≤30 s, .caf/.wav/.aiff) or a notification channel sound (Android) and name it in the push payload's `sound` field so it plays when the app is closed too.
 - **Instagram auto-import** of flyers and meets: blocked until a Meta developer app is created and passes Meta's app review (Instagram's API only works through an approved app). Flyers are currently added by hand or through the flyer reader.
 - **Linkups on the map:** the Map tab shows meets and forum photo spots, not linkups.
 - **Club members-only linkups:** linkups are public or private, with no club scoping.

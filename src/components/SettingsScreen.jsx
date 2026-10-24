@@ -19,12 +19,18 @@ import { ListingRequestsQueue } from "./ListingRequest.jsx";
 import { SetPasswordForm } from "./SetPassword.jsx";
 import { SHOP_OPEN } from "../lib/points.js";
 import { openInvites } from "../lib/invites.js";
+import { MeetHistory, InviteHistory, TransactionLog, SignInHistory, AlertSound } from "./ActivityPages.jsx";
 import RewardsPanel, { RewardsAdmin, RedemptionsAdmin, CheckinsAdmin, PurchasesAdmin, CardsAdmin, IssuesAdmin } from "./Rewards.jsx";
 
 const PAGES = {
   email: "Email",
   password: "Password",
   points: "Points & rewards",
+  meetHistory: "Meet history",
+  inviteHistory: "Invite history",
+  transactions: "Transaction log",
+  signIns: "Sign-in history",
+  alertSound: "Alert sound",
   host: "Host verification",
   restricted: "Restricted accounts",
   blocked: "Blocked accounts",
@@ -285,11 +291,19 @@ export default function SettingsScreen({
                 sub="Phone alerts, linkups near you, meet-day reminders"
                 onClick={onOpenAlerts}
               />
+              <Row icon="🔊" label="Alert sound" sub="Make your car's exhaust your alert sound" onClick={() => open("alertSound")} />
+            </Section>
+
+            <Section title="ACTIVITY">
+              <Row icon="🏁" label="Meet history" sub="Meets you went to and checked in at" onClick={() => open("meetHistory")} />
+              <Row icon="🎁" label="Invite history" sub="Who joined with your link, who's pending" onClick={() => open("inviteHistory")} />
+              <Row icon="🧾" label="Transaction log" sub="Points earned and spent, rewards claimed" onClick={() => open("transactions")} />
             </Section>
 
             <Section title="PRIVACY AND SAFETY">
               <Row icon="🔇" label="Restricted accounts" value={counts.restricted ? String(counts.restricted) : ""} onClick={() => open("restricted")} />
               <Row icon="🚫" label="Blocked accounts" value={counts.blocked ? String(counts.blocked) : ""} onClick={() => open("blocked")} />
+              <Row icon="🔐" label="Sign-in history" sub="Where you're signed in; sign out other devices" onClick={() => open("signIns")} />
             </Section>
 
             <Section title="HOSTING">
@@ -369,6 +383,16 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
       return <SetPasswordForm onToast={onToast} />;
     case "points":
       return <RewardsPanel user={user} onToast={onToast} />;
+    case "meetHistory":
+      return <MeetHistory onOpenLink={onFollow} />;
+    case "inviteHistory":
+      return <InviteHistory onOpenLink={onFollow} />;
+    case "transactions":
+      return <TransactionLog user={user} />;
+    case "signIns":
+      return <SignInHistory user={user} onToast={onToast} />;
+    case "alertSound":
+      return <AlertSound onToast={onToast} />;
     case "rewardsAdmin":
       return <RewardsAdmin onToast={onToast} />;
     case "claims":

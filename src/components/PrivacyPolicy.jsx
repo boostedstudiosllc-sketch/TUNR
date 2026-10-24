@@ -93,6 +93,12 @@ export default function PrivacyPolicy({ onClose }) {
           the ones you join or ask to join, how you're coming, and messages in linkup chats.
           <br />
           <br />
+          <strong>Sign-ins:</strong> when you sign in, the kind of device and browser (like
+          "Safari on iPhone") and a partly hidden network address (like 203.0.113.x), kept 90 days
+          so you can spot a sign-in that wasn't you. A custom alert sound you record stays on your
+          device; it isn't sent to us.
+          <br />
+          <br />
           <strong>Invites:</strong> your invite code, and if you joined through a friend's link,
           that you did. Your friend sees your username and whether you've confirmed your email, so
           it can count toward their unlocks.

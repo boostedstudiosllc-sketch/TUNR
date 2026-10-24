@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   loadNotifications,
   markNotificationsRead,
@@ -6,6 +6,7 @@ import {
   subscribeToNotifications,
 } from "../lib/alerts.js";
 import Sheet, { sheetTitle, muted, quietButton } from "./Sheet.jsx";
+import { playAlertSound } from "../lib/activity.js";
 
 // The bell in the header: everything TUNR has told you, newest first.
 // Tapping one opens what it's about.
@@ -13,10 +14,16 @@ export default function NotificationBell({ user, onOpenLink, onToast, onOpenSett
   const [items, setItems] = useState([]);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
+  // Unread alerts seen so far; null until the first load, so opening the
+  // app doesn't play the sound for alerts that were already waiting.
+  const seenUnread = useRef(null);
 
   function refresh() {
     loadNotifications()
       .then((rows) => {
+        const unreadIds = rows.filter((n) => !n.read_at).map((n) => n.id);
+        if (seenUnread.current && unreadIds.some((id) => !seenUnread.current.has(id))) playAlertSound();
+        seenUnread.current = new Set(unreadIds);
         setItems(rows);
         setError("");
       })
@@ -24,6 +31,7 @@ export default function NotificationBell({ user, onOpenLink, onToast, onOpenSett
   }
 
   useEffect(() => {
+    seenUnread.current = null;
     if (!user) {
       setItems([]);
       return;
