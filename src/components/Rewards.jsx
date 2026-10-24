@@ -27,6 +27,10 @@ import {
   loadCardBatches,
   loadUnusedCards,
   voidCardBatch,
+  reportPointsIssue,
+  loadMyPointsIssues,
+  loadPointsIssueQueue,
+  resolvePointsIssue,
   savePointsSettings,
   loadPurchaseQueue,
   recordPurchase,
@@ -282,6 +286,9 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
           ))
         )}
       </div>
+
+      <Title>MISSING POINTS?</Title>
+      <IssueForm user={user} onToast={onToast} />
 
       <div style={{ ...muted, fontSize: 11.5, marginTop: 14 }}>
         Points have no cash value and can't be sold or transferred. Each points card works once. Rewards are guaranteed
@@ -956,6 +963,217 @@ export function PurchasesAdmin({ onToast }) {
             right={`+${r.points ?? 0}`}
             rightColor="#10B981"
           />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Didn't get points for something? Send the order number and the email it
+// was bought with; we look it up and answer in the app.
+function IssueForm({ user, onToast }) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState({ store: "square", orderRef: "", purchaseEmail: user.email || "", item: "", message: "" });
+  const [mine, setMine] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const refresh = () =>
+    loadMyPointsIssues(user.id)
+      .then(setMine)
+      .catch((e) => setError(e.message));
+  useEffect(() => {
+    refresh();
+  }, [user.id]);
+
+  const set = (patch) => setDraft((d) => ({ ...d, ...patch }));
+
+  async function send() {
+    setBusy(true);
+    setError("");
+    try {
+      await reportPointsIssue(draft);
+      onToast("Report sent. We'll look up your order and get back to you here.");
+      setOpen(false);
+      setDraft((d) => ({ ...d, orderRef: "", item: "", message: "" }));
+      refresh();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div style={card}>
+      {!open ? (
+        <>
+          <div style={{ ...muted, fontSize: 12.5 }}>
+            Bought something and didn't get your points? Lost the card, or it didn't work? Tell us and
+            we'll sort it out.
+          </div>
+          <button onClick={() => setOpen(true)} style={{ ...quietButton, marginTop: 8 }}>REPORT A POINTS ISSUE</button>
+        </>
+      ) : (
+        <>
+          <Field name="WHERE YOU BOUGHT IT">
+            <select style={field} value={draft.store} onChange={(e) => set({ store: e.target.value })}>
+              {STORES.map((s) => (
+                <option key={s.id} value={s.id}>{s.label}</option>
+              ))}
+              <option value="card">A points card didn't work</option>
+            </select>
+          </Field>
+          <Field name={draft.store === "card" ? "THE CARD'S CODE" : "ORDER OR RECEIPT NUMBER"}>
+            <input style={field} maxLength={60} value={draft.orderRef} onChange={(e) => set({ orderRef: e.target.value })} autoCapitalize="characters" />
+          </Field>
+          <Field name="EMAIL YOU USED TO BUY IT">
+            <input style={field} type="email" maxLength={254} value={draft.purchaseEmail} onChange={(e) => set({ purchaseEmail: e.target.value })} autoCapitalize="none" />
+          </Field>
+          <Field name="WHAT YOU BOUGHT (OPTIONAL)">
+            <input style={field} maxLength={80} placeholder="Boosted tee, full detail…" value={draft.item} onChange={(e) => set({ item: e.target.value })} />
+          </Field>
+          <Field name="ANYTHING ELSE (OPTIONAL)">
+            <textarea style={{ ...field, minHeight: 60 }} maxLength={500} value={draft.message} onChange={(e) => set({ message: e.target.value })} />
+          </Field>
+          {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button disabled={busy} onClick={send} style={{ ...bigButton, flex: 1 }}>{busy ? "SENDING…" : "SEND"}</button>
+            <button disabled={busy} onClick={() => (setOpen(false), setError(""))} style={{ ...quietButton, flex: 1 }}>CANCEL</button>
+          </div>
+        </>
+      )}
+      {!open && error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {mine.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          {mine.map((i) => (
+            <Line
+              key={i.id}
+              left={`Order ${i.order_ref}`}
+              sub={i.reply || new Date(i.created_at).toLocaleDateString()}
+              right={i.status === "resolved" ? `+${i.points_added ?? 0}` : i.status === "declined" ? "Answered" : "Looking into it"}
+              rightColor={i.status === "resolved" ? "#10B981" : i.status === "declined" ? "#AAA" : "#A08A40"}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Reports of missing points: look the order up (Square, Depop, your
+// records) by its number and the buyer's email, then add or decline.
+export function IssuesAdmin({ onToast }) {
+  const [status, setStatus] = useState("open");
+  const [rows, setRows] = useState(null);
+  const [amounts, setAmounts] = useState({});
+  const [replies, setReplies] = useState({});
+  const [error, setError] = useState("");
+
+  async function refresh(st = status) {
+    try {
+      setRows(await loadPointsIssueQueue(st));
+      setError("");
+    } catch (e) {
+      setError(e.message);
+      setRows([]);
+    }
+  }
+  useEffect(() => {
+    refresh(status);
+  }, [status]);
+
+  async function answer(row, add) {
+    const reply = (replies[row.id] || "").trim();
+    let cents = null;
+    if (add) {
+      cents = toCents(amounts[row.id]);
+      if (!cents) return onToast("Enter the order's amount from the shop, like 35 or 35.50.");
+    } else if (!reply) {
+      return onToast("Write a short reason first. They'll see it.");
+    }
+    try {
+      const pts = await resolvePointsIssue(row.id, cents, reply);
+      onToast(add ? `Added ${pts} points for @${row.username || "user"}` : "Answer sent");
+      refresh();
+    } catch (e) {
+      onToast(e.message);
+    }
+  }
+
+  return (
+    <div>
+      <div style={muted}>
+        Find the order in Square or Depop by its number and the buyer's email. If it's real, enter
+        the amount and add the points (the order is then recorded, so it can't be paid twice).
+        If not, say why.
+      </div>
+      <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+        {[
+          ["open", "TO ANSWER"],
+          ["resolved", "ADDED"],
+          ["declined", "DECLINED"],
+        ].map(([id, name]) => (
+          <button key={id} onClick={() => setStatus(id)} style={{ ...quietButton, flex: 1, padding: "10px 0", ...(status === id ? { borderColor: "#FF4500", color: "#FF7A00" } : {}) }}>
+            {name}
+          </button>
+        ))}
+      </div>
+      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {rows && rows.length === 0 && <div style={{ ...muted, marginTop: 12 }}>Nothing here.</div>}
+      {(rows || []).map((r) => (
+        <div key={r.id} style={card}>
+          <Line
+            left={`${r.order_ref}`}
+            sub={`${r.store === "card" ? "Points card" : (STORES.find((s) => s.id === r.store) || {}).label || r.store} · ${new Date(r.created_at).toLocaleString()}`}
+            right={r.points_added != null ? `+${r.points_added}` : ""}
+            rightColor="#10B981"
+          />
+          <div style={{ ...muted, fontSize: 12.5 }}>
+            Bought with: <b style={{ color: "#DDD" }}>{r.purchase_email}</b>
+            <br />
+            TUNR account: @{r.username || "no username"} ({r.account_email || "no email"})
+            {r.item && (
+              <>
+                <br />
+                Item: {r.item}
+              </>
+            )}
+            {r.message && (
+              <>
+                <br />
+                “{r.message}”
+              </>
+            )}
+            {r.reply && (
+              <>
+                <br />
+                Your answer: {r.reply}
+              </>
+            )}
+          </div>
+          {status === "open" && (
+            <>
+              <input
+                style={{ ...field, marginTop: 8 }}
+                placeholder="Message to them (optional when adding points)"
+                maxLength={300}
+                value={replies[r.id] || ""}
+                onChange={(e) => setReplies((m) => ({ ...m, [r.id]: e.target.value }))}
+              />
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <input
+                  style={{ ...field, flex: 1 }}
+                  placeholder="$ on the order"
+                  inputMode="decimal"
+                  value={amounts[r.id] || ""}
+                  onChange={(e) => setAmounts((m) => ({ ...m, [r.id]: e.target.value.replace(/[^\d.]/g, "") }))}
+                />
+                <button onClick={() => answer(r, true)} style={{ ...bigButton, flex: 1, padding: "10px 0" }}>ADD POINTS</button>
+              </div>
+              <button onClick={() => answer(r, false)} style={{ ...quietButton, marginTop: 8, padding: "10px 0" }}>DECLINE WITH MESSAGE</button>
+            </>
+          )}
         </div>
       ))}
     </div>

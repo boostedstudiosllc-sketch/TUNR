@@ -437,3 +437,57 @@ export async function adjustPoints(userId, delta, note) {
   const { error } = await supabase.rpc("adjust_points", { p_user: userId, p_delta: delta, p_note: note });
   if (error) throw new Error(friendlyWriteError(error, "Couldn't adjust points."));
 }
+
+// ============ MISSING POINTS ============
+const ISSUE_COPY = {
+  not_signed_in: "Sign in to report missing points.",
+  bad_order: "Enter the order or receipt number (at least 3 characters).",
+  bad_email: "Enter the email you used when you bought it, like name@gmail.com.",
+  rate_limited: "That's 3 reports today, the limit. Try again tomorrow, or email us.",
+  already_open: "You already reported this order. We'll get back to you.",
+  already_paid: "Points for that order were already added (check your history). If they went to the wrong account, email us.",
+};
+
+export async function reportPointsIssue({ store, orderRef, purchaseEmail, item, message }) {
+  need();
+  const { data, error } = await supabase.rpc("report_points_issue", {
+    p_store: store,
+    p_order_ref: orderRef,
+    p_purchase_email: purchaseEmail,
+    p_item: item,
+    p_message: message,
+  });
+  if (error) throw new Error(withReason("Couldn't send your report.", error));
+  if (data?.status !== "ok") throw new Error(ISSUE_COPY[data?.status] || `Couldn't send your report. (${data?.status})`);
+}
+
+export async function loadMyPointsIssues(userId) {
+  need();
+  const { data, error } = await supabase
+    .from("points_issues")
+    .select("id, order_ref, status, reply, points_added, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) throw new Error(withReason("Couldn't load your reports.", error));
+  return data || [];
+}
+
+export async function loadPointsIssueQueue(status = "open") {
+  need();
+  const { data, error } = await supabase.rpc("points_issue_queue", { p_status: status });
+  if (error) throw new Error(withReason("Couldn't load points reports.", error));
+  return data || [];
+}
+
+// amountCents set: add points for the order. Null: decline with the reply.
+export async function resolvePointsIssue(id, amountCents, reply) {
+  need();
+  const { data, error } = await supabase.rpc("resolve_points_issue", {
+    p_id: id,
+    p_amount_cents: amountCents,
+    p_reply: reply,
+  });
+  if (error) throw new Error(friendlyWriteError(error, "Couldn't answer that report."));
+  return data;
+}
