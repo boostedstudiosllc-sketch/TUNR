@@ -7,7 +7,6 @@ import {
   loadMyCohostInvites,
 } from "../lib/store.js";
 import { useAccount, requestConfirmationEmail, shortDate, CLEANUP_WHY } from "../lib/account.js";
-import { CONTACT_EMAIL } from "../lib/contact.js";
 import HostVerification, { VerificationQueue, HostInvites } from "./HostVerification.jsx";
 import { RestrictedAccounts, BlockedAccounts, DeleteAccount } from "./AccountSettings.jsx";
 import ModerationQueue from "./ModerationQueue.jsx";
@@ -20,6 +19,7 @@ import { SetPasswordForm } from "./SetPassword.jsx";
 import { SHOP_OPEN } from "../lib/points.js";
 import { openInvites } from "../lib/invites.js";
 import { MeetHistory, InviteHistory, TransactionLog, SignInHistory, AlertSound } from "./ActivityPages.jsx";
+import { FeedbackPage, FeedbackInbox } from "./Feedback.jsx";
 import RewardsPanel, { RewardsAdmin, RedemptionsAdmin, CheckinsAdmin, PurchasesAdmin, CardsAdmin, IssuesAdmin } from "./Rewards.jsx";
 
 const PAGES = {
@@ -31,6 +31,9 @@ const PAGES = {
   transactions: "Transaction log",
   signIns: "Sign-in history",
   alertSound: "Alert sound",
+  contact: "Contact us",
+  suggestions: "Suggestion box",
+  inbox: "Inbox",
   host: "Host verification",
   restricted: "Restricted accounts",
   blocked: "Blocked accounts",
@@ -317,6 +320,7 @@ export default function SettingsScreen({
 
             {profile.isAdmin && (
               <Section title="ADMIN">
+                <Row icon="📥" label="Inbox" sub="Contact messages and suggestions" onClick={() => open("inbox")} />
                 <Row icon="📊" label="Insights" onClick={() => open("insights")} />
                 <Row icon="🚩" label="Community reports" onClick={() => open("reports")} />
                 <Row icon="🧹" label="Moderation queue" onClick={() => open("moderation")} />
@@ -338,7 +342,8 @@ export default function SettingsScreen({
             <Section title="ABOUT">
               <Row icon="📄" label="Terms of Service" onClick={onShowTerms} />
               <Row icon="🔒" label="Privacy Policy" onClick={onShowPrivacy} />
-              <Row icon="💬" label="Contact support" sub={CONTACT_EMAIL} href={`mailto:${CONTACT_EMAIL}`} />
+              <Row icon="💬" label="Contact us" sub="Questions, problems, partnerships" onClick={() => open("contact")} />
+              <Row icon="💡" label="Suggestion box" sub="Ideas to make TUNR better" onClick={() => open("suggestions")} />
             </Section>
             <div style={{ textAlign: "center", fontSize: 12, color: "#808080", marginTop: 12, letterSpacing: 1, fontFamily: "'Barlow', sans-serif" }}>
               TUNR by Boosted Studios
@@ -393,6 +398,12 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
       return <SignInHistory user={user} onToast={onToast} />;
     case "alertSound":
       return <AlertSound onToast={onToast} />;
+    case "contact":
+      return <FeedbackPage kind="contact" user={user} onToast={onToast} />;
+    case "suggestions":
+      return <FeedbackPage kind="suggestion" user={user} onToast={onToast} />;
+    case "inbox":
+      return <FeedbackInbox onToast={onToast} />;
     case "rewardsAdmin":
       return <RewardsAdmin onToast={onToast} />;
     case "claims":

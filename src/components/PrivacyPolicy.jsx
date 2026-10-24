@@ -99,6 +99,11 @@ export default function PrivacyPolicy({ onClose }) {
           device; it isn't sent to us.
           <br />
           <br />
+          <strong>Messages to us:</strong> what you send through Contact us or the Suggestion box,
+          the topic, an optional reply email, and your device type, so we can answer and fix
+          problems.
+          <br />
+          <br />
           <strong>Invites:</strong> your invite code, and if you joined through a friend's link,
           that you did. Your friend sees your username and whether you've confirmed your email, so
           it can count toward their unlocks.
