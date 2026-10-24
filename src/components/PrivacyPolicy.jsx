@@ -94,8 +94,8 @@ export default function PrivacyPolicy({ onClose }) {
           <br />
           <br />
           <strong>Points:</strong> the meets you check in at and when, how far you were from the
-          meet's pin, the Boosted orders you add (where you bought, the order number and the
-          amount), your points history, and the rewards you claim with their claim codes.
+          meet's pin, the points cards you add and any sale we record for you (what it was for,
+          the order or card number and the amount), your points history, and the rewards you claim with their claim codes.
           <br />
           <br />
           <strong>Location:</strong> only when you tap for it, and only while the app is open.

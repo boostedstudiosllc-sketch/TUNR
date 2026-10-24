@@ -259,14 +259,16 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           perk says so, listing a business doesn't mean it endorses TUNR or that we endorse it.
           <br />
           <br />
-          <strong>Points and rewards.</strong> You earn points for Boosted Studios purchases (once
-          we match the order with the shop's records), a one-time membership bonus, checking in at
+          <strong>Points and rewards.</strong> You earn points for Boosted Studios purchases (by
+          scanning the one-time points card that comes with your order or service, or for a sale
+          we record for you), a one-time membership bonus, checking in at
           meets marked as points meets, and one-time getting-started bonuses. Rewards are
           guaranteed when you redeem them: it's a loyalty program, never a drawing, raffle or
           lottery. Some rewards are only for buyers who have spent a minimum amount. A refunded or
-          cancelled order loses its points. Points have no cash value and can't be sold,
+          cancelled order loses its points, and each points card works once, for the account that
+          adds it first. Points have no cash value and can't be sold,
           transferred or combined between accounts. Checking in needs the code shown at the meet and your
-          location at that moment; you must actually be there. Adding orders that aren't yours,
+          location at that moment; you must actually be there. Using points cards that aren't yours,
           using fake locations, sharing codes
           with people who aren't there, extra accounts, or any other trick to earn points breaks
           these terms: we can remove those points, cancel rewards claimed with them, and suspend

@@ -56,6 +56,7 @@ import ConfirmEmailBanner from "./components/ConfirmEmail.jsx";
 import SetPasswordSheet from "./components/SetPassword.jsx";
 import { AccountContext, confirmMyEmail } from "./lib/account.js";
 import { loadPhotoSpots } from "./lib/community.js";
+import { CARD_PARAM, rememberPendingCard, hasPendingCard } from "./lib/points.js";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -129,6 +130,28 @@ export default function App() {
     const id = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(id);
   }, []);
+
+  // Scanned a points card (?card=…): hold the code until they're signed in,
+  // then it opens on the Perks tab with the code filled in.
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get(CARD_PARAM);
+    if (!code) return;
+    rememberPendingCard(code);
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
+  useEffect(() => {
+    if (!hasPendingCard()) return;
+    if (user) {
+      setTab("perks");
+      return;
+    }
+    // The saved sign-in can take a moment to load; only then ask them to sign in.
+    const t = setTimeout(() => {
+      setTab("profile");
+      showToast("Sign in or create a free account to add your points card");
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [user]);
 
   // Track auth session
   useEffect(() => {

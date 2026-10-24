@@ -247,36 +247,59 @@ export async function loadPointsSettings() {
   return data || { points_per_dollar: 10, member_bonus: 500 };
 }
 
-const PURCHASE_COPY = {
-  not_signed_in: "Sign in to add a purchase.",
-  unconfirmed: "Confirm your email first. Tap the link we emailed you.",
-  bad_order: "Enter the order number from your receipt (at least 3 characters).",
-  bad_amount: "Enter what you paid, between $1 and $10,000.",
-  rate_limited: "That's 5 purchases added today, the limit. Try again tomorrow.",
-  duplicate: "That order has already been added. Each order counts once.",
-};
+// ============ POINTS CARDS ============
+// One-time codes on a card in every order bag (or handed over after a sale
+// or a detail). Scanning one adds its points at once; nobody checks orders.
+export const CARD_PARAM = "card";
+const PENDING_CARD_KEY = "tunr.pendingCard";
 
-export async function submitPurchase(store, orderRef, amountCents) {
-  need();
-  const { data, error } = await supabase.rpc("submit_purchase", {
-    p_store: store,
-    p_order_ref: orderRef,
-    p_amount_cents: amountCents,
-  });
-  if (error) throw new Error(withReason("Couldn't add that purchase.", error));
-  if (data?.status !== "ok") throw new Error(PURCHASE_COPY[data?.status] || `Couldn't add that purchase. (${data?.status})`);
+export const cleanCardCode = (text) => String(text || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+
+// A scanned link (?card=…) waits here until the person is signed in.
+export function rememberPendingCard(code) {
+  try {
+    sessionStorage.setItem(PENDING_CARD_KEY, cleanCardCode(code));
+  } catch (e) {
+    console.warn(`Couldn't remember the scanned card: ${e.message}`);
+  }
 }
 
-export async function loadMyPurchases(userId) {
+export function takePendingCard() {
+  try {
+    const code = sessionStorage.getItem(PENDING_CARD_KEY) || "";
+    sessionStorage.removeItem(PENDING_CARD_KEY);
+    return code;
+  } catch (e) {
+    console.warn(`Couldn't read the scanned card: ${e.message}`);
+    return "";
+  }
+}
+
+export function hasPendingCard() {
+  try {
+    return Boolean(sessionStorage.getItem(PENDING_CARD_KEY));
+  } catch (e) {
+    console.warn(`Couldn't read the scanned card: ${e.message}`);
+    return false;
+  }
+}
+
+const CARD_COPY = {
+  not_signed_in: "Sign in to add your points card.",
+  unconfirmed: "Confirm your email first. Tap the link we emailed you.",
+  rate_limited: "Too many tries. Wait an hour and try again.",
+  invalid: "That code doesn't exist. Check each letter and try again.",
+  used: "That card was already used by another account.",
+  yours: "You already added this card. The points are in your history.",
+  expired: "That card has expired.",
+};
+
+export async function redeemPointCard(code) {
   need();
-  const { data, error } = await supabase
-    .from("purchase_claims")
-    .select("id, store, order_ref, amount_cents, status, points, note, created_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(50);
-  if (error) throw new Error(withReason("Couldn't load your purchases.", error));
-  return data || [];
+  const { data, error } = await supabase.rpc("redeem_point_card", { p_code: code });
+  if (error) throw new Error(withReason("Couldn't add that card.", error));
+  if (data?.status !== "ok") throw new Error(CARD_COPY[data?.status] || `Couldn't add that card. (${data?.status})`);
+  return data;
 }
 
 // ============ ADMIN ============
@@ -300,18 +323,6 @@ export async function loadPurchaseQueue(status = "pending") {
   return data || [];
 }
 
-export async function decidePurchase(id, approve, amountCents = null, note = null) {
-  need();
-  const { data, error } = await supabase.rpc("decide_purchase", {
-    p_claim: id,
-    p_approve: approve,
-    p_amount_cents: amountCents,
-    p_note: note,
-  });
-  if (error) throw new Error(friendlyWriteError(error, "Couldn't update that purchase."));
-  return data;
-}
-
 export async function recordPurchase(userId, store, orderRef, amountCents) {
   need();
   const { data, error } = await supabase.rpc("record_purchase", {
@@ -321,6 +332,40 @@ export async function recordPurchase(userId, store, orderRef, amountCents) {
     p_amount_cents: amountCents,
   });
   if (error) throw new Error(friendlyWriteError(error, "Couldn't record that sale."));
+  return data;
+}
+
+export async function createPointCards({ label, points, valueCents, count, expiresAt }) {
+  need();
+  const { data, error } = await supabase.rpc("create_point_cards", {
+    p_label: label,
+    p_points: points,
+    p_value_cents: valueCents,
+    p_count: count,
+    p_expires_at: expiresAt,
+  });
+  if (error) throw new Error(friendlyWriteError(error, "Couldn't make the cards."));
+  return (data || []).map((r) => r.card_code);
+}
+
+export async function loadCardBatches() {
+  need();
+  const { data, error } = await supabase.rpc("point_card_batches");
+  if (error) throw new Error(withReason("Couldn't load your points cards.", error));
+  return data || [];
+}
+
+export async function loadUnusedCards(batchId) {
+  need();
+  const { data, error } = await supabase.rpc("point_card_codes", { p_batch: batchId });
+  if (error) throw new Error(withReason("Couldn't load that batch's codes.", error));
+  return data || [];
+}
+
+export async function voidCardBatch(batchId) {
+  need();
+  const { data, error } = await supabase.rpc("void_point_cards", { p_batch: batchId });
+  if (error) throw new Error(friendlyWriteError(error, "Couldn't cancel those cards."));
   return data;
 }
 

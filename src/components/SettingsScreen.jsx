@@ -17,7 +17,7 @@ import Insights from "./Insights.jsx";
 import { CohostInvites } from "./Cohosts.jsx";
 import { ListingRequestsQueue } from "./ListingRequest.jsx";
 import { SetPasswordForm } from "./SetPassword.jsx";
-import RewardsPanel, { RewardsAdmin, RedemptionsAdmin, CheckinsAdmin, PurchasesAdmin } from "./Rewards.jsx";
+import RewardsPanel, { RewardsAdmin, RedemptionsAdmin, CheckinsAdmin, PurchasesAdmin, CardsAdmin } from "./Rewards.jsx";
 
 const PAGES = {
   email: "Email",
@@ -37,6 +37,7 @@ const PAGES = {
   rewardsAdmin: "Rewards",
   claims: "Reward claims",
   purchases: "Purchases",
+  cards: "Points cards",
   checkins: "Check-ins",
 };
 
@@ -306,7 +307,8 @@ export default function SettingsScreen({
                 <Row icon="📨" label="Host invites" onClick={() => open("hostInvites")} />
                 <Row icon="📈" label="Sign-up stats" onClick={() => open("signups")} />
                 <Row icon="🎁" label="Rewards" sub="What points can buy" onClick={() => open("rewardsAdmin")} />
-                <Row icon="🛍️" label="Purchases" sub="Approve orders, record sales, set rates" onClick={() => open("purchases")} />
+                <Row icon="🎟️" label="Points cards" sub="Print scan-to-earn cards for orders and details" onClick={() => open("cards")} />
+                <Row icon="🛍️" label="Purchases" sub="Record a sale, set rates" onClick={() => open("purchases")} />
                 <Row icon="🧾" label="Reward claims" sub="Hand over or cancel" onClick={() => open("claims")} />
                 <Row icon="📍" label="Check-ins" sub="Review, remove, adjust points" onClick={() => open("checkins")} />
               </Section>
@@ -366,6 +368,8 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
       return <RedemptionsAdmin onToast={onToast} />;
     case "purchases":
       return <PurchasesAdmin onToast={onToast} />;
+    case "cards":
+      return <CardsAdmin onToast={onToast} />;
     case "checkins":
       return <CheckinsAdmin onToast={onToast} />;
     case "host":

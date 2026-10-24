@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   POINTS,
   REDEEM_RULES,
@@ -20,11 +20,15 @@ import {
   toCents,
   STORES,
   loadPointsSettings,
-  submitPurchase,
-  loadMyPurchases,
+  redeemPointCard,
+  cleanCardCode,
+  CARD_PARAM,
+  createPointCards,
+  loadCardBatches,
+  loadUnusedCards,
+  voidCardBatch,
   savePointsSettings,
   loadPurchaseQueue,
-  decidePurchase,
   recordPurchase,
   findUserId,
 } from "../lib/points.js";
@@ -32,42 +36,39 @@ import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton } from "
 
 const KIND_LABELS = { merch: "MERCH", discount: "DISCOUNT", experience: "EXPERIENCE", other: "REWARD" };
 
-export function RewardsSheet({ user, onClose, onToast }) {
+export function RewardsSheet({ user, initialCard = "", onClose, onToast }) {
   return (
     <Sheet onClose={onClose} label="Points and rewards" zIndex={296}>
       <div style={sheetTitle}>POINTS &amp; REWARDS</div>
-      <RewardsPanel user={user} onToast={onToast} />
+      <RewardsPanel user={user} initialCard={initialCard} onToast={onToast} />
     </Sheet>
   );
 }
 
 // Your balance, how to earn, what you can get, what you've claimed, and the
 // history behind the number.
-export default function RewardsPanel({ user, onToast }) {
+export default function RewardsPanel({ user, initialCard = "", onToast }) {
   const [points, setPoints] = useState(null);
   const [starter, setStarter] = useState(null);
   const [rewards, setRewards] = useState([]);
   const [claims, setClaims] = useState([]);
   const [history, setHistory] = useState([]);
   const [rates, setRates] = useState({ points_per_dollar: 10, member_bonus: 500 });
-  const [purchases, setPurchases] = useState([]);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(null);
   const [busy, setBusy] = useState(false);
 
   async function refresh() {
     try {
-      const [p, r, c, h, rt, pu] = await Promise.all([
+      const [p, r, c, h, rt] = await Promise.all([
         loadMyPoints(),
         loadRewards(),
         loadMyRedemptions(user.id),
         loadPointHistory(user.id),
         loadPointsSettings(),
-        loadMyPurchases(user.id),
       ]);
       setPoints(p);
       setRates(rt);
-      setPurchases(pu);
       setRewards(r.filter((x) => x.active));
       setClaims(c);
       setHistory(h);
@@ -111,6 +112,14 @@ export default function RewardsPanel({ user, onToast }) {
     }
   }
 
+  // Scanned a card: it goes first, right under the balance.
+  const cardSection = (
+    <>
+      <Title>GOT A POINTS CARD?</Title>
+      <CardForm initialCode={initialCard} onAdded={refresh} onToast={onToast} />
+    </>
+  );
+
   const balance = Number(points?.balance || 0);
   const spent = Number(points?.spent_cents || 0);
   const pending = claims.filter((c) => c.status === "pending");
@@ -134,9 +143,11 @@ export default function RewardsPanel({ user, onToast }) {
         )}
       </div>
 
+      {initialCard && cardSection}
+
       <Title>HOW TO EARN</Title>
       <div style={card}>
-        <EarnRow icon="🛍️" text="Buy Boosted Studios merch" pts={`+${rates.points_per_dollar} per $1`} />
+        <EarnRow icon="🛍️" text="Boosted merch or a detail: scan the points card you get" pts={`+${rates.points_per_dollar} per $1`} />
         {rates.member_bonus > 0 && (
           <EarnRow icon="💎" text="Become a TUNR member (one time)" pts={`+${rates.member_bonus}`} done={points?.earned > 0 && history.some((h) => h.label === "Membership bonus")} />
         )}
@@ -157,8 +168,7 @@ export default function RewardsPanel({ user, onToast }) {
         </div>
       </div>
 
-      <Title>ADD A BOOSTED PURCHASE</Title>
-      <PurchaseForm rate={rates.points_per_dollar} purchases={purchases} onAdded={refresh} onToast={onToast} />
+      {!initialCard && cardSection}
 
       {pending.length > 0 && (
         <>
@@ -274,8 +284,7 @@ export default function RewardsPanel({ user, onToast }) {
       </div>
 
       <div style={{ ...muted, fontSize: 11.5, marginTop: 14 }}>
-        Points have no cash value and can't be sold or transferred. Purchase points are added
-        once we match your order with the shop's records. Rewards are guaranteed
+        Points have no cash value and can't be sold or transferred. Each points card works once. Rewards are guaranteed
         when you redeem: there's no drawing. TUNR can remove points earned by breaking the rules
         and can change or end the program. See the Terms, section 10.
       </div>
@@ -576,24 +585,32 @@ export function CheckinsAdmin({ onToast }) {
   );
 }
 
-// A buyer adds an order from their receipt; it counts once we match it.
-function PurchaseForm({ rate, purchases, onAdded, onToast }) {
-  const [store, setStore] = useState("square");
-  const [order, setOrder] = useState("");
-  const [amount, setAmount] = useState("");
+// Scan the QR on a points card (it opens TUNR with the code filled in) or
+// type the code. Points land at once.
+function CardForm({ initialCode, onAdded, onToast }) {
+  const [code, setCode] = useState(() => cleanCardCode(initialCode));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const autoTried = useRef(false);
+  const [added, setAdded] = useState(null);
 
-  async function add() {
-    const cents = toCents(amount);
-    if (!cents) return setError("Enter what you paid, like 35 or 35.50.");
+  // Scanned: add it straight away, once.
+  useEffect(() => {
+    if (autoTried.current || cleanCardCode(initialCode).length !== 12) return;
+    autoTried.current = true;
+    add(cleanCardCode(initialCode));
+  }, [initialCode]);
+
+  async function add(value = code) {
+    if (value.length !== 12) return setError("Points card codes are 12 letters and numbers.");
     setBusy(true);
     setError("");
+    setAdded(null);
     try {
-      await submitPurchase(store, order.trim(), cents);
-      onToast("Purchase added. Points land once we match it with the shop.");
-      setOrder("");
-      setAmount("");
+      const r = await redeemPointCard(value);
+      setAdded(r);
+      onToast(`⭐ +${r.points} points from your ${r.label} card`);
+      setCode("");
       onAdded();
     } catch (e) {
       setError(e.message);
@@ -603,53 +620,248 @@ function PurchaseForm({ rate, purchases, onAdded, onToast }) {
   }
 
   return (
-    <div style={card}>
+    <div style={{ ...card, borderColor: initialCode ? "#4A3A00" : "#222" }}>
       <div style={{ ...muted, fontSize: 12.5 }}>
-        Bought Boosted merch? Add the order from your receipt and get {rate} points for every $1 once
-        we match it. Bought in person at a meet? Ask us to add it for you.
+        Every Boosted order and detail comes with a points card. Scan its QR code with your phone
+        camera, or type the code here.
       </div>
-      <select style={{ ...field, marginTop: 10 }} aria-label="Where you bought it" value={store} onChange={(e) => setStore(e.target.value)}>
-        {STORES.map((s) => (
-          <option key={s.id} value={s.id}>{s.label}</option>
-        ))}
-      </select>
-      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-        <input style={{ ...field, flex: 2 }} placeholder="Order / receipt #" aria-label="Order number" maxLength={60} value={order} onChange={(e) => setOrder(e.target.value)} autoCapitalize="characters" />
-        <input style={{ ...field, flex: 1 }} placeholder="$ paid" aria-label="Amount paid" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.$]/g, ""))} />
-      </div>
+      <input
+        style={{ ...field, marginTop: 10, textAlign: "center", letterSpacing: 3, fontSize: 17, fontWeight: 800 }}
+        placeholder="XXXX-XXXX-XXXX"
+        aria-label="Points card code"
+        autoCapitalize="characters"
+        autoCorrect="off"
+        spellCheck={false}
+        value={code.replace(/(.{4})(?=.)/g, "$1-")}
+        onChange={(e) => setCode(cleanCardCode(e.target.value))}
+      />
       {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 6 }}>{error}</div>}
-      <button disabled={busy} onClick={add} style={{ ...quietButton, marginTop: 8 }}>{busy ? "ADDING…" : "ADD PURCHASE"}</button>
-      {purchases.length > 0 && (
-        <div style={{ marginTop: 10 }}>
-          {purchases.map((p) => (
-            <Line
-              key={p.id}
-              left={`${p.order_ref} · ${dollars(p.amount_cents)}`}
-              sub={p.status === "rejected" && p.note ? p.note : new Date(p.created_at).toLocaleDateString()}
-              right={p.status === "approved" ? `+${p.points}` : p.status === "rejected" ? "Not matched" : "Checking…"}
-              rightColor={p.status === "approved" ? "#10B981" : p.status === "rejected" ? "#F87171" : "#A08A40"}
-            />
-          ))}
+      {added && !error && (
+        <div role="status" style={{ marginTop: 8, fontSize: 15, fontWeight: 800, color: "#10B981" }}>
+          ✓ +{added.points} points added from your {added.label} card
         </div>
       )}
+      <button disabled={busy} onClick={() => add()} style={{ ...bigButton, marginTop: 8, opacity: busy ? 0.6 : 1 }}>
+        {busy ? "ADDING…" : "ADD MY POINTS"}
+      </button>
     </div>
   );
 }
 
-// Match buyers' orders against Square/Depop, record in-person sales, and set
+// Make cards for a product or service, print them, track how many are used.
+export function CardsAdmin({ onToast }) {
+  const [batches, setBatches] = useState(null);
+  const [rate, setRate] = useState(10);
+  const [draft, setDraft] = useState({ label: "", price: "", points: "", count: "25", months: "12" });
+  const [pointsEdited, setPointsEdited] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function refresh() {
+    try {
+      const [b, rt] = await Promise.all([loadCardBatches(), loadPointsSettings()]);
+      setBatches(b);
+      setRate(rt.points_per_dollar);
+      setError("");
+    } catch (e) {
+      setError(e.message);
+      setBatches([]);
+    }
+  }
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  const set = (patch) => setDraft((d) => ({ ...d, ...patch }));
+  // Points follow the price at the current rate until typed over.
+  const autoPoints = (price) => {
+    const cents = toCents(price);
+    return cents ? String(Math.floor((cents / 100) * rate)) : "";
+  };
+
+  async function make() {
+    const cents = toCents(draft.price);
+    const points = Number(draft.points);
+    const count = Number(draft.count);
+    if (!draft.label.trim()) return setError("Say what the card is for, like “Boosted tee” or “Full detail”.");
+    if (!(points >= 1)) return setError("Set how many points each card gives.");
+    if (!(count >= 1 && count <= 500)) return setError("Make between 1 and 500 cards at a time.");
+    // Opened now, while the tap still counts, so the browser doesn't block it.
+    const win = window.open("", "_blank");
+    setBusy(true);
+    setError("");
+    try {
+      const months = Number(draft.months);
+      const expiresAt = months > 0 ? new Date(Date.now() + months * 30.44 * 86400000).toISOString() : null;
+      const codes = await createPointCards({ label: draft.label.trim(), points, valueCents: cents || 0, count, expiresAt });
+      onToast(`Made ${codes.length} cards`);
+      await printCards(win, codes.map((code) => ({ code, label: draft.label.trim(), points, expires_at: expiresAt })));
+      setDraft((d) => ({ ...d, price: "", points: "" }));
+      setPointsEdited(false);
+      refresh();
+    } catch (e) {
+      if (win) win.close();
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function reprint(batch) {
+    const win = window.open("", "_blank");
+    try {
+      const cards = await loadUnusedCards(batch.batch_id);
+      if (!cards.length) {
+        if (win) win.close();
+        return onToast("Every card in that batch has been used or cancelled.");
+      }
+      await printCards(win, cards);
+    } catch (e) {
+      if (win) win.close();
+      onToast(e.message);
+    }
+  }
+
+  async function cancel(batch) {
+    if (!window.confirm(`Cancel the ${batch.made - batch.redeemed - batch.voided} unused “${batch.label}” cards? They'll stop working. Cards already used keep their points.`)) return;
+    try {
+      const n = await voidCardBatch(batch.batch_id);
+      onToast(`Cancelled ${n} cards`);
+      refresh();
+    } catch (e) {
+      onToast(e.message);
+    }
+  }
+
+  return (
+    <div>
+      <div style={muted}>
+        Print a card for each shirt bag, sale or detail. The buyer scans it and the points land at
+        once; each card works one time. No orders to check.
+      </div>
+      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+
+      <Title>MAKE CARDS</Title>
+      <div style={card}>
+        <Field name="WHAT IT'S FOR">
+          <input style={field} maxLength={60} placeholder="Boosted tee" value={draft.label} onChange={(e) => set({ label: e.target.value })} />
+        </Field>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Field name="PRICE ($)">
+            <input
+              style={field}
+              inputMode="decimal"
+              placeholder="35"
+              value={draft.price}
+              onChange={(e) => {
+                const price = e.target.value.replace(/[^\d.]/g, "");
+                set(pointsEdited ? { price } : { price, points: autoPoints(price) });
+              }}
+            />
+          </Field>
+          <Field name="POINTS EACH">
+            <input
+              style={field}
+              inputMode="numeric"
+              placeholder="350"
+              value={draft.points}
+              onChange={(e) => {
+                setPointsEdited(true);
+                set({ points: e.target.value.replace(/\D/g, "") });
+              }}
+            />
+          </Field>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Field name="HOW MANY">
+            <input style={field} inputMode="numeric" value={draft.count} onChange={(e) => set({ count: e.target.value.replace(/\D/g, "") })} />
+          </Field>
+          <Field name="EXPIRE AFTER (MONTHS, 0 = NEVER)">
+            <input style={field} inputMode="numeric" value={draft.months} onChange={(e) => set({ months: e.target.value.replace(/\D/g, "") })} />
+          </Field>
+        </div>
+        <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>
+          The price counts toward rewards' minimum spend. At {rate} points per $1 a ${draft.price || "35"} item
+          gives {autoPoints(draft.price || "35") || 0} points.
+        </div>
+        <button disabled={busy} onClick={make} style={{ ...bigButton, marginTop: 10, opacity: busy ? 0.6 : 1 }}>
+          {busy ? "MAKING…" : "MAKE + PRINT CARDS"}
+        </button>
+      </div>
+
+      <Title>YOUR CARDS</Title>
+      {batches && batches.length === 0 && <div style={muted}>No cards yet.</div>}
+      {(batches || []).map((b) => {
+        const unused = b.made - b.redeemed - b.voided;
+        return (
+          <div key={b.batch_id} style={card}>
+            <Line
+              left={b.label}
+              sub={`${b.points} pts${b.value_cents ? ` · ${dollars(b.value_cents)}` : ""} · made ${new Date(b.created_at).toLocaleDateString()}${b.expires_at ? ` · expires ${new Date(b.expires_at).toLocaleDateString()}` : ""}`}
+              right={`${b.redeemed}/${b.made} used`}
+              rightColor="#10B981"
+            />
+            {unused > 0 && (
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <button onClick={() => reprint(b)} style={{ ...quietButton, flex: 1, padding: "9px 0" }}>PRINT {unused} UNUSED</button>
+                <button onClick={() => cancel(b)} style={{ ...quietButton, flex: 1, padding: "9px 0", color: "#F87171" }}>CANCEL UNUSED</button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// A sheet of business-card-size cards (10 to a page) in a new tab, ready to
+// print or save as a PDF. The QR opens TUNR with the code filled in.
+async function printCards(win, cards) {
+  if (!win) throw new Error("Your browser blocked the print window. Allow pop-ups for TUNR and try again.");
+  const { default: QRCode } = await import("qrcode");
+  const origin = window.location.origin;
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const items = await Promise.all(
+    cards.map(async (c) => {
+      const svg = await QRCode.toString(`${origin}/?${CARD_PARAM}=${c.code}`, { type: "svg", margin: 0, errorCorrectionLevel: "M" });
+      const pretty = c.code.replace(/(.{4})(?=.)/g, "$1-");
+      const exp = c.expires_at ? `Use by ${new Date(c.expires_at).toLocaleDateString()}` : "";
+      return `<div class="card"><div class="qr">${svg}</div><div class="txt"><div class="brand">BOOSTED STUDIOS</div><div class="pts">+${c.points} POINTS</div><div class="lbl">${esc(c.label)}</div><div class="how">Scan with your phone camera, or enter the code in TUNR: Perks → ⭐ Points</div><div class="code">${pretty}</div><div class="fine">One-time use. No cash value. ${exp}</div></div></div>`;
+    })
+  );
+  win.document.open();
+  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>TUNR points cards</title><style>
+    @page { size: letter; margin: 0.5in 0.75in; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111; }
+    .bar { padding: 12px; font-size: 14px; background: #FFF4E5; border-bottom: 1px solid #F0D0A0; }
+    .bar button { font-size: 14px; padding: 6px 14px; margin-left: 8px; }
+    .grid { display: grid; grid-template-columns: repeat(2, 3.5in); gap: 0; justify-content: center; }
+    .card { width: 3.5in; height: 2in; box-sizing: border-box; border: 1px dashed #999; padding: 0.15in; display: flex; gap: 0.12in; align-items: center; break-inside: avoid; }
+    .qr { width: 1.3in; height: 1.3in; flex-shrink: 0; }
+    .qr svg { width: 100%; height: 100%; }
+    .brand { font-size: 8pt; letter-spacing: 1.5px; font-weight: 700; color: #FF4500; }
+    .pts { font-size: 17pt; font-weight: 900; line-height: 1.1; }
+    .lbl { font-size: 9pt; font-weight: 700; }
+    .how { font-size: 6.5pt; color: #444; margin-top: 3px; line-height: 1.25; }
+    .code { font-family: "Courier New", monospace; font-size: 10.5pt; font-weight: 700; margin-top: 4px; letter-spacing: 0.5px; }
+    .fine { font-size: 5.5pt; color: #777; margin-top: 2px; }
+    @media print { .bar { display: none; } }
+  </style></head><body><div class="bar">${cards.length} cards. Print on card stock and cut along the dashed lines, or save as PDF.<button onclick="window.print()">Print</button></div><div class="grid">${items.join("")}</div></body></html>`);
+  win.document.close();
+}
+
+// Sales recorded by hand (in person, no card on you), what's come in, and
 // the rates.
 export function PurchasesAdmin({ onToast }) {
-  const [status, setStatus] = useState("pending");
   const [rows, setRows] = useState(null);
-  const [amounts, setAmounts] = useState({});
   const [error, setError] = useState("");
   const [sale, setSale] = useState({ username: "", store: "in_person", order: "", amount: "" });
   const [rates, setRates] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  async function refresh(st = status) {
+  async function refresh() {
     try {
-      const [q, rt] = await Promise.all([loadPurchaseQueue(st), loadPointsSettings()]);
+      const [q, rt] = await Promise.all([loadPurchaseQueue("approved"), loadPointsSettings()]);
       setRows(q);
       setRates((r) => r || rt);
       setError("");
@@ -659,26 +871,8 @@ export function PurchasesAdmin({ onToast }) {
     }
   }
   useEffect(() => {
-    refresh(status);
-  }, [status]);
-
-  async function decide(row, approve) {
-    let note = null;
-    if (!approve) {
-      note = window.prompt("Why didn't it match? They'll see this.", "We couldn't find that order number.");
-      if (note === null) return;
-    }
-    const edited = amounts[row.id];
-    const cents = edited !== undefined ? toCents(edited) : null;
-    if (approve && edited !== undefined && !cents) return onToast("Fix the amount first, like 35 or 35.50.");
-    try {
-      const pts = await decidePurchase(row.id, approve, cents, note);
-      onToast(approve ? `Approved: +${pts} points to @${row.username || "user"}` : "Marked not matched");
-      refresh();
-    } catch (e) {
-      onToast(e.message);
-    }
-  }
+    refresh();
+  }, []);
 
   async function record() {
     const cents = toCents(sale.amount);
@@ -691,7 +885,7 @@ export function PurchasesAdmin({ onToast }) {
       const pts = await recordPurchase(await findUserId(sale.username), sale.store, sale.order.trim(), cents);
       onToast(`Recorded: +${pts} points to @${sale.username.replace(/^@/, "")}`);
       setSale({ username: "", store: sale.store, order: "", amount: "" });
-      if (status === "approved") refresh();
+      refresh();
     } catch (e) {
       onToast(e.message);
     } finally {
@@ -714,51 +908,10 @@ export function PurchasesAdmin({ onToast }) {
   return (
     <div>
       <div style={muted}>
-        Buyers add their order number and amount. Find the order in Square or Depop, fix the amount
-        if it's off, then approve. Each order number counts once.
-      </div>
-      <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
-        {[
-          ["pending", "TO CHECK"],
-          ["approved", "APPROVED"],
-          ["rejected", "NOT MATCHED"],
-        ].map(([id, name]) => (
-          <button key={id} onClick={() => setStatus(id)} style={{ ...quietButton, flex: 1, padding: "10px 0", ...(status === id ? { borderColor: "#FF4500", color: "#FF7A00" } : {}) }}>
-            {name}
-          </button>
-        ))}
+        Points cards add purchase points by themselves (Settings → Admin → Points cards). Use this
+        only for a sale where you didn't hand over a card.
       </div>
       {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
-      {rows && rows.length === 0 && <div style={{ ...muted, marginTop: 12 }}>Nothing here.</div>}
-      {(rows || []).map((r) => (
-        <div key={r.id} style={card}>
-          <Line
-            left={`${r.order_ref}`}
-            sub={`@${r.username || "deleted"} · ${(STORES.find((s) => s.id === r.store) || {}).label || r.store} · ${new Date(r.created_at).toLocaleString()}`}
-            right={r.points != null ? `+${r.points}` : dollars(r.amount_cents)}
-            rightColor={r.points != null ? "#10B981" : "#F0F0F0"}
-          />
-          {r.note && <div style={{ ...muted, fontSize: 12 }}>{r.note}</div>}
-          {status === "pending" && (
-            <>
-              <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
-                <span style={{ ...muted, fontSize: 12 }}>Amount on the order:</span>
-                <input
-                  style={{ ...field, flex: 1, padding: "8px 10px" }}
-                  inputMode="decimal"
-                  aria-label="Amount on the order"
-                  value={amounts[r.id] ?? (r.amount_cents / 100).toFixed(2)}
-                  onChange={(e) => setAmounts((a) => ({ ...a, [r.id]: e.target.value.replace(/[^\d.]/g, "") }))}
-                />
-              </div>
-              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                <button onClick={() => decide(r, true)} style={{ ...bigButton, flex: 1, padding: "10px 0" }}>APPROVE</button>
-                <button onClick={() => decide(r, false)} style={{ ...quietButton, flex: 1, padding: "10px 0" }}>NOT MATCHED</button>
-              </div>
-            </>
-          )}
-        </div>
-      ))}
 
       <Title>RECORD A SALE</Title>
       <div style={card}>
@@ -787,11 +940,24 @@ export function PurchasesAdmin({ onToast }) {
             </Field>
           </div>
           <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>
-            New rates apply to purchases approved from now on. Points already given stay.
+            The rate fills in points when you make cards and record sales. Points already given stay.
           </div>
           <button disabled={busy} onClick={saveRates} style={{ ...quietButton, marginTop: 8 }}>SAVE RATES</button>
         </div>
       )}
+
+      <Title>RECENT PURCHASE POINTS</Title>
+      {rows && rows.length === 0 && <div style={muted}>None yet.</div>}
+      {(rows || []).map((r) => (
+        <div key={r.id} style={card}>
+          <Line
+            left={r.store === "card" ? `Card ${r.order_ref.replace(/(.{4})(?=.)/g, "$1-")}` : r.order_ref}
+            sub={`@${r.username || "deleted"} · ${r.store === "card" ? r.note || "Points card" : (STORES.find((s) => s.id === r.store) || {}).label || r.store} · ${new Date(r.created_at).toLocaleDateString()}`}
+            right={`+${r.points ?? 0}`}
+            rightColor="#10B981"
+          />
+        </div>
+      ))}
     </div>
   );
 }

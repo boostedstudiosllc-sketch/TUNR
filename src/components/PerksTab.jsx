@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadPerks, recordRedemption, loadProfile, track } from "../lib/store.js";
-import { loadMyPoints } from "../lib/points.js";
+import { loadMyPoints, hasPendingCard, takePendingCard } from "../lib/points.js";
 import { RewardsSheet } from "./Rewards.jsx";
 
 const CATEGORY_LABELS = {
@@ -26,6 +26,14 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
   const [isMember, setIsMember] = useState(false);
   const [points, setPoints] = useState(null);
   const [showRewards, setShowRewards] = useState(false);
+  const [scannedCard, setScannedCard] = useState("");
+
+  // Arrived by scanning a points card: open straight to it.
+  useEffect(() => {
+    if (!user || !hasPendingCard()) return;
+    setScannedCard(takePendingCard());
+    setShowRewards(true);
+  }, [user?.id]);
 
   // Refreshed when the rewards sheet closes, after anything spent or earned.
   useEffect(() => {
@@ -124,7 +132,15 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
           onOpen={() => (user ? setShowRewards(true) : onNeedAccount())}
         />
         {showRewards && user && (
-          <RewardsSheet user={user} onClose={() => setShowRewards(false)} onToast={onToast} />
+          <RewardsSheet
+            user={user}
+            initialCard={scannedCard}
+            onClose={() => {
+              setShowRewards(false);
+              setScannedCard("");
+            }}
+            onToast={onToast}
+          />
         )}
 
         {!isMember && memberPerks > 0 && <JoinCard count={memberPerks} onNeedAccount={onNeedAccount} user={user} />}
