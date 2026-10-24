@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   POINTS,
+  SHOP_OPEN,
   REDEEM_RULES,
   loadMyPoints,
   claimStarterPoints,
@@ -147,11 +148,15 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
         )}
       </div>
 
-      {initialCard && cardSection}
+      {SHOP_OPEN && initialCard && cardSection}
 
       <Title>HOW TO EARN</Title>
       <div style={card}>
-        <EarnRow icon="🛍️" text="Boosted merch or a detail: scan the points card you get" pts={`+${rates.points_per_dollar} per $1`} />
+        {SHOP_OPEN ? (
+          <EarnRow icon="🛍️" text="Boosted merch or a detail: scan the points card you get" pts={`+${rates.points_per_dollar} per $1`} />
+        ) : (
+          <EarnRow icon="🛍️" text="Boosted Studios shop: coming soon" pts="SOON" />
+        )}
         {rates.member_bonus > 0 && (
           <EarnRow icon="💎" text="Become a TUNR member (one time)" pts={`+${rates.member_bonus}`} done={points?.earned > 0 && history.some((h) => h.label === "Membership bonus")} />
         )}
@@ -172,7 +177,7 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
         </div>
       </div>
 
-      {!initialCard && cardSection}
+      {SHOP_OPEN && !initialCard && cardSection}
 
       {pending.length > 0 && (
         <>
@@ -287,8 +292,12 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
         )}
       </div>
 
-      <Title>MISSING POINTS?</Title>
-      <IssueForm user={user} onToast={onToast} />
+      {SHOP_OPEN && (
+        <>
+          <Title>MISSING POINTS?</Title>
+          <IssueForm user={user} onToast={onToast} />
+        </>
+      )}
 
       <div style={{ ...muted, fontSize: 11.5, marginTop: 14 }}>
         Points have no cash value and can't be sold or transferred. Each points card works once. Rewards are guaranteed

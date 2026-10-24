@@ -357,7 +357,7 @@ export async function saveVehicle(vehicle, ownerId) {
     ? supabase.from("vehicles").update(payload).eq("id", vehicle.id)
     : supabase.from("vehicles").insert(payload);
   const { error } = await query;
-  if (error) throw new Error(withReason("Couldn't save that car. Try again.", error));
+  if (error) throw new Error(friendlyWriteError(error, "Couldn't save that car. Try again."));
 }
 
 export async function deleteVehicle(vehicleId) {
@@ -431,6 +431,7 @@ export async function loadProfile(userId = null) {
         photoPage: data.photo_page || "",
         avatarUrl: data.avatar_url || "",
         bio: data.bio || "",
+        profileColor: data.profile_color || "",
       };
     }
     return { username: "", city: "Atlanta, GA", isAdmin: false, isMember: false };
@@ -450,6 +451,7 @@ export async function saveProfile(profile, userId = null) {
         ...(profile.photoPage !== undefined ? { photo_page: profile.photoPage.trim() || null } : {}),
         ...(profile.avatarUrl !== undefined ? { avatar_url: String(profile.avatarUrl ?? "").trim() || null } : {}),
         ...(profile.bio !== undefined ? { bio: String(profile.bio ?? "").trim() || null } : {}),
+        ...(profile.profileColor !== undefined ? { profile_color: profile.profileColor || null } : {}),
       });
     if (error) {
       if (error.code === "23505") throw new Error("That username is taken — pick another.");

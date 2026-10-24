@@ -93,6 +93,11 @@ export default function PrivacyPolicy({ onClose }) {
           the ones you join or ask to join, how you're coming, and messages in linkup chats.
           <br />
           <br />
+          <strong>Invites:</strong> your invite code, and if you joined through a friend's link,
+          that you did. Your friend sees your username and whether you've confirmed your email, so
+          it can count toward their unlocks.
+          <br />
+          <br />
           <strong>Points:</strong> the meets you check in at and when, how far you were from the
           meet's pin, the points cards you add and any sale we record for you (what it was for,
           the order or card number and the amount), any missing-points report you send (the

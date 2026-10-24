@@ -5,6 +5,11 @@
 import { supabase } from "./supabase.js";
 import { friendlyWriteError, withReason } from "./errors.js";
 
+// The Boosted shop isn't open yet. While false, buying, points cards and
+// missing-points reports are hidden and the app says "coming soon"; the
+// database side is ready for when it opens.
+export const SHOP_OPEN = false;
+
 export const POINTS = { checkin: 10, rsvpBonus: 5, profile: 10, car: 10, alerts: 5 };
 export const REDEEM_RULES = { accountDays: 14, checkins: 2 };
 

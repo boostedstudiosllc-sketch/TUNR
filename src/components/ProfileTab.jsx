@@ -9,6 +9,7 @@ import Garage from "./Garage.jsx";
 import { Badges } from "./Badge.jsx";
 import Connections from "./Connections.jsx";
 import EditProfile, { Avatar } from "./EditProfile.jsx";
+import { openInvites } from "../lib/invites.js";
 import SettingsScreen from "./SettingsScreen.jsx";
 import { PostCard, Segments, Logo } from "./CommunityBits.jsx";
 
@@ -228,7 +229,7 @@ function SignedIn({
 
         {/* Photo and counts */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14 }}>
-          <Avatar url={p.avatarUrl} name={p.username} size={84} ring />
+          <Avatar url={p.avatarUrl} name={p.username} size={84} ring ringColor={p.profileColor || social?.profile_color || undefined} />
           <div style={{ flex: 1, minWidth: 0, display: "flex", justifyContent: "space-around" }}>
             <Stat
               n={goingCount}
@@ -247,17 +248,18 @@ function SignedIn({
         <div style={{ marginTop: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
             {p.username && (
-              <span style={{ fontSize: 17, fontWeight: 900, letterSpacing: 0.4, overflowWrap: "anywhere" }}>
+              <span style={{ fontSize: 17, fontWeight: 900, letterSpacing: 0.4, overflowWrap: "anywhere", color: p.profileColor || undefined }}>
                 {p.username.toUpperCase()}
               </span>
             )}
-            {(p.dayOne || p.foundingHost || p.isPhotographer) && (
+            {(p.dayOne || p.foundingHost || p.isPhotographer || social?.connector) && (
               <Badges
                 dayOne={p.dayOne}
                 dayOneNumber={p.dayOneNumber}
                 foundingHost={p.foundingHost}
                 photographer={p.isPhotographer}
                 photographerVerified={p.isPhotographer && social?.photographer_verified}
+                connector={social?.connector}
                 size={18}
               />
             )}
@@ -340,6 +342,9 @@ function SignedIn({
           </button>
           <button className="action-btn" onClick={onOpenAlerts} style={headerButton}>
             🔔 ALERTS
+          </button>
+          <button className="action-btn" onClick={() => openInvites()} style={headerButton}>
+            🎁 INVITE
           </button>
         </div>
 

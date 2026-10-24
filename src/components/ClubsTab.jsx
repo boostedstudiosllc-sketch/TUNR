@@ -3,6 +3,7 @@ import { loadClubs, createClub, CLUB_KINDS, kindLabel } from "../lib/community.j
 import { uploadEventPhoto } from "../lib/store.js";
 import { compressImage } from "../lib/image.js";
 import { useAccount } from "../lib/account.js";
+import { loadMyInvites, openInvites } from "../lib/invites.js";
 import { Logo } from "./CommunityBits.jsx";
 import ClubView from "./ClubView.jsx";
 import Sheet, { sheetTitle, muted, label, field, bigButton, Chip } from "./Sheet.jsx";
@@ -39,10 +40,27 @@ export default function ClubsTab({ user, events, open, onOpened, onNeedAccount, 
   const others = matching.filter((c) => !c.my_role);
   const club = clubId && (clubs || []).find((c) => c.id === clubId);
 
+  // Starting a club unlocks with one invited friend; anyone who already
+  // started one keeps the ability. The database enforces it too.
+  async function startCreating() {
+    if (!(clubs || []).some((c) => c.my_role === "owner")) {
+      try {
+        const inv = await loadMyInvites();
+        if (inv && !inv.unlocked?.clubs) {
+          openInvites("Invite 1 friend to start your own club. Joining clubs is always free.");
+          return;
+        }
+      } catch (e) {
+        console.warn(e.message);
+      }
+    }
+    setCreating(true);
+  }
+
   return (
     <div>
       <button
-        onClick={() => (!user ? onNeedAccount() : unconfirmed ? onToast("Confirm your email first — tap the link we emailed you.") : setCreating(true))}
+        onClick={() => (!user ? onNeedAccount() : unconfirmed ? onToast("Confirm your email first — tap the link we emailed you.") : startCreating())}
         style={{ ...bigButton, padding: "12px 0" }}
       >
         + START A CLUB

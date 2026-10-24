@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { saveProfile, uploadAvatar, removeAvatarFile } from "../lib/store.js";
+import { FLAIR_COLORS, loadMyInvites, openInvites } from "../lib/invites.js";
 import Sheet, { sheetTitle, muted, label, field, bigButton } from "./Sheet.jsx";
 
 const BIO_MAX = 160;
@@ -9,7 +10,7 @@ const cleanUsername = (value) => String(value || "").trim().toLowerCase().replac
 
 // A round profile photo, or the orange initial when there isn't one (or it
 // won't load).
-export function Avatar({ url, name, size = 64, ring = false }) {
+export function Avatar({ url, name, size = 64, ring = false, ringColor = "#FF4500" }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [url]);
   const frame = {
@@ -18,7 +19,7 @@ export function Avatar({ url, name, size = 64, ring = false }) {
     borderRadius: "50%",
     flexShrink: 0,
     boxSizing: "border-box",
-    ...(ring ? { border: "3px solid #FF4500", boxShadow: "0 0 20px rgba(255,69,0,0.35)" } : {}),
+    ...(ring ? { border: `3px solid ${ringColor}`, boxShadow: `0 0 20px ${ringColor}59` } : {}),
   };
   if (url && !failed) {
     return (
@@ -59,7 +60,15 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
     avatarUrl: profile.avatarUrl || "",
     isPhotographer: Boolean(profile.isPhotographer),
     photoPage: profile.photoPage || "",
+    profileColor: profile.profileColor || "",
   }));
+  // Profile colors unlock at 5 friends; the database checks it again.
+  const [flairOpen, setFlairOpen] = useState(false);
+  useEffect(() => {
+    loadMyInvites()
+      .then((d) => setFlairOpen(Boolean(d?.unlocked?.flair)))
+      .catch((e) => console.warn(e.message));
+  }, []);
   const [uploading, setUploading] = useState(false);
   // Photos uploaded in this sheet; any not kept are deleted from storage.
   const [uploads, setUploads] = useState([]);
@@ -94,6 +103,8 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
       photoPage: draft.isPhotographer ? (draft.photoPage || "").trim().slice(0, 200) : "",
       avatarUrl: (draft.avatarUrl || "").trim(),
       bio: (draft.bio || "").trim().slice(0, BIO_MAX),
+      // Left out until unlocked, so saving never trips the lock.
+      ...(flairOpen ? { profileColor: draft.profileColor || "" } : {}),
     };
     if ((next.bio.match(/\n/g) || []).length > 4) {
       setError("Keep your bio to 5 lines or fewer.");
@@ -131,7 +142,7 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
       <div style={sheetTitle}>EDIT PROFILE</div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 14 }}>
-        <Avatar url={draft.avatarUrl} name={draft.username} size={84} ring />
+        <Avatar url={draft.avatarUrl} name={draft.username} size={84} ring ringColor={draft.profileColor || undefined} />
         <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
           <label style={{ ...pill, color: "#FF7A00", borderColor: "#FF4500", opacity: uploading ? 0.6 : 1 }}>
             {uploading ? "UPLOADING…" : draft.avatarUrl ? "📷 CHANGE PHOTO" : "📷 ADD A PHOTO"}
@@ -199,6 +210,43 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
           value={draft.bio}
           onChange={(e) => set({ bio: e.target.value.slice(0, BIO_MAX) })}
         />
+      </div>
+
+      <div style={{ marginTop: 14 }}>
+        <div style={label}>PROFILE COLOR</div>
+        {flairOpen ? (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {["", ...FLAIR_COLORS].map((c) => (
+              <button
+                key={c || "none"}
+                type="button"
+                aria-label={c ? `Color ${c}` : "No color"}
+                aria-pressed={draft.profileColor === c}
+                onClick={() => set({ profileColor: c })}
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: "50%",
+                  background: c || "#1A1A1A",
+                  border: draft.profileColor === c ? "3px solid #fff" : "1px solid #333",
+                  color: "#777",
+                  fontSize: 14,
+                  cursor: "pointer",
+                }}
+              >
+                {c ? "" : "∅"}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => openInvites("Invite 5 friends to unlock profile colors and the Connector badge.")}
+            style={{ ...pill, width: "100%", color: "#FACC15", borderColor: "#4A3A00", textAlign: "left", whiteSpace: "normal" }}
+          >
+            🔒 Invite 5 friends to pick your profile color
+          </button>
+        )}
       </div>
 
       <label

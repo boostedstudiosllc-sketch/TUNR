@@ -9,6 +9,7 @@ import {
   track,
 } from "../lib/store.js";
 import { compressImage } from "../lib/image.js";
+import { loadMyInvites, openInvites } from "../lib/invites.js";
 
 const inputStyle = {
   background: "#0F0F0F",
@@ -76,6 +77,23 @@ export default function Garage({ user, onToast }) {
     }
   }
 
+  // A second car unlocks with one invited friend (the database enforces it;
+  // this just says so up front instead of after filling in the form).
+  async function startAdding() {
+    if (vehicles.length === 1) {
+      try {
+        const inv = await loadMyInvites();
+        if (inv && !inv.unlocked?.cars) {
+          openInvites("Invite 1 friend to add more cars to your garage.");
+          return;
+        }
+      } catch (e) {
+        console.warn(e.message);
+      }
+    }
+    setEditing({ ...EMPTY });
+  }
+
   async function save() {
     if (busy) return;
     setBusy(true);
@@ -126,7 +144,7 @@ export default function Garage({ user, onToast }) {
         {!editing && (
           <button
             className="action-btn"
-            onClick={() => setEditing({ ...EMPTY })}
+            onClick={startAdding}
             style={{
               padding: "6px 12px",
               background: "rgba(255,69,0,0.12)",

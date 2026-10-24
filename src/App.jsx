@@ -57,6 +57,8 @@ import SetPasswordSheet from "./components/SetPassword.jsx";
 import { AccountContext, confirmMyEmail } from "./lib/account.js";
 import { loadPhotoSpots } from "./lib/community.js";
 import { CARD_PARAM, rememberPendingCard, hasPendingCard } from "./lib/points.js";
+import { INVITE_PARAM, rememberPendingInvite, takePendingInvite, claimInvite } from "./lib/invites.js";
+import InviteSheet from "./components/InviteSheet.jsx";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -111,6 +113,8 @@ export default function App() {
   const [position, setPosition] = useState(null);
   const [showAlerts, setShowAlerts] = useState(false);
   const [settingPassword, setSettingPassword] = useState(false);
+  // The invite screen, opened from the profile or a locked feature.
+  const [inviting, setInviting] = useState(null);
   // The map's photo-spot layer (forum posts tagged 📸 with a pin).
   const [showSpots, setShowSpots] = useState(false);
   const [spots, setSpots] = useState([]);
@@ -129,6 +133,34 @@ export default function App() {
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(id);
+  }, []);
+
+  // Opened a friend's invite link (?invite=…): kept until they've signed up,
+  // then credited to that friend. Only new accounts can be credited.
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get(INVITE_PARAM);
+    if (!code) return;
+    rememberPendingInvite(code);
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
+  useEffect(() => {
+    if (!user) return;
+    const code = takePendingInvite();
+    if (!code) return;
+    // After ensureProfile has had a moment to create the profile row.
+    const t = setTimeout(() => {
+      claimInvite(code)
+        .then((r) => {
+          if (r?.status === "ok") showToast(`🎉 You joined with @${r.inviter || "a friend"}'s invite`);
+        })
+        .catch((e) => showToast(e.message));
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [user]);
+  useEffect(() => {
+    const open = (e) => setInviting({ reason: e.detail?.reason || "" });
+    window.addEventListener("tunr:invites", open);
+    return () => window.removeEventListener("tunr:invites", open);
   }, []);
 
   // Scanned a points card (?card=…): hold the code until they're signed in,
@@ -1044,6 +1076,17 @@ export default function App() {
 
       {showAlerts && user && <AlertSettings user={user} onClose={() => setShowAlerts(false)} onToast={showToast} />}
       {settingPassword && user && <SetPasswordSheet onClose={() => setSettingPassword(false)} onToast={showToast} />}
+      {inviting && user && (
+        <InviteSheet
+          reason={inviting.reason}
+          onClose={() => setInviting(null)}
+          onToast={showToast}
+          onOpenPerson={(id) => {
+            setInviting(null);
+            setPersonView(id);
+          }}
+        />
+      )}
 
       {/* Perks */}
       {tab === "perks" && (

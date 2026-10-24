@@ -114,16 +114,17 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
         ) : (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: -6 }}>
-              <Avatar url={person.avatar_url} name={person.username || "?"} size={64} />
+              <Avatar url={person.avatar_url} name={person.username || "?"} size={64} ring={Boolean(person.profile_color)} ringColor={person.profile_color || undefined} />
               <div style={{ minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 22, fontWeight: 900, overflowWrap: "anywhere" }}>@{person.username}</span>
+                  <span style={{ fontSize: 22, fontWeight: 900, overflowWrap: "anywhere", color: person.profile_color || undefined }}>@{person.username}</span>
                   <Badges
                     dayOne={person.day_one}
                     dayOneNumber={person.day_one_number}
                     foundingHost={person.founding_host}
                     photographer={person.is_photographer}
                     photographerVerified={person.photographer_verified}
+                    connector={person.connector}
                     size={18}
                   />
                 </div>
