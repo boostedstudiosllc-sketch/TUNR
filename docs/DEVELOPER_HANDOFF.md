@@ -7,11 +7,12 @@ Written October 2026 from the code on branch `claude/tunr-car-meet-app-f9dqlh`. 
 
 ## For the owner: the short version
 
-1. TUNR is a finished, working **web app**: car meets, a map, RSVPs, chat, linkups, forums, clubs, alerts and admin tools. It runs on Vercel (the website) and Supabase (the database and logins).
+1. TUNR is a finished, working **web app**: car meets, a map, RSVPs, chat, linkups, forums, clubs, alerts, points and rewards, invite-to-unlock, and admin tools. It runs on Vercel (the website) and Supabase (the database and logins).
 2. A developer can turn it into real **iPhone and Android apps** by wrapping this same code with a tool called **Capacitor**. About 95% of the work you've already paid for carries over. A full rewrite isn't needed.
 3. Expect roughly **3 to 6 weeks** for one experienced developer to get both apps into the stores (an estimate, see section 8), plus Apple and Google review time.
 4. **You** should open and own the store accounts: Apple Developer (99 USD a year, needs a free D-U-N-S number for the LLC) and Google Play (25 USD once). You'll also need a Mac for iPhone builds, either yours or the developer's.
 5. Give the developer access to GitHub, Vercel and Supabase as a *member* of your accounts, never your passwords. Keep every account in the LLC's name.
+6. **Owner's must-have for the app version:** members can record their own car as their alert sound. Today it plays only while the web app is open (phones don't allow custom sounds for web apps). The app version must make it play for alerts when the app is closed too. See section 8, checklist H.
 
 ---
 
@@ -53,6 +54,9 @@ TUNR is a mobile-first web app for finding and attending car meets, launched in 
 | **Photographers** | A self-declared 📸 badge with a link to the photographer's page. It becomes verified (📸✓) after 5 car owners confirm "they shot my car", or when an admin grants it. Admins can also revoke it. | `src/lib/photographer.js`, `PersonProfile.jsx` | `profiles.is_photographer`, `photographer_confirmations`, `photographer_grants` |
 | **Hosts** | Host verification (a request, or a one-time invite link DMed from @tunr.app). Verifying reserves the host name. A founding-host badge for hosts verified before launch. Co-hosts invited by username. **Private meets** with a passcode and/or host-approved join requests. "Is this your meet?" requests on imported listings. The `/hosts` pitch page. | `HostVerification.jsx`, `HostSetup.jsx`, `HostPitch.jsx`, `Cohosts.jsx`, `PrivateAccess.jsx`, `ListingRequest.jsx` | `host_verifications`, `verified_hosts`, `host_invites`, `event_cohosts`, `event_members`, `passcode_attempts`, `listing_requests` |
 | **Perks** | Partner discounts (for example Chemical Guys, 10% off, free with any account). The database hides codes: free perks from signed-out visitors, members-only perks from non-members. The members-only tier is built, but billing isn't. | `PerksTab.jsx`, `JoinPage.jsx` | `partners`, `perks`, `perks_public`, `perk_redemptions`, `profiles.is_member` |
+| **Points and rewards** | Points for checking in at admin-approved ⭐ "points meets" (the host's daily 6-character code + being within 400 m of the pin during the meet; +10, +5 if RSVP'd going beforehand), one-time getting-started bonuses, a one-time membership bonus, and purchases (10 per $1, set in admin). Rewards catalog with claim codes, optional minimum spend, stock and per-person limits; redeeming needs a 14-day-old account and 2 check-ins or a purchase. Anti-cheat: hosts can't earn at their own meets, one check-in per meet per day, 3 a day, attempt limits; the ledger is written only by SQL functions. **The shop is "coming soon"**: `SHOP_OPEN = false` in `src/lib/points.js` hides purchase points, scan-to-earn **points cards** (printable QR batches) and missing-points reports, all built and ready. | `CheckIn.jsx`, `Rewards.jsx`, `src/lib/points.js`, `PerksTab.jsx` | `points_meets`, `meet_checkins`, `point_ledger`, `rewards`, `reward_redemptions`, `points_settings`, `purchase_claims`, `point_cards`, `points_issues` (045–048) |
+| **Invites** | Beli-style invite-to-unlock. Personal link `/?invite=<code>`; a friend counts once they sign up (account under 7 days old) and confirm their email. 1 friend unlocks a 2nd+ car and starting a club; 5 unlock a profile color and the Connector badge. Enforced by triggers; existing 2nd cars and clubs are grandfathered. | `InviteSheet.jsx`, `src/lib/invites.js` | `profiles.invite_code/invited_by/profile_color`, `claim_invite()`, `my_invites()` (049) |
+| **Activity and support** | Settings pages: meet history, invite history, transaction log, sign-in history (device + masked network, 90 days) with "sign out everywhere else", custom **alert sound** (record or upload ≤6 s; device-only `localStorage`, plays while open), Contact us and Suggestion box with an admin Inbox (replies arrive as alerts). | `ActivityPages.jsx`, `Feedback.jsx`, `src/lib/activity.js`, `src/lib/feedback.js`, `NotificationBell.jsx` | `sign_ins`, `my_meet_history()`, `feedback` (050–051) |
 | **Growth pages** | `/join` (a bio link that gives a numbered Day 1 badge before launch) and `/hosts`, both with server-rendered link-preview tags. | `JoinPage.jsx`, `HostPitch.jsx`, `api/join.js`, `api/hosts.js` | `launch_settings`, `signup_stats` |
 | **Admin** | Shown only to admins, in Profile → ⚙️ Settings → Admin (`SettingsScreen.jsx`): insights (growth and host traction, CSV export), sign-up sources, the meet reports queue (hide/restore), community reports (posts, comments, forums, clubs), verification queue, host invites, listing requests, and account-cleanup numbers. | `Insights.jsx`, `SignupStats.jsx`, `ModerationQueue.jsx`, `CommunityReports.jsx`, `HostVerification.jsx` | `admin_*` views, `reports_queue`, `community_report_queue()`, `moderate_event()`, `is_admin()` |
 | **Legal** | Terms of Service (version 3; you have to scroll to the end to agree, and every acceptance is logged) and the Privacy Policy, both shown in the app. | `TermsOfService.jsx`, `PrivacyPolicy.jsx`, `TOS_VERSION` in `src/lib/store.js` | `terms_acceptances` |
@@ -87,10 +91,10 @@ public/                   icons, manifest.webmanifest, sw.js
 scripts/migrate.sh        applies pending SQL migrations (used by CI)
 src/
   App.jsx                 tabs, top-level state, deep links (?open=, /m/, /join, /hosts)
-  components/             56 screen and sheet components (Sheet.jsx = bottom sheet)
+  components/             61 screen and sheet components (Sheet.jsx = bottom sheet)
   data/events.js          seed meets, used only when Supabase isn't configured
   lib/                    data layer and pure helpers (see below)
-supabase/migrations/      001…044 numbered SQL files (append-only)
+supabase/migrations/      001…051 numbered SQL files (append-only)
 test/                     node:test unit tests (no database needed)
 .github/workflows/migrate.yml   auto-applies migrations on push
 vercel.json               rewrites, function timeouts, cron
@@ -281,7 +285,7 @@ From `CLAUDE.md`, the rules every change follows:
 
 [Capacitor](https://capacitorjs.com) puts the built `dist/` in a native iOS/Android shell (a WKWebView or Android WebView) and gives JavaScript access to native features through plugins.
 
-- **Why:** almost all of the code is reused, roughly 95%: all 56 components, `src/lib`, the Supabase backend, RLS, the `api/` routes and the tests. Only the places that touch the browser platform change (listed below). One codebase keeps serving the website, iOS and Android. The backend needs no rewrite.
+- **Why:** almost all of the code is reused, roughly 95%: all 61 components, `src/lib`, the Supabase backend, RLS, the `api/` routes and the tests. Only the places that touch the browser platform change (listed below). One codebase keeps serving the website, iOS and Android. The backend needs no rewrite.
 - **Why not a React Native rewrite now:** React Native can't render this DOM, inline-CSS UI. About 15,000 lines of JSX would need rewriting with RN primitives and a navigation library, and Mapbox, uploads, image compression (canvas) and the fingerprint code would all need native replacements. That's a multi-month project (very roughly 3 to 6 months for one developer), it duplicates the web app, and it buys smoother scrolling and gestures, which TUNR doesn't need yet. Revisit if the app outgrows a WebView, for example with heavy real-time maps or a lot of gesture-driven UI.
 
 ### Checklist
@@ -325,6 +329,15 @@ From `CLAUDE.md`, the rules every change follows:
 - **Icons and splash:** `public/icon-512.png` is the largest icon. The App Store needs a 1024×1024 master. Generate every size with `@capacitor/assets`.
 - **Release strategy:** bundled web assets mean every UI change needs a store release. Consider a live-update service (for example Capgo or Ionic Appflow) for JS/CSS-only fixes, within Apple's rules.
 
+**H. Custom alert sound: the member's own car (owner requirement)**
+- Today: Settings → Alert sound records 4 s from the mic (`MediaRecorder`) or takes an uploaded clip (≤6 s, ≤600 KB), stores it as a data URL in `localStorage` (`tunr.alertSound`, `src/lib/activity.js`), and `NotificationBell.jsx` plays it when a new unread alert arrives while the app is open. Phones only use the system sound for web-push alerts when the app is closed.
+- **Goal in the native app:** the same clip plays for push alerts when the app is closed or in the background.
+- **iOS:** record with a native plugin (or reuse the web recording), convert to linear PCM / IMA4 `.caf` (or `.wav`/`.aiff`), **under 30 seconds**, and write it to `Library/Sounds/tunr_custom.caf` in the app container (a small Swift plugin; files there can be replaced at runtime). Send APNs payloads with `"sound": "tunr_custom.caf"` for devices that have one; iOS falls back to the default if the file is missing.
+- **Android (8+):** notification sound is per **channel** and fixed once the channel exists. Copy the clip to app storage, create a channel such as `tunr_custom_<n>` with that sound (`content://` URI via a FileProvider), and send FCM messages with `android.notification.channel_id` set to it. When the member changes their sound, create a new channel with a new id and delete the old one.
+- **Server:** add `custom_sound boolean` (and `channel_id text` for Android) to the device-token table from checklist D, set by the app after the sound is installed. In `api/_lib/push.js`, pass `sound` / `channel_id` per device; everyone else keeps the default.
+- **Optional:** sync the clip to the account (a private `alert-sounds/<uid>/` storage bucket with own-folder policies, like `avatars` in 044) so it follows the member to a new phone.
+- Add `NSMicrophoneUsageDescription` (iOS) and `RECORD_AUDIO` (Android) for recording in-app.
+
 ### App Store review points
 
 | Requirement | Status in TUNR |
@@ -363,9 +376,10 @@ For one experienced web and mobile developer who is new to the codebase:
 | Auth: deep/universal links, magic-link change, Google in the system browser, Sign in with Apple (with revocation), session storage | 4–6 days |
 | Native push: token table and RPC, FCM sender, tap handling, settings UI | 3–5 days |
 | Location, camera, share, clipboard and external-link plugins, resume handling | 2–3 days |
+| Custom car alert sound (checklist H): iOS `Library/Sounds` plugin, Android channels, per-device flag and payload | 1–2 days |
 | Device QA on iOS and Android, fixes | 3–5 days |
 | Store listings, privacy labels, Data safety, review notes, resubmissions | 2–4 days of work, plus waiting |
-| **Total** | **about 17–28 working days (≈ 140–220 hours), so 3–6 calendar weeks** |
+| **Total** | **about 18–30 working days (≈ 145–240 hours), so 3–6 calendar weeks** |
 
 Main drivers: how smooth auth deep linking goes (the most fiddly part), whether App Review raises 4.2 or 4.8 issues, how long the D-U-N-S number and Apple enrollment take (start these **now**, in parallel), and whether background location ("On my way") is in scope. That feature alone adds about 1–2 weeks, plus extra review scrutiny.
 
@@ -376,7 +390,8 @@ Main drivers: how smooth auth deep linking goes (the most fiddly part), whether 
 **Product backlog (not built)**
 - **"Who's down?":** float a linkup idea to see who's interested before setting a time and place. Linkups today must start within 2 hours.
 - **On my way / Open in Waze:** share that you're heading to a meet or linkup (an ETA, possibly live location; see 8.E), and a Waze button beside the Google Maps directions (`directionsUrl()` in `src/lib/geo.js`).
-- **Custom alert sound (native):** the web app plays a member's recorded clip (Settings → Alert sound, stored in `localStorage` as `tunr.alertSound`) only while TUNR is open. In the native app, copy the clip to `Library/Sounds` (iOS, ≤30 s, .caf/.wav/.aiff) or a notification channel sound (Android) and name it in the push payload's `sound` field so it plays when the app is closed too.
+- **Custom alert sound when the app is closed:** required for the native app; see section 8, checklist H.
+- **Open the shop:** set `SHOP_OPEN = true` in `src/lib/points.js` when merch launches. For automatic purchase points with no manual checking, an **Etsy** shop (Etsy collects sales tax) can be read daily through the Etsy Open API v3 (receipts include the buyer email) to award points by matching TUNR account emails; or connect Square webhooks if the owner sells on Square.
 - **Instagram auto-import** of flyers and meets: blocked until a Meta developer app is created and passes Meta's app review (Instagram's API only works through an approved app). Flyers are currently added by hand or through the flyer reader.
 - **Linkups on the map:** the Map tab shows meets and forum photo spots, not linkups.
 - **Club members-only linkups:** linkups are public or private, with no club scoping.
