@@ -1,14 +1,14 @@
 // TUNR Rush: the game engine and drawing, kept apart from React so it can be
 // tested in plain Node. A 3-lane desert highway in pseudo-3D (like the old
 // flash taxi games): dodge traffic, cones and barrels, grab ⏱ for time and
-// the Boosted Studios turbo for a boost.
+// the Boosted Studios badge for a boost.
 // The server re-checks every run (060_tunr_rush.sql); its calls are in
 // rush.js. No imports here, so it runs in plain Node for the tests.
 
 export const GOAL_METERS = 3000;
 export const START_TIME = 60;
 export const MAX_SPEED = 85; // m/s
-// Grabbing the Boosted turbo: a few seconds flat out, smashing through
+// Grabbing the Boosted Studios badge: a few seconds flat out, smashing through
 // traffic. The server allows up to 120 m/s (062_rush_boost.sql).
 export const BOOST_SPEED = 115;
 export const BOOST_TIME = 3;
@@ -338,7 +338,7 @@ export function drawGame(ctx, W, H, g, me, art = {}) {
       ctx.textBaseline = "middle";
       ctx.fillText("⏱", x, y - w * 0.35);
     } else if (o.kind === "boost") {
-      // The Boosted Studios turbo, bobbing, with a blue glow.
+      // The Boosted Studios badge, bobbing and spinning like a coin, with a blue glow.
       const cy = y - w * 0.45 - Math.sin(g.t * 6) * w * 0.06;
       const glow = ctx.createRadialGradient(x, cy, 0, x, cy, w * 0.6);
       glow.addColorStop(0, "rgba(56,189,248,0.75)");
@@ -347,9 +347,10 @@ export function drawGame(ctx, W, H, g, me, art = {}) {
       ctx.beginPath();
       ctx.arc(x, cy, w * 0.6, 0, Math.PI * 2);
       ctx.fill();
-      const s = w * 0.78;
+      const s = w * 0.95;
       if (ready(art.boost)) {
-        ctx.drawImage(art.boost, x - s / 2, cy - s / 2, s, (s * art.boost.naturalHeight) / art.boost.naturalWidth);
+        const spin = 0.3 + 0.7 * Math.abs(Math.cos(g.t * 3));
+        ctx.drawImage(art.boost, x - (s * spin) / 2, cy - s / 2, s * spin, s);
       } else {
         ctx.fillStyle = "#1D4ED8";
         ctx.beginPath();

@@ -19,7 +19,7 @@ import { loadVehicles, loadProfile } from "../lib/store.js";
 import { Avatar } from "./EditProfile.jsx";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 
-// The Boosted Studios turbo (the boost pickup) and the full logo (shown
+// The Boosted Studios badge (the boost pickup) and the full logo (shown
 // while boosting). Loaded once; the game draws them when ready.
 const ART = typeof Image === "undefined" ? {} : { boost: new Image(), logo: new Image() };
 if (ART.boost) {
@@ -125,7 +125,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
         {screen === "garage" && (
           <>
             <div style={{ ...muted, marginTop: 6 }}>
-              Dodge traffic and grab ⏱ for extra time. Grab the Boosted turbo{" "}
+              Dodge traffic and grab ⏱ for extra time. Grab the Boosted badge{" "}
               <img src="/game/boost.webp" alt="" style={{ width: 22, height: "auto", verticalAlign: "middle" }} /> for a{" "}
               <b style={{ color: "#38BDF8" }}>boost</b>: a few seconds flat out, smashing through anything in your way. Reach <b style={{ color: "#FACC15" }}>{GOAL_METERS.toLocaleString()} m</b>{" "}
               for <b style={{ color: "#FACC15" }}>+1 point</b>, once a day.{" "}
