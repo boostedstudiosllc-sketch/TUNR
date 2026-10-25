@@ -29,7 +29,7 @@ const CHECKIN_COPY = {
   own_meet: "Hosts don't earn points at their own meet.",
   not_happening: "Check-in opens 30 minutes before the meet starts and closes when it ends.",
   no_pin: "This meet has no map pin yet, so check-in can't confirm you're there. Ask the host to add the address.",
-  location_needed: "Allow location so TUNR can confirm you're at the meet.",
+  location_needed: "Turn on location so TUNR can confirm you're at the meet (Settings → Location).",
   weak_location: "Your location isn't precise enough. Turn on precise location (or step outside) and try again.",
   wrong_code: "That code isn't right. Get today's code from the host or the sign at the meet.",
   already: "You already checked in to this meet today.",
@@ -119,7 +119,7 @@ export function preciseLocation() {
         reject(
           new Error(
             err.code === 1
-              ? "Location is blocked for TUNR. Allow it in your browser or phone settings to check in."
+              ? "Location is blocked for TUNR, so it can't check you in. Settings → Location shows how to turn it on."
               : withReason("Couldn't find your location.", err)
           )
         ),

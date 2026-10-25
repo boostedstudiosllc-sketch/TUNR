@@ -11,6 +11,8 @@ import {
   stayMessage,
 } from "../lib/points.js";
 import { loadProfile } from "../lib/store.js";
+import { askForLocation } from "../lib/location.js";
+import { useLocationStatus, LocationNotice } from "./LocationAccess.jsx";
 import { field, bigButton, muted, label } from "./Sheet.jsx";
 
 const BOOSTS = [10, 25, 50];
@@ -31,6 +33,14 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const isHost = Boolean(event.canManage);
+  const [locStatus, setLocStatus] = useLocationStatus();
+  const [asking, setAsking] = useState(false);
+
+  async function turnOnLocation() {
+    setAsking(true);
+    setLocStatus(await askForLocation());
+    setAsking(false);
+  }
   const base = Number(event.basePoints || 0);
   const on = Boolean(boost) || base > 0;
 
@@ -213,6 +223,10 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
         </div>
       )}
       {isHost && on && <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>Hosts don't earn points at their own meet.</div>}
+
+      {on && !isHost && !(checkedIn && stayed) && (
+        <LocationNotice status={locStatus} onTurnOn={turnOnLocation} busy={asking} />
+      )}
 
       {on && !isHost &&
         (checkedIn ? (

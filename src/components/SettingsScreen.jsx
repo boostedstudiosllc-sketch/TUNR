@@ -20,6 +20,7 @@ import { SHOP_OPEN } from "../lib/points.js";
 import { openInvites } from "../lib/invites.js";
 import { MeetHistory, InviteHistory, TransactionLog, SignInHistory, AlertSound } from "./ActivityPages.jsx";
 import { FeedbackPage, FeedbackInbox } from "./Feedback.jsx";
+import { LocationPage, LocationPill, useLocationStatus } from "./LocationAccess.jsx";
 import RewardsPanel, { RewardsAdmin, RedemptionsAdmin, CheckinsAdmin, PurchasesAdmin, CardsAdmin, IssuesAdmin } from "./Rewards.jsx";
 
 const PAGES = {
@@ -31,6 +32,7 @@ const PAGES = {
   transactions: "Transaction log",
   signIns: "Sign-in history",
   alertSound: "Alert sound",
+  location: "Location",
   contact: "Contact us",
   suggestions: "Suggestion box",
   inbox: "Inbox",
@@ -74,6 +76,7 @@ export default function SettingsScreen({
   const [page, setPage] = useState(initialPage);
   const [verification, setVerification] = useState(undefined); // undefined = loading
   const [counts, setCounts] = useState({});
+  const [locStatus] = useLocationStatus();
   const scroller = useRef(null);
   const mainScroll = useRef(0);
 
@@ -304,6 +307,13 @@ export default function SettingsScreen({
             </Section>
 
             <Section title="PRIVACY AND SAFETY">
+              <Row
+                icon="📍"
+                label="Location"
+                sub="Needed to check in at meets for points"
+                right={<LocationPill status={locStatus} />}
+                onClick={() => open("location")}
+              />
               <Row icon="🔇" label="Restricted accounts" value={counts.restricted ? String(counts.restricted) : ""} onClick={() => open("restricted")} />
               <Row icon="🚫" label="Blocked accounts" value={counts.blocked ? String(counts.blocked) : ""} onClick={() => open("blocked")} />
               <Row icon="🔐" label="Sign-in history" sub="Where you're signed in; sign out other devices" onClick={() => open("signIns")} />
@@ -398,6 +408,8 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
       return <SignInHistory user={user} onToast={onToast} />;
     case "alertSound":
       return <AlertSound onToast={onToast} />;
+    case "location":
+      return <LocationPage onToast={onToast} />;
     case "contact":
       return <FeedbackPage kind="contact" user={user} onToast={onToast} />;
     case "suggestions":
