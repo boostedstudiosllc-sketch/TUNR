@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { loadPerks, recordRedemption, loadProfile, track } from "../lib/store.js";
 import { loadMyPoints, hasPendingCard, takePendingCard } from "../lib/points.js";
 import { RewardsSheet } from "./Rewards.jsx";
-import { BoostedSheet } from "./BoostedStudios.jsx";
 
 const CATEGORY_LABELS = {
   detailing: "DETAILING",
@@ -28,7 +27,6 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
   const [points, setPoints] = useState(null);
   const [showRewards, setShowRewards] = useState(false);
   const [scannedCard, setScannedCard] = useState("");
-  const [showBoosted, setShowBoosted] = useState(false);
 
   // Arrived by scanning a points card: open straight to it.
   useEffect(() => {
@@ -144,36 +142,6 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
             onToast={onToast}
           />
         )}
-
-        <button
-          className="action-btn"
-          onClick={() => setShowBoosted(true)}
-          style={{
-            width: "100%",
-            marginBottom: 14,
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "11px 14px",
-            background: "#121212",
-            border: "1px solid #2A2A2A",
-            borderRadius: 12,
-            color: "#DDD",
-            textAlign: "left",
-            cursor: "pointer",
-            fontFamily: "'Barlow Condensed', sans-serif",
-          }}
-        >
-          <span aria-hidden="true" style={{ fontSize: 20 }}>🏁</span>
-          <span style={{ flex: 1 }}>
-            <span style={{ display: "block", fontSize: 14.5, fontWeight: 900, letterSpacing: 0.4 }}>BOOSTED STUDIOS</span>
-            <span style={{ display: "block", fontSize: 12, color: "#888", fontFamily: "'Barlow', sans-serif" }}>
-              TUNR, Boosted Photography, Boosted Detailing
-            </span>
-          </span>
-          <span aria-hidden="true" style={{ color: "#666" }}>›</span>
-        </button>
-        {showBoosted && <BoostedSheet onClose={() => setShowBoosted(false)} onOpenPerks={() => setShowBoosted(false)} />}
 
         {!isMember && memberPerks > 0 && <JoinCard count={memberPerks} onNeedAccount={onNeedAccount} user={user} />}
 

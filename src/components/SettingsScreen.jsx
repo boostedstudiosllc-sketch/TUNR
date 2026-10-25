@@ -36,7 +36,7 @@ const PAGES = {
   alertSound: "Alert sound",
   location: "Location",
   contact: "Contact us",
-  boosted: "Boosted Studios",
+  boosted: "Boosted businesses",
   boostedAdmin: "Boosted businesses",
   suggestions: "Suggestion box",
   inbox: "Inbox",
@@ -388,7 +388,7 @@ export default function SettingsScreen({
             <Section title="ABOUT">
               <Row icon="📄" label="Terms of Service" onClick={onShowTerms} />
               <Row icon="🔒" label="Privacy Policy" onClick={onShowPrivacy} />
-              <Row icon="🏁" label="Boosted Studios" sub="TUNR, Boosted Photography, Boosted Detailing" onClick={() => open("boosted")} />
+              <Row icon="🏁" label="Other Boosted businesses" sub="Boosted Photography, Boosted Detailing" onClick={() => open("boosted")} />
               <Row icon="💬" label="Contact us" sub="Questions, problems, partnerships" onClick={() => open("contact")} />
               <Row icon="💡" label="Suggestion box" sub="Ideas to make TUNR better" onClick={() => open("suggestions")} />
             </Section>
