@@ -454,6 +454,10 @@ export default function App() {
       setCommunityOpen({ type, id });
     } else if (type === "person") {
       setPersonView(id);
+    } else if (type === "tab") {
+      // "tab:perks" and the like, from pages inside Settings.
+      setSelected(null);
+      setTab(id);
     } else if (type === "meet") {
       const found = events.find((e) => e.id === id);
       if (found) {

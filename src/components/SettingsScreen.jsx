@@ -22,6 +22,7 @@ import { MeetHistory, InviteHistory, TransactionLog, SignInHistory, AlertSound }
 import { FeedbackPage, FeedbackInbox } from "./Feedback.jsx";
 import { LocationPage, LocationPill, useLocationStatus } from "./LocationAccess.jsx";
 import { loadMyStreak, setHiddenFromLeaderboards } from "../lib/points.js";
+import BoostedPage, { BoostedAdmin } from "./BoostedStudios.jsx";
 import RewardsPanel, { RewardsAdmin, RedemptionsAdmin, CheckinsAdmin, PurchasesAdmin, CardsAdmin, IssuesAdmin } from "./Rewards.jsx";
 
 const PAGES = {
@@ -35,6 +36,8 @@ const PAGES = {
   alertSound: "Alert sound",
   location: "Location",
   contact: "Contact us",
+  boosted: "Boosted Studios",
+  boostedAdmin: "Boosted businesses",
   suggestions: "Suggestion box",
   inbox: "Inbox",
   host: "Host verification",
@@ -363,6 +366,7 @@ export default function SettingsScreen({
             {profile.isAdmin && (
               <Section title="ADMIN">
                 <Row icon="📥" label="Inbox" sub="Contact messages and suggestions" onClick={() => open("inbox")} />
+                <Row icon="🏁" label="Boosted businesses" sub="Edit the Boosted Studios page" onClick={() => open("boostedAdmin")} />
                 <Row icon="📊" label="Insights" onClick={() => open("insights")} />
                 <Row icon="🚩" label="Community reports" onClick={() => open("reports")} />
                 <Row icon="🧹" label="Moderation queue" onClick={() => open("moderation")} />
@@ -384,12 +388,16 @@ export default function SettingsScreen({
             <Section title="ABOUT">
               <Row icon="📄" label="Terms of Service" onClick={onShowTerms} />
               <Row icon="🔒" label="Privacy Policy" onClick={onShowPrivacy} />
+              <Row icon="🏁" label="Boosted Studios" sub="TUNR, Boosted Photography, Boosted Detailing" onClick={() => open("boosted")} />
               <Row icon="💬" label="Contact us" sub="Questions, problems, partnerships" onClick={() => open("contact")} />
               <Row icon="💡" label="Suggestion box" sub="Ideas to make TUNR better" onClick={() => open("suggestions")} />
             </Section>
-            <div style={{ textAlign: "center", fontSize: 12, color: "#808080", marginTop: 12, letterSpacing: 1, fontFamily: "'Barlow', sans-serif" }}>
-              TUNR by Boosted Studios
-            </div>
+            <button
+              onClick={() => open("boosted")}
+              style={{ display: "block", width: "100%", background: "none", border: "none", textAlign: "center", fontSize: 12, color: "#808080", marginTop: 12, padding: "8px 0", letterSpacing: 1, cursor: "pointer", fontFamily: "'Barlow', sans-serif" }}
+            >
+              TUNR by Boosted Studios →
+            </button>
 
             <button
               className="action-btn"
@@ -442,6 +450,10 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
       return <AlertSound onToast={onToast} />;
     case "location":
       return <LocationPage onToast={onToast} />;
+    case "boosted":
+      return <BoostedPage onOpenPerks={() => onFollow("tab:perks")} />;
+    case "boostedAdmin":
+      return <BoostedAdmin onToast={onToast} />;
     case "contact":
       return <FeedbackPage kind="contact" user={user} onToast={onToast} />;
     case "suggestions":
