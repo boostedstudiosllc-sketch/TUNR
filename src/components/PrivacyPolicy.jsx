@@ -132,8 +132,8 @@ export default function PrivacyPolicy({ onClose }) {
           <br />
           <strong>TUNR Rush:</strong> each run you play while signed in (when it started and
           ended, the distance and score, and which of your cars you drove), plus the color and
-          body style you pick for each car. Your best run this week can appear on the game
-          leaderboard with your username and car, unless you turn off “Show me on leaderboards”.
+          body style you pick for each car. Your best run this week and of all time can appear on the
+          game leaderboards with your username and car, unless you turn off “Show me on leaderboards”.
           <br />
           <br />
           <strong>Location:</strong> only at the moment you tap something that needs it, and only

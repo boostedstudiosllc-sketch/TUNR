@@ -46,6 +46,8 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
   const [mine, setMine] = useState(null);
   const [result, setResult] = useState(null);
   const [board, setBoard] = useState(null);
+  const [boardPeriod, setBoardPeriod] = useState("week");
+  const saveTimer = useRef(0);
   const [error, setError] = useState("");
 
   const car = cars.find((c) => c.id === carId) || null;
@@ -83,22 +85,29 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
     const next = { ...look, ...patch };
     setLook(next);
     if (car) {
-      saveGameLook(car.id, next).catch((e) => onToast(e.message));
+      // The color wheel fires on every drag, so save once it settles.
+      clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => saveGameLook(car.id, next).catch((e) => onToast(e.message)), 500);
       setCars((list) =>
         list.map((c) => (c.id === car.id ? { ...c, game_color: next.color, game_body: next.body, game_spoiler: next.spoiler } : c))
       );
     }
   }
 
-  async function openBoard() {
-    setScreen("board");
+  async function loadBoard(period = "week") {
+    setBoardPeriod(period);
     setBoard(null);
     try {
-      setBoard(await loadGameLeaderboard());
+      setBoard(await loadGameLeaderboard(period));
     } catch (e) {
       setError(e.message);
       setBoard([]);
     }
+  }
+
+  function openBoard(period = "week") {
+    setScreen("board");
+    loadBoard(period);
   }
 
   // The phone's back gesture and Escape close the game.
@@ -166,17 +175,18 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
               </div>
             )}
 
-            <div style={{ ...label, marginTop: 12 }}>COLOR</div>
-            <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+            <div style={{ ...label, marginTop: 12 }}>COLOR · TAP + FOR ANY COLOR</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {GAME_COLORS.map((c) => (
                 <button
                   key={c}
                   aria-label={`Color ${c}`}
                   aria-pressed={look.color === c}
                   onClick={() => changeLook({ color: c })}
-                  style={{ width: 32, height: 32, borderRadius: "50%", background: c, border: look.color === c ? "3px solid #fff" : "1px solid #333", cursor: "pointer" }}
+                  style={{ width: 30, height: 30, borderRadius: "50%", background: c, border: look.color === c ? "3px solid #fff" : "1px solid #333", cursor: "pointer" }}
                 />
               ))}
+              <OtherColor color={look.color} onChange={(c) => changeLook({ color: c })} />
             </div>
             <div style={{ ...label, marginTop: 12 }}>BODY</div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -205,7 +215,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
               </div>
             )}
             <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-              <button className="action-btn" onClick={openBoard} style={{ ...quietButton, flex: 1 }}>🏆 THIS WEEK</button>
+              <button className="action-btn" onClick={() => openBoard("week")} style={{ ...quietButton, flex: 1 }}>🏆 LEADERBOARD</button>
             </div>
             {mine && (
               <div style={{ ...muted, textAlign: "center", marginTop: 10 }}>
@@ -237,6 +247,8 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             onDone={(r) => {
               setResult(r);
               setScreen("result");
+              // The run is saved by now, so the board includes it.
+              loadBoard("week");
               if (r.server) setMine((m) => ({ ...(m || {}), best: r.server.best, today_done: r.server.today_done }));
             }}
             onQuit={() => setScreen("garage")}
@@ -271,49 +283,155 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             <button className="action-btn" onClick={() => setScreen("play")} style={{ ...bigButton, marginTop: 18 }}>
               🔁 RUN IT BACK
             </button>
-            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+
+            <div style={{ textAlign: "left", marginTop: 20 }}>
+              <div style={label}>🏆 THIS WEEK'S LEADERBOARD</div>
+              <RankLine rows={board} period="week" signedIn={Boolean(user)} onNeedAccount={onNeedAccount} />
+              <BoardList rows={board} top={5} />
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
               <button className="action-btn" onClick={() => setScreen("garage")} style={{ ...quietButton, flex: 1 }}>GARAGE</button>
-              <button className="action-btn" onClick={openBoard} style={{ ...quietButton, flex: 1 }}>🏆 THIS WEEK</button>
+              <button className="action-btn" onClick={() => openBoard("week")} style={{ ...quietButton, flex: 1 }}>FULL BOARD</button>
             </div>
           </div>
         )}
 
         {screen === "board" && (
           <div style={{ marginTop: 12 }}>
-            <div style={{ ...muted }}>Longest single run this week (Monday to Sunday).</div>
-            {board === null && <div style={{ ...muted, marginTop: 12 }}>Loading…</div>}
-            {board && board.length === 0 && <div style={{ ...muted, marginTop: 12 }}>No runs yet this week. Be the first.</div>}
-            {(board || []).map((r) => (
-              <div
-                key={r.user_id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "10px 6px",
-                  borderBottom: "1px solid #1A1A1A",
-                  background: r.is_me ? "rgba(255,69,0,0.08)" : "none",
-                  borderRadius: 8,
-                }}
-              >
-                <span style={{ width: 26, textAlign: "center", fontWeight: 900, color: "#A0A0A0" }}>
-                  {r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : r.rank}
-                </span>
-                <Avatar url={r.avatar_url} name={r.username} size={34} ring={Boolean(r.profile_color)} ringColor={r.profile_color || undefined} />
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontWeight: 900, color: r.profile_color || undefined }}>@{r.username}{r.is_me ? " (you)" : ""}</span>
-                  {r.car && <span style={{ display: "block", ...muted, fontSize: 12 }}>{r.car}</span>}
-                </span>
-                <span style={{ fontWeight: 900, color: "#FACC15" }}>{Number(r.score).toLocaleString()} m</span>
-              </div>
-            ))}
-            <button className="action-btn" onClick={() => setScreen("garage")} style={{ ...quietButton, marginTop: 14 }}>
+            <div style={{ display: "flex", gap: 6 }}>
+              {[
+                ["week", "THIS WEEK"],
+                ["all", "ALL TIME"],
+              ].map(([id, name]) => (
+                <button
+                  key={id}
+                  onClick={() => openBoard(id)}
+                  style={{ ...quietButton, flex: 1, padding: "10px 0", ...(boardPeriod === id ? { border: "1px solid #FF4500", color: "#FF7A00" } : {}) }}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+            <div style={{ ...muted, marginTop: 10 }}>
+              Longest single run {boardPeriod === "week" ? "this week (Monday to Sunday)" : "ever"}.
+            </div>
+            <RankLine rows={board} period={boardPeriod} signedIn={Boolean(user)} />
+            <BoardList rows={board} />
+            <button className="action-btn" onClick={() => setScreen(result ? "result" : "garage")} style={{ ...quietButton, marginTop: 14 }}>
               ‹ BACK
             </button>
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+// Where you stand: "You're #4 of 23 drivers this week."
+function RankLine({ rows, period, signedIn, onNeedAccount }) {
+  if (!rows) return <div style={{ ...muted, marginTop: 10 }}>Loading…</div>;
+  const me = rows.find((r) => r.is_me);
+  const drivers = rows[0]?.drivers || 0;
+  const when = period === "week" ? "this week" : "all time";
+  let text;
+  if (me) {
+    const ahead = rows.filter((r) => r.score > me.score).at(-1) || null;
+    text = (
+      <>
+        You're <b style={{ color: "#FACC15" }}>#{me.rank}</b> of {drivers} driver{drivers === 1 ? "" : "s"} {when}
+        {me.rank === 1 ? ". 👑 Top of the board!" : ahead ? `. ${(ahead.score - me.score + 1).toLocaleString()} m more to pass @${ahead.username}.` : "."}
+      </>
+    );
+  } else if (!signedIn) {
+    text = (
+      <>
+        {drivers} driver{drivers === 1 ? "" : "s"} on the board {when}.{" "}
+        {onNeedAccount && (
+          <button onClick={onNeedAccount} style={{ background: "none", border: "none", color: "#38BDF8", cursor: "pointer", padding: 0, font: "inherit" }}>
+            Sign in to get on it.
+          </button>
+        )}
+      </>
+    );
+  } else {
+    text = `${drivers} driver${drivers === 1 ? "" : "s"} on the board ${when}. Finish a run to join them.`;
+  }
+  return <div style={{ ...muted, color: "#DDD", marginTop: 8, marginBottom: 4 }}>{text}</div>;
+}
+
+// The board's rows. With `top`, just the leaders plus you if you're lower.
+function BoardList({ rows, top = null }) {
+  if (!rows) return null;
+  if (rows.length === 0) return <div style={{ ...muted, marginTop: 12 }}>No runs yet. Be the first.</div>;
+  let list = rows;
+  if (top) {
+    list = rows.filter((r, i) => i < top || r.is_me);
+  }
+  return list.map((r, i) => (
+    <div key={r.user_id}>
+      {i > 0 && r.rank > list[i - 1].rank + 1 && <div style={{ ...muted, textAlign: "center", lineHeight: 1 }}>⋮</div>}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "10px 6px",
+          borderBottom: "1px solid #1A1A1A",
+          background: r.is_me ? "rgba(255,69,0,0.1)" : "none",
+          borderRadius: 8,
+        }}
+      >
+        <span style={{ width: 28, textAlign: "center", fontWeight: 900, color: "#A0A0A0" }}>
+          {r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : r.rank}
+        </span>
+        <Avatar url={r.avatar_url} name={r.username} size={34} ring={Boolean(r.profile_color)} ringColor={r.profile_color || undefined} />
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: "block", fontWeight: 900, color: r.profile_color || undefined, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            @{r.username}
+            {r.is_me ? " (you)" : ""}
+          </span>
+          {r.car && <span style={{ display: "block", ...muted, fontSize: 12 }}>{r.car}</span>}
+        </span>
+        <span style={{ fontWeight: 900, color: "#FACC15" }}>{Number(r.score).toLocaleString()} m</span>
+      </div>
+    </div>
+  ));
+}
+
+// "Other": a rainbow swatch that opens the phone's color wheel.
+function OtherColor({ color, onChange }) {
+  const custom = !GAME_COLORS.includes(color);
+  return (
+    <label
+      title="Any color"
+      style={{
+        position: "relative",
+        width: 30,
+        height: 30,
+        borderRadius: "50%",
+        cursor: "pointer",
+        background: custom ? color : "conic-gradient(#ef4444, #f59e0b, #facc15, #22c55e, #06b6d4, #3b82f6, #a855f7, #ef4444)",
+        border: custom ? "3px solid #fff" : "1px solid #333",
+        boxShadow: custom ? "0 0 0 2px #a855f7" : "none",
+        boxSizing: "border-box",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 15,
+        fontWeight: 900,
+        color: "#fff",
+        textShadow: "0 1px 2px #000",
+      }}
+    >
+      {custom ? "" : "+"}
+      <input
+        type="color"
+        aria-label="Pick any color"
+        value={/^#[0-9a-f]{6}$/i.test(color) ? color : "#ff4500"}
+        onChange={(e) => onChange(e.target.value.toUpperCase())}
+        style={{ position: "absolute", inset: 0, opacity: 0, width: "100%", height: "100%", cursor: "pointer", border: 0, padding: 0 }}
+      />
+    </label>
   );
 }
 

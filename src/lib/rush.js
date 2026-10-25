@@ -79,9 +79,11 @@ export async function loadMyGame() {
   return data || null;
 }
 
-export async function loadGameLeaderboard() {
+// Best distance per driver, "week" (Monday to Sunday) or "all" time. Your
+// own row always comes back, even outside the top.
+export async function loadGameLeaderboard(period = "week", limit = 50) {
   if (!supabase) return [];
-  const { data, error } = await supabase.rpc("game_leaderboard", { p_limit: 50 });
+  const { data, error } = await supabase.rpc("game_leaderboard", { p_limit: limit, p_period: period });
   if (error) throw new Error(withReason("Couldn't load the leaderboard.", error));
   return data || [];
 }
