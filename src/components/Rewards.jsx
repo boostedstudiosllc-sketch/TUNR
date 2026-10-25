@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import {
   POINTS,
   SHOP_OPEN,
+  STREAK_MILESTONES,
+  loadMyStreak,
   REDEEM_RULES,
   loadMyPoints,
   claimStarterPoints,
@@ -38,6 +40,7 @@ import {
   findUserId,
 } from "../lib/points.js";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
+import Leaderboard from "./Leaderboard.jsx";
 
 const KIND_LABELS = { merch: "MERCH", discount: "DISCOUNT", experience: "EXPERIENCE", other: "REWARD" };
 
@@ -58,20 +61,24 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
   const [rewards, setRewards] = useState([]);
   const [claims, setClaims] = useState([]);
   const [history, setHistory] = useState([]);
-  const [rates, setRates] = useState({ points_per_dollar: 10, member_bonus: 500 });
+  const [rates, setRates] = useState({ points_per_dollar: 1, member_bonus: 50 });
+  const [streak, setStreak] = useState(null);
+  const [showBoard, setShowBoard] = useState(false);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(null);
   const [busy, setBusy] = useState(false);
 
   async function refresh() {
     try {
-      const [p, r, c, h, rt] = await Promise.all([
+      const [p, r, c, h, rt, st] = await Promise.all([
         loadMyPoints(),
         loadRewards(),
         loadMyRedemptions(user.id),
         loadPointHistory(user.id),
         loadPointsSettings(),
+        loadMyStreak(),
       ]);
+      setStreak(st);
       setPoints(p);
       setRates(rt);
       setRewards(r.filter((x) => x.active));
@@ -150,6 +157,36 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
 
       {SHOP_OPEN && initialCard && cardSection}
 
+      <div style={{ ...card, display: "flex", alignItems: "center", gap: 12 }}>
+        <span aria-hidden="true" style={{ fontSize: 30 }}>{streak?.current ? "🔥" : "🧊"}</span>
+        <span style={{ flex: 1 }}>
+          <span style={{ display: "block", fontSize: 17, fontWeight: 900 }}>
+            {streak ? `${streak.current}-WEEK STREAK` : "WEEKLY STREAK"}
+          </span>
+          <span style={{ display: "block", ...muted, fontSize: 12.5 }}>
+            {!streak
+              ? "Loading…"
+              : streak.this_week
+                ? `✓ This week counts.${streak.best ? ` Best: ${streak.best} weeks.` : ""}`
+                : streak.current
+                  ? "Check in at a meet by Sunday night to keep it going."
+                  : "Check in at a meet this week to start one."}
+          </span>
+        </span>
+        <button className="action-btn" onClick={() => setShowBoard(true)} style={{ ...quietButton, width: "auto", padding: "10px 12px" }}>
+          🏆 BOARD
+        </button>
+      </div>
+      {showBoard && (
+        <Leaderboard
+          onClose={() => setShowBoard(false)}
+          onOpenPerson={(id) => {
+            setShowBoard(false);
+            window.dispatchEvent(new CustomEvent("tunr:open", { detail: { link: `person:${id}` } }));
+          }}
+        />
+      )}
+
       <Title>HOW TO EARN</Title>
       <div style={card}>
         {SHOP_OPEN ? (
@@ -164,6 +201,11 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
         <EarnRow icon="🏁" text="Check in again at the end: stayed the whole meet" pts="+1" />
         <EarnRow icon="⭐" text="Check in at a boosted meet (code shown at the meet)" pts="+10 to +50" />
         <EarnRow icon="🙋" text="RSVP “Going” to a boosted meet, then show up" pts={`+${POINTS.rsvpBonus}`} />
+        <EarnRow
+          icon="🔥"
+          text={`Weekly streak: ${STREAK_MILESTONES.map(([w, b]) => `${w} wks +${b}`).join(", ")}`}
+          pts="BONUS"
+        />
         <div style={{ ...label, marginTop: 12 }}>GETTING STARTED (ONE TIME)</div>
         <EarnRow icon="👤" text="Profile photo, username and bio" pts={`+${POINTS.profile}`} done={starter?.profile} />
         <EarnRow icon="🚗" text="Add your car to your garage" pts={`+${POINTS.car}`} done={starter?.car} />

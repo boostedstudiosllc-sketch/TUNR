@@ -21,6 +21,7 @@ import { openInvites } from "../lib/invites.js";
 import { MeetHistory, InviteHistory, TransactionLog, SignInHistory, AlertSound } from "./ActivityPages.jsx";
 import { FeedbackPage, FeedbackInbox } from "./Feedback.jsx";
 import { LocationPage, LocationPill, useLocationStatus } from "./LocationAccess.jsx";
+import { loadMyStreak, setHiddenFromLeaderboards } from "../lib/points.js";
 import RewardsPanel, { RewardsAdmin, RedemptionsAdmin, CheckinsAdmin, PurchasesAdmin, CardsAdmin, IssuesAdmin } from "./Rewards.jsx";
 
 const PAGES = {
@@ -77,6 +78,24 @@ export default function SettingsScreen({
   const [verification, setVerification] = useState(undefined); // undefined = loading
   const [counts, setCounts] = useState({});
   const [locStatus] = useLocationStatus();
+  const [onBoards, setOnBoards] = useState(null);
+  useEffect(() => {
+    loadMyStreak()
+      .then((s) => setOnBoards(!s?.hidden))
+      .catch((e) => console.warn(e.message));
+  }, []);
+
+  async function toggleBoards() {
+    const next = !onBoards;
+    setOnBoards(next);
+    try {
+      await setHiddenFromLeaderboards(user.id, !next);
+      onToast(next ? "You're back on the leaderboards" : "Hidden from the leaderboards");
+    } catch (e) {
+      setOnBoards(!next);
+      onToast(e.message);
+    }
+  }
   const scroller = useRef(null);
   const mainScroll = useRef(0);
 
@@ -316,6 +335,19 @@ export default function SettingsScreen({
               />
               <Row icon="🔇" label="Restricted accounts" value={counts.restricted ? String(counts.restricted) : ""} onClick={() => open("restricted")} />
               <Row icon="🚫" label="Blocked accounts" value={counts.blocked ? String(counts.blocked) : ""} onClick={() => open("blocked")} />
+              <Row
+                icon="🏆"
+                label="Show me on leaderboards"
+                sub="Your username, photo and streak or check-in count"
+                right={
+                  onBoards === null ? null : (
+                    <span role="switch" aria-checked={onBoards} style={{ fontSize: 13, fontWeight: 800, color: onBoards ? "#10B981" : "#777" }}>
+                      {onBoards ? "ON" : "OFF"}
+                    </span>
+                  )
+                }
+                onClick={() => onBoards !== null && toggleBoards()}
+              />
               <Row icon="🔐" label="Sign-in history" sub="Where you're signed in; sign out other devices" onClick={() => open("signIns")} />
             </Section>
 

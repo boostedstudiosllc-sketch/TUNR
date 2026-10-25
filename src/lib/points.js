@@ -211,6 +211,7 @@ const REASON_LABELS = {
   checkin: "Checked in",
   rsvp_bonus: "Said you'd go, and showed up",
   stay_bonus: "Stayed the whole meet",
+  streak_bonus: "Weekly streak bonus",
   starter_profile: "Finished your profile",
   starter_car: "Added your car",
   starter_alerts: "Turned on alerts",
@@ -543,4 +544,34 @@ export async function resolvePointsIssue(id, amountCents, reply) {
   });
   if (error) throw new Error(friendlyWriteError(error, "Couldn't answer that report."));
   return data;
+}
+
+// ============ STREAKS AND LEADERBOARD ============
+export const STREAK_MILESTONES = [
+  [4, 2],
+  [8, 3],
+  [12, 5],
+  [26, 15],
+  [52, 30],
+];
+
+export async function loadMyStreak() {
+  need();
+  const { data, error } = await supabase.rpc("my_streak");
+  if (error) throw new Error(withReason("Couldn't load your streak.", error));
+  return data || { current: 0, best: 0, this_week: false, hidden: false };
+}
+
+// "streaks" (current weekly streak) or "month" (check-ins this month).
+export async function loadLeaderboard(kind = "streaks") {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("leaderboard", { p_kind: kind, p_limit: 50 });
+  if (error) throw new Error(withReason("Couldn't load the leaderboard.", error));
+  return data || [];
+}
+
+export async function setHiddenFromLeaderboards(userId, hidden) {
+  need();
+  const { error } = await supabase.from("profiles").update({ hide_from_leaderboards: hidden }).eq("id", userId);
+  if (error) throw new Error(friendlyWriteError(error, "Couldn't change your leaderboard setting."));
 }

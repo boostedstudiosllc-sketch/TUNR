@@ -104,6 +104,12 @@ export default function PrivacyPolicy({ onClose }) {
           problems.
           <br />
           <br />
+          <strong>Leaderboards:</strong> unless you turn it off (Settings → Privacy and safety →
+          Show me on leaderboards), your username, photo and your weekly check-in streak or this
+          month's check-in count can appear on TUNR's public leaderboard. It never shows which
+          meets you went to or where you were.
+          <br />
+          <br />
           <strong>Invites:</strong> your invite code, and if you joined through a friend's link,
           that you did. Your friend sees your username and whether you've confirmed your email, so
           it can count toward their unlocks.

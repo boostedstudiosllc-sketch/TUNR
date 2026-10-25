@@ -159,6 +159,12 @@ export default function App() {
     }, 1500);
     return () => clearTimeout(t);
   }, [user]);
+  // Screens without a link handler (the leaderboard) open things through this.
+  useEffect(() => {
+    const go = (e) => e.detail?.link && openLink(e.detail.link);
+    window.addEventListener("tunr:open", go);
+    return () => window.removeEventListener("tunr:open", go);
+  });
   useEffect(() => {
     const open = (e) => setInviting({ reason: e.detail?.reason || "" });
     window.addEventListener("tunr:invites", open);
