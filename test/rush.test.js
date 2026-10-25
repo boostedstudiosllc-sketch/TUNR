@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { newGame, step, steer, scoreOf, START_TIME, MAX_SPEED } from "../src/lib/rushEngine.js";
+import { newGame, step, steer, scoreOf, START_TIME, BOOST_SPEED, BOOST_TIME } from "../src/lib/rushEngine.js";
 
 // A repeatable "random" for the tests.
 function seeded(seed = 7) {
@@ -17,14 +17,14 @@ test("a run ends when the clock runs out, and never goes faster than the server 
   }
   assert.equal(g.over, true);
   assert.equal(g.timeLeft, 0);
-  // Max speed 85 m/s, under the server's 90 m/s check.
-  assert.ok(g.dist <= g.t * 90, `distance ${g.dist} in ${g.t}s`);
-  assert.ok(g.speed <= MAX_SPEED + 0.001);
+  // Even boosting tops out at 115 m/s, under the server's 120 m/s check.
+  assert.ok(g.dist <= g.t * 120, `distance ${g.dist} in ${g.t}s`);
+  assert.ok(g.speed <= BOOST_SPEED + 0.001);
 });
 
 test("hitting traffic costs time and slows you down; a clock adds time", () => {
   const g = newGame(seeded());
-  g.objects.push({ z: 0.03, lane: 1, kind: "car", color: "#fff", body: "sedan", num: 3 });
+  g.objects.push({ z: 0.03, lane: 1, kind: "car", color: "#fff", body: "sedan" });
   const before = g.timeLeft;
   const speed = g.speed;
   const ev = step(g, 0.001);
@@ -50,4 +50,28 @@ test("you can't steer off the road", () => {
   assert.equal(g.lane, 0);
   steer(g, 5);
   assert.equal(g.lane, 2);
+});
+
+test("the Boosted turbo gives a boost that smashes through traffic for free", () => {
+  const g = newGame(seeded());
+  g.objects.push({ z: 0.03, lane: 1, kind: "boost" });
+  assert.deepEqual(step(g, 0.001), ["boost"]);
+  assert.equal(g.boosts, 1);
+  assert.ok(g.boostT > BOOST_TIME - 0.01);
+
+  g.objects.push({ z: 0.03, lane: 1, kind: "car", color: "#fff", body: "sedan" });
+  const time = g.timeLeft;
+  assert.deepEqual(step(g, 0.001), ["smash"]);
+  assert.equal(g.crashes, 0);
+  assert.equal(g.smashed, 1);
+  assert.ok(g.timeLeft > time - 0.01);
+
+  // Faster while it lasts, then it wears off.
+  for (let i = 0; i < 60; i++) step(g, 1 / 60);
+  assert.ok(g.speed > 85);
+  for (let i = 0; i < 60 * BOOST_TIME; i++) step(g, 1 / 60);
+  assert.equal(g.boostT, 0);
+  const crash = newGame(seeded());
+  crash.objects.push({ z: 0.03, lane: 1, kind: "barrel" });
+  assert.deepEqual(step(crash, 0.001), ["crash"]);
 });

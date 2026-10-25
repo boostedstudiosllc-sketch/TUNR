@@ -19,6 +19,14 @@ import { loadVehicles, loadProfile } from "../lib/store.js";
 import { Avatar } from "./EditProfile.jsx";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 
+// The Boosted Studios turbo (the boost pickup) and the full logo (shown
+// while boosting). Loaded once; the game draws them when ready.
+const ART = typeof Image === "undefined" ? {} : { boost: new Image(), logo: new Image() };
+if (ART.boost) {
+  ART.boost.src = "/game/boost.webp";
+  ART.logo.src = "/game/boosted-logo.webp";
+}
+
 const BODY_LABELS = { coupe: "Coupe", sedan: "Sedan", hatch: "Hatch", suv: "SUV", truck: "Truck" };
 
 // TUNR Rush: a full-screen driving game in your own car. Reach 3,000 m for
@@ -117,7 +125,9 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
         {screen === "garage" && (
           <>
             <div style={{ ...muted, marginTop: 6 }}>
-              Dodge traffic, grab ⏱ for extra time. Reach <b style={{ color: "#FACC15" }}>{GOAL_METERS.toLocaleString()} m</b>{" "}
+              Dodge traffic and grab ⏱ for extra time. Grab the Boosted turbo{" "}
+              <img src="/game/boost.webp" alt="" style={{ width: 22, height: "auto", verticalAlign: "middle" }} /> for a{" "}
+              <b style={{ color: "#38BDF8" }}>boost</b>: a few seconds flat out, smashing through anything in your way. Reach <b style={{ color: "#FACC15" }}>{GOAL_METERS.toLocaleString()} m</b>{" "}
               for <b style={{ color: "#FACC15" }}>+1 point</b>, once a day.{" "}
               {mine?.today_done ? <span style={{ color: "#10B981" }}>✓ Today's point is in.</span> : null}
             </div>
@@ -211,7 +221,9 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
               {result.dist.toLocaleString()} m
             </div>
             <div style={{ ...muted, marginTop: 6 }}>
-              ⏱ {result.pickups} grabbed · 💥 {result.crashes} crash{result.crashes === 1 ? "" : "es"} · score {result.score.toLocaleString()}
+              ⏱ {result.pickups} · 🚀 {result.boosts} boost{result.boosts === 1 ? "" : "s"}
+              {result.smashed ? ` (${result.smashed} smashed)` : ""} · 💥 {result.crashes} crash{result.crashes === 1 ? "" : "es"} · score{" "}
+              {result.score.toLocaleString()}
             </div>
             <div style={{ marginTop: 14, fontSize: 17, fontWeight: 900, color: result.server?.earned ? "#FACC15" : "#AAA" }}>
               {result.serverError
@@ -346,10 +358,11 @@ function Game({ look, plate, vehicleId, signedIn, onDone, onQuit }) {
       const events = step(g, (now - last) / 1000);
       last = now;
       if (events.includes("crash") && navigator.vibrate) navigator.vibrate(120);
-      drawGame(ctx, W, H, g, me);
+      if (events.includes("boost") && navigator.vibrate) navigator.vibrate([40, 30, 40]);
+      drawGame(ctx, W, H, g, me, ART);
       if (g.over && !ended) {
         ended = true;
-        const r = { dist: Math.floor(g.dist), score: scoreOf(g), pickups: g.pickups, crashes: g.crashes };
+        const r = { dist: Math.floor(g.dist), score: scoreOf(g), pickups: g.pickups, boosts: g.boosts, smashed: g.smashed, crashes: g.crashes };
         if (!signedIn || !runRef.current) return onDone(r);
         finishRun(runRef.current, g)
           .then((server) => onDone({ ...r, server: server?.status === "ok" ? server : null, serverError: server && server.status !== "ok" ? `Run not counted (${server.status}).` : "" }))

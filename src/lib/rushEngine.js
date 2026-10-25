@@ -1,12 +1,17 @@
 // TUNR Rush: the game engine and drawing, kept apart from React so it can be
 // tested in plain Node. A 3-lane desert highway in pseudo-3D (like the old
-// flash taxi games): dodge traffic, cones and barrels, grab ⏱ for time.
+// flash taxi games): dodge traffic, cones and barrels, grab ⏱ for time and
+// the Boosted Studios turbo for a boost.
 // The server re-checks every run (060_tunr_rush.sql); its calls are in
 // rush.js. No imports here, so it runs in plain Node for the tests.
 
 export const GOAL_METERS = 3000;
 export const START_TIME = 60;
-export const MAX_SPEED = 85; // m/s; the server allows up to 90
+export const MAX_SPEED = 85; // m/s
+// Grabbing the Boosted turbo: a few seconds flat out, smashing through
+// traffic. The server allows up to 120 m/s (062_rush_boost.sql).
+export const BOOST_SPEED = 115;
+export const BOOST_TIME = 3;
 export const BODIES = ["coupe", "sedan", "hatch", "suv", "truck"];
 export const GAME_COLORS = ["#E11D2E", "#FF7A00", "#FACC15", "#10B981", "#1D4ED8", "#A855F7", "#F5F5F5", "#9CA3AF", "#111827"];
 const TRAFFIC_COLORS = ["#F59E0B", "#2563EB", "#7C3AED", "#16A34A", "#DC2626", "#0EA5E9", "#9333EA"];
@@ -30,6 +35,9 @@ export function newGame(rand = Math.random) {
     crashT: 0,
     crashes: 0,
     pickups: 0,
+    boosts: 0,
+    boostT: 0,
+    smashed: 0,
     over: false,
   };
 }
@@ -51,10 +59,11 @@ function spawnRow(g) {
       kind: roll < 0.7 ? "car" : roll < 0.85 ? "cone" : "barrel",
       color: TRAFFIC_COLORS[Math.floor(r() * TRAFFIC_COLORS.length)],
       body: BODIES[Math.floor(r() * 3)],
-      num: 1 + Math.floor(r() * 49),
     });
   }
-  if (r() < 0.22) g.objects.push({ z: 1, lane: lanes[2], kind: "clock" });
+  const bonus = r();
+  if (bonus < 0.22) g.objects.push({ z: 1, lane: lanes[2], kind: "clock" });
+  else if (bonus < 0.3 && g.boostT <= 0) g.objects.push({ z: 1, lane: lanes[2], kind: "boost" });
 }
 
 // Advance the game by dt seconds. Returns events for sounds/vibration.
@@ -64,9 +73,11 @@ export function step(g, dt) {
   dt = Math.min(dt, 0.05);
   g.t += dt;
   g.timeLeft -= dt;
-  const target = Math.min(MAX_SPEED, 28 + g.dist / 70);
-  g.speed += (target - g.speed) * Math.min(1, dt * (g.crashT > 0 ? 0.6 : 1.5));
+  const boosting = g.boostT > 0;
+  const target = boosting ? BOOST_SPEED : Math.min(MAX_SPEED, 28 + g.dist / 70);
+  g.speed += (target - g.speed) * Math.min(1, dt * (boosting ? 3 : g.crashT > 0 ? 0.6 : 1.5));
   g.crashT = Math.max(0, g.crashT - dt);
+  g.boostT = Math.max(0, g.boostT - dt);
   g.dist += g.speed * dt;
   g.laneX += Math.sign(g.lane - g.laneX) * Math.min(Math.abs(g.lane - g.laneX), dt * 9);
 
@@ -95,6 +106,16 @@ export function step(g, dt) {
       g.timeLeft += 3;
       g.pickups += 1;
       events.push("pickup");
+    } else if (o.kind === "boost") {
+      g.boostT = BOOST_TIME;
+      g.crashT = 0;
+      g.boosts += 1;
+      events.push("boost");
+    } else if (boosting) {
+      // Boosted: plow straight through.
+      o.smashed = true;
+      g.smashed += 1;
+      events.push("smash");
     } else if (g.crashT <= 0) {
       g.timeLeft -= 4;
       g.speed *= 0.45;
@@ -103,7 +124,7 @@ export function step(g, dt) {
       events.push("crash");
     }
   }
-  g.objects = g.objects.filter((o) => o.z > -0.05 && !(o.hit && o.kind === "clock"));
+  g.objects = g.objects.filter((o) => o.z > -0.05 && !(o.hit && (o.kind === "clock" || o.kind === "boost" || o.smashed)));
 
   if (g.timeLeft <= 0) {
     g.timeLeft = 0;
@@ -113,7 +134,7 @@ export function step(g, dt) {
   return events;
 }
 
-export const scoreOf = (g) => Math.floor(g.dist) + g.pickups * 100;
+export const scoreOf = (g) => Math.floor(g.dist) + g.pickups * 100 + g.boosts * 100 + g.smashed * 50;
 
 // ---------- drawing ----------
 
@@ -142,7 +163,7 @@ const BODY_SHAPE = {
 };
 
 // A car seen from behind, centered at cx, sitting on bottomY, w wide.
-export function drawCar(ctx, cx, bottomY, w, { color = "#FF4500", body = "coupe", plate = "", num = null } = {}) {
+export function drawCar(ctx, cx, bottomY, w, { color = "#FF4500", body = "coupe", plate = "" } = {}) {
   const s = BODY_SHAPE[body] || BODY_SHAPE.coupe;
   const h = w * s.h;
   const x = cx - w / 2;
@@ -214,22 +235,13 @@ export function drawCar(ctx, cx, bottomY, w, { color = "#FF4500", body = "coupe"
     ctx.textBaseline = "middle";
     ctx.fillText(plate.slice(0, 9).toUpperCase(), cx, lowerTop + h * 0.2 + ph / 2 + 0.5, pw * 0.92);
   }
-
-  // Traffic numbers on the roof, like the old taxi games.
-  if (num != null && w > 24) {
-    ctx.fillStyle = "#FDE047";
-    ctx.strokeStyle = "#111";
-    ctx.lineWidth = Math.max(1, w * 0.03);
-    ctx.font = `900 ${w * 0.34}px 'Barlow Condensed', sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.strokeText(String(num), cx, top + h * 0.2);
-    ctx.fillText(String(num), cx, top + h * 0.2);
-  }
 }
 
-// Draw the whole frame. `me` is { color, body, plate }.
-export function drawGame(ctx, W, H, g, me) {
+// Draw the whole frame. `me` is { color, body, plate }; `art` holds loaded
+// images ({ boost, logo }), drawn only once they've loaded.
+const ready = (img) => img && img.complete && img.naturalWidth > 0;
+
+export function drawGame(ctx, W, H, g, me, art = {}) {
   const y0 = H * 0.3;
   const yPlayer = H * 0.86;
   const hw0 = W * 0.03;
@@ -298,7 +310,7 @@ export function drawGame(ctx, W, H, g, me) {
     const scale = hwOf(y) / hwB;
     const w = W * 0.25 * scale;
     if (o.kind === "car") {
-      drawCar(ctx, x, y, w, { color: o.color, body: o.body, num: o.num });
+      drawCar(ctx, x, y, w, { color: o.color, body: o.body });
     } else if (o.kind === "cone") {
       ctx.fillStyle = "#F97316";
       ctx.beginPath();
@@ -325,13 +337,95 @@ export function drawGame(ctx, W, H, g, me) {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText("⏱", x, y - w * 0.35);
+    } else if (o.kind === "boost") {
+      // The Boosted Studios turbo, bobbing, with a blue glow.
+      const cy = y - w * 0.45 - Math.sin(g.t * 6) * w * 0.06;
+      const glow = ctx.createRadialGradient(x, cy, 0, x, cy, w * 0.6);
+      glow.addColorStop(0, "rgba(56,189,248,0.75)");
+      glow.addColorStop(1, "rgba(56,189,248,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x, cy, w * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+      const s = w * 0.78;
+      if (ready(art.boost)) {
+        ctx.drawImage(art.boost, x - s / 2, cy - s / 2, s, (s * art.boost.naturalHeight) / art.boost.naturalWidth);
+      } else {
+        ctx.fillStyle = "#1D4ED8";
+        ctx.beginPath();
+        ctx.arc(x, cy, w * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.font = `900 ${w * 0.36}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("B", x, cy);
+      }
     }
   }
 
   // You.
+  const myX = W / 2 + (g.laneX - 1) * hwOf(yPlayer) * 0.64;
+  const myW = W * 0.27;
+  if (g.boostT > 0) {
+    // Speed streaks.
+    ctx.strokeStyle = "rgba(186,230,253,0.55)";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 10; i++) {
+      const sx = ((i * 97 + g.t * 900) % W);
+      const sy = y0 + ((i * 53 + g.t * 1400) % (H - y0));
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(sx + (sx - W / 2) * 0.12, sy + 26);
+      ctx.stroke();
+    }
+  }
   const blink = g.crashT > 0 && Math.floor(g.crashT * 10) % 2 === 0;
   if (!blink) {
-    drawCar(ctx, W / 2 + (g.laneX - 1) * hwOf(yPlayer) * 0.64, yPlayer + H * 0.02, W * 0.27, me);
+    drawCar(ctx, myX, yPlayer + H * 0.02, myW, me);
+  }
+  if (g.boostT > 0) {
+    // Blue exhaust flames out the back.
+    const flame = 0.8 + Math.sin(g.t * 40) * 0.2;
+    for (const side of [-1, 1]) {
+      const fx = myX + side * myW * 0.2;
+      const fy = yPlayer + H * 0.02 - myW * 0.06;
+      const len = myW * 0.32 * flame;
+      const fl = ctx.createLinearGradient(fx, fy, fx, fy + len);
+      fl.addColorStop(0, "rgba(255,255,255,0.95)");
+      fl.addColorStop(0.35, "rgba(56,189,248,0.9)");
+      fl.addColorStop(1, "rgba(29,78,216,0)");
+      ctx.fillStyle = fl;
+      ctx.beginPath();
+      ctx.moveTo(fx - myW * 0.06, fy);
+      ctx.lineTo(fx + myW * 0.06, fy);
+      ctx.lineTo(fx, fy + len);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  // Boost banner: the Boosted Studios logo and what's left of the boost.
+  if (g.boostT > 0) {
+    const bw = Math.min(W * 0.62, 240);
+    const bh = ready(art.logo) ? (bw * art.logo.naturalHeight) / art.logo.naturalWidth : 0;
+    const by = 64;
+    ctx.globalAlpha = Math.min(1, g.boostT * 3);
+    if (bh) {
+      ctx.drawImage(art.logo, W / 2 - bw / 2, by, bw, bh);
+    } else {
+      ctx.fillStyle = "#38BDF8";
+      ctx.font = "900 28px 'Barlow Condensed', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText("BOOSTED!", W / 2, by);
+    }
+    const barY = by + (bh || 32) + 6;
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.fillRect(W / 2 - bw / 2, barY, bw, 5);
+    ctx.fillStyle = "#38BDF8";
+    ctx.fillRect(W / 2 - bw / 2, barY, (bw * g.boostT) / BOOST_TIME, 5);
+    ctx.globalAlpha = 1;
   }
 
   // Dashboard.
