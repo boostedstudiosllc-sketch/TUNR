@@ -1,31 +1,33 @@
 import { useEffect, useState } from "react";
-import {
-  POINTS,
-  isPointsMeet,
-  setPointsMeet,
-  getCheckinCode,
-  preciseLocation,
-  checkIn,
-  checkinMessage,
-  myCheckin,
-} from "../lib/points.js";
+import { POINTS, setMeetPoints, getCheckinCode, preciseLocation, checkIn, checkinMessage, myCheckin } from "../lib/points.js";
 import { loadProfile } from "../lib/store.js";
 import { field, bigButton, muted, label } from "./Sheet.jsx";
 
-// The ⭐ box on a meet that gives points. Attendees check in with today's
-// code and their location; the host (or an admin) sees the code to post at
-// the meet; admins switch points on and off. The database decides whether a
-// check-in counts, so this only collects what it needs and shows the answer.
-export default function CheckIn({ event, user, onNeedAccount, onToast }) {
-  const [on, setOn] = useState(null); // null = loading
+const BOOSTS = [10, 25, 50];
+
+// The ⭐ box on a meet. Any meet gives a point for checking in (location and
+// meet hours only); a boosted meet gives more and needs the host's code. The
+// host (or an admin) sees the code to post at the meet; admins set the boost.
+// The database decides whether a check-in counts.
+export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged }) {
   // Only for showing the admin controls; the database checks it again.
   const [isAdmin, setIsAdmin] = useState(false);
+  const [boost, setBoost] = useState(event.boostPoints ?? null);
+  const [custom, setCustom] = useState("");
   const [code, setCode] = useState("");
   const [hostCode, setHostCode] = useState(null);
   const [checkedIn, setCheckedIn] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const isHost = Boolean(event.canManage);
+  const base = Number(event.basePoints || 0);
+  const on = Boolean(boost) || base > 0;
+
+  useEffect(() => {
+    setBoost(event.boostPoints ?? null);
+    setMessage("");
+    setCode("");
+  }, [event.id, event.boostPoints]);
 
   useEffect(() => {
     if (!user) return setIsAdmin(false);
@@ -37,18 +39,6 @@ export default function CheckIn({ event, user, onNeedAccount, onToast }) {
       alive = false;
     };
   }, [user?.id]);
-
-  useEffect(() => {
-    let alive = true;
-    setOn(null);
-    setMessage("");
-    isPointsMeet(event.id)
-      .then((v) => alive && setOn(v))
-      .catch((e) => alive && (setOn(false), setMessage(e.message)));
-    return () => {
-      alive = false;
-    };
-  }, [event.id]);
 
   // A check-in in the last 12 hours means this occurrence is done.
   useEffect(() => {
@@ -66,7 +56,7 @@ export default function CheckIn({ event, user, onNeedAccount, onToast }) {
   }, [on, user?.id, event.id, isHost]);
 
   useEffect(() => {
-    if (!on || !(isHost || isAdmin)) return;
+    if (!boost || !(isHost || isAdmin)) return setHostCode(null);
     let alive = true;
     getCheckinCode(event.id)
       .then((r) => alive && setHostCode(r))
@@ -74,14 +64,15 @@ export default function CheckIn({ event, user, onNeedAccount, onToast }) {
     return () => {
       alive = false;
     };
-  }, [on, isHost, isAdmin, event.id]);
+  }, [boost, isHost, isAdmin, event.id]);
 
-  async function toggle() {
+  async function changeBoost(points) {
     setBusy(true);
     try {
-      await setPointsMeet(event.id, !on);
-      setOn(!on);
-      onToast(on ? "Points turned off for this meet" : "⭐ This meet now gives points");
+      await setMeetPoints(event.id, points);
+      setBoost(points || null);
+      onToast(points ? `⭐ Boosted to ${points} points` : `Back to the regular ${base || 0} point${base === 1 ? "" : "s"}`);
+      onChanged && onChanged();
     } catch (e) {
       onToast(e.message);
     } finally {
@@ -91,7 +82,7 @@ export default function CheckIn({ event, user, onNeedAccount, onToast }) {
 
   async function submit() {
     if (!user) return onNeedAccount();
-    if (code.replace(/[^A-Za-z0-9]/g, "").length < 6) {
+    if (boost && code.replace(/[^A-Za-z0-9]/g, "").length < 6) {
       setMessage("Enter the 6-character code from the host or the sign at the meet.");
       return;
     }
@@ -99,10 +90,10 @@ export default function CheckIn({ event, user, onNeedAccount, onToast }) {
     setMessage("");
     try {
       const pos = await preciseLocation();
-      const result = await checkIn(event.id, code, pos);
+      const result = await checkIn(event.id, boost ? code : null, pos);
       if (result.status === "ok") {
         setCheckedIn(true);
-        onToast(`⭐ Checked in: +${result.points} points${result.rsvp_bonus ? " (RSVP bonus)" : ""}`);
+        onToast(`⭐ Checked in: +${result.points} point${result.points === 1 ? "" : "s"}${result.rsvp_bonus ? " (RSVP bonus)" : ""}`);
       } else {
         setMessage(checkinMessage(result));
       }
@@ -113,39 +104,65 @@ export default function CheckIn({ event, user, onNeedAccount, onToast }) {
     }
   }
 
-  if (on === null) return null;
-  if (!on && !isAdmin) {
-    return message ? <div style={{ ...muted, color: "#F87171", marginTop: 12 }}>{message}</div> : null;
-  }
+  if (!on && !isAdmin) return null;
 
   return (
-    <div style={box}>
+    <div style={boost ? boostedBox : box}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 0.6, color: on ? "#FACC15" : "#888" }}>
-          {on ? "⭐ POINTS MEET" : "⭐ POINTS: OFF"}
+        <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 0.6, color: boost ? "#FACC15" : on ? "#E5C76B" : "#888" }}>
+          {boost ? `⭐ BOOSTED: +${boost} POINTS` : on ? `+${base} POINT${base === 1 ? "" : "S"} FOR CHECKING IN` : "⭐ NO POINTS"}
         </div>
-        {isAdmin && (
-          <button onClick={toggle} disabled={busy} style={smallButton}>
-            {on ? "TURN OFF" : "TURN ON"}
-          </button>
+      </div>
+
+      <div style={{ ...muted, marginTop: 4 }}>
+        {boost ? (
+          <>
+            Check in with the code shown at the meet for <b style={{ color: "#F0F0F0" }}>+{boost}</b>, plus{" "}
+            <b style={{ color: "#F0F0F0" }}>+{POINTS.rsvpBonus}</b> if you RSVP'd going before it started.
+          </>
+        ) : on ? (
+          <>Every meet gives a point when you check in there. Boosted ⭐ meets give more.</>
+        ) : (
+          <>This meet doesn't give the regular point (no map pin, or posted less than a day ahead). You can still boost it.</>
         )}
       </div>
 
-      {!on && (
-        <div style={{ ...muted, marginTop: 6 }}>
-          Admin only: turn on to let people earn points here. Only do this for meets you trust, and
-          check the map pin is right: check-ins must be within a quarter mile of it.
+      {isAdmin && (
+        <div style={{ marginTop: 10 }}>
+          <div style={label}>ADMIN: BOOST THIS MEET</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {BOOSTS.map((n) => (
+              <button key={n} disabled={busy} onClick={() => changeBoost(n)} style={{ ...chip, ...(boost === n ? chipOn : {}) }}>
+                +{n}
+              </button>
+            ))}
+            <input
+              style={{ ...field, width: 74, padding: "7px 8px", textAlign: "center" }}
+              inputMode="numeric"
+              placeholder="Other"
+              aria-label="Custom boosted points"
+              value={custom}
+              onChange={(e) => setCustom(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              onKeyDown={(e) => e.key === "Enter" && Number(custom) > 0 && changeBoost(Number(custom))}
+            />
+            {custom && (
+              <button disabled={busy} onClick={() => changeBoost(Number(custom))} style={chip}>
+                SET
+              </button>
+            )}
+            {boost && (
+              <button disabled={busy} onClick={() => changeBoost(null)} style={{ ...chip, color: "#F87171" }}>
+                REMOVE BOOST
+              </button>
+            )}
+          </div>
+          <div style={{ ...muted, fontSize: 11.5, marginTop: 4 }}>
+            Check the map pin is right: check-ins must be within a quarter mile of it.
+          </div>
         </div>
       )}
 
-      {on && (
-        <div style={{ ...muted, marginTop: 4 }}>
-          Check in at the meet for <b style={{ color: "#F0F0F0" }}>+{POINTS.checkin} points</b>, plus{" "}
-          <b style={{ color: "#F0F0F0" }}>+{POINTS.rsvpBonus}</b> if you said you're going before it started.
-        </div>
-      )}
-
-      {on && (isHost || isAdmin) && (
+      {boost && (isHost || isAdmin) && (
         <div style={{ marginTop: 12, background: "#0D0D0D", border: "1px dashed #3A3A3A", borderRadius: 10, padding: "10px 12px" }}>
           <div style={label}>TODAY'S CHECK-IN CODE {isHost ? "(HOSTS ONLY)" : "(ADMIN)"}</div>
           {hostCode === null ? (
@@ -160,45 +177,39 @@ export default function CheckIn({ event, user, onNeedAccount, onToast }) {
           ) : hostCode.status === "not_today" ? (
             <div style={muted}>The code shows up here on the day of the meet.</div>
           ) : (
-            <div style={{ ...muted, color: "#F87171" }}>
-              {hostCode.message || `Couldn't get the code. (${hostCode.status})`}
-            </div>
+            <div style={{ ...muted, color: "#F87171" }}>{hostCode.message || `Couldn't get the code. (${hostCode.status})`}</div>
           )}
-          {isHost && <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>Hosts don't earn points at their own meet.</div>}
         </div>
       )}
+      {isHost && on && <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>Hosts don't earn points at their own meet.</div>}
 
-      {on && !isHost && (
-        checkedIn ? (
+      {on && !isHost &&
+        (checkedIn ? (
           <div style={{ marginTop: 12, fontSize: 15, fontWeight: 800, color: "#10B981" }}>✓ You're checked in. Enjoy the meet!</div>
         ) : (
           <div style={{ marginTop: 12 }}>
-            <input
-              style={{ ...field, textAlign: "center", letterSpacing: 6, fontSize: 18, fontWeight: 800, textTransform: "uppercase" }}
-              placeholder="CODE"
-              aria-label="Check-in code"
-              maxLength={8}
-              autoCapitalize="characters"
-              autoCorrect="off"
-              spellCheck={false}
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-            />
-            <button
-              className="action-btn"
-              onClick={submit}
-              disabled={busy}
-              style={{ ...bigButton, marginTop: 8, opacity: busy ? 0.6 : 1 }}
-            >
-              {busy ? "CHECKING…" : "📍 CHECK IN"}
+            {boost && (
+              <input
+                style={{ ...field, textAlign: "center", letterSpacing: 6, fontSize: 18, fontWeight: 800, textTransform: "uppercase", marginBottom: 8 }}
+                placeholder="CODE"
+                aria-label="Check-in code"
+                maxLength={8}
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+              />
+            )}
+            <button className="action-btn" onClick={submit} disabled={busy} style={{ ...bigButton, opacity: busy ? 0.6 : 1 }}>
+              {busy ? "CHECKING…" : `📍 CHECK IN · +${boost || base}`}
             </button>
             <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>
-              Works from 30 minutes before the start until the meet ends, within a quarter mile of
-              the pin. TUNR checks your location once and keeps only how far you were.
+              Works from 30 minutes before the start until the meet ends, within a quarter mile of the
+              pin. TUNR checks your location once and keeps only how far you were.
             </div>
           </div>
-        )
-      )}
+        ))}
 
       {message && (
         <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>
@@ -211,22 +222,30 @@ export default function CheckIn({ event, user, onNeedAccount, onToast }) {
 
 const box = {
   marginTop: 12,
-  background: "linear-gradient(180deg, #1A1500 0%, #111 100%)",
-  border: "1px solid #3A3000",
+  background: "#121212",
+  border: "1px solid #2A2A2A",
   borderRadius: 12,
   padding: "12px 14px 14px",
 };
 
-const smallButton = {
-  padding: "8px 12px",
-  minHeight: 36,
+const boostedBox = {
+  ...box,
+  background: "linear-gradient(180deg, #1A1500 0%, #111 100%)",
+  border: "1px solid #3A3000",
+};
+
+const chip = {
+  padding: "7px 12px",
+  minHeight: 34,
   background: "#1A1A1A",
   border: "1px solid #2A2A2A",
   borderRadius: 8,
   color: "#CCC",
-  fontSize: 12,
+  fontSize: 12.5,
   fontWeight: 800,
-  letterSpacing: 1,
+  letterSpacing: 0.5,
   cursor: "pointer",
   fontFamily: "'Barlow Condensed', sans-serif",
 };
+
+const chipOn = { borderColor: "#FACC15", color: "#FACC15", background: "rgba(250,204,21,0.1)" };

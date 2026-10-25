@@ -103,10 +103,12 @@ export async function loadEvents(userId = null) {
   if (!supabase) {
     return [...read(SUBMITTED_KEY, []), ...seedEvents];
   }
-  let [eventsRes, countsRes, foundingRes] = await Promise.all([
+  let [eventsRes, countsRes, foundingRes, boostRes, pointsRes] = await Promise.all([
     supabase.from("events_public").select("*"),
     supabase.from("event_rsvp_counts").select("*"),
     supabase.from("verified_hosts").select("host").eq("founding", true),
+    supabase.from("points_meets").select("event_id, points"),
+    supabase.from("points_settings").select("base_meet_points").maybeSingle(),
   ]);
 
   // events_public arrives with migration 008. Until that has been run, read
@@ -132,9 +134,19 @@ export async function loadEvents(userId = null) {
   const founding = new Set(
     (Array.isArray(foundingRes?.data) ? foundingRes.data : []).map((r) => normalizeHost(r.host))
   );
+  // Points are decorative on the list too: boosted meets, and the amount any
+  // meet gives for checking in (the database makes the real call).
+  const boosts = new Map((Array.isArray(boostRes?.data) ? boostRes.data : []).map((r) => [r.event_id, r.points]));
+  const basePoints = Number(pointsRes?.data?.base_meet_points ?? 0);
   return rows.map((r) => {
     const event = rowToEvent(r, counts, userId);
     event.foundingHost = founding.has(normalizeHost(r.host));
+    event.boostPoints = boosts.get(r.id) ?? null;
+    // Same rules as check_in_at_meet (052): a map pin, and a one-off posted
+    // at least a day ahead.
+    const postedAhead =
+      Boolean(r.recurrence) || (r.start_at && r.created_at && new Date(r.created_at) <= new Date(new Date(r.start_at).getTime() - 864e5));
+    event.basePoints = basePoints > 0 && r.lat != null && r.lng != null && postedAhead ? basePoints : 0;
     return event;
   });
 }

@@ -61,7 +61,7 @@ import { INVITE_PARAM, rememberPendingInvite, takePendingInvite, claimInvite } f
 import InviteSheet from "./components/InviteSheet.jsx";
 import { recordSignIn } from "./lib/activity.js";
 
-const BASE_FILTERS = ["All", "Today", "This Weekend", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
+const BASE_FILTERS = ["All", "Today", "This Weekend", "⭐ Points", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
 const SORTS = [
   { id: "soonest", label: "SOONEST" },
@@ -292,6 +292,7 @@ export default function App() {
           );
         if (filter === "Today") return isToday(e, now);
         if (filter === "This Weekend") return isThisWeekend(e, now);
+        if (filter === "⭐ Points") return Boolean(e.boostPoints);
         return e.vibe === filter;
       })
       .filter((e) => {

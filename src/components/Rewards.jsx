@@ -160,8 +160,9 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
         {rates.member_bonus > 0 && (
           <EarnRow icon="💎" text="Become a TUNR member (one time)" pts={`+${rates.member_bonus}`} done={points?.earned > 0 && history.some((h) => h.label === "Membership bonus")} />
         )}
-        <EarnRow icon="📍" text="Check in at a ⭐ points meet" pts={`+${POINTS.checkin}`} />
-        <EarnRow icon="🙋" text="RSVP “Going” before it starts, then show up" pts={`+${POINTS.rsvpBonus}`} />
+        <EarnRow icon="📍" text="Check in at any meet" pts="+1" />
+        <EarnRow icon="⭐" text="Check in at a boosted meet (code shown at the meet)" pts="+10 to +50" />
+        <EarnRow icon="🙋" text="RSVP “Going” to a boosted meet, then show up" pts={`+${POINTS.rsvpBonus}`} />
         <div style={{ ...label, marginTop: 12 }}>GETTING STARTED (ONE TIME)</div>
         <EarnRow icon="👤" text="Profile photo, username and bio" pts={`+${POINTS.profile}`} done={starter?.profile} />
         <EarnRow icon="🚗" text="Add your car to your garage" pts={`+${POINTS.car}`} done={starter?.car} />
@@ -172,8 +173,8 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
           </div>
         )}
         <div style={{ ...muted, fontSize: 12, marginTop: 10 }}>
-          Check-in needs the code shown at the meet and your location, during the meet. One check-in
-          per meet per day, 3 a day at most.
+          Check in from the meet itself, during the meet. Boosted meets also need the code shown
+          there. One check-in per meet per day, 3 a day at most.
         </div>
       </div>
 

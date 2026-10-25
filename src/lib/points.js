@@ -25,6 +25,7 @@ const CHECKIN_COPY = {
   rate_limited: "Too many tries. Wait an hour and try again.",
   not_found: "This meet isn't available.",
   not_points_meet: "This meet doesn't give points.",
+  posted_too_late: "This meet was posted less than a day before it started, so it doesn't give points.",
   own_meet: "Hosts don't earn points at their own meet.",
   not_happening: "Check-in opens 30 minutes before the meet starts and closes when it ends.",
   no_pin: "This meet has no map pin yet, so check-in can't confirm you're there. Ask the host to add the address.",
@@ -83,6 +84,13 @@ export async function isPointsMeet(eventId) {
   const { data, error } = await supabase.from("points_meets").select("event_id").eq("event_id", eventId).limit(1);
   if (error) throw new Error(withReason("Couldn't check whether this meet gives points.", error));
   return Boolean(data && data.length);
+}
+
+// An admin boosts a meet to more points (0 or null puts it back to normal).
+export async function setMeetPoints(eventId, points) {
+  need();
+  const { error } = await supabase.rpc("set_meet_points", { p_event: eventId, p_points: points || null });
+  if (error) throw new Error(friendlyWriteError(error, "Couldn't change this meet's points."));
 }
 
 export async function setPointsMeet(eventId, on) {

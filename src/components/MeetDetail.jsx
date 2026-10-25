@@ -456,7 +456,7 @@ export default function MeetDetail({
           </div>
 
           {!locked && (
-            <CheckIn event={event} user={user} onNeedAccount={onNeedAccount} onToast={onToast} />
+            <CheckIn event={event} user={user} onChanged={onJoined} onNeedAccount={onNeedAccount} onToast={onToast} />
           )}
 
           {event.source && (

@@ -72,6 +72,11 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
           {event.vibe}
         </div>
         <div style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 6 }}>
+          {event.boostPoints ? (
+            <Badge points>⭐ +{event.boostPoints} PTS</Badge>
+          ) : event.basePoints ? (
+            <Badge>+{event.basePoints} PT{event.basePoints === 1 ? "" : "S"}</Badge>
+          ) : null}
           {event.visibility === "private" && <Badge>🔒 PRIVATE</Badge>}
           {event.recurrence && <Badge>WEEKLY</Badge>}
           {event.verified && (
@@ -247,13 +252,13 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
   );
 }
 
-function Badge({ children, accent = false }) {
+function Badge({ children, accent = false, points = false }) {
   return (
     <div
       style={{
-        background: accent ? "rgba(255,69,0,0.2)" : "rgba(0,0,0,0.7)",
-        border: accent ? "1px solid #FF4500" : "1px solid #444",
-        color: accent ? "#FF4500" : "#aaa",
+        background: points ? "rgba(26,21,0,0.9)" : accent ? "rgba(255,69,0,0.2)" : "rgba(0,0,0,0.7)",
+        border: points ? "1px solid #FACC15" : accent ? "1px solid #FF4500" : "1px solid #444",
+        color: points ? "#FACC15" : accent ? "#FF4500" : "#aaa",
         fontSize: 9,
         fontWeight: 700,
         padding: "3px 7px",
