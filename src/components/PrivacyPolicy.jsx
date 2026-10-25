@@ -128,6 +128,12 @@ export default function PrivacyPolicy({ onClose }) {
           order number, the email you bought with and your note, used only to find that order), your points history, and the rewards you claim with their claim codes.
           <br />
           <br />
+          <strong>TUNR Rush:</strong> each run you play while signed in (when it started and
+          ended, the distance and score, and which of your cars you drove), plus the color and
+          body style you pick for each car. Your best run this week can appear on the game
+          leaderboard with your username and car, unless you turn off “Show me on leaderboards”.
+          <br />
+          <br />
           <strong>Location:</strong> only at the moment you tap something that needs it, and only
           while the app is open. We don't track your location in the background, even if your
           phone's setting for TUNR (or your browser) is “Always”. Without location, the features

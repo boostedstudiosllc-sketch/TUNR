@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { loadPerks, recordRedemption, loadProfile, track } from "../lib/store.js";
 import { loadMyPoints, hasPendingCard, takePendingCard } from "../lib/points.js";
 import { RewardsSheet } from "./Rewards.jsx";
+import TunrRush from "./TunrRush.jsx";
 
 const CATEGORY_LABELS = {
   detailing: "DETAILING",
@@ -27,6 +28,7 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
   const [points, setPoints] = useState(null);
   const [showRewards, setShowRewards] = useState(false);
   const [scannedCard, setScannedCard] = useState("");
+  const [playing, setPlaying] = useState(false);
 
   // Arrived by scanning a points card: open straight to it.
   useEffect(() => {
@@ -131,6 +133,48 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
           points={points}
           onOpen={() => (user ? setShowRewards(true) : onNeedAccount())}
         />
+        <button
+          className="action-btn"
+          onClick={() => setPlaying(true)}
+          style={{
+            width: "100%",
+            marginBottom: 14,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "14px 16px",
+            background: "linear-gradient(135deg, #2A0E00, #141414)",
+            border: "1px solid #5A2200",
+            borderRadius: 12,
+            color: "#F0F0F0",
+            textAlign: "left",
+            cursor: "pointer",
+            fontFamily: "'Barlow Condensed', sans-serif",
+          }}
+        >
+          <span aria-hidden="true" style={{ fontSize: 28 }}>🎮</span>
+          <span style={{ flex: 1 }}>
+            <span style={{ display: "block", fontSize: 17, fontWeight: 900, letterSpacing: 0.5 }}>
+              TUNR <span style={{ color: "#FF4500" }}>RUSH</span>
+            </span>
+            <span style={{ display: "block", fontSize: 12.5, color: "#C2724A", fontFamily: "'Barlow', sans-serif" }}>
+              Drive your own car. Reach 3,000 m for +1 point a day.
+            </span>
+          </span>
+          <span aria-hidden="true" style={{ fontSize: 20, color: "#C2724A" }}>›</span>
+        </button>
+        {playing && (
+          <TunrRush
+            user={user}
+            onClose={() => setPlaying(false)}
+            onToast={onToast}
+            onNeedAccount={() => {
+              setPlaying(false);
+              onNeedAccount();
+            }}
+          />
+        )}
+
         {showRewards && user && (
           <RewardsSheet
             user={user}

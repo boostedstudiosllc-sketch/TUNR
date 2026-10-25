@@ -214,6 +214,7 @@ const REASON_LABELS = {
   streak_bonus: "Weekly streak bonus",
   referral_bonus: "A friend you brought checked in",
   welcome_bonus: "Welcome bonus: your first meet",
+  game_bonus: "TUNR Rush daily drive",
   starter_profile: "Finished your profile",
   starter_car: "Added your car",
   starter_alerts: "Turned on alerts",
