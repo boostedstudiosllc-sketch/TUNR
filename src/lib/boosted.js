@@ -18,6 +18,15 @@ const blank = (v) => {
   return t ? t : null;
 };
 
+// "@a, @b" (or an array) → ["a", "b"], or null when empty. Up to three.
+export function instagramList(value) {
+  const list = (Array.isArray(value) ? value : String(value || "").split(/[\s,]+/))
+    .map((h) => String(h).trim().replace(/^@/, ""))
+    .filter(Boolean)
+    .slice(0, 3);
+  return list.length ? list : null;
+}
+
 export async function saveBoostedBusiness(b) {
   if (!supabase) return;
   const row = {
@@ -27,7 +36,7 @@ export async function saveBoostedBusiness(b) {
     description: blank(b.description),
     website: blank(b.website),
     booking_url: blank(b.booking_url),
-    instagram: blank(String(b.instagram || "").replace(/^@/, "")),
+    instagram: instagramList(b.instagram),
     email: blank(b.email),
     phone: blank(b.phone),
     sort: Number(b.sort) || 100,

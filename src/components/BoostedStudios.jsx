@@ -67,11 +67,11 @@ export default function BoostedPage({ onOpenPerks }) {
             )}
             {b.booking_url && <a href={b.booking_url} target="_blank" rel="noreferrer" style={{ ...chip, ...chipHot }}>📅 Book</a>}
             {b.website && <a href={b.website} target="_blank" rel="noreferrer" style={chip}>🌐 Website</a>}
-            {b.instagram && (
-              <a href={`https://instagram.com/${b.instagram}`} target="_blank" rel="noreferrer" style={chip}>
-                📷 @{b.instagram}
+            {(b.instagram || []).map((h) => (
+              <a key={h} href={`https://instagram.com/${h}`} target="_blank" rel="noreferrer" style={chip}>
+                📷 @{h}
               </a>
-            )}
+            ))}
             {b.phone && <a href={`tel:${b.phone.replace(/[^\d+]/g, "")}`} style={chip}>📞 Call</a>}
             {b.email && <a href={`mailto:${b.email}?subject=${encodeURIComponent(b.name)}`} style={chip}>✉️ Email</a>}
           </div>
@@ -137,7 +137,7 @@ export function BoostedAdmin({ onToast }) {
         </div>
         {input("booking_url", "BOOKING LINK (OPTIONAL)", "https://…", { autoCapitalize: "none" })}
         {input("website", "WEBSITE (OPTIONAL)", "https://…", { autoCapitalize: "none" })}
-        {input("instagram", "INSTAGRAM (OPTIONAL)", "@boostedstudios", { autoCapitalize: "none" })}
+        {input("instagram", "INSTAGRAM (OPTIONAL, UP TO 3, SEPARATE WITH COMMAS)", "@boostedstudios.png, @boostedstudios.portfolio", { autoCapitalize: "none" })}
         {input("email", "EMAIL (OPTIONAL)", "you@example.com", { autoCapitalize: "none", type: "email" })}
         {input("phone", "PHONE (OPTIONAL)", "(404) 555-0100", { inputMode: "tel" })}
         {input("sort", "ORDER (LOWER SHOWS FIRST)", "100", { inputMode: "numeric" })}
@@ -165,7 +165,7 @@ export function BoostedAdmin({ onToast }) {
       {(rows || []).map((b) => (
         <button
           key={b.id}
-          onClick={() => setDraft({ ...EMPTY, ...b, instagram: b.instagram || "", sort: String(b.sort) })}
+          onClick={() => setDraft({ ...EMPTY, ...b, instagram: (b.instagram || []).map((h) => `@${h}`).join(", "), sort: String(b.sort) })}
           style={{ ...card, width: "100%", textAlign: "left", color: "#F0F0F0", cursor: "pointer", opacity: b.active ? 1 : 0.5 }}
         >
           <span style={{ fontSize: 16, fontWeight: 900 }}>
@@ -173,7 +173,7 @@ export function BoostedAdmin({ onToast }) {
             {b.active ? "" : " (hidden)"}
           </span>
           <span style={{ display: "block", ...muted, fontSize: 12 }}>
-            {[b.booking_url && "booking", b.website && "website", b.instagram && "Instagram", b.email && "email", b.phone && "phone"]
+            {[b.booking_url && "booking", b.website && "website", b.instagram?.length && `Instagram ×${b.instagram.length}`, b.email && "email", b.phone && "phone"]
               .filter(Boolean)
               .join(" · ") || "No links yet"}
           </span>
