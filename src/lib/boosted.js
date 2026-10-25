@@ -39,6 +39,7 @@ export async function saveBoostedBusiness(b) {
     instagram: instagramList(b.instagram),
     email: blank(b.email),
     phone: blank(b.phone),
+    contact_form: Boolean(b.contact_form),
     sort: Number(b.sort) || 100,
     active: b.active !== false,
   };

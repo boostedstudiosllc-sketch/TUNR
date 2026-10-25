@@ -1,20 +1,22 @@
 import { useEffect, useState } from "react";
 import { loadBoostedBusinesses, saveBoostedBusiness } from "../lib/boosted.js";
 import { openInvites } from "../lib/invites.js";
+import DetailingRequest from "./DetailingRequest.jsx";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
 
-export function BoostedSheet({ onClose, onOpenPerks }) {
+export function BoostedSheet({ onClose, ...rest }) {
   return (
     <Sheet onClose={onClose} label="Boosted Studios" zIndex={296}>
       <div style={sheetTitle}>BOOSTED STUDIOS</div>
-      <BoostedPage onOpenPerks={onOpenPerks} />
+      <BoostedPage {...rest} />
     </Sheet>
   );
 }
 
 // Every business in the Boosted Studios family, with how to reach each.
-export default function BoostedPage({ onOpenPerks }) {
+export default function BoostedPage({ onOpenPerks, user, onToast, onNeedAccount }) {
   const [rows, setRows] = useState(null);
+  const [requesting, setRequesting] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => {
     loadBoostedBusinesses()
@@ -65,6 +67,9 @@ export default function BoostedPage({ onOpenPerks }) {
             {b.slug === "tunr" && (
               <button onClick={() => openInvites()} style={chip}>🎁 Invite friends</button>
             )}
+            {b.contact_form && (
+              <button onClick={() => setRequesting(true)} style={{ ...chip, ...chipHot }}>🧽 Request a detail</button>
+            )}
             {b.booking_url && <a href={b.booking_url} target="_blank" rel="noreferrer" style={{ ...chip, ...chipHot }}>📅 Book</a>}
             {b.website && <a href={b.website} target="_blank" rel="noreferrer" style={chip}>🌐 Website</a>}
             {(b.instagram || []).map((h) => (
@@ -77,11 +82,14 @@ export default function BoostedPage({ onOpenPerks }) {
           </div>
         </div>
       ))}
+      {requesting && (
+        <DetailingRequest user={user} onClose={() => setRequesting(false)} onToast={onToast} onNeedAccount={onNeedAccount} />
+      )}
     </div>
   );
 }
 
-const EMPTY = { name: "", icon: "🏁", tagline: "", description: "", website: "", booking_url: "", instagram: "", email: "", phone: "", sort: 100, active: true };
+const EMPTY = { name: "", icon: "🏁", tagline: "", description: "", website: "", booking_url: "", instagram: "", email: "", phone: "", sort: 100, active: true, contact_form: false };
 
 // Admins edit the page here: links, wording, order, or add a new business.
 export function BoostedAdmin({ onToast }) {
@@ -144,6 +152,10 @@ export function BoostedAdmin({ onToast }) {
         <label style={{ ...muted, display: "flex", gap: 8, alignItems: "center", marginTop: 10 }}>
           <input type="checkbox" checked={draft.active !== false} onChange={(e) => set({ active: e.target.checked })} /> Show it on the page
         </label>
+        <label style={{ ...muted, display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
+          <input type="checkbox" checked={Boolean(draft.contact_form)} onChange={(e) => set({ contact_form: e.target.checked })} /> Take detail
+          requests in the app (they land in Settings → Inbox)
+        </label>
         {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
         <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
           <button disabled={busy} onClick={save} style={{ ...bigButton, flex: 1 }}>{busy ? "SAVING…" : "SAVE"}</button>
@@ -173,7 +185,7 @@ export function BoostedAdmin({ onToast }) {
             {b.active ? "" : " (hidden)"}
           </span>
           <span style={{ display: "block", ...muted, fontSize: 12 }}>
-            {[b.booking_url && "booking", b.website && "website", b.instagram?.length && `Instagram ×${b.instagram.length}`, b.email && "email", b.phone && "phone"]
+            {[b.contact_form && "request form", b.booking_url && "booking", b.website && "website", b.instagram?.length && `Instagram ×${b.instagram.length}`, b.email && "email", b.phone && "phone"]
               .filter(Boolean)
               .join(" · ") || "No links yet"}
           </span>

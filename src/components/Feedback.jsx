@@ -162,7 +162,7 @@ export function FeedbackInbox({ onToast }) {
 
   async function refresh() {
     try {
-      setRows(await loadFeedbackInbox(status, kind));
+      setRows(kind === "detailing" ? await loadFeedbackInbox(status, null, "detailing") : await loadFeedbackInbox(status, kind));
       setError("");
     } catch (e) {
       setError(e.message);
@@ -185,7 +185,7 @@ export function FeedbackInbox({ onToast }) {
     }
   }
 
-  const tab = (active) => ({ ...quietButton, flex: 1, padding: "10px 0", ...(active ? { borderColor: "#FF4500", color: "#FF7A00" } : {}) });
+  const tab = (active) => ({ ...quietButton, flex: 1, padding: "10px 0", ...(active ? { border: "1px solid #FF4500", color: "#FF7A00" } : {}) });
 
   return (
     <div>
@@ -205,6 +205,7 @@ export function FeedbackInbox({ onToast }) {
           [null, "ALL"],
           ["contact", "💬 CONTACT"],
           ["suggestion", "💡 IDEAS"],
+          ["detailing", "🧽 DETAIL"],
         ].map(([id, name]) => (
           <button key={name} onClick={() => setKind(id)} style={tab(kind === id)}>
             {name}
@@ -216,12 +217,17 @@ export function FeedbackInbox({ onToast }) {
       {(rows || []).map((r) => (
         <div key={r.id} style={{ background: "#121212", border: "1px solid #222", borderRadius: 12, padding: "12px 14px", marginTop: 10 }}>
           <div style={{ fontSize: 12, fontWeight: 800, color: "#A0A0A0" }}>
-            {r.kind === "suggestion" ? "💡" : "💬"} {topicLabel(r.kind, r.topic).toUpperCase()} · {when(r.created_at)}
+            {r.kind === "suggestion" ? "💡" : r.topic === "detailing" ? "🧽" : "💬"} {topicLabel(r.kind, r.topic).toUpperCase()} · {when(r.created_at)}
           </div>
           <div style={{ ...muted, fontSize: 12.5, marginTop: 4 }}>
             @{r.username || "no username"} · {r.reply_email || r.account_email || "no email"}
             {r.device ? ` · ${r.device}` : ""}
           </div>
+          {r.phone && (
+            <a href={`tel:${r.phone.replace(/[^\d+]/g, "")}`} style={{ display: "inline-block", marginTop: 4, fontSize: 13, color: "#38BDF8", fontFamily: "'Barlow', sans-serif" }}>
+              📞 {r.phone}
+            </a>
+          )}
           <div style={{ ...muted, color: "#EEE", marginTop: 8, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{r.message}</div>
           {r.reply && <div style={{ ...muted, marginTop: 8, color: "#10B981" }}>Your reply: {r.reply}</div>}
           {status === "new" && (
@@ -239,7 +245,7 @@ export function FeedbackInbox({ onToast }) {
               </div>
               {(r.reply_email || r.account_email) && (
                 <a
-                  href={`mailto:${r.reply_email || r.account_email}?subject=${encodeURIComponent("About your message to TUNR")}`}
+                  href={`mailto:${r.reply_email || r.account_email}?subject=${encodeURIComponent(r.topic === "detailing" ? "Your Boosted Detailing request" : "About your message to TUNR")}`}
                   style={{ display: "inline-block", marginTop: 8, fontSize: 12.5, color: "#38BDF8", fontFamily: "'Barlow', sans-serif" }}
                 >
                   Or reply by email →

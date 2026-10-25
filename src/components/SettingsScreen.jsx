@@ -451,7 +451,7 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
     case "location":
       return <LocationPage onToast={onToast} />;
     case "boosted":
-      return <BoostedPage onOpenPerks={() => onFollow("tab:perks")} />;
+      return <BoostedPage onOpenPerks={() => onFollow("tab:perks")} user={user} onToast={onToast} onNeedAccount={() => {}} />;
     case "boostedAdmin":
       return <BoostedAdmin onToast={onToast} />;
     case "contact":

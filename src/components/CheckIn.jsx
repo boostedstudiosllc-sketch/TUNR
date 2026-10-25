@@ -90,6 +90,7 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
   }, [boost, isHost, isAdmin, event.id]);
 
   async function changeBoost(points) {
+    if (points > 10) return onToast("Boosted meets top out at 10 points.");
     setBusy(true);
     try {
       await setMeetPoints(event.id, points);
@@ -183,7 +184,7 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
               placeholder="Other"
               aria-label="Custom boosted points"
               value={custom}
-              onChange={(e) => setCustom(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              onChange={(e) => setCustom(e.target.value.replace(/\D/g, "").slice(0, 2))}
               onKeyDown={(e) => e.key === "Enter" && Number(custom) > 0 && changeBoost(Number(custom))}
             />
             {custom && (

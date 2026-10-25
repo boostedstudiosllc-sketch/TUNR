@@ -101,7 +101,9 @@ export default function PrivacyPolicy({ onClose }) {
           <br />
           <strong>Messages to us:</strong> what you send through Contact us or the Suggestion box,
           the topic, an optional reply email, and your device type, so we can answer and fix
-          problems.
+          problems. A Boosted Detailing request also includes what you'd like done, your car,
+          and, if you add them, when works, your area and a phone number, used only to answer
+          that request.
           <br />
           <br />
           <strong>Leaderboards:</strong> unless you turn it off (Settings → Privacy and safety →

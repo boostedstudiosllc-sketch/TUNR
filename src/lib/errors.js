@@ -77,7 +77,7 @@ const WRITE_ERROR_COPY = {
   invite_to_unlock_clubs: "Invite 1 friend to start your own club. Profile → 🎁 Invite.",
   invite_to_unlock_flair: "Invite 5 friends to unlock profile colors. Profile → 🎁 Invite.",
   profiles_profile_color_check: "Pick one of the colors shown.",
-  points_meets_points_check: "Boosted points have to be between 1 and 1,000.",
+  points_meets_points_check: "Boosted meets give 1 to 10 points.",
   rewards_cost_check: "A reward has to cost between 1 and 100,000 points.",
   rewards_title_check: "Give the reward a name of up to 80 characters.",
   rewards_per_person_check: "Max per person has to be between 1 and 50.",

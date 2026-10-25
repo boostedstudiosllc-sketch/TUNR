@@ -21,7 +21,10 @@ export const TOPICS = {
   ],
 };
 
-export const topicLabel = (kind, id) => (TOPICS[kind] || []).find((t) => t.id === id)?.label || id;
+// Detailing requests come from their own form, not the topic picker.
+const OTHER_TOPICS = { detailing: "Boosted Detailing request" };
+
+export const topicLabel = (kind, id) => (TOPICS[kind] || []).find((t) => t.id === id)?.label || OTHER_TOPICS[id] || id;
 
 const SEND_COPY = {
   not_signed_in: "Sign in to send a message.",
@@ -44,6 +47,34 @@ export async function sendFeedback({ kind, topic, message, replyEmail }) {
   if (data?.status !== "ok") throw new Error(SEND_COPY[data?.status] || `Couldn't send your message. (${data?.status})`);
 }
 
+// Boosted Detailing requests (061_detailing_requests_and_shirt.sql).
+export const DETAIL_SERVICES = ["Full detail", "Interior", "Exterior", "Not sure yet"];
+
+const DETAIL_COPY = {
+  not_signed_in: "Sign in to send a request.",
+  bad_service: "Pick what you need done.",
+  need_car: "Add your car's year, make and model.",
+  bad_phone: "That phone number doesn't look right, like (404) 555-0134. Or leave it empty.",
+  bad_email: "That reply email doesn't look right, like name@gmail.com. Or leave it empty.",
+  rate_limited: "That's 5 messages today, the limit. Try again tomorrow.",
+};
+
+export async function requestDetail({ service, car, when, area, phone, email, notes }) {
+  if (!supabase) throw new Error("Sending a request needs an account.");
+  const { data, error } = await supabase.rpc("request_detail", {
+    p_service: service,
+    p_car: car,
+    p_when: when || null,
+    p_area: area || null,
+    p_phone: phone || null,
+    p_reply_email: email || null,
+    p_notes: notes || null,
+    p_device: deviceLabel(),
+  });
+  if (error) throw new Error(withReason("Couldn't send your request.", error));
+  if (data?.status !== "ok") throw new Error(DETAIL_COPY[data?.status] || `Couldn't send your request. (${data?.status})`);
+}
+
 export async function loadMyFeedback(userId, kind) {
   if (!supabase) return [];
   const { data, error } = await supabase
@@ -57,9 +88,9 @@ export async function loadMyFeedback(userId, kind) {
   return data || [];
 }
 
-export async function loadFeedbackInbox(status = "new", kind = null) {
+export async function loadFeedbackInbox(status = "new", kind = null, topic = null) {
   if (!supabase) return [];
-  const { data, error } = await supabase.rpc("feedback_inbox", { p_status: status, p_kind: kind });
+  const { data, error } = await supabase.rpc("feedback_inbox", { p_status: status, p_kind: kind, p_topic: topic });
   if (error) throw new Error(withReason("Couldn't load the inbox.", error));
   return data || [];
 }

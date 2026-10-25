@@ -3,6 +3,7 @@ import { loadPerks, recordRedemption, loadProfile, track } from "../lib/store.js
 import { loadMyPoints, hasPendingCard, takePendingCard } from "../lib/points.js";
 import { RewardsSheet } from "./Rewards.jsx";
 import TunrRush from "./TunrRush.jsx";
+import DetailingRequest from "./DetailingRequest.jsx";
 
 const CATEGORY_LABELS = {
   detailing: "DETAILING",
@@ -29,6 +30,7 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
   const [showRewards, setShowRewards] = useState(false);
   const [scannedCard, setScannedCard] = useState("");
   const [playing, setPlaying] = useState(false);
+  const [requesting, setRequesting] = useState(false);
 
   // Arrived by scanning a points card: open straight to it.
   useEffect(() => {
@@ -206,9 +208,21 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
                 onReveal={() => reveal(perk)}
                 user={user}
                 onNeedAccount={onNeedAccount}
+                onRequest={perk.partner_slug === "boosted-detailing" ? () => setRequesting(true) : null}
               />
             ))}
           </div>
+        )}
+        {requesting && (
+          <DetailingRequest
+            user={user}
+            onClose={() => setRequesting(false)}
+            onToast={onToast}
+            onNeedAccount={() => {
+              setRequesting(false);
+              onNeedAccount();
+            }}
+          />
         )}
       </div>
     </div>
@@ -312,7 +326,7 @@ function JoinCard({ count, user, onNeedAccount }) {
   );
 }
 
-export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount }) {
+export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount, onRequest = null }) {
   const locked = !perk.unlocked;
   const free = perk.members_only === false;
 
@@ -434,6 +448,15 @@ export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount }) {
           >
             {perk.code}
           </div>
+        ) : onRequest ? (
+          <>
+            <button className="action-btn" onClick={onRequest} style={unlockButton}>
+              🧽 REQUEST A DETAIL
+            </button>
+            <div style={{ fontSize: 11.5, color: "#777", marginTop: 6, fontFamily: "'Barlow', sans-serif" }}>
+              Send a request in the app and we'll reply with a time and price. Your discount is included.
+            </div>
+          </>
         ) : perk.redemption_type === "show_screen" ? (
           <div
             style={{
