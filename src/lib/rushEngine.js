@@ -5,13 +5,28 @@
 // The server re-checks every run (060_tunr_rush.sql); its calls are in
 // rush.js. No imports here, so it runs in plain Node for the tests.
 
-export const GOAL_METERS = 3000;
-export const START_TIME = 60;
-export const MAX_SPEED = 85; // m/s
-// Grabbing the Boosted Studios badge: a few seconds flat out, smashing through
-// traffic. The server allows up to 120 m/s (062_rush_boost.sql).
-export const BOOST_SPEED = 115;
-export const BOOST_TIME = 3;
+// The game's rules. Admins change them in the app (063_rush_settings.sql);
+// these are the defaults when the settings can't be loaded.
+export const DEFAULT_RULES = {
+  enabled: true,
+  goal: 3000, // meters for the daily points
+  dailyPoints: 1,
+  startTime: 60, // seconds on the clock at the start
+  clockSeconds: 3, // a ⏱ pickup adds this
+  crashSeconds: 4, // hitting traffic costs this
+  boostSeconds: 3, // the Boosted badge lasts this (0 = no boosts)
+  boostChance: 0.08, // share of traffic rows with a badge
+  clockChance: 0.22, // share with a ⏱
+  traffic: 1, // more than 1 = traffic comes faster
+  topSpeed: 85, // m/s
+  boostSpeed: 115, // m/s while boosting; the server allows the faster of the two plus 5
+};
+export const GOAL_METERS = DEFAULT_RULES.goal;
+export const START_TIME = DEFAULT_RULES.startTime;
+export const MAX_SPEED = DEFAULT_RULES.topSpeed;
+export const BOOST_SPEED = DEFAULT_RULES.boostSpeed;
+export const BOOST_TIME = DEFAULT_RULES.boostSeconds;
+export const SPOILERS = ["none", "lip", "wing"];
 export const BODIES = ["coupe", "sedan", "hatch", "suv", "truck"];
 export const GAME_COLORS = ["#E11D2E", "#FF7A00", "#FACC15", "#10B981", "#1D4ED8", "#A855F7", "#F5F5F5", "#9CA3AF", "#111827"];
 const TRAFFIC_COLORS = ["#F59E0B", "#2563EB", "#7C3AED", "#16A34A", "#DC2626", "#0EA5E9", "#9333EA"];
@@ -19,11 +34,13 @@ const ROAD_DEPTH = 190; // meters of road on screen
 
 // ---------- engine ----------
 
-export function newGame(rand = Math.random) {
+export function newGame(rand = Math.random, rules = {}) {
+  const r = { ...DEFAULT_RULES, ...rules };
   return {
     rand,
+    rules: r,
     t: 0,
-    timeLeft: START_TIME,
+    timeLeft: r.startTime,
     speed: 28,
     dist: 0,
     lane: 1,
@@ -58,12 +75,13 @@ function spawnRow(g) {
       lane: lanes[i],
       kind: roll < 0.7 ? "car" : roll < 0.85 ? "cone" : "barrel",
       color: TRAFFIC_COLORS[Math.floor(r() * TRAFFIC_COLORS.length)],
-      body: BODIES[Math.floor(r() * 3)],
+      body: BODIES[Math.floor(r() * BODIES.length)],
     });
   }
+  const { clockChance, boostChance, boostSeconds } = g.rules;
   const bonus = r();
-  if (bonus < 0.22) g.objects.push({ z: 1, lane: lanes[2], kind: "clock" });
-  else if (bonus < 0.3 && g.boostT <= 0) g.objects.push({ z: 1, lane: lanes[2], kind: "boost" });
+  if (bonus < clockChance) g.objects.push({ z: 1, lane: lanes[2], kind: "clock" });
+  else if (bonus < clockChance + boostChance && boostSeconds > 0 && g.boostT <= 0) g.objects.push({ z: 1, lane: lanes[2], kind: "boost" });
 }
 
 // Advance the game by dt seconds. Returns events for sounds/vibration.
@@ -73,8 +91,9 @@ export function step(g, dt) {
   dt = Math.min(dt, 0.05);
   g.t += dt;
   g.timeLeft -= dt;
+  const R = g.rules;
   const boosting = g.boostT > 0;
-  const target = boosting ? BOOST_SPEED : Math.min(MAX_SPEED, 28 + g.dist / 70);
+  const target = boosting ? R.boostSpeed : Math.min(R.topSpeed, 28 + g.dist / 70);
   g.speed += (target - g.speed) * Math.min(1, dt * (boosting ? 3 : g.crashT > 0 ? 0.6 : 1.5));
   g.crashT = Math.max(0, g.crashT - dt);
   g.boostT = Math.max(0, g.boostT - dt);
@@ -94,7 +113,7 @@ export function step(g, dt) {
   g.spawnIn -= dt;
   if (g.spawnIn <= 0) {
     spawnRow(g);
-    g.spawnIn = Math.max(0.5, 1.25 - g.dist / 9000) * (0.8 + g.rand() * 0.4);
+    g.spawnIn = (Math.max(0.5, 1.25 - g.dist / 9000) * (0.8 + g.rand() * 0.4)) / R.traffic;
   }
 
   const myLane = Math.round(g.laneX);
@@ -103,11 +122,11 @@ export function step(g, dt) {
     if (o.hit || o.z > 0.06 || o.z < -0.02 || o.lane !== myLane) continue;
     o.hit = true;
     if (o.kind === "clock") {
-      g.timeLeft += 3;
+      g.timeLeft += R.clockSeconds;
       g.pickups += 1;
       events.push("pickup");
     } else if (o.kind === "boost") {
-      g.boostT = BOOST_TIME;
+      g.boostT = R.boostSeconds;
       g.crashT = 0;
       g.boosts += 1;
       events.push("boost");
@@ -117,7 +136,7 @@ export function step(g, dt) {
       g.smashed += 1;
       events.push("smash");
     } else if (g.crashT <= 0) {
-      g.timeLeft -= 4;
+      g.timeLeft -= R.crashSeconds;
       g.speed *= 0.45;
       g.crashT = 1.2;
       g.crashes += 1;
@@ -154,87 +173,228 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
+// Proportions per body, as fractions of the car's width: total height,
+// the glass/roof share of it, and the roof and window-base widths.
 const BODY_SHAPE = {
-  coupe: { h: 0.56, cabin: 0.42, top: 0.5 },
-  sedan: { h: 0.62, cabin: 0.45, top: 0.56 },
-  hatch: { h: 0.66, cabin: 0.5, top: 0.62 },
-  suv: { h: 0.8, cabin: 0.52, top: 0.68 },
-  truck: { h: 0.76, cabin: 0.44, top: 0.6 },
+  coupe: { h: 0.5, cabin: 0.4, roof: 0.5, base: 0.72 },
+  sedan: { h: 0.55, cabin: 0.42, roof: 0.56, base: 0.75 },
+  hatch: { h: 0.6, cabin: 0.47, roof: 0.62, base: 0.77 },
+  suv: { h: 0.74, cabin: 0.47, roof: 0.74, base: 0.82 },
+  truck: { h: 0.72, cabin: 0.4, roof: 0.6, base: 0.64 },
 };
 
 // A car seen from behind, centered at cx, sitting on bottomY, w wide.
-export function drawCar(ctx, cx, bottomY, w, { color = "#FF4500", body = "coupe", plate = "" } = {}) {
+// `sport` is the player's car: diffuser, quad exhaust and a spoiler
+// ("none", "lip" or "wing"); traffic gets a plain bumper.
+export function drawCar(ctx, cx, bottomY, w, { color = "#FF4500", body = "coupe", plate = "", sport = false, spoiler = "lip" } = {}) {
   const s = BODY_SHAPE[body] || BODY_SHAPE.coupe;
   const h = w * s.h;
   const x = cx - w / 2;
   const top = bottomY - h;
-  const lowerTop = bottomY - h * (1 - s.cabin);
+  const belt = top + h * s.cabin; // where the glass meets the body
+  const bodyBottom = bottomY - h * 0.1;
+  const bh = bodyBottom - belt;
+  const detail = w > 34; // skip the small stuff on far-away cars
 
-  // Shadow and tires.
-  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  // Shadow, underbody and tires.
+  ctx.fillStyle = "rgba(0,0,0,0.3)";
   ctx.beginPath();
-  ctx.ellipse(cx, bottomY, w * 0.55, h * 0.08, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx, bottomY, w * 0.56, h * 0.07, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = "#151515";
-  roundRect(ctx, x + w * 0.04, bottomY - h * 0.2, w * 0.2, h * 0.22, w * 0.03);
-  ctx.fill();
-  roundRect(ctx, x + w * 0.76, bottomY - h * 0.2, w * 0.2, h * 0.22, w * 0.03);
-  ctx.fill();
-
-  // Cabin (roof and rear window).
-  const cabW0 = w * (body === "truck" ? 0.62 : 0.78);
-  const cabW1 = cabW0 * (body === "suv" ? 0.9 : 0.72);
-  ctx.fillStyle = shade(color, -0.12);
-  ctx.beginPath();
-  ctx.moveTo(cx - cabW0 / 2, lowerTop + 1);
-  ctx.lineTo(cx - cabW1 / 2, top);
-  ctx.lineTo(cx + cabW1 / 2, top);
-  ctx.lineTo(cx + cabW0 / 2, lowerTop + 1);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = "#1E3A8A";
-  const inset = w * 0.05;
-  ctx.beginPath();
-  ctx.moveTo(cx - cabW0 / 2 + inset, lowerTop - h * 0.02);
-  ctx.lineTo(cx - cabW1 / 2 + inset * 0.7, top + h * 0.07);
-  ctx.lineTo(cx + cabW1 / 2 - inset * 0.7, top + h * 0.07);
-  ctx.lineTo(cx + cabW0 / 2 - inset, lowerTop - h * 0.02);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = "rgba(255,255,255,0.18)";
-  ctx.fillRect(cx - cabW1 / 2 + inset, top + h * 0.09, cabW1 * 0.25, h * 0.04);
-
-  // Lower body.
-  ctx.fillStyle = color;
-  roundRect(ctx, x, lowerTop, w, bottomY - h * 0.12 - lowerTop, w * 0.08);
-  ctx.fill();
-  ctx.fillStyle = shade(color, -0.2);
-  ctx.fillRect(x + w * 0.03, bottomY - h * 0.2, w * 0.94, h * 0.08);
-  if (body === "truck") {
-    ctx.fillStyle = shade(color, -0.3);
-    ctx.fillRect(x + w * 0.08, lowerTop + h * 0.04, w * 0.84, h * 0.03);
+  ctx.fillStyle = "#0B0B0B";
+  ctx.fillRect(x + w * 0.08, bodyBottom - bh * 0.1, w * 0.84, bottomY - bodyBottom);
+  for (const tx of [x + w * 0.04, x + w * 0.76]) {
+    ctx.fillStyle = "#141414";
+    roundRect(ctx, tx, bodyBottom - bh * 0.18, w * 0.2, bottomY - bodyBottom + bh * 0.18, w * 0.035);
+    ctx.fill();
+    if (detail) {
+      ctx.fillStyle = "#262626";
+      ctx.fillRect(tx + w * 0.02, bottomY - h * 0.075, w * 0.16, h * 0.02);
+    }
   }
 
-  // Tail lights.
-  ctx.fillStyle = "#EF4444";
-  roundRect(ctx, x + w * 0.04, lowerTop + h * 0.07, w * 0.2, h * 0.1, w * 0.02);
-  ctx.fill();
-  roundRect(ctx, x + w * 0.76, lowerTop + h * 0.07, w * 0.2, h * 0.1, w * 0.02);
-  ctx.fill();
+  // Cabin: pillars and roof in body color, curved roofline.
+  const roofW = w * s.roof;
+  const baseW = w * s.base;
+  const ch = belt - top;
+  const cabin = new Path2D();
+  cabin.moveTo(cx - baseW / 2, belt + 1);
+  cabin.lineTo(cx - roofW / 2, top + ch * 0.14);
+  cabin.quadraticCurveTo(cx, top - ch * 0.08, cx + roofW / 2, top + ch * 0.14);
+  cabin.lineTo(cx + baseW / 2, belt + 1);
+  cabin.closePath();
+  ctx.fillStyle = shade(color, -0.08);
+  ctx.fill(cabin);
+
+  // Rear glass: dark, tinted, with a streak of reflection.
+  const inX = w * 0.045;
+  const glass = new Path2D();
+  glass.moveTo(cx - baseW / 2 + inX, belt - ch * 0.06);
+  glass.lineTo(cx - roofW / 2 + inX * 0.8, top + ch * 0.24);
+  glass.quadraticCurveTo(cx, top + ch * 0.06, cx + roofW / 2 - inX * 0.8, top + ch * 0.24);
+  glass.lineTo(cx + baseW / 2 - inX, belt - ch * 0.06);
+  glass.closePath();
+  const tint = ctx.createLinearGradient(0, top, 0, belt);
+  tint.addColorStop(0, "#1E293B");
+  tint.addColorStop(1, "#05070D");
+  ctx.fillStyle = tint;
+  ctx.fill(glass);
+  if (detail) {
+    ctx.save();
+    ctx.clip(glass);
+    ctx.fillStyle = "rgba(255,255,255,0.13)";
+    ctx.beginPath();
+    ctx.moveTo(cx - roofW * 0.35, top);
+    ctx.lineTo(cx - roofW * 0.15, top);
+    ctx.lineTo(cx - baseW * 0.35, belt);
+    ctx.lineTo(cx - baseW * 0.55, belt);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    // Third brake light.
+    ctx.fillStyle = "#EF4444";
+    ctx.fillRect(cx - roofW * 0.14, top + ch * 0.17, roofW * 0.28, Math.max(1, ch * 0.04));
+    // Side mirrors.
+    ctx.fillStyle = shade(color, -0.15);
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(cx + side * (baseW / 2 + w * 0.035), belt - ch * 0.16, w * 0.045, ch * 0.1, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Body: flared hips, glossy paint (light on top, darker low down).
+  const shell = new Path2D();
+  shell.moveTo(x + w * 0.05, bodyBottom);
+  shell.lineTo(x + w * 0.005, bodyBottom - bh * 0.3);
+  shell.quadraticCurveTo(x - w * 0.01, belt + bh * 0.12, x + w * 0.07, belt);
+  shell.lineTo(x + w * 0.93, belt);
+  shell.quadraticCurveTo(x + w * 1.01, belt + bh * 0.12, x + w * 0.995, bodyBottom - bh * 0.3);
+  shell.lineTo(x + w * 0.95, bodyBottom);
+  shell.closePath();
+  const paint = ctx.createLinearGradient(0, belt, 0, bodyBottom);
+  paint.addColorStop(0, shade(color, 0.22));
+  paint.addColorStop(0.28, color);
+  paint.addColorStop(1, shade(color, -0.28));
+  ctx.fillStyle = paint;
+  ctx.fill(shell);
+
+  // Trunk lip line, or a tailgate crease on the truck.
+  ctx.fillStyle = shade(color, -0.32);
+  ctx.fillRect(x + w * 0.12, belt + bh * (body === "truck" ? 0.36 : 0.05), w * 0.76, Math.max(1, bh * 0.025));
+
+  // Tail lights: slim LED wedges joined by a light bar, with a soft glow.
+  const ty = belt + bh * 0.12;
+  const lh = bh * 0.2;
+  if (detail) {
+    ctx.fillStyle = "rgba(239,68,68,0.16)";
+    for (const gx of [x - w * 0.01, x + w * 0.72]) {
+      roundRect(ctx, gx, ty - lh * 0.35, w * 0.29, lh * 1.7, lh * 0.6);
+      ctx.fill();
+    }
+  }
+  ctx.fillStyle = "#DC2626";
+  if (body === "truck") {
+    for (const lx of [x + w * 0.02, x + w * 0.9]) {
+      roundRect(ctx, lx, ty - lh * 0.2, w * 0.08, lh * 2.2, w * 0.015);
+      ctx.fill();
+    }
+  } else {
+    for (const side of [-1, 1]) {
+      const o = cx + side * w * 0.47; // outer edge
+      const i = cx + side * w * 0.23; // inner edge
+      ctx.beginPath();
+      ctx.moveTo(o, ty);
+      ctx.lineTo(i, ty + lh * 0.18);
+      ctx.lineTo(i + side * w * 0.015, ty + lh);
+      ctx.lineTo(o - side * w * 0.02, ty + lh);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.fillRect(cx - w * 0.23, ty + lh * 0.3, w * 0.46, Math.max(1, lh * 0.2));
+  }
+  if (detail) {
+    ctx.fillStyle = "#FCA5A5";
+    ctx.fillRect(x + w * 0.05, ty + lh * 0.05, w * 0.16, Math.max(1, lh * 0.12));
+    ctx.fillRect(x + w * 0.79, ty + lh * 0.05, w * 0.16, Math.max(1, lh * 0.12));
+  }
 
   // Plate.
-  const pw = w * 0.34;
-  const ph = h * 0.13;
+  const pw = w * 0.27;
+  const ph = bh * 0.2;
+  const py = belt + bh * (body === "truck" ? 0.5 : 0.42);
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  roundRect(ctx, cx - pw / 2 - w * 0.012, py - w * 0.01, pw + w * 0.024, ph + w * 0.02, w * 0.02);
+  ctx.fill();
   ctx.fillStyle = "#F8FAFC";
-  roundRect(ctx, cx - pw / 2, lowerTop + h * 0.2, pw, ph, w * 0.015);
+  roundRect(ctx, cx - pw / 2, py, pw, ph, w * 0.012);
   ctx.fill();
   if (plate && w > 40) {
     ctx.fillStyle = "#111";
-    ctx.font = `800 ${Math.max(6, ph * 0.62)}px 'Barlow Condensed', sans-serif`;
+    ctx.font = `800 ${Math.max(6, ph * 0.66)}px 'Barlow Condensed', sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(plate.slice(0, 9).toUpperCase(), cx, lowerTop + h * 0.2 + ph / 2 + 0.5, pw * 0.92);
+    ctx.fillText(plate.slice(0, 9).toUpperCase(), cx, py + ph / 2 + 0.5, pw * 0.92);
   }
+
+  // Bumper: a black diffuser with fins and quad tips on your car; a plain
+  // lower bumper with one tip on traffic.
+  const dy = bodyBottom - bh * 0.22;
+  if (sport) {
+    ctx.fillStyle = "#0F0F0F";
+    ctx.beginPath();
+    ctx.moveTo(x + w * 0.1, dy);
+    ctx.lineTo(x + w * 0.9, dy);
+    ctx.lineTo(x + w * 0.86, bodyBottom + h * 0.02);
+    ctx.lineTo(x + w * 0.14, bodyBottom + h * 0.02);
+    ctx.closePath();
+    ctx.fill();
+    if (detail) {
+      ctx.fillStyle = "#2A2A2A";
+      for (let f = 0; f < 5; f++) ctx.fillRect(cx - w * 0.12 + f * w * 0.06, dy + bh * 0.04, Math.max(1, w * 0.012), bh * 0.2);
+    }
+    for (const ex of [0.2, 0.29, 0.71, 0.8]) exhaust(ctx, x + w * ex, bodyBottom - bh * 0.07, w * 0.036);
+  } else {
+    ctx.fillStyle = shade(color, -0.38);
+    ctx.fillRect(x + w * 0.1, dy + bh * 0.08, w * 0.8, bh * 0.16);
+    exhaust(ctx, x + w * 0.24, bodyBottom - bh * 0.04, w * 0.028);
+  }
+
+  // Spoiler, on your car.
+  if (sport && spoiler === "wing" && body !== "truck") {
+    const wy = belt - h * 0.17;
+    ctx.fillStyle = "#151515";
+    for (const side of [-1, 1]) ctx.fillRect(cx + side * w * 0.24 - w * 0.015, wy, w * 0.03, belt - wy + bh * 0.04);
+    roundRect(ctx, x + w * 0.02, wy - h * 0.04, w * 0.96, h * 0.055, h * 0.015);
+    ctx.fill();
+    ctx.fillStyle = shade(color, -0.1);
+    ctx.fillRect(x + w * 0.02, wy - h * 0.04, w * 0.96, Math.max(1, h * 0.012));
+    ctx.fillStyle = "#151515";
+    ctx.fillRect(x + w * 0.01, wy - h * 0.07, w * 0.025, h * 0.1);
+    ctx.fillRect(x + w * 0.965, wy - h * 0.07, w * 0.025, h * 0.1);
+  } else if (sport && spoiler === "lip") {
+    ctx.fillStyle = "#151515";
+    if (body === "hatch" || body === "suv") {
+      roundRect(ctx, cx - roofW * 0.56, top + ch * 0.02, roofW * 1.12, ch * 0.1, ch * 0.04);
+    } else {
+      roundRect(ctx, x + w * 0.16, belt - h * 0.035, w * 0.68, h * 0.045, h * 0.02);
+    }
+    ctx.fill();
+  }
+}
+
+function exhaust(ctx, ex, ey, r) {
+  const chrome = ctx.createLinearGradient(ex, ey - r, ex, ey + r);
+  chrome.addColorStop(0, "#F3F4F6");
+  chrome.addColorStop(1, "#6B7280");
+  ctx.fillStyle = chrome;
+  ctx.beginPath();
+  ctx.ellipse(ex, ey, r * 1.2, r * 0.78, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#0A0A0A";
+  ctx.beginPath();
+  ctx.ellipse(ex, ey, r * 0.85, r * 0.48, 0, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 // Draw the whole frame. `me` is { color, body, plate }; `art` holds loaded
@@ -383,13 +543,13 @@ export function drawGame(ctx, W, H, g, me, art = {}) {
   }
   const blink = g.crashT > 0 && Math.floor(g.crashT * 10) % 2 === 0;
   if (!blink) {
-    drawCar(ctx, myX, yPlayer + H * 0.02, myW, me);
+    drawCar(ctx, myX, yPlayer + H * 0.02, myW, { sport: true, ...me });
   }
   if (g.boostT > 0) {
     // Blue exhaust flames out the back.
     const flame = 0.8 + Math.sin(g.t * 40) * 0.2;
     for (const side of [-1, 1]) {
-      const fx = myX + side * myW * 0.2;
+      const fx = myX + side * myW * 0.255;
       const fy = yPlayer + H * 0.02 - myW * 0.06;
       const len = myW * 0.32 * flame;
       const fl = ctx.createLinearGradient(fx, fy, fx, fy + len);
@@ -425,7 +585,7 @@ export function drawGame(ctx, W, H, g, me, art = {}) {
     ctx.fillStyle = "rgba(0,0,0,0.4)";
     ctx.fillRect(W / 2 - bw / 2, barY, bw, 5);
     ctx.fillStyle = "#38BDF8";
-    ctx.fillRect(W / 2 - bw / 2, barY, (bw * g.boostT) / BOOST_TIME, 5);
+    ctx.fillRect(W / 2 - bw / 2, barY, (bw * g.boostT) / Math.max(0.1, g.rules.boostSeconds), 5);
     ctx.globalAlpha = 1;
   }
 
@@ -443,7 +603,7 @@ export function drawGame(ctx, W, H, g, me, art = {}) {
   ctx.textAlign = "right";
   ctx.fillStyle = "#fff";
   ctx.fillText(`${Math.round(g.speed * 2.237)} MPH`, W - 18, 25);
-  const pct = Math.min(1, g.dist / GOAL_METERS);
+  const pct = Math.min(1, g.dist / g.rules.goal);
   ctx.fillStyle = "rgba(255,255,255,0.2)";
   ctx.fillRect(W - 118, 38, 100, 6);
   ctx.fillStyle = pct >= 1 ? "#10B981" : "#FACC15";

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  GOAL_METERS,
+  DEFAULT_RULES,
   BODIES,
+  SPOILERS,
   GAME_COLORS,
   newGame,
   step,
@@ -14,6 +15,7 @@ import {
   loadMyGame,
   loadGameLeaderboard,
   saveGameLook,
+  loadGameSettings,
 } from "../lib/rush.js";
 import { loadVehicles, loadProfile } from "../lib/store.js";
 import { Avatar } from "./EditProfile.jsx";
@@ -28,14 +30,18 @@ if (ART.boost) {
 }
 
 const BODY_LABELS = { coupe: "Coupe", sedan: "Sedan", hatch: "Hatch", suv: "SUV", truck: "Truck" };
+const SPOILER_LABELS = { none: "None", lip: "Lip", wing: "Wing" };
+const DEFAULT_LOOK = { color: "#FF4500", body: "coupe", spoiler: "lip" };
 
-// TUNR Rush: a full-screen driving game in your own car. Reach 3,000 m for
-// +1 point a day (checked by the server); weekly leaderboard.
+// TUNR Rush: a full-screen driving game in your own car. Reach the daily
+// distance for points once a day (checked by the server); weekly
+// leaderboard. Admins set the rules (Settings → Admin → TUNR Rush).
 export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
   const [screen, setScreen] = useState("garage"); // garage | play | result | board
   const [cars, setCars] = useState([]);
   const [carId, setCarId] = useState(null);
-  const [look, setLook] = useState({ color: "#FF4500", body: "coupe" });
+  const [look, setLook] = useState(DEFAULT_LOOK);
+  const [rules, setRules] = useState(DEFAULT_RULES);
   const [plate, setPlate] = useState("TUNR");
   const [mine, setMine] = useState(null);
   const [result, setResult] = useState(null);
@@ -44,6 +50,12 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
 
   const car = cars.find((c) => c.id === carId) || null;
   const carName = car ? [car.year, car.make, car.model].filter(Boolean).join(" ") : "TUNR loaner";
+
+  useEffect(() => {
+    loadGameSettings()
+      .then(setRules)
+      .catch((e) => console.warn(e.message));
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -64,15 +76,17 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
 
   function pick(c) {
     setCarId(c.id);
-    setLook({ color: c.game_color || "#FF4500", body: c.game_body || "coupe" });
+    setLook({ color: c.game_color || DEFAULT_LOOK.color, body: c.game_body || DEFAULT_LOOK.body, spoiler: c.game_spoiler || DEFAULT_LOOK.spoiler });
   }
 
   function changeLook(patch) {
     const next = { ...look, ...patch };
     setLook(next);
     if (car) {
-      saveGameLook(car.id, next.color, next.body).catch((e) => onToast(e.message));
-      setCars((list) => list.map((c) => (c.id === car.id ? { ...c, game_color: next.color, game_body: next.body } : c)));
+      saveGameLook(car.id, next).catch((e) => onToast(e.message));
+      setCars((list) =>
+        list.map((c) => (c.id === car.id ? { ...c, game_color: next.color, game_body: next.body, game_spoiler: next.spoiler } : c))
+      );
     }
   }
 
@@ -127,8 +141,8 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             <div style={{ ...muted, marginTop: 6 }}>
               Dodge traffic and grab ⏱ for extra time. Grab the Boosted badge{" "}
               <img src="/game/boost.webp" alt="" style={{ width: 22, height: "auto", verticalAlign: "middle" }} /> for a{" "}
-              <b style={{ color: "#38BDF8" }}>boost</b>: a few seconds flat out, smashing through anything in your way. Reach <b style={{ color: "#FACC15" }}>{GOAL_METERS.toLocaleString()} m</b>{" "}
-              for <b style={{ color: "#FACC15" }}>+1 point</b>, once a day.{" "}
+              <b style={{ color: "#38BDF8" }}>boost</b>: a few seconds flat out, smashing through anything in your way. Reach <b style={{ color: "#FACC15" }}>{rules.goal.toLocaleString()} m</b>{" "}
+              for <b style={{ color: "#FACC15" }}>+{rules.dailyPoints} point{rules.dailyPoints === 1 ? "" : "s"}</b>, once a day.{" "}
               {mine?.today_done ? <span style={{ color: "#10B981" }}>✓ Today's point is in.</span> : null}
             </div>
             <CarPreview look={look} plate={plate} />
@@ -172,10 +186,24 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
                 </button>
               ))}
             </div>
+            <div style={{ ...label, marginTop: 12 }}>SPOILER</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {SPOILERS.map((sp) => (
+                <button key={sp} onClick={() => changeLook({ spoiler: sp })} style={{ ...chip, ...(look.spoiler === sp ? chipOn : {}) }}>
+                  {SPOILER_LABELS[sp]}
+                </button>
+              ))}
+            </div>
 
-            <button className="action-btn" onClick={() => setScreen("play")} style={{ ...bigButton, marginTop: 18, fontSize: 18, padding: "16px 0" }}>
-              🏁 START
-            </button>
+            {rules.enabled ? (
+              <button className="action-btn" onClick={() => setScreen("play")} style={{ ...bigButton, marginTop: 18, fontSize: 18, padding: "16px 0" }}>
+                🏁 START
+              </button>
+            ) : (
+              <div style={{ ...muted, marginTop: 18, textAlign: "center", color: "#FACC15" }}>
+                🅿️ TUNR Rush is parked for now. Check back soon.
+              </div>
+            )}
             <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
               <button className="action-btn" onClick={openBoard} style={{ ...quietButton, flex: 1 }}>🏆 THIS WEEK</button>
             </div>
@@ -193,8 +221,8 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
               </div>
             )}
             <div style={{ ...muted, fontSize: 11.5, marginTop: 14 }}>
-              Tap the left or right side (or swipe, or use the arrow keys) to change lanes. Crashing costs 4
-              seconds. Free to play; points are for skill, never luck. Please don't play while driving.
+              Tap the left or right side (or swipe, or use the arrow keys) to change lanes. Crashing costs{" "}
+              {rules.crashSeconds} seconds. Free to play; points are for skill, never luck. Please don't play while driving.
             </div>
           </>
         )}
@@ -203,6 +231,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
           <Game
             look={look}
             plate={plate}
+            rules={rules}
             vehicleId={user ? carId : null}
             signedIn={Boolean(user)}
             onDone={(r) => {
@@ -217,7 +246,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
         {screen === "result" && result && (
           <div style={{ textAlign: "center", marginTop: 18 }}>
             <div style={{ ...label, marginBottom: 0 }}>YOU DROVE</div>
-            <div style={{ fontSize: 56, fontWeight: 900, lineHeight: 1, color: result.dist >= GOAL_METERS ? "#10B981" : "#F0F0F0" }}>
+            <div style={{ fontSize: 56, fontWeight: 900, lineHeight: 1, color: result.dist >= rules.goal ? "#10B981" : "#F0F0F0" }}>
               {result.dist.toLocaleString()} m
             </div>
             <div style={{ ...muted, marginTop: 6 }}>
@@ -229,12 +258,12 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
               {result.serverError
                 ? result.serverError
                 : result.server?.earned
-                  ? "⭐ +1 point! Today's daily drive is done."
-                  : result.dist >= GOAL_METERS
+                  ? `⭐ +${result.server.earned} point${result.server.earned === 1 ? "" : "s"}! Today's daily drive is done.`
+                  : result.dist >= rules.goal
                     ? result.server
                       ? "✓ Goal hit. Today's point was already in; come back tomorrow."
                       : "Goal hit! Sign in to earn points for it."
-                    : `${(GOAL_METERS - result.dist).toLocaleString()} m short of today's +1. One more?`}
+                    : `${(rules.goal - result.dist).toLocaleString()} m short of today's points. One more?`}
             </div>
             {result.server && result.dist >= (result.server.best || 0) && result.dist > 0 && (
               <div style={{ marginTop: 6, color: "#FF7A00", fontWeight: 900 }}>🔥 NEW PERSONAL BEST</div>
@@ -305,13 +334,13 @@ function CarPreview({ look, plate }) {
     ctx.fillRect(0, 0, 300, 170);
     ctx.fillStyle = "#222";
     ctx.fillRect(0, 140, 300, 30);
-    drawCar(ctx, 150, 150, 180, { color: look.color, body: look.body, plate });
-  }, [look.color, look.body, plate]);
+    drawCar(ctx, 150, 156, 170, { color: look.color, body: look.body, spoiler: look.spoiler, plate, sport: true });
+  }, [look.color, look.body, look.spoiler, plate]);
   return <canvas ref={ref} style={{ width: "100%", maxWidth: 300, height: "auto", aspectRatio: "300 / 170", display: "block", margin: "14px auto 6px", borderRadius: 12 }} />;
 }
 
 // The running game. Registers the run with the server, plays, and reports.
-function Game({ look, plate, vehicleId, signedIn, onDone, onQuit }) {
+function Game({ look, plate, rules, vehicleId, signedIn, onDone, onQuit }) {
   const canvasRef = useRef(null);
   const stateRef = useRef(null);
   const runRef = useRef(null);
@@ -347,9 +376,9 @@ function Game({ look, plate, vehicleId, signedIn, onDone, onQuit }) {
     c.style.height = `${H}px`;
     const ctx = c.getContext("2d");
     ctx.scale(dpr, dpr);
-    const g = newGame();
+    const g = newGame(Math.random, rules);
     stateRef.current = g;
-    const me = { color: look.color, body: look.body, plate };
+    const me = { color: look.color, body: look.body, spoiler: look.spoiler, plate };
     let last = performance.now();
     let raf = 0;
     let ended = false;

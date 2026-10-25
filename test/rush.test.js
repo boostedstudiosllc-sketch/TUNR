@@ -75,3 +75,19 @@ test("the Boosted turbo gives a boost that smashes through traffic for free", ()
   crash.objects.push({ z: 0.03, lane: 1, kind: "barrel" });
   assert.deepEqual(step(crash, 0.001), ["crash"]);
 });
+
+test("the game follows the admin's rules", () => {
+  const g = newGame(seeded(), { startTime: 30, crashSeconds: 10, boostSeconds: 0, boostChance: 0.3 });
+  assert.equal(g.timeLeft, 30);
+  g.objects.push({ z: 0.03, lane: 1, kind: "cone" });
+  step(g, 0.001);
+  assert.ok(g.timeLeft < 20.01);
+  // Boosts off: no badges ever show up.
+  const h = newGame(seeded(3), { boostSeconds: 0, boostChance: 0.3 });
+  let badges = 0;
+  for (let i = 0; i < 60 * 60 && !h.over; i++) {
+    step(h, 1 / 60);
+    badges += h.objects.filter((o) => o.kind === "boost").length;
+  }
+  assert.equal(badges, 0);
+});

@@ -23,6 +23,7 @@ import { FeedbackPage, FeedbackInbox } from "./Feedback.jsx";
 import { LocationPage, LocationPill, useLocationStatus } from "./LocationAccess.jsx";
 import { loadMyStreak, setHiddenFromLeaderboards } from "../lib/points.js";
 import BoostedPage, { BoostedAdmin } from "./BoostedStudios.jsx";
+import RushAdmin from "./RushAdmin.jsx";
 import RewardsPanel, { RewardsAdmin, RedemptionsAdmin, CheckinsAdmin, PurchasesAdmin, CardsAdmin, IssuesAdmin } from "./Rewards.jsx";
 
 const PAGES = {
@@ -38,6 +39,7 @@ const PAGES = {
   contact: "Contact us",
   boosted: "Boosted businesses",
   boostedAdmin: "Boosted businesses",
+  rushAdmin: "TUNR Rush",
   suggestions: "Suggestion box",
   inbox: "Inbox",
   host: "Host verification",
@@ -367,6 +369,7 @@ export default function SettingsScreen({
               <Section title="ADMIN">
                 <Row icon="📥" label="Inbox" sub="Contact messages and suggestions" onClick={() => open("inbox")} />
                 <Row icon="🏁" label="Boosted businesses" sub="Edit the Boosted Studios page" onClick={() => open("boostedAdmin")} />
+                <Row icon="🎮" label="TUNR Rush" sub="Game on/off, daily goal, points, boosts, traffic" onClick={() => open("rushAdmin")} />
                 <Row icon="📊" label="Insights" onClick={() => open("insights")} />
                 <Row icon="🚩" label="Community reports" onClick={() => open("reports")} />
                 <Row icon="🧹" label="Moderation queue" onClick={() => open("moderation")} />
@@ -454,6 +457,8 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
       return <BoostedPage onOpenPerks={() => onFollow("tab:perks")} user={user} onToast={onToast} onNeedAccount={() => {}} />;
     case "boostedAdmin":
       return <BoostedAdmin onToast={onToast} />;
+    case "rushAdmin":
+      return <RushAdmin onToast={onToast} />;
     case "contact":
       return <FeedbackPage kind="contact" user={user} onToast={onToast} />;
     case "suggestions":

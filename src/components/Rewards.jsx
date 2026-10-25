@@ -201,7 +201,7 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
         <EarnRow icon="🏁" text="Check in again at the end: stayed the whole meet" pts="+1" />
         <EarnRow icon="⭐" text="Check in at a boosted meet (code shown at the meet)" pts="+5 to +10" />
         <EarnRow icon="🙋" text="RSVP “Going” to a boosted meet, then show up" pts={`+${POINTS.rsvpBonus}`} />
-        <EarnRow icon="🎮" text="TUNR Rush (Perks tab): drive 3,000 m, once a day" pts="+1" />
+        <EarnRow icon="🎮" text="TUNR Rush (Perks tab): hit the daily distance, once a day" pts="+1" />
         <EarnRow icon="🤝" text="Bring a friend (invite link or your car's QR): when they check in at their first meet" pts="+5" />
         <EarnRow icon="👋" text="Your own first meet check-in, if a friend brought you" pts="+2" />
         <EarnRow
