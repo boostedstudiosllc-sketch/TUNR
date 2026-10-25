@@ -53,14 +53,19 @@ export function LocationPage({ onToast }) {
         <LocationPill status={status} />
       </div>
       <div style={{ ...muted, marginTop: 6 }}>
-        TUNR checks your location only at the moment you tap for it, and never in the background.
-        Several features need it to work:
+        TUNR reads your location only at the moment you tap something that needs it. It doesn't
+        track you in the background, even if your phone's setting is “Always”. Pick{" "}
+        <b style={{ color: "#DDD" }}>While Using the App</b> with <b style={{ color: "#DDD" }}>Precise</b> on:
+        that's all TUNR needs.
+      </div>
+      <div style={{ ...label, marginTop: 16 }}>
+        {status === "granted" ? "WHAT LOCATION TURNS ON" : "LOCKED UNTIL LOCATION IS ON"}
       </div>
 
-      <div style={{ marginTop: 10 }}>
+      <div>
         {LOCATION_USES.map(([icon, title, sub]) => (
-          <div key={title} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: "1px solid #1A1A1A" }}>
-            <span aria-hidden="true" style={{ width: 22, textAlign: "center" }}>{icon}</span>
+          <div key={title} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: "1px solid #1A1A1A", opacity: status === "granted" ? 1 : 0.75 }}>
+            <span aria-hidden="true" style={{ width: 22, textAlign: "center" }}>{status === "granted" ? icon : "🔒"}</span>
             <span>
               <span style={{ display: "block", fontSize: 14.5, fontWeight: 800 }}>{title}</span>
               <span style={{ display: "block", ...muted, fontSize: 12.5 }}>{sub}</span>
@@ -119,8 +124,8 @@ export function LocationNotice({ status, onTurnOn, busy }) {
         📍 {blocked ? "Location is blocked for TUNR" : "Location is needed to check in"}
       </div>
       <div style={{ ...muted, fontSize: 12.5, marginTop: 2 }}>
-        Points are for being at the meet, so TUNR checks you're within a quarter mile of its pin. Only
-        when you tap, never in the background.
+        Check-ins and the stay bonus are locked until it's on: points are for being at the meet, so
+        TUNR checks you're within a quarter mile of its pin. It reads your location only when you tap.
       </div>
       {blocked ? (
         showSteps ? (

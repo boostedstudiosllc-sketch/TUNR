@@ -115,7 +115,11 @@ export default function PrivacyPolicy({ onClose }) {
           order number, the email you bought with and your note, used only to find that order), your points history, and the rewards you claim with their claim codes.
           <br />
           <br />
-          <strong>Location:</strong> only when you tap for it, and only while the app is open.
+          <strong>Location:</strong> only at the moment you tap something that needs it, and only
+          while the app is open. We don't track your location in the background, even if your
+          phone's setting for TUNR (or your browser) is “Always”. Without location, the features
+          that need it (meet check-ins and points, distances, nearby-linkup alerts, “I'm here
+          now”) don't work; everything else does.
           Showing distances to meets uses your coordinates in your browser only; they aren't sent
           to us. If you set your location for linkup alerts, we save it rounded to about half a
           mile, with the distance you chose, to work out which linkups are near you; it's never

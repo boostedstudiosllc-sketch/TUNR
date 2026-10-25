@@ -1,6 +1,8 @@
 // Whether TUNR may use this device's location, and how to turn it on.
-// Location is only ever read when someone taps for it (check-in, distances,
-// alert home spot, "I'm here now"), never in the background.
+// TUNR reads location only when someone taps something that needs it
+// (check-in, distances, alert home spot, "I'm here now"). It never tracks in
+// the background, whatever the phone's setting ("Always" or "While Using"):
+// a web app can't while closed, and TUNR doesn't ask to.
 
 // granted | denied | prompt | unsupported. Browsers without the Permissions
 // API (older Safari) report "prompt", so the first tap still asks.
@@ -69,8 +71,11 @@ export function enableSteps(ua = navigator.userAgent || "") {
   ];
 }
 
+// What needs location, and what happens to it. All of these are switched
+// off (shown locked) while location is off or blocked.
 export const LOCATION_USES = [
-  ["📍", "Checking in at meets for points, and the stay-the-whole-meet bonus", "Confirms you're within a quarter mile of the meet's pin"],
+  ["📍", "Checking in at meets for points", "Confirms you're within a quarter mile of the meet's pin"],
+  ["🏁", "The stay-the-whole-meet bonus", "Same check, near the meet's end time"],
   ["📏", "Distances to meets", "Worked out on your phone; your location isn't sent to us"],
   ["🔔", "Linkup alerts near you", "Saved rounded to about half a mile, only if you set it"],
   ["🛣️", "“I'm here now” when posting a linkup", "Becomes the linkup's spot"],

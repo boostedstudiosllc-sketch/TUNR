@@ -236,8 +236,13 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
               <div style={{ marginTop: 6, fontSize: 14, fontWeight: 800, color: "#10B981" }}>🏁 Stayed the whole meet: +1</div>
             ) : (
               <>
-                <button className="action-btn" onClick={stay} disabled={busy} style={{ ...stayButton, opacity: busy ? 0.6 : 1 }}>
-                  {busy ? "CHECKING…" : "🏁 STILL HERE AT THE END? +1"}
+                <button
+                  className="action-btn"
+                  onClick={stay}
+                  disabled={busy || locStatus === "denied" || locStatus === "unsupported"}
+                  style={{ ...stayButton, opacity: busy || locStatus === "denied" || locStatus === "unsupported" ? 0.5 : 1 }}
+                >
+                  {busy ? "CHECKING…" : locStatus === "denied" ? "🔒 TURN ON LOCATION FOR THE STAY BONUS" : "🏁 STILL HERE AT THE END? +1"}
                 </button>
                 <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>
                   Check in again from 30 minutes before the listed end time until an hour after it, at the
@@ -261,8 +266,21 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
               />
             )}
-            <button className="action-btn" onClick={submit} disabled={busy} style={{ ...bigButton, opacity: busy ? 0.6 : 1 }}>
-              {busy ? "CHECKING…" : `📍 CHECK IN · +${boost || base}`}
+            <button
+              className="action-btn"
+              onClick={submit}
+              disabled={busy || locStatus === "denied" || locStatus === "unsupported"}
+              style={{
+                ...bigButton,
+                ...(locStatus === "denied" || locStatus === "unsupported" ? { background: "#1A1A1A", color: "#777", border: "1px solid #2A2A2A" } : {}),
+                opacity: busy ? 0.6 : 1,
+              }}
+            >
+              {busy
+                ? "CHECKING…"
+                : locStatus === "denied" || locStatus === "unsupported"
+                  ? "🔒 TURN ON LOCATION TO CHECK IN"
+                  : `📍 CHECK IN · +${boost || base}`}
             </button>
             <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>
               Works from 30 minutes before the start until the meet ends, within a quarter mile of the

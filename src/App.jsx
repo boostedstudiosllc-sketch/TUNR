@@ -59,6 +59,7 @@ import { loadPhotoSpots } from "./lib/community.js";
 import { CARD_PARAM, rememberPendingCard, hasPendingCard } from "./lib/points.js";
 import { INVITE_PARAM, rememberPendingInvite, takePendingInvite, claimInvite } from "./lib/invites.js";
 import InviteSheet from "./components/InviteSheet.jsx";
+import { useLocationStatus } from "./components/LocationAccess.jsx";
 import { recordSignIn } from "./lib/activity.js";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "⭐ Points", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
@@ -479,6 +480,10 @@ export default function App() {
     return () => navigator.serviceWorker.removeEventListener("message", onMessage);
   }, []);
 
+  // Location's setting on this device, so features that need it show as
+  // locked while it's blocked (see Settings → Location).
+  const [locStatus] = useLocationStatus();
+
   function requestLocation() {
     if (!navigator.geolocation) {
       showToast("This browser can't share your location.");
@@ -495,7 +500,7 @@ export default function App() {
         setLocating(false);
         showToast(
           err && err.code === 1
-            ? "Couldn't get your location — location access is turned off for this site in your browser settings."
+            ? "Distances need location, and it's blocked for TUNR. Profile → ⚙️ → Location shows how to turn it on."
             : `Couldn't get your location (${(err && err.message) || "timed out"}).`
         );
       },
@@ -808,7 +813,7 @@ export default function App() {
                   fontFamily: "'Barlow Condensed', sans-serif",
                 }}
               >
-                {locating ? "LOCATING…" : "📍 SHOW DISTANCES FROM ME"}
+                {locating ? "LOCATING…" : locStatus === "denied" ? "🔒 DISTANCES NEED LOCATION (TAP FOR HELP)" : "📍 SHOW DISTANCES FROM ME"}
               </button>
             </div>
           )}
