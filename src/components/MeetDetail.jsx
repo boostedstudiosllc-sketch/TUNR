@@ -9,6 +9,7 @@ import PrivateAccess from "./PrivateAccess.jsx";
 import Attendees from "./Attendees.jsx";
 import MeetPhotos from "./MeetPhotos.jsx";
 import CheckIn from "./CheckIn.jsx";
+import { ShowcaseBanner } from "./MeetStyle.jsx";
 import IssueFlag from "./IssueFlag.jsx";
 import { track, loadGoingHistory } from "../lib/store.js";
 import GoingTicker from "./GoingTicker.jsx";
@@ -454,6 +455,8 @@ export default function MeetDetail({
               </button>
             )}
           </div>
+
+          {event.meetStyle === "showcase" && <ShowcaseBanner note={locked ? "" : event.showcaseNote} />}
 
           {!locked && (
             <CheckIn event={event} user={user} onChanged={onJoined} onNeedAccount={onNeedAccount} onToast={onToast} />

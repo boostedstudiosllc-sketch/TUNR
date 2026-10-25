@@ -64,7 +64,7 @@ import { recordSignIn } from "./lib/activity.js";
 import { CAR_PARAM } from "./lib/buildpage.js";
 import BuildPage from "./components/BuildPage.jsx";
 
-const BASE_FILTERS = ["All", "Today", "This Weekend", "⭐ Points", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
+const BASE_FILTERS = ["All", "Today", "This Weekend", "✨ Showcase", "⭐ Points", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
 const SORTS = [
   { id: "soonest", label: "SOONEST" },
@@ -309,6 +309,7 @@ export default function App() {
         if (filter === "Today") return isToday(e, now);
         if (filter === "This Weekend") return isThisWeekend(e, now);
         if (filter === "⭐ Points") return Boolean(e.boostPoints);
+        if (filter === "✨ Showcase") return e.meetStyle === "showcase";
         return e.vibe === filter;
       })
       .filter((e) => {

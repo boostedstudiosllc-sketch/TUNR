@@ -72,6 +72,7 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
           {event.vibe}
         </div>
         <div style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 6 }}>
+          {event.meetStyle === "showcase" && <Badge points>✨ SHOWCASE</Badge>}
           {event.boostPoints ? (
             <Badge points>⭐ +{event.boostPoints} PTS</Badge>
           ) : event.basePoints ? (

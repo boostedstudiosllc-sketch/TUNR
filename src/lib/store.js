@@ -69,6 +69,8 @@ function rowToEvent(row, counts, userId) {
     // Last day a seasonal series runs ("YYYY-MM-DD"), or null if it doesn't stop.
     recurrenceUntil: row.recurrence_until || null,
     vibe: row.vibe,
+    meetStyle: row.meet_style || "open",
+    showcaseNote: row.showcase_note || "",
     going: (row.base_going || 0) + c.going,
     interested: (row.base_interested || 0) + c.interested,
     // Of the people going (real RSVPs only): bringing a car, and shooting.
@@ -179,6 +181,8 @@ export async function submitEvent(draft, userId = null) {
         city: draft.city || "Atlanta, GA",
         start_at: draft.start ? parseLocal(draft.start, DEFAULT_TZ).toISOString() : null,
         vibe: draft.vibe || "JDM",
+        meet_style: draft.meetStyle === "showcase" ? "showcase" : "open",
+        showcase_note: draft.meetStyle === "showcase" ? (draft.showcaseNote || "").trim().slice(0, 200) || null : null,
         tags: ["Just Posted"],
         description: draft.description || "No description yet.",
         source: draft.igLink ? "instagram" : null,
@@ -897,6 +901,10 @@ export async function updateEvent(eventId, fields) {
   if (fields.city !== undefined) payload.city = fields.city;
   if (fields.description !== undefined) payload.description = fields.description;
   if (fields.vibe !== undefined) payload.vibe = fields.vibe;
+  if (fields.meetStyle !== undefined) {
+    payload.meet_style = fields.meetStyle === "showcase" ? "showcase" : "open";
+    payload.showcase_note = payload.meet_style === "showcase" ? (fields.showcaseNote || "").trim().slice(0, 200) || null : null;
+  }
   if (fields.photoUrl !== undefined) payload.photo_url = fields.photoUrl;
   if (fields.flyerUrl !== undefined) payload.flyer_url = fields.flyerUrl;
   if (fields.flyerHash !== undefined) payload.flyer_hash = fields.flyerHash;

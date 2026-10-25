@@ -1,3 +1,4 @@
+import { MeetStylePicker } from "./MeetStyle.jsx";
 import { useState } from "react";
 import { VIBES } from "../data/events.js";
 import { compressImage } from "../lib/image.js";
@@ -48,6 +49,8 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
     location: "",
     city: "Atlanta, GA",
     vibe: "JDM",
+    meetStyle: "open",
+    showcaseNote: "",
     date: "",
     time: "",
     description: "",
@@ -155,6 +158,8 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
       location: draft.location.trim(),
       city: draft.city.trim() || "Atlanta, GA",
       vibe: draft.vibe,
+      meetStyle: draft.meetStyle,
+      showcaseNote: draft.showcaseNote,
       start,
       description: draft.description.trim(),
       igLink: draft.igLink.trim() || null,
@@ -314,6 +319,14 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                 ))}
               </div>
             </div>
+            <MeetStylePicker
+              style={draft.meetStyle}
+              note={draft.showcaseNote}
+              onStyle={(m) => setDraft((d) => ({ ...d, meetStyle: m }))}
+              onNote={(n) => setDraft((d) => ({ ...d, showcaseNote: n }))}
+              labelStyle={labelStyle}
+              inputStyle={inputStyle}
+            />
           </div>
         )}
 

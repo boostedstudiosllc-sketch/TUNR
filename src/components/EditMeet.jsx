@@ -1,3 +1,4 @@
+import { MeetStylePicker } from "./MeetStyle.jsx";
 import { useState } from "react";
 import { VIBES } from "../data/events.js";
 import { updateEvent, uploadEventPhoto, track } from "../lib/store.js";
@@ -36,6 +37,8 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
   const [city, setCity] = useState(event.city || "");
   const [description, setDescription] = useState(event.description || "");
   const [vibe, setVibe] = useState(event.vibe || "JDM");
+  const [meetStyle, setMeetStyle] = useState(event.meetStyle || "open");
+  const [showcaseNote, setShowcaseNote] = useState(event.showcaseNote || "");
   const [photoUrl, setPhotoUrl] = useState(event.photoUrl || "");
   const [flyerUrl, setFlyerUrl] = useState(event.flyerUrl || "");
   const [flyerHashValue, setFlyerHashValue] = useState(undefined); // undefined = unchanged
@@ -81,6 +84,8 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
         city: city.trim(),
         description: description.trim(),
         vibe,
+        meetStyle,
+        showcaseNote,
         photoUrl: photoUrl || null,
         flyerUrl: flyerUrl || null,
       });
@@ -207,6 +212,14 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
               ))}
             </div>
           </div>
+          <MeetStylePicker
+            style={meetStyle}
+            note={showcaseNote}
+            onStyle={setMeetStyle}
+            onNote={setShowcaseNote}
+            labelStyle={label}
+            inputStyle={input}
+          />
           <div>
             <div style={label}>DESCRIPTION</div>
             <textarea
