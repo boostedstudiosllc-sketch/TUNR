@@ -110,6 +110,13 @@ export default function PrivacyPolicy({ onClose }) {
           meets you went to or where you were.
           <br />
           <br />
+          <strong>“Scan my build” pages:</strong> only if you turn one on for a car, anyone with the
+          link or the QR sticker can see that car's photo, year, make, model, build notes and your
+          username. We count scans; to skip repeats we keep only a one-way scrambled code made
+          from the scanner's account or network address, never the address itself. Turn the page
+          off any time in your garage.
+          <br />
+          <br />
           <strong>Invites:</strong> your invite code, and if you joined through a friend's link,
           that you did. Your friend sees your username and whether you've confirmed your email, so
           it can count toward their unlocks.

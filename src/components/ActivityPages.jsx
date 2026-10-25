@@ -70,7 +70,21 @@ export function InviteHistory({ onOpenLink }) {
         <button key={f.id} onClick={() => onOpenLink(`person:${f.id}`)} style={rowButton}>
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: "block", fontSize: 15, fontWeight: 900 }}>@{f.username || "new member"}</span>
-            {f.joined && <span style={{ display: "block", ...muted, fontSize: 12.5 }}>Joined {day(f.joined)}</span>}
+            <span style={{ display: "block", ...muted, fontSize: 12.5 }}>
+              {[
+                f.joined && `Joined ${day(f.joined)}`,
+                f.via === "scan" ? `via the QR on your ${f.car || "car"}` : "via your link",
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+            <span style={{ display: "block", fontSize: 12, fontWeight: 700, color: f.points === true ? "#10B981" : f.points === false ? "#A0A0A0" : "#A08A40", fontFamily: "'Barlow', sans-serif" }}>
+              {f.points === true
+                ? "⭐ +5 earned: they checked in at a meet"
+                : f.points === false
+                  ? "Checked in, but past this month's 10-referral limit"
+                  : "⭐ +5 when they check in at their first meet"}
+            </span>
           </span>
           <span style={{ fontSize: 12, fontWeight: 800, color: f.confirmed ? "#10B981" : "#FACC15", whiteSpace: "nowrap" }}>
             {f.confirmed ? "✓ JOINED" : "PENDING"}

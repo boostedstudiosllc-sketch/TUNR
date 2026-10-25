@@ -10,6 +10,7 @@ import {
 } from "../lib/store.js";
 import { compressImage } from "../lib/image.js";
 import { loadMyInvites, openInvites } from "../lib/invites.js";
+import StickerSheet from "./StickerSheet.jsx";
 
 const inputStyle = {
   background: "#0F0F0F",
@@ -41,6 +42,8 @@ export default function Garage({ user, onToast }) {
   const [vehicles, setVehicles] = useState([]);
   const [makes, setMakes] = useState([]);
   const [editing, setEditing] = useState(null);
+  // The car whose "Scan my build" sticker sheet is open.
+  const [sticker, setSticker] = useState(null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -137,6 +140,9 @@ export default function Garage({ user, onToast }) {
         marginBottom: 12,
       }}
     >
+      {sticker && (
+        <StickerSheet vehicle={sticker} onClose={() => setSticker(null)} onToast={onToast} onChanged={refresh} />
+      )}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ fontSize: 15, fontWeight: 800 }}>
           🏎 Your garage {vehicles.length > 0 && `· ${vehicles.length}`}
@@ -173,7 +179,7 @@ export default function Garage({ user, onToast }) {
           }}
         >
           Add your car and it shows up on the meets you RSVP to. Other people see the make and
-          model only — never your name.
+          model only, never your name, unless you turn on a car's “Scan my build” page.
         </div>
       )}
 
@@ -237,6 +243,9 @@ export default function Garage({ user, onToast }) {
                   </div>
                 )}
                 <div style={{ display: "flex", gap: 6, marginTop: 7, flexWrap: "wrap" }}>
+                  <button className="action-btn" onClick={() => setSticker(v)} style={{ ...linkStyle, color: "#FF7A00" }}>
+                    🔳 QR sticker{v.public_page ? " · page on" : ""}
+                  </button>
                   {v.is_primary ? (
                     <span style={tagStyle("#FF4500")}>MAIN CAR</span>
                   ) : (

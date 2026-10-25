@@ -16,10 +16,12 @@ export const FLAIR_COLORS = ["#FF4500", "#FACC15", "#10B981", "#38BDF8", "#A855F
 
 export const inviteLink = (code) => `${window.location.origin}/?${INVITE_PARAM}=${code}`;
 
-// Someone opened a friend's link: keep the code until they've signed up.
-export function rememberPendingInvite(code) {
+// Someone opened a friend's link (or scanned the QR on their car): keep it
+// until they've signed up. `vehicle` is set for a scan.
+export function rememberPendingInvite(code, { source = "link", vehicle = null } = {}) {
   try {
-    sessionStorage.setItem(PENDING_INVITE_KEY, String(code || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12));
+    const clean = String(code || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+    sessionStorage.setItem(PENDING_INVITE_KEY, JSON.stringify({ code: clean, source, vehicle }));
   } catch (e) {
     console.warn(`Couldn't remember the invite: ${e.message}`);
   }
@@ -27,18 +29,20 @@ export function rememberPendingInvite(code) {
 
 export function takePendingInvite() {
   try {
-    const code = sessionStorage.getItem(PENDING_INVITE_KEY) || "";
+    const raw = sessionStorage.getItem(PENDING_INVITE_KEY) || "";
     sessionStorage.removeItem(PENDING_INVITE_KEY);
-    return code;
+    if (!raw) return null;
+    // Older sessions stored just the code.
+    return raw.startsWith("{") ? JSON.parse(raw) : { code: raw, source: "link", vehicle: null };
   } catch (e) {
     console.warn(`Couldn't read the invite: ${e.message}`);
-    return "";
+    return null;
   }
 }
 
-export async function claimInvite(code) {
+export async function claimInvite({ code, source = "link", vehicle = null } = {}) {
   if (!supabase || !code) return null;
-  const { data, error } = await supabase.rpc("claim_invite", { p_code: code });
+  const { data, error } = await supabase.rpc("claim_invite", { p_code: code, p_source: source, p_vehicle: vehicle });
   if (error) throw new Error(withReason("Couldn't link your friend's invite.", error));
   return data || {};
 }

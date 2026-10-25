@@ -264,7 +264,8 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           we record for you), a one-time membership bonus, checking in at
           meets (one point at any meet with a map pin posted at least a day ahead; more at meets
           we boost; plus one for checking in again near a meet's end after arriving in its first
-          hour; plus small bonuses for weekly check-in streaks), and one-time getting-started bonuses. Rewards are
+          hour; plus small bonuses for weekly check-in streaks), referrals (when someone you
+          invited, by link or your car's QR, checks in at their first meet; up to 10 a month), and one-time getting-started bonuses. Rewards are
           guaranteed when you redeem them: it's a loyalty program, never a drawing, raffle or
           lottery. Some rewards are only for buyers who have spent a minimum amount. A refunded or
           cancelled order loses its points, and each points card works once, for the account that

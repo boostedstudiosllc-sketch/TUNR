@@ -212,6 +212,8 @@ const REASON_LABELS = {
   rsvp_bonus: "Said you'd go, and showed up",
   stay_bonus: "Stayed the whole meet",
   streak_bonus: "Weekly streak bonus",
+  referral_bonus: "A friend you brought checked in",
+  welcome_bonus: "Welcome bonus: your first meet",
   starter_profile: "Finished your profile",
   starter_car: "Added your car",
   starter_alerts: "Turned on alerts",

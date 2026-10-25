@@ -61,6 +61,8 @@ import { INVITE_PARAM, rememberPendingInvite, takePendingInvite, claimInvite } f
 import InviteSheet from "./components/InviteSheet.jsx";
 import { useLocationStatus } from "./components/LocationAccess.jsx";
 import { recordSignIn } from "./lib/activity.js";
+import { CAR_PARAM } from "./lib/buildpage.js";
+import BuildPage from "./components/BuildPage.jsx";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "⭐ Points", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -139,19 +141,26 @@ export default function App() {
 
   // Opened a friend's invite link (?invite=…): kept until they've signed up,
   // then credited to that friend. Only new accounts can be credited.
+  // A "Scan my build" sticker opens ?car=<id>&invite=<owner's code>: show
+  // that car's page, and credit the owner if the scanner signs up.
+  const [carView, setCarView] = useState(
+    () => (typeof window !== "undefined" && new URLSearchParams(window.location.search).get(CAR_PARAM)) || null
+  );
   useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get(INVITE_PARAM);
-    if (!code) return;
-    rememberPendingInvite(code);
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get(INVITE_PARAM);
+    const car = params.get(CAR_PARAM);
+    if (!code && !car) return;
+    if (code) rememberPendingInvite(code, car ? { source: "scan", vehicle: car } : {});
     window.history.replaceState(null, "", window.location.pathname);
   }, []);
   useEffect(() => {
     if (!user) return;
-    const code = takePendingInvite();
-    if (!code) return;
+    const pending = takePendingInvite();
+    if (!pending?.code) return;
     // After ensureProfile has had a moment to create the profile row.
     const t = setTimeout(() => {
-      claimInvite(code)
+      claimInvite(pending)
         .then((r) => {
           if (r?.status === "ok") showToast(`🎉 You joined with @${r.inviter || "a friend"}'s invite`);
         })
@@ -553,6 +562,30 @@ export default function App() {
           }}
         />
       </>
+    );
+  }
+
+  // Someone new who scanned a car's sticker sees the build first; the terms
+  // come when they go on into the app.
+  if (!tosAccepted && carView) {
+    return (
+      <div style={{ fontFamily: "'Barlow Condensed', sans-serif", color: "#F0F0F0", background: "#0A0A0A", minHeight: "100vh" }}>
+        <GlobalStyles />
+        <BuildPage
+          vehicleId={carView}
+          user={user}
+          onClose={() => setCarView(null)}
+          onOpenPerson={(id) => {
+            setCarView(null);
+            setPersonView(id);
+          }}
+          onJoin={() => {
+            setCarView(null);
+            setTab("profile");
+          }}
+          onToast={showToast}
+        />
+      </div>
     );
   }
 
@@ -1095,6 +1128,23 @@ export default function App() {
 
       {showAlerts && user && <AlertSettings user={user} onClose={() => setShowAlerts(false)} onToast={showToast} />}
       {settingPassword && user && <SetPasswordSheet onClose={() => setSettingPassword(false)} onToast={showToast} />}
+      {carView && (
+        <BuildPage
+          vehicleId={carView}
+          user={user}
+          onClose={() => setCarView(null)}
+          onOpenPerson={(id) => {
+            setCarView(null);
+            setPersonView(id);
+          }}
+          onJoin={() => {
+            setCarView(null);
+            setTab("profile");
+            showToast("Create your free account. The car's owner gets credit for bringing you!");
+          }}
+          onToast={showToast}
+        />
+      )}
       {inviting && user && (
         <InviteSheet
           reason={inviting.reason}

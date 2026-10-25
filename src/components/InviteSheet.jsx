@@ -39,7 +39,8 @@ export default function InviteSheet({ reason = "", onClose, onToast, onOpenPerso
       {reason && <div style={{ ...muted, color: "#FACC15", marginTop: 6 }}>🔒 {reason}</div>}
       <div style={{ ...muted, marginTop: 6 }}>
         Share your link. Each friend who signs up with it and confirms their email counts toward
-        unlocking more of TUNR.
+        unlocking more of TUNR, and you get <b style={{ color: "#FACC15" }}>+5 points</b> when they check in at their
+        first meet (they get +2 too). The QR sticker on your car counts the same way.
       </div>
       {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
 
