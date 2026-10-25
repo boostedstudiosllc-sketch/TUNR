@@ -199,7 +199,7 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
         )}
         <EarnRow icon="📍" text="Check in at any meet, at the meet" pts="+1" />
         <EarnRow icon="🏁" text="Check in again at the end: stayed the whole meet" pts="+1" />
-        <EarnRow icon="⭐" text="Check in at a boosted meet (code shown at the meet)" pts="+10 to +50" />
+        <EarnRow icon="⭐" text="Check in at a boosted meet (code shown at the meet)" pts="+5 to +10" />
         <EarnRow icon="🙋" text="RSVP “Going” to a boosted meet, then show up" pts={`+${POINTS.rsvpBonus}`} />
         <EarnRow
           icon="🔥"
@@ -415,13 +415,13 @@ export function RewardsAdmin({ onToast }) {
           </select>
         </Field>
         <Field name="POINTS COST">
-          <input style={field} inputMode="numeric" value={draft.cost} onChange={(e) => set({ cost: e.target.value.replace(/\D/g, "") })} placeholder="3000" />
+          <input style={field} inputMode="numeric" value={draft.cost} onChange={(e) => set({ cost: e.target.value.replace(/\D/g, "") })} placeholder="300" />
         </Field>
-        {Number(draft.cost) > 0 && rate > 0 && (
-          <div style={{ ...muted, fontSize: 12, marginTop: 4 }}>
-            At {rate} points per $1, that's about {dollars(Math.round((Number(draft.cost) / rate) * 100))} spent on merch.
-          </div>
-        )}
+        <div style={{ ...muted, fontSize: 12, marginTop: 4 }}>
+          Easy rule: <b style={{ color: "#DDD" }}>10 points for every $1</b> the item is worth. A $30 shirt = 300 points,
+          a $20 hat = 200. That's about 7–8 months for a very active member.
+          {Number(draft.cost) > 0 && ` ${Number(draft.cost)} points ≈ a ${dollars(Number(draft.cost) * 10)} item.`}
+        </div>
         <Field name="MUST HAVE SPENT AT LEAST ($, OPTIONAL)">
           <input style={field} inputMode="decimal" value={draft.minSpend} onChange={(e) => set({ minSpend: e.target.value.replace(/[^\d.]/g, "") })} placeholder="100" />
         </Field>

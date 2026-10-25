@@ -15,7 +15,7 @@ import { askForLocation } from "../lib/location.js";
 import { useLocationStatus, LocationNotice } from "./LocationAccess.jsx";
 import { field, bigButton, muted, label } from "./Sheet.jsx";
 
-const BOOSTS = [10, 25, 50];
+const BOOSTS = [5, 10];
 
 // The ⭐ box on a meet. Any meet gives a point for checking in (location and
 // meet hours only); a boosted meet gives more and needs the host's code. The

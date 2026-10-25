@@ -10,7 +10,7 @@ import { friendlyWriteError, withReason } from "./errors.js";
 // database side is ready for when it opens.
 export const SHOP_OPEN = false;
 
-export const POINTS = { checkin: 10, rsvpBonus: 5, profile: 10, car: 10, alerts: 5 };
+export const POINTS = { checkin: 10, rsvpBonus: 1, profile: 10, car: 10, alerts: 5 };
 export const REDEEM_RULES = { accountDays: 14, checkins: 2 };
 
 function need() {
