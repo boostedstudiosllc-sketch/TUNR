@@ -141,11 +141,50 @@ export async function checkIn(eventId, code, pos) {
   return data || {};
 }
 
+const STAY_COPY = {
+  not_signed_in: "Sign in first.",
+  rate_limited: "Too many tries. Wait an hour and try again.",
+  not_found: "This meet isn't available.",
+  not_happening: "The stay bonus closes an hour after the meet's end time.",
+  not_checked_in: "Check in when you arrive first; the stay bonus is for people who were there from the start.",
+  late_arrival: "The stay bonus is for people who checked in within the first hour of the meet.",
+  already: "You already got the stay bonus for this meet.",
+  no_pin: "This meet has no map pin, so TUNR can't confirm you're still there.",
+  location_needed: "Allow location so TUNR can confirm you're still at the meet.",
+  weak_location: "Your location isn't precise enough. Turn on precise location (or step outside) and try again.",
+};
+
+export function stayMessage(result) {
+  const status = result?.status || "unknown";
+  if (status === "too_early") {
+    const at = new Date(result.opens_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    return `Not yet: the stay bonus opens at ${at}, 30 minutes before the listed end time.`;
+  }
+  if (status === "too_far") {
+    const miles = (Number(result.distance_m || 0) / 1609.34).toFixed(1);
+    return `You're about ${miles} miles from the meet. The stay bonus is for being there at the end.`;
+  }
+  return STAY_COPY[status] || `Couldn't add the stay bonus. (${status})`;
+}
+
+// Checked in at the start and still there at the end: +1.
+export async function stayCheckIn(eventId, pos) {
+  need();
+  const { data, error } = await supabase.rpc("stay_check_in", {
+    p_event: eventId,
+    p_lat: pos?.lat ?? null,
+    p_lng: pos?.lng ?? null,
+    p_accuracy: pos?.accuracy ?? null,
+  });
+  if (error) throw new Error(withReason("Couldn't add the stay bonus.", error));
+  return data || {};
+}
+
 export async function myCheckin(eventId, userId) {
   if (!supabase || !userId) return null;
   const { data, error } = await supabase
     .from("meet_checkins")
-    .select("occurrence, created_at, voided_at")
+    .select("occurrence, created_at, voided_at, stayed_at")
     .eq("event_id", eventId)
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
@@ -171,6 +210,7 @@ export async function claimStarterPoints() {
 const REASON_LABELS = {
   checkin: "Checked in",
   rsvp_bonus: "Said you'd go, and showed up",
+  stay_bonus: "Stayed the whole meet",
   starter_profile: "Finished your profile",
   starter_car: "Added your car",
   starter_alerts: "Turned on alerts",

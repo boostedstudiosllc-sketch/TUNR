@@ -263,7 +263,8 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           scanning the one-time points card that comes with your order or service, or for a sale
           we record for you), a one-time membership bonus, checking in at
           meets (one point at any meet with a map pin posted at least a day ahead; more at meets
-          we boost), and one-time getting-started bonuses. Rewards are
+          we boost; plus one for checking in again near a meet's end after arriving in its first
+          hour), and one-time getting-started bonuses. Rewards are
           guaranteed when you redeem them: it's a loyalty program, never a drawing, raffle or
           lottery. Some rewards are only for buyers who have spent a minimum amount. A refunded or
           cancelled order loses its points, and each points card works once, for the account that

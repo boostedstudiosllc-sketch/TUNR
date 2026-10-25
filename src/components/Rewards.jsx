@@ -160,7 +160,8 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
         {rates.member_bonus > 0 && (
           <EarnRow icon="💎" text="Become a TUNR member (one time)" pts={`+${rates.member_bonus}`} done={points?.earned > 0 && history.some((h) => h.label === "Membership bonus")} />
         )}
-        <EarnRow icon="📍" text="Check in at any meet" pts="+1" />
+        <EarnRow icon="📍" text="Check in at any meet, at the meet" pts="+1" />
+        <EarnRow icon="🏁" text="Check in again at the end: stayed the whole meet" pts="+1" />
         <EarnRow icon="⭐" text="Check in at a boosted meet (code shown at the meet)" pts="+10 to +50" />
         <EarnRow icon="🙋" text="RSVP “Going” to a boosted meet, then show up" pts={`+${POINTS.rsvpBonus}`} />
         <div style={{ ...label, marginTop: 12 }}>GETTING STARTED (ONE TIME)</div>

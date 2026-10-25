@@ -37,7 +37,7 @@ export function MeetHistory({ onOpenLink }) {
             </span>
           </span>
           <span style={{ fontSize: 12, fontWeight: 800, color: r.checked_in ? "#10B981" : "#A0A0A0", whiteSpace: "nowrap" }}>
-            {r.checked_in ? "✓ CHECKED IN" : r.rsvp === "going" ? "GOING" : r.rsvp === "interested" ? "MAYBE" : r.rsvp === "not_going" ? "NOT GOING" : ""}
+            {r.stayed ? "🏁 STAYED" : r.checked_in ? "✓ CHECKED IN" : r.rsvp === "going" ? "GOING" : r.rsvp === "interested" ? "MAYBE" : r.rsvp === "not_going" ? "NOT GOING" : ""}
           </span>
         </button>
       ))}

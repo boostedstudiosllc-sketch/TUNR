@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
-import { POINTS, setMeetPoints, getCheckinCode, preciseLocation, checkIn, checkinMessage, myCheckin } from "../lib/points.js";
+import {
+  POINTS,
+  setMeetPoints,
+  getCheckinCode,
+  preciseLocation,
+  checkIn,
+  checkinMessage,
+  myCheckin,
+  stayCheckIn,
+  stayMessage,
+} from "../lib/points.js";
 import { loadProfile } from "../lib/store.js";
 import { field, bigButton, muted, label } from "./Sheet.jsx";
 
@@ -17,6 +27,7 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
   const [code, setCode] = useState("");
   const [hostCode, setHostCode] = useState(null);
   const [checkedIn, setCheckedIn] = useState(false);
+  const [stayed, setStayed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const isHost = Boolean(event.canManage);
@@ -47,7 +58,9 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
     myCheckin(event.id, user.id)
       .then((c) => {
         if (!alive || !c || c.voided_at) return;
-        setCheckedIn(Date.now() - new Date(c.created_at).getTime() < 12 * 3600 * 1000);
+        const recent = Date.now() - new Date(c.created_at).getTime() < 12 * 3600 * 1000;
+        setCheckedIn(recent);
+        setStayed(recent && Boolean(c.stayed_at));
       })
       .catch((e) => console.warn(e.message));
     return () => {
@@ -75,6 +88,24 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
       onChanged && onChanged();
     } catch (e) {
       onToast(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function stay() {
+    setBusy(true);
+    setMessage("");
+    try {
+      const result = await stayCheckIn(event.id, await preciseLocation());
+      if (result.status === "ok") {
+        setStayed(true);
+        onToast("🏁 +1 for staying the whole meet. Respect!");
+      } else {
+        setMessage(stayMessage(result));
+      }
+    } catch (e) {
+      setMessage(e.message);
     } finally {
       setBusy(false);
     }
@@ -185,7 +216,22 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
 
       {on && !isHost &&
         (checkedIn ? (
-          <div style={{ marginTop: 12, fontSize: 15, fontWeight: 800, color: "#10B981" }}>✓ You're checked in. Enjoy the meet!</div>
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#10B981" }}>✓ You're checked in. Enjoy the meet!</div>
+            {stayed ? (
+              <div style={{ marginTop: 6, fontSize: 14, fontWeight: 800, color: "#10B981" }}>🏁 Stayed the whole meet: +1</div>
+            ) : (
+              <>
+                <button className="action-btn" onClick={stay} disabled={busy} style={{ ...stayButton, opacity: busy ? 0.6 : 1 }}>
+                  {busy ? "CHECKING…" : "🏁 STILL HERE AT THE END? +1"}
+                </button>
+                <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>
+                  Check in again from 30 minutes before the listed end time until an hour after it, at the
+                  meet, for a bonus point.
+                </div>
+              </>
+            )}
+          </div>
         ) : (
           <div style={{ marginTop: 12 }}>
             {boost && (
@@ -246,6 +292,14 @@ const chip = {
   letterSpacing: 0.5,
   cursor: "pointer",
   fontFamily: "'Barlow Condensed', sans-serif",
+};
+
+const stayButton = {
+  ...bigButton,
+  marginTop: 10,
+  background: "#141414",
+  border: "1px solid #10B981",
+  color: "#10B981",
 };
 
 const chipOn = { borderColor: "#FACC15", color: "#FACC15", background: "rgba(250,204,21,0.1)" };
