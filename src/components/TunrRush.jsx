@@ -17,6 +17,7 @@ import {
   saveGameLook,
   loadGameSettings,
 } from "../lib/rush.js";
+import { RushAudio, loadSoundPrefs } from "../lib/rushAudio.js";
 import { loadVehicles, loadProfile } from "../lib/store.js";
 import { Avatar } from "./EditProfile.jsx";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
@@ -48,6 +49,23 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
   const [board, setBoard] = useState(null);
   const [boardPeriod, setBoardPeriod] = useState("week");
   const saveTimer = useRef(0);
+  const audio = useRef(null);
+  const [sound, setSound] = useState(loadSoundPrefs);
+
+  // Sound can only start from a tap, so it begins with the first START.
+  function play() {
+    if (!audio.current) audio.current = new RushAudio();
+    if (audio.current.unlock()) audio.current.startMusic();
+    setScreen("play");
+  }
+  function toggle(kind) {
+    const next = { ...sound, [kind]: !sound[kind] };
+    setSound(next);
+    if (!audio.current) audio.current = new RushAudio();
+    if (kind === "music") audio.current.setMusic(next.music);
+    else audio.current.setSfx(next.sfx);
+  }
+  useEffect(() => () => audio.current?.dispose(), []);
   const [error, setError] = useState("");
 
   const car = cars.find((c) => c.id === carId) || null;
@@ -139,9 +157,27 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
           <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 1 }}>
             🎮 TUNR <span style={{ color: "#FF4500" }}>RUSH</span>
           </div>
-          <button onClick={onClose} aria-label="Close the game" style={{ ...quietButton, width: 44, height: 44, padding: 0, fontSize: 18 }}>
-            ✕
-          </button>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button
+              onClick={() => toggle("music")}
+              aria-label={sound.music ? "Turn music off" : "Turn music on"}
+              aria-pressed={sound.music}
+              style={{ ...quietButton, width: 44, height: 44, padding: 0, fontSize: 17, opacity: sound.music ? 1 : 0.4 }}
+            >
+              🎵
+            </button>
+            <button
+              onClick={() => toggle("sfx")}
+              aria-label={sound.sfx ? "Turn sound effects off" : "Turn sound effects on"}
+              aria-pressed={sound.sfx}
+              style={{ ...quietButton, width: 44, height: 44, padding: 0, fontSize: 17 }}
+            >
+              {sound.sfx ? "🔊" : "🔇"}
+            </button>
+            <button onClick={onClose} aria-label="Close the game" style={{ ...quietButton, width: 44, height: 44, padding: 0, fontSize: 18 }}>
+              ✕
+            </button>
+          </div>
         </div>
         {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
 
@@ -150,7 +186,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             <div style={{ ...muted, marginTop: 6 }}>
               Dodge traffic and grab ⏱ for extra time. Grab the Boosted badge{" "}
               <img src="/game/boost.webp" alt="" style={{ width: 22, height: "auto", verticalAlign: "middle" }} /> for a{" "}
-              <b style={{ color: "#38BDF8" }}>boost</b>: a few seconds flat out, smashing through anything in your way. Reach <b style={{ color: "#FACC15" }}>{rules.goal.toLocaleString()} m</b>{" "}
+              <b style={{ color: "#38BDF8" }}>boost</b>: a few seconds flat out with big blue flames. You still have to dodge, and a crash ends it. Reach <b style={{ color: "#FACC15" }}>{rules.goal.toLocaleString()} m</b>{" "}
               for <b style={{ color: "#FACC15" }}>+{rules.dailyPoints} point{rules.dailyPoints === 1 ? "" : "s"}</b>, once a day.{" "}
               {mine?.today_done ? <span style={{ color: "#10B981" }}>✓ Today's point is in.</span> : null}
             </div>
@@ -206,7 +242,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             </div>
 
             {rules.enabled ? (
-              <button className="action-btn" onClick={() => setScreen("play")} style={{ ...bigButton, marginTop: 18, fontSize: 18, padding: "16px 0" }}>
+              <button className="action-btn" onClick={play} style={{ ...bigButton, marginTop: 18, fontSize: 18, padding: "16px 0" }}>
                 🏁 START
               </button>
             ) : (
@@ -242,6 +278,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             look={look}
             plate={plate}
             rules={rules}
+            audio={audio.current}
             vehicleId={user ? carId : null}
             signedIn={Boolean(user)}
             onDone={(r) => {
@@ -263,7 +300,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             </div>
             <div style={{ ...muted, marginTop: 6 }}>
               ⏱ {result.pickups} · 🚀 {result.boosts} boost{result.boosts === 1 ? "" : "s"}
-              {result.smashed ? ` (${result.smashed} smashed)` : ""} · 💥 {result.crashes} crash{result.crashes === 1 ? "" : "es"} · score{" "}
+              {" "}· 💥 {result.crashes} crash{result.crashes === 1 ? "" : "es"} · score{" "}
               {result.score.toLocaleString()}
             </div>
             <div style={{ marginTop: 14, fontSize: 17, fontWeight: 900, color: result.server?.earned ? "#FACC15" : "#AAA" }}>
@@ -280,7 +317,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             {result.server && result.dist >= (result.server.best || 0) && result.dist > 0 && (
               <div style={{ marginTop: 6, color: "#FF7A00", fontWeight: 900 }}>🔥 NEW PERSONAL BEST</div>
             )}
-            <button className="action-btn" onClick={() => setScreen("play")} style={{ ...bigButton, marginTop: 18 }}>
+            <button className="action-btn" onClick={play} style={{ ...bigButton, marginTop: 18 }}>
               🔁 RUN IT BACK
             </button>
 
@@ -458,7 +495,7 @@ function CarPreview({ look, plate }) {
 }
 
 // The running game. Registers the run with the server, plays, and reports.
-function Game({ look, plate, rules, vehicleId, signedIn, onDone, onQuit }) {
+function Game({ look, plate, rules, audio, vehicleId, signedIn, onDone, onQuit }) {
   const canvasRef = useRef(null);
   const stateRef = useRef(null);
   const runRef = useRef(null);
@@ -500,16 +537,28 @@ function Game({ look, plate, rules, vehicleId, signedIn, onDone, onQuit }) {
     let last = performance.now();
     let raf = 0;
     let ended = false;
+    audio?.startEngine();
 
     const frame = (now) => {
       const events = step(g, (now - last) / 1000);
       last = now;
       if (events.includes("crash") && navigator.vibrate) navigator.vibrate(120);
       if (events.includes("boost") && navigator.vibrate) navigator.vibrate([40, 30, 40]);
+      if (audio) {
+        audio.engine(g.speed, g.boostT > 0);
+        for (const ev of events) {
+          if (ev === "crash") audio.crash();
+          else if (ev === "pickup") audio.pickup();
+          else if (ev === "boost") audio.boost();
+          else if (ev === "pop") audio.pop();
+          else if (ev === "boostEnd") audio.boostEnd();
+        }
+      }
       drawGame(ctx, W, H, g, me, ART);
       if (g.over && !ended) {
         ended = true;
-        const r = { dist: Math.floor(g.dist), score: scoreOf(g), pickups: g.pickups, boosts: g.boosts, smashed: g.smashed, crashes: g.crashes };
+        audio?.stopEngine();
+        const r = { dist: Math.floor(g.dist), score: scoreOf(g), pickups: g.pickups, boosts: g.boosts, crashes: g.crashes };
         if (!signedIn || !runRef.current) return onDone(r);
         finishRun(runRef.current, g)
           .then((server) => onDone({ ...r, server: server?.status === "ok" ? server : null, serverError: server && server.status !== "ok" ? `Run not counted (${server.status}).` : "" }))
@@ -528,6 +577,7 @@ function Game({ look, plate, rules, vehicleId, signedIn, onDone, onQuit }) {
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("keydown", onKey);
+      audio?.stopEngine();
     };
   }, [countdown <= 0]);
 

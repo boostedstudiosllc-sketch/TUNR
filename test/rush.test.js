@@ -52,25 +52,33 @@ test("you can't steer off the road", () => {
   assert.equal(g.lane, 2);
 });
 
-test("the Boosted turbo gives a boost that smashes through traffic for free", () => {
+test("the Boosted badge makes you faster, but you still have to steer around traffic", () => {
   const g = newGame(seeded());
   g.objects.push({ z: 0.03, lane: 1, kind: "boost" });
   assert.deepEqual(step(g, 0.001), ["boost"]);
   assert.equal(g.boosts, 1);
   assert.ok(g.boostT > BOOST_TIME - 0.01);
 
-  g.objects.push({ z: 0.03, lane: 1, kind: "car", color: "#fff", body: "sedan" });
-  const time = g.timeLeft;
-  assert.deepEqual(step(g, 0.001), ["smash"]);
-  assert.equal(g.crashes, 0);
-  assert.equal(g.smashed, 1);
-  assert.ok(g.timeLeft > time - 0.01);
-
   // Faster while it lasts, then it wears off.
+  g.objects = [];
+  g.spawnIn = 99;
   for (let i = 0; i < 60; i++) step(g, 1 / 60);
   assert.ok(g.speed > 85);
-  for (let i = 0; i < 60 * BOOST_TIME; i++) step(g, 1 / 60);
+  const ended = [];
+  for (let i = 0; i < 60 * BOOST_TIME; i++) ended.push(...step(g, 1 / 60));
   assert.equal(g.boostT, 0);
+  assert.ok(ended.includes("boostEnd"));
+
+  // Hitting something while boosted is still a crash, and ends the boost.
+  const h = newGame(seeded());
+  h.objects.push({ z: 0.03, lane: 1, kind: "boost" });
+  step(h, 0.001);
+  h.objects.push({ z: 0.03, lane: 1, kind: "car", color: "#fff", body: "sedan" });
+  const time = h.timeLeft;
+  assert.ok(step(h, 0.001).includes("crash"));
+  assert.equal(h.crashes, 1);
+  assert.equal(h.boostT, 0);
+  assert.ok(h.timeLeft < time - 3.9);
   const crash = newGame(seeded());
   crash.objects.push({ z: 0.03, lane: 1, kind: "barrel" });
   assert.deepEqual(step(crash, 0.001), ["crash"]);

@@ -54,7 +54,7 @@ export function newGame(rand = Math.random, rules = {}) {
     pickups: 0,
     boosts: 0,
     boostT: 0,
-    smashed: 0,
+    popT: 0,
     over: false,
   };
 }
@@ -97,6 +97,13 @@ export function step(g, dt) {
   g.speed += (target - g.speed) * Math.min(1, dt * (boosting ? 3 : g.crashT > 0 ? 0.6 : 1.5));
   g.crashT = Math.max(0, g.crashT - dt);
   g.boostT = Math.max(0, g.boostT - dt);
+  g.popT = Math.max(0, g.popT - dt);
+  if (boosting && g.boostT === 0) events.push("boostEnd");
+  // Exhaust pops and burbles while boosting.
+  if (g.boostT > 0 && g.rand() < dt * 7) {
+    g.popT = 0.1;
+    events.push("pop");
+  }
   g.dist += g.speed * dt;
   g.laneX += Math.sign(g.lane - g.laneX) * Math.min(Math.abs(g.lane - g.laneX), dt * 9);
 
@@ -130,12 +137,10 @@ export function step(g, dt) {
       g.crashT = 0;
       g.boosts += 1;
       events.push("boost");
-    } else if (boosting) {
-      // Boosted: plow straight through.
-      o.smashed = true;
-      g.smashed += 1;
-      events.push("smash");
     } else if (g.crashT <= 0) {
+      // Boosted or not, you still have to steer around things; a crash
+      // also ends the boost.
+      g.boostT = 0;
       g.timeLeft -= R.crashSeconds;
       g.speed *= 0.45;
       g.crashT = 1.2;
@@ -143,7 +148,7 @@ export function step(g, dt) {
       events.push("crash");
     }
   }
-  g.objects = g.objects.filter((o) => o.z > -0.05 && !(o.hit && (o.kind === "clock" || o.kind === "boost" || o.smashed)));
+  g.objects = g.objects.filter((o) => o.z > -0.05 && !(o.hit && (o.kind === "clock" || o.kind === "boost")));
 
   if (g.timeLeft <= 0) {
     g.timeLeft = 0;
@@ -153,7 +158,7 @@ export function step(g, dt) {
   return events;
 }
 
-export const scoreOf = (g) => Math.floor(g.dist) + g.pickups * 100 + g.boosts * 100 + g.smashed * 50;
+export const scoreOf = (g) => Math.floor(g.dist) + g.pickups * 100 + g.boosts * 100;
 
 // ---------- drawing ----------
 
@@ -546,23 +551,41 @@ export function drawGame(ctx, W, H, g, me, art = {}) {
     drawCar(ctx, myX, yPlayer + H * 0.02, myW, { sport: true, ...me });
   }
   if (g.boostT > 0) {
-    // Blue exhaust flames out the back.
-    const flame = 0.8 + Math.sin(g.t * 40) * 0.2;
+    // Big blue exhaust flames, flaring on every pop.
+    const flicker = 0.75 + Math.sin(g.t * 47) * 0.15 + Math.sin(g.t * 83) * 0.1;
+    const pop = g.popT > 0 ? 1.6 : 1;
+    const fy = yPlayer + H * 0.02 - myW * 0.06;
     for (const side of [-1, 1]) {
       const fx = myX + side * myW * 0.255;
-      const fy = yPlayer + H * 0.02 - myW * 0.06;
-      const len = myW * 0.32 * flame;
+      const len = myW * 0.62 * flicker * pop;
+      const half = myW * 0.09 * pop;
+      // Outer glow.
+      const glow = ctx.createRadialGradient(fx, fy + len * 0.3, 0, fx, fy + len * 0.3, len * 0.7);
+      glow.addColorStop(0, "rgba(56,189,248,0.45)");
+      glow.addColorStop(1, "rgba(56,189,248,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(fx, fy + len * 0.3, len * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+      // Flame body: white-hot core to deep blue.
       const fl = ctx.createLinearGradient(fx, fy, fx, fy + len);
-      fl.addColorStop(0, "rgba(255,255,255,0.95)");
-      fl.addColorStop(0.35, "rgba(56,189,248,0.9)");
-      fl.addColorStop(1, "rgba(29,78,216,0)");
+      fl.addColorStop(0, "rgba(255,255,255,1)");
+      fl.addColorStop(0.25, "rgba(125,211,252,0.95)");
+      fl.addColorStop(0.6, "rgba(37,99,235,0.8)");
+      fl.addColorStop(1, "rgba(30,64,175,0)");
       ctx.fillStyle = fl;
       ctx.beginPath();
-      ctx.moveTo(fx - myW * 0.06, fy);
-      ctx.lineTo(fx + myW * 0.06, fy);
-      ctx.lineTo(fx, fy + len);
+      ctx.moveTo(fx - half, fy);
+      ctx.quadraticCurveTo(fx - half * 1.3, fy + len * 0.45, fx, fy + len);
+      ctx.quadraticCurveTo(fx + half * 1.3, fy + len * 0.45, fx + half, fy);
       ctx.closePath();
       ctx.fill();
+      if (g.popT > 0) {
+        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        ctx.beginPath();
+        ctx.arc(fx, fy + myW * 0.02, myW * 0.07, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   }
 
