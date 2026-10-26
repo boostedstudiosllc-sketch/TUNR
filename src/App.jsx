@@ -1205,6 +1205,7 @@ export default function App() {
           backdropFilter: "blur(20px)",
           borderTop: "1px solid #1A1A1A",
           display: "flex",
+          paddingBottom: "env(safe-area-inset-bottom)",
           zIndex: 100,
         }}
       >

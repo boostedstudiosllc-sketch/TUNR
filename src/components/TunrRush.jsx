@@ -221,7 +221,15 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
         overflowY: "auto",
       }}
     >
-      <div style={{ width: "100%", maxWidth: 430, padding: "12px 16px 32px", boxSizing: "border-box" }}>
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 430,
+          // Clear of the phone's status bar and home bar.
+          padding: "calc(12px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom))",
+          boxSizing: "border-box",
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 1 }}>
             🎮 TUNR <span style={{ color: "#FF4500" }}>RUSH</span>
@@ -537,6 +545,20 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
               ‹ BACK
             </button>
           </div>
+        )}
+
+        {/* Easy to reach with a thumb: leave the game for TUNR's home screen. */}
+        {screen !== "play" && (
+          <button
+            className="action-btn"
+            onClick={() => {
+              onClose();
+              window.dispatchEvent(new CustomEvent("tunr:open", { detail: { link: "tab:discover" } }));
+            }}
+            style={{ ...quietButton, marginTop: 18, padding: "15px 0", fontSize: 15 }}
+          >
+            🏠 BACK TO HOME
+          </button>
         )}
       </div>
     </div>
