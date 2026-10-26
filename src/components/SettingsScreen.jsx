@@ -194,7 +194,7 @@ export default function SettingsScreen({
       aria-label="Settings"
       style={{
         position: "fixed",
-        top: 0,
+        top: "env(safe-area-inset-top)",
         bottom: 0,
         left: "50%",
         transform: "translateX(-50%)",

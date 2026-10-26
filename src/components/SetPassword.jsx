@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { updatePassword } from "../lib/store.js";
+import { passwordProblem } from "../lib/passwordRules.js";
+import PasswordChecklist from "./PasswordChecklist.jsx";
 import Sheet, { sheetTitle, muted, label, field, bigButton } from "./Sheet.jsx";
 
 // Choosing a new password: from Settings while signed in, or after tapping a
@@ -12,7 +14,8 @@ export function SetPasswordForm({ onDone, onToast }) {
 
   async function save() {
     setError("");
-    if (password.length < 6) return setError("Use at least 6 characters.");
+    const weak = passwordProblem(password);
+    if (weak) return setError(weak);
     if (password !== again) return setError("The two passwords don't match.");
     setBusy(true);
     try {
@@ -31,7 +34,9 @@ export function SetPasswordForm({ onDone, onToast }) {
   return (
     <div>
       <div style={label}>NEW PASSWORD</div>
-      <input style={field} type="password" autoComplete="new-password" placeholder="at least 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} />
+      <input style={field} type="password" autoComplete="new-password" placeholder="8+ characters, mix it up" value={password} onChange={(e) => setPassword(e.target.value)} />
+      <PasswordChecklist password={password} />
+      <div style={{ ...muted, fontSize: 11.5, marginTop: 4 }}>It can't be one of your last 24 passwords. Passwords never expire.</div>
       <div style={{ ...label, marginTop: 12 }}>TYPE IT AGAIN</div>
       <input
         style={field}

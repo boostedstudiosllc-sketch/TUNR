@@ -300,7 +300,7 @@ function SignedIn({
               >
                 {social.photographer_verified
                   ? "📸✓ Verified photographer"
-                  : `📸 ${social.photo_confirmations || 0} of 5 confirmations for the ✓ →`}
+                  : "📸 Photographer · see your profile →"}
               </button>
             </div>
           )}

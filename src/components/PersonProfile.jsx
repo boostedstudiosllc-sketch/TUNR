@@ -7,8 +7,6 @@ import {
   restrictUser,
   loadVehicles,
   loadProfile,
-  confirmPhotographer,
-  unconfirmPhotographer,
   setPhotographerStatus,
   track,
 } from "../lib/store.js";
@@ -75,7 +73,7 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
       onClick={onClose}
       style={{
         position: "fixed",
-        top: 0,
+        top: "env(safe-area-inset-top)",
         bottom: 0,
         width: "100%",
         maxWidth: 430,
@@ -254,12 +252,6 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
                 isMe={isMe}
                 busy={busy}
                 isAdmin={viewerIsAdmin}
-                onConfirm={() =>
-                  act(
-                    () => (person.i_confirmed ? unconfirmPhotographer(personId, user.id) : confirmPhotographer(personId, user.id)),
-                    person.i_confirmed ? "Confirmation taken back" : `Confirmed — thanks for vouching for ${name}`
-                  )
-                }
                 onAdmin={(status) => act(() => setPhotographerStatus(personId, status), `Photographer check: ${status}`)}
               />
             )}
@@ -317,65 +309,43 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
   );
 }
 
-// The road to 📸✓: five car owners saying "they shot my car", or an admin.
-function PhotographerCheck({ person, isMe, busy, isAdmin, onConfirm, onAdmin }) {
-  const n = person.photo_confirmations || 0;
-  const status = person.photographer_status;
+// The 📸 badge is self-declared; the ✓ comes from TUNR (an admin).
+function PhotographerCheck({ person, isMe, busy, isAdmin, onAdmin }) {
+  const verified = person.photographer_verified;
   return (
     <div style={{ marginTop: 14, background: "#0E1622", border: "1px solid #1E3A5F", borderRadius: 10, padding: "12px 14px" }}>
       <div style={{ fontSize: 13, fontWeight: 800, color: "#7DD3FC", letterSpacing: 0.4 }}>
-        {person.photographer_verified ? "📸✓ VERIFIED PHOTOGRAPHER" : "📸 PHOTOGRAPHER"}
+        {verified ? "📸✓ VERIFIED PHOTOGRAPHER" : "📸 PHOTOGRAPHER"}
       </div>
       <div style={{ fontSize: 12, color: "#8BA3BF", marginTop: 3, lineHeight: 1.5, fontFamily: "'Barlow', sans-serif" }}>
-        {status === "revoked"
-          ? "An admin removed the verified check."
-          : person.photographer_verified && n < 5
-            ? "Verified by TUNR."
-            : person.photographer_verified
-              ? `${n} car owners confirmed they shot their cars.`
-              : `${n} of 5 car owners have confirmed${isMe ? " you" : ""}. Five gets the verified ✓.`}
-        {isMe && !person.photographer_verified && " Ask the people you shoot to open your profile and tap “They shot my car.”"}
+        {verified ? "Verified by TUNR." : isMe ? "You turned on the photographer badge." : "Shoots cars at meets."}
       </div>
-      {!isMe && (
-        <button
-          disabled={busy}
-          onClick={onConfirm}
-          style={{
-            ...wideButton,
-            width: "100%",
-            marginTop: 10,
-            background: person.i_confirmed ? "#13202F" : "#1D4ED8",
-            color: "#fff",
-            border: person.i_confirmed ? "1px solid #1E3A5F" : "none",
-          }}
-        >
-          {person.i_confirmed ? "✓ YOU CONFIRMED · UNDO" : "📸 THEY SHOT MY CAR"}
-        </button>
-      )}
       {isAdmin && (
         <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
           {[
             ["verified", "VERIFY"],
-            ["revoked", "REVOKE"],
-            ["auto", "AUTO (5)"],
-          ].map(([id, text]) => (
-            <button
-              key={id}
-              disabled={busy}
-              onClick={() => onAdmin(id)}
-              aria-pressed={(status || "auto") === id}
-              style={{
-                ...wideButton,
-                flex: 1,
-                padding: "8px 0",
-                fontSize: 11,
-                color: (status || "auto") === id ? "#FF7A00" : "#888",
-                border: `1px solid ${(status || "auto") === id ? "#FF4500" : "#2A2A2A"}`,
-              }}
-            >
-              ADMIN: {text}
-            </button>
-          ))}
+            ["auto", "NOT VERIFIED"],
+          ].map(([id, text]) => {
+            const on = id === "verified" ? verified : !verified;
+            return (
+              <button
+                key={id}
+                disabled={busy}
+                onClick={() => onAdmin(id)}
+                aria-pressed={on}
+                style={{
+                  ...wideButton,
+                  flex: 1,
+                  padding: "8px 0",
+                  fontSize: 11,
+                  color: on ? "#FF7A00" : "#888",
+                  border: `1px solid ${on ? "#FF4500" : "#2A2A2A"}`,
+                }}
+              >
+                ADMIN: {text}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

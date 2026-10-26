@@ -49,6 +49,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
       style={{
         position: "fixed",
         inset: 0,
+        top: "env(safe-area-inset-top)",
         zIndex: 300,
         background: "#0A0A0A",
         maxWidth: 430,

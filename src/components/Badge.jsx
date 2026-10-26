@@ -22,7 +22,7 @@ const BADGES = {
     title: "Verified photographer",
     gradient: "linear-gradient(135deg, #22D3EE, #1D4ED8)",
     explain: () =>
-      "A photographer five car owners have confirmed shot their cars, or one TUNR checked. Still worth looking at their work first.",
+      "A photographer TUNR has checked. Still worth looking at their work first.",
     glyph: (
       // A camera with a check.
       <g fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">

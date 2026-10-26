@@ -178,7 +178,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
       onClick={onClose}
       style={{
         position: "fixed",
-        top: 0,
+        top: "env(safe-area-inset-top)",
         bottom: 0,
         width: "100%",
         maxWidth: 430,

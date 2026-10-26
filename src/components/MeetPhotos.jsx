@@ -158,6 +158,7 @@ export default function MeetPhotos({ eventId, user, isHost, onNeedAccount, onToa
           style={{
             position: "fixed",
             inset: 0,
+            top: "env(safe-area-inset-top)",
             zIndex: 400,
             background: "rgba(0,0,0,0.94)",
             display: "flex",

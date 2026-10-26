@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import PasswordChecklist from "./PasswordChecklist.jsx";
+import { passwordProblem } from "../lib/passwordRules.js";
 import {
   signUpWithPassword,
   signInWithPassword,
@@ -61,7 +63,7 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
   const cleanUsername = username.toLowerCase().replace(/[^a-z0-9_.]/g, "");
   const usernameOk = cleanUsername.length >= 3;
   const emailOk = email.includes("@") && email.includes(".");
-  const passwordOk = password.length >= 6;
+  const passwordOk = passwordProblem(password) === null;
 
   const canSubmit =
     mode === "signup"
@@ -294,13 +296,14 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
               style={input}
               type="password"
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              placeholder={mode === "signup" ? "at least 6 characters" : "your password"}
+              placeholder={mode === "signup" ? "8+ characters, mix it up" : "your password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") submit();
               }}
             />
+            {mode === "signup" && <PasswordChecklist password={password} />}
           </div>
         )}
       </div>

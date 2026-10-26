@@ -21,6 +21,7 @@ export default function PrivacyPolicy({ onClose }) {
       style={{
         position: "fixed",
         inset: 0,
+        top: "env(safe-area-inset-top)",
         zIndex: 300,
         background: "#0A0A0A",
         maxWidth: 430,
@@ -95,7 +96,11 @@ export default function PrivacyPolicy({ onClose }) {
           <br />
           <strong>Sign-ins:</strong> when you sign in, the kind of device and browser (like
           "Safari on iPhone") and a partly hidden network address (like 203.0.113.x), kept 90 days
-          so you can spot a sign-in that wasn't you. A custom alert sound you record stays on your
+          so you can spot a sign-in that wasn't you. To protect your account we also count wrong
+          passwords for your email and for the network address they came from (10 in a row locks the
+          account for 30 minutes; the count clears when you sign in or reset your password), and keep
+          scrambled, one-way copies (hashes) of your last 24 passwords so you can't reuse them. We
+          never store or see your actual password. A custom alert sound you record stays on your
           device; it isn't sent to us.
           <br />
           <br />
@@ -195,8 +200,7 @@ export default function PrivacyPolicy({ onClose }) {
           but who voted isn't shown, and the forums you follow are private. A public club's member
           list is public; a private club's is visible only to its members. Clubs you're in show on
           your profile unless you turn that off. Club chat is visible only to the club's members.
-          Your 📸 photographer badge, its link and how many confirmations you have are
-          public; who confirmed you isn't.
+          Your 📸 photographer badge, its link and whether TUNR has verified you are public.
           <br />
           <br />
           <strong>Perks:</strong> when you redeem a perk we record that you did. Partner businesses

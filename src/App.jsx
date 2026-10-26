@@ -623,7 +623,8 @@ export default function App() {
       {/* Header */}
       <div
         style={{
-          padding: "16px 20px 12px",
+          // Clear of the iPhone status bar.
+          padding: "calc(16px + env(safe-area-inset-top)) 20px 12px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",

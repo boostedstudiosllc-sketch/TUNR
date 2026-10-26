@@ -48,6 +48,66 @@ Confirm your TUNR email
 </div>
 ```
 
+## 2b. Paste this into the Reset Password template
+Supabase → **Authentication → Emails → Templates → Reset Password**.
+Branded with the TUNR logo and plain explanations, so it doesn't look like a phishing email.
+(The link expires after Supabase's "Email OTP Expiration", 1 hour by default.)
+
+**Subject**
+
+```
+Reset your TUNR password
+```
+
+**Message body** (switch the editor to *Source* / HTML)
+
+```html
+<div style="background:#f4f4f5;padding:24px 12px;font-family:Arial,Helvetica,sans-serif">
+<div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;color:#1a1a1a;line-height:1.55">
+  <div style="background:#0A0A0A;padding:20px 24px">
+    <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+      <td style="vertical-align:middle"><img src="https://tunr-gules.vercel.app/icon-192.png" width="44" height="44" alt="TUNR" style="display:block;border-radius:10px"></td>
+      <td style="vertical-align:middle;padding-left:12px">
+        <div style="font-size:26px;font-weight:900;letter-spacing:-0.5px;color:#ffffff">TUN<span style="color:#FF4500">R</span></div>
+        <div style="font-size:11px;color:#9a9a9a;letter-spacing:1.5px">CAR MEETS · ATLANTA</div>
+      </td>
+    </tr></table>
+  </div>
+
+  <div style="padding:24px">
+    <h2 style="margin:0 0 12px;font-size:20px">Reset your TUNR password</h2>
+    <p>Hi{{ if .Data.username }} @{{ .Data.username }}{{ end }},</p>
+    <p>We got a request to reset the password for the TUNR account that uses <b>{{ .Email }}</b>.
+    If that was you, tap the button below and choose a new password.</p>
+
+    <p style="margin:24px 0">
+      <a href="{{ .ConfirmationURL }}" style="background:#FF4500;color:#ffffff;text-decoration:none;font-weight:bold;padding:13px 24px;border-radius:6px;display:inline-block">Choose a new password</a>
+    </p>
+
+    <p style="font-size:13px;color:#444">This link works once and expires in 1 hour. Your new password needs at least
+    8 characters and 3 of these 4: an uppercase letter, a lowercase letter, a number and a symbol. It can't be one
+    of your last 24 passwords.</p>
+
+    <p style="font-size:13px;color:#444"><b>Didn't ask for this?</b> You can ignore this email. Your password stays the
+    same, and nobody can change it without this link. If you keep getting these emails, someone may be typing your
+    address by mistake. Reply to this email and we'll look into it.</p>
+
+    <div style="font-size:12px;color:#555;background:#f4f4f5;border-radius:8px;padding:12px 14px;margin-top:18px">
+      <b>How to know this email is really from TUNR</b><br>
+      • The button opens <b>tunr-gules.vercel.app</b>, TUNR's own site.<br>
+      • We'll never ask for your password, a code or payment details by email, text or DM.<br>
+      • We only send this email when someone asks to reset a password on the TUNR sign-in screen.
+    </div>
+  </div>
+
+  <div style="font-size:11.5px;color:#888;border-top:1px solid #eee;padding:14px 24px">
+    TUNR is made by Boosted Studios Production LLC in Atlanta, GA · boostedstudiosllc@gmail.com<br>
+    You're getting this because a password reset was requested for {{ .Email }} on TUNR.
+  </div>
+</div>
+</div>
+```
+
 ## 3. Use your own email sender (needed for volume)
 Supabase's built-in sender only sends a few emails per hour for the whole project, so
 confirmation emails will queue up and go out slowly (TUNR retries every morning and never
@@ -68,3 +128,10 @@ Later, with your own domain (e.g. tunr.app), switch to a sender like Resend for 
 ## 4. Site URL
 Supabase → **Authentication → URL Configuration** → **Site URL** must be your live site
 (e.g. `https://tunr-gules.vercel.app`), so the confirm link opens TUNR.
+
+## 5. Password policy (Supabase dashboard)
+TUNR's own server enforces the full policy (src/lib/passwordRules.js): 8+ characters, 3 of the 4 kinds,
+none of the last 24 passwords, 10 wrong tries locks the account for 30 minutes, and no expiration.
+Also set Supabase's own floor so its sign-up can't be used to skip the length rule:
+Supabase → **Authentication → Sign In / Providers → Email** → **Minimum password length: 8** → Save.
+(Leave "Password requirements" on "No required characters": Supabase can't express "3 of 4", so TUNR checks it.)

@@ -11,6 +11,7 @@ import { friendlyWriteError, withReason, authErrorMessage } from "./errors.js";
 import { normalizePasscode } from "./passcode.js";
 import { kickPush } from "./alerts.js";
 import { compressImage } from "./image.js";
+import { passwordProblem } from "./passwordRules.js";
 
 const RSVP_KEY = "tunr.rsvps.v1";
 const SUBMITTED_KEY = "tunr.submitted.v1";
@@ -718,6 +719,8 @@ function returnUrl() {
 
 export async function signUpWithPassword(email, password, username) {
   if (!supabase) throw new Error("Backend not configured");
+  const weak = passwordProblem(password);
+  if (weak) throw new Error(weak);
 
   if (await isUsernameTaken(username)) {
     throw new Error("That username is taken — pick another.");
@@ -751,11 +754,48 @@ export async function signUpWithPassword(email, password, username) {
   return { signedIn: true };
 }
 
+// Through TUNR's server (api/sign-in.js), which applies the lockout: 10
+// wrong passwords in a row lock the account for 30 minutes.
 export async function signInWithPassword(email, password) {
   if (!supabase) throw new Error("Backend not configured");
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const body = await callApi("/api/sign-in", { email, password });
+  if (body.error) throw new Error(signInErrorMessage(body));
+  const { error } = await supabase.auth.setSession({ access_token: body.access_token, refresh_token: body.refresh_token });
   if (error) throw new Error(friendlyAuthError(error));
   return { signedIn: true };
+}
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+function signInErrorMessage(b) {
+  if (b.error === "bad_login") {
+    return b.left <= 5
+      ? `Wrong email or password. ${b.left} ${b.left === 1 ? "try" : "tries"} left before this account locks for 30 minutes.`
+      : "Wrong email or password.";
+  }
+  if (b.error === "account_locked") {
+    return `Too many wrong passwords, so this account is locked for ${plural(b.minutes, "more minute")}. Reset your password to get in now.`;
+  }
+  if (b.error === "too_many_tries") return `Too many wrong passwords from this network. Try again in ${plural(b.minutes, "minute")}.`;
+  if (b.error === "missing_fields") return "Enter your email and password.";
+  if (b.error === "sign_in_failed") return authErrorMessage({ message: b.detail || "", code: b.code || "" });
+  return `Couldn't sign in. (${b.error}${b.detail ? `: ${b.detail}` : ""})`;
+}
+
+// POST to one of TUNR's server functions; the reply's JSON, with `error`
+// set when it failed.
+async function callApi(path, payload, token = null) {
+  let res;
+  try {
+    res = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify(payload),
+    });
+  } catch (e) {
+    return { error: "network", detail: e.message };
+  }
+  const body = await res.json().catch((e) => ({ error: `http_${res.status}`, detail: e.message }));
+  return res.ok ? body : { ...body, error: body.error || `http_${res.status}` };
 }
 
 export async function sendPasswordReset(email) {
@@ -766,10 +806,19 @@ export async function sendPasswordReset(email) {
   if (error) throw new Error(friendlyAuthError(error));
 }
 
+// Through TUNR's server (api/password.js), which applies the policy:
+// 8+ characters, 3 of 4 kinds, none of your last 24 passwords.
 export async function updatePassword(password) {
   if (!supabase) throw new Error("Backend not configured");
-  const { error } = await supabase.auth.updateUser({ password });
-  if (error) throw new Error(friendlyAuthError(error));
+  const weak = passwordProblem(password);
+  if (weak) throw new Error(weak);
+  const { data } = await supabase.auth.getSession();
+  const body = await callApi("/api/password", { password }, data?.session?.access_token);
+  if (!body.error) return;
+  if (body.error === "password_reused") throw new Error("That's one of your last 24 passwords. Pick one you haven't used before.");
+  if (body.error === "weak_password") throw new Error(body.detail || "That password is too weak.");
+  if (body.error === "not_signed_in") throw new Error("You were signed out. Sign in again (or use a fresh reset link), then set the password.");
+  throw new Error(`Couldn't change your password. (${body.error}${body.detail ? `: ${body.detail}` : ""})`);
 }
 
 function friendlyAuthError(error) {
@@ -1616,29 +1665,7 @@ export async function submitReport(eventId, reason, note, userId, suggested = ""
 
 // ---------- verified photographers ----------
 
-export async function confirmPhotographer(photographerId, userId) {
-  if (!supabase || !userId) throw new Error("Sign in first.");
-  const { error } = await supabase
-    .from("photographer_confirmations")
-    .insert({ photographer_id: photographerId, confirmer_id: userId });
-  if (error) {
-    if (error.code === "23505") throw new Error("You've already confirmed them.");
-    throw new Error(friendlyWriteError(error, "Couldn't confirm that."));
-  }
-  kickPush();
-}
-
-export async function unconfirmPhotographer(photographerId, userId) {
-  if (!supabase || !userId) throw new Error("Sign in first.");
-  const { error } = await supabase
-    .from("photographer_confirmations")
-    .delete()
-    .eq("photographer_id", photographerId)
-    .eq("confirmer_id", userId);
-  if (error) throw new Error(withReason("Couldn't take back your confirmation.", error));
-}
-
-// Admins: "verified", "revoked", or "auto" (back to counting confirmations).
+// Admins: "verified", or "auto" (not verified).
 export async function setPhotographerStatus(userId, status) {
   if (!supabase) throw new Error("Sign in first.");
   const { error } = await supabase.rpc("set_photographer_status", { p_user: userId, p_status: status });

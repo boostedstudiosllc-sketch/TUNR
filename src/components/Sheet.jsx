@@ -28,7 +28,7 @@ export default function Sheet({ onClose, children, zIndex = 260, label }) {
           border: "1px solid #1E1E1E",
           maxHeight: "90vh",
           overflowY: "auto",
-          padding: "18px 20px 28px",
+          padding: "18px 20px calc(28px + env(safe-area-inset-bottom))",
           animation: "slideUp 0.25s ease",
           color: "#F0F0F0",
         }}

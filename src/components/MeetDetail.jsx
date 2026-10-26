@@ -87,7 +87,7 @@ export default function MeetDetail({
       onClick={onClose}
       style={{
         position: "fixed",
-        top: 0,
+        top: "env(safe-area-inset-top)",
         bottom: 0,
         width: "100%",
         maxWidth: 430,
@@ -592,6 +592,7 @@ function Flyer({ url, title }) {
           style={{
             position: "fixed",
             inset: 0,
+            top: "env(safe-area-inset-top)",
             zIndex: 400,
             background: "rgba(0,0,0,0.95)",
             display: "flex",
