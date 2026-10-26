@@ -13,6 +13,7 @@ import {
 import { useAccount } from "../lib/account.js";
 import { VoteBox, Author, ReportSheet } from "./CommunityBits.jsx";
 import Sheet, { muted, field, bigButton } from "./Sheet.jsx";
+import DirectionsIcon from "./DirectionsIcon.jsx";
 
 // One post: the post, votes, comments with replies, and the answer that
 // solved it. Mods can pin, lock and remove.
@@ -182,7 +183,7 @@ export default function PostView({ postId, user, onClose, onToast, onNeedAccount
           rel="noreferrer"
           style={{ display: "block", textAlign: "center", marginTop: 10, padding: "10px 0", borderRadius: 8, background: "#0F1F0F", border: "1px solid #10B981", color: "#10B981", fontSize: 13, fontWeight: 800, letterSpacing: 1, textDecoration: "none", fontFamily: "'Barlow Condensed', sans-serif" }}
         >
-          🧭 DIRECTIONS{post.place ? ` · ${post.place.toUpperCase()}` : ""}
+          <DirectionsIcon size={15} /> DIRECTIONS{post.place ? ` · ${post.place.toUpperCase()}` : ""}
         </a>
       )}
 

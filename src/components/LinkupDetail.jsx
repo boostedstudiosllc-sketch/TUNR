@@ -21,6 +21,7 @@ import { Badges } from "./Badge.jsx";
 import { useAccount } from "../lib/account.js";
 import { ConfirmToChat } from "./ConfirmEmail.jsx";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton, Chip } from "./Sheet.jsx";
+import DirectionsIcon from "./DirectionsIcon.jsx";
 
 const AS_TEXT = { car: "🚗", photographer: "📸", both: "🚗📸" };
 
@@ -146,7 +147,7 @@ export default function LinkupDetail({ linkup, user, miles, onClose, onChanged, 
                 rel="noreferrer"
                 style={{ display: "block", textAlign: "center", marginTop: 10, padding: "10px 0", borderRadius: 8, background: "#0F1F0F", border: "1px solid #10B981", color: "#10B981", fontSize: 13, fontWeight: 800, letterSpacing: 1.2, textDecoration: "none", fontFamily: "'Barlow Condensed', sans-serif" }}
               >
-                🧭 DIRECTIONS
+                <DirectionsIcon size={15} /> DIRECTIONS
               </a>
             )}
           </>

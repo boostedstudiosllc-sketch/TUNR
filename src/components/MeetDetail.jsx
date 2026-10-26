@@ -15,6 +15,7 @@ import { track, loadGoingHistory } from "../lib/store.js";
 import GoingTicker from "./GoingTicker.jsx";
 import { directionsUrl } from "../lib/geo.js";
 import { GOING_AS, crowdLine } from "../lib/photographer.js";
+import DirectionsIcon from "./DirectionsIcon.jsx";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -712,7 +713,7 @@ function ActionBar({ rsvp, onRsvp, goingAs, onGoingAs, directions }) {
             href={directions}
             target="_blank"
             rel="noreferrer"
-            aria-label="Directions"
+            aria-label="Directions in Maps"
             style={{
               flex: "0 0 48px",
               display: "flex",
@@ -728,9 +729,9 @@ function ActionBar({ rsvp, onRsvp, goingAs, onGoingAs, directions }) {
               lineHeight: 1,
             }}
           >
-            🧭
+            <DirectionsIcon size={20} />
             <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: 0.8, marginTop: 3, fontFamily: "'Barlow Condensed', sans-serif" }}>
-              GO
+              MAPS
             </span>
           </a>
         )}
