@@ -272,73 +272,91 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// Proportions per body, as fractions of the car's width: total height,
-// the glass/roof share of it, and the roof and window-base widths.
-const BODY_SHAPE = {
-  coupe: { h: 0.5, cabin: 0.4, roof: 0.5, base: 0.72 },
-  sedan: { h: 0.55, cabin: 0.42, roof: 0.56, base: 0.75 },
-  hatch: { h: 0.6, cabin: 0.47, roof: 0.62, base: 0.77 },
-  suv: { h: 0.74, cabin: 0.47, roof: 0.74, base: 0.82 },
-  truck: { h: 0.72, cabin: 0.4, roof: 0.6, base: 0.64 },
+// ---------- cars, seen from behind ----------
+// Three families, with no brand logos:
+//   * coupe, sedan, hatch: styled like a modern German sport sedan, with
+//     L-shaped LED tail lights reaching onto the trunk, fastback glass, a
+//     crisp trunk lip, the plate on the trunk between the lights, and a
+//     diffuser with exhaust tips in pairs.
+//   * suv: tall upright tailgate, roof spoiler and rails, wide tail lights,
+//     black wheel-arch trim, a silver skid plate and more ground clearance.
+//   * truck: a pickup, with the cab's sliding rear window over an open bed,
+//     a flat tailgate with a center handle, tall corner lights, a chrome step
+//     bumper with the plate and a tow hitch, and big tires.
+// Sizes are fractions of the width: total height, the glass/cab share of
+// it, roof and window-base widths, and ground clearance.
+const CAR_SHAPE = {
+  coupe: { h: 0.5, cabin: 0.42, roof: 0.5, base: 0.74, clear: 0.1 },
+  sedan: { h: 0.56, cabin: 0.42, roof: 0.56, base: 0.76, clear: 0.1 },
+  hatch: { h: 0.6, cabin: 0.48, roof: 0.64, base: 0.8, clear: 0.11 },
+  suv: { h: 0.8, cabin: 0.45, roof: 0.78, base: 0.84, clear: 0.17 },
+  truck: { h: 0.86, cabin: 0.4, roof: 0.68, base: 0.74, clear: 0.2 },
 };
 
 // A car seen from behind, centered at cx, sitting on bottomY, w wide.
-// `sport` is the player's car: diffuser, quad exhaust and a spoiler
-// ("none", "lip" or "wing"); traffic gets a plain bumper.
-export function drawCar(ctx, cx, bottomY, w, { color = "#FF4500", body = "coupe", plate = "", sport = false, spoiler = "lip" } = {}) {
-  const s = BODY_SHAPE[body] || BODY_SHAPE.coupe;
+// `sport` is the player's car (diffuser, quad exhaust, spoiler: "none",
+// "lip" or "wing"); traffic stays plain.
+export function drawCar(ctx, cx, bottomY, w, opts = {}) {
+  const s = CAR_SHAPE[opts.body] || CAR_SHAPE.coupe;
   const h = w * s.h;
-  const x = cx - w / 2;
-  const top = bottomY - h;
-  const belt = top + h * s.cabin; // where the glass meets the body
-  const bodyBottom = bottomY - h * 0.1;
-  const bh = bodyBottom - belt;
-  const detail = w > 34; // skip the small stuff on far-away cars
+  const c = { cx, x: cx - w / 2, w, h, bottomY, s, top: bottomY - h, detail: w > 34, color: opts.color || "#FF4500" };
+  c.belt = c.top + h * s.cabin;
+  c.bodyBottom = bottomY - h * s.clear;
+  c.bh = c.bodyBottom - c.belt;
+  wheels(ctx, c, opts.body);
+  if (opts.body === "truck") drawPickup(ctx, c, opts);
+  else if (opts.body === "suv") drawSuv(ctx, c, opts);
+  else drawSporty(ctx, c, opts);
+}
 
-  // Shadow, underbody and tires.
+function wheels(ctx, c, body) {
+  const { x, w, h, bottomY, bodyBottom, bh } = c;
+  const big = body === "suv" || body === "truck";
   ctx.fillStyle = "rgba(0,0,0,0.3)";
   ctx.beginPath();
-  ctx.ellipse(cx, bottomY, w * 0.56, h * 0.07, 0, 0, Math.PI * 2);
+  ctx.ellipse(c.cx, bottomY, w * 0.56, h * 0.06, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = "#0B0B0B";
-  ctx.fillRect(x + w * 0.08, bodyBottom - bh * 0.1, w * 0.84, bottomY - bodyBottom);
-  for (const tx of [x + w * 0.04, x + w * 0.76]) {
-    ctx.fillStyle = "#141414";
-    roundRect(ctx, tx, bodyBottom - bh * 0.18, w * 0.2, bottomY - bodyBottom + bh * 0.18, w * 0.035);
+  ctx.fillRect(x + w * 0.1, bodyBottom - bh * 0.1, w * 0.8, bottomY - bodyBottom + bh * 0.05);
+  const tw = w * (big ? 0.22 : 0.19);
+  for (const tx of [x + w * 0.035, x + w * 0.965 - tw]) {
+    ctx.fillStyle = "#151515";
+    roundRect(ctx, tx, bodyBottom - bh * 0.16, tw, bottomY - bodyBottom + bh * 0.16, w * 0.035);
     ctx.fill();
-    if (detail) {
+    if (c.detail) {
+      // Tread blocks.
       ctx.fillStyle = "#262626";
-      ctx.fillRect(tx + w * 0.02, bottomY - h * 0.075, w * 0.16, h * 0.02);
+      for (let i = 0; i < (big ? 4 : 3); i++) ctx.fillRect(tx + tw * 0.12, bottomY - (bottomY - bodyBottom) * (0.25 + i * 0.22), tw * 0.76, Math.max(1, h * 0.012));
     }
   }
+}
 
-  // Cabin: pillars and roof in body color, curved roofline.
-  const roofW = w * s.roof;
-  const baseW = w * s.base;
+// Pillars and roof in paint, tinted glass with a streak of reflection.
+function greenhouse(ctx, c, { roofW, baseW, upright = false }) {
+  const { cx, top, belt, color } = c;
   const ch = belt - top;
+  const lean = upright ? 0.04 : 0.14;
   const cabin = new Path2D();
   cabin.moveTo(cx - baseW / 2, belt + 1);
-  cabin.lineTo(cx - roofW / 2, top + ch * 0.14);
-  cabin.quadraticCurveTo(cx, top - ch * 0.08, cx + roofW / 2, top + ch * 0.14);
+  cabin.lineTo(cx - roofW / 2, top + ch * lean);
+  cabin.quadraticCurveTo(cx, top - ch * (upright ? 0.02 : 0.08), cx + roofW / 2, top + ch * lean);
   cabin.lineTo(cx + baseW / 2, belt + 1);
   cabin.closePath();
-  ctx.fillStyle = shade(color, -0.08);
+  ctx.fillStyle = shade(color, -0.06);
   ctx.fill(cabin);
-
-  // Rear glass: dark, tinted, with a streak of reflection.
-  const inX = w * 0.045;
+  const inX = c.w * (upright ? 0.06 : 0.05);
   const glass = new Path2D();
-  glass.moveTo(cx - baseW / 2 + inX, belt - ch * 0.06);
-  glass.lineTo(cx - roofW / 2 + inX * 0.8, top + ch * 0.24);
-  glass.quadraticCurveTo(cx, top + ch * 0.06, cx + roofW / 2 - inX * 0.8, top + ch * 0.24);
-  glass.lineTo(cx + baseW / 2 - inX, belt - ch * 0.06);
+  glass.moveTo(cx - baseW / 2 + inX, belt - ch * 0.07);
+  glass.lineTo(cx - roofW / 2 + inX * 0.8, top + ch * (lean + 0.12));
+  glass.quadraticCurveTo(cx, top + ch * (upright ? 0.12 : 0.06), cx + roofW / 2 - inX * 0.8, top + ch * (lean + 0.12));
+  glass.lineTo(cx + baseW / 2 - inX, belt - ch * 0.07);
   glass.closePath();
   const tint = ctx.createLinearGradient(0, top, 0, belt);
   tint.addColorStop(0, "#1E293B");
   tint.addColorStop(1, "#05070D");
   ctx.fillStyle = tint;
   ctx.fill(glass);
-  if (detail) {
+  if (c.detail) {
     ctx.save();
     ctx.clip(glass);
     ctx.fillStyle = "rgba(255,255,255,0.13)";
@@ -350,139 +368,325 @@ export function drawCar(ctx, cx, bottomY, w, { color = "#FF4500", body = "coupe"
     ctx.closePath();
     ctx.fill();
     ctx.restore();
-    // Third brake light.
     ctx.fillStyle = "#EF4444";
-    ctx.fillRect(cx - roofW * 0.14, top + ch * 0.17, roofW * 0.28, Math.max(1, ch * 0.04));
-    // Side mirrors.
-    ctx.fillStyle = shade(color, -0.15);
-    for (const side of [-1, 1]) {
-      ctx.beginPath();
-      ctx.ellipse(cx + side * (baseW / 2 + w * 0.035), belt - ch * 0.16, w * 0.045, ch * 0.1, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    ctx.fillRect(cx - roofW * 0.13, top + ch * (lean + 0.05), roofW * 0.26, Math.max(1, ch * 0.035));
   }
+  return { ch, lean };
+}
 
-  // Body: flared hips, glossy paint (light on top, darker low down).
-  const shell = new Path2D();
-  shell.moveTo(x + w * 0.05, bodyBottom);
-  shell.lineTo(x + w * 0.005, bodyBottom - bh * 0.3);
-  shell.quadraticCurveTo(x - w * 0.01, belt + bh * 0.12, x + w * 0.07, belt);
-  shell.lineTo(x + w * 0.93, belt);
-  shell.quadraticCurveTo(x + w * 1.01, belt + bh * 0.12, x + w * 0.995, bodyBottom - bh * 0.3);
-  shell.lineTo(x + w * 0.95, bodyBottom);
-  shell.closePath();
-  const paint = ctx.createLinearGradient(0, belt, 0, bodyBottom);
-  paint.addColorStop(0, shade(color, 0.22));
-  paint.addColorStop(0.28, color);
-  paint.addColorStop(1, shade(color, -0.28));
-  ctx.fillStyle = paint;
-  ctx.fill(shell);
-
-  // Trunk lip line, or a tailgate crease on the truck.
-  ctx.fillStyle = shade(color, -0.32);
-  ctx.fillRect(x + w * 0.12, belt + bh * (body === "truck" ? 0.36 : 0.05), w * 0.76, Math.max(1, bh * 0.025));
-
-  // Tail lights: slim LED wedges joined by a light bar, with a soft glow.
-  const ty = belt + bh * 0.12;
-  const lh = bh * 0.2;
-  if (detail) {
-    ctx.fillStyle = "rgba(239,68,68,0.16)";
-    for (const gx of [x - w * 0.01, x + w * 0.72]) {
-      roundRect(ctx, gx, ty - lh * 0.35, w * 0.29, lh * 1.7, lh * 0.6);
-      ctx.fill();
-    }
+function mirrors(ctx, c, spread, y, size = 1) {
+  if (!c.detail) return;
+  ctx.fillStyle = shade(c.color, -0.15);
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(c.cx + side * spread, y, c.w * 0.045 * size, (c.belt - c.top) * 0.1 * size, 0, 0, Math.PI * 2);
+    ctx.fill();
   }
-  ctx.fillStyle = "#DC2626";
-  if (body === "truck") {
-    for (const lx of [x + w * 0.02, x + w * 0.9]) {
-      roundRect(ctx, lx, ty - lh * 0.2, w * 0.08, lh * 2.2, w * 0.015);
-      ctx.fill();
-    }
-  } else {
-    for (const side of [-1, 1]) {
-      const o = cx + side * w * 0.47; // outer edge
-      const i = cx + side * w * 0.23; // inner edge
-      ctx.beginPath();
-      ctx.moveTo(o, ty);
-      ctx.lineTo(i, ty + lh * 0.18);
-      ctx.lineTo(i + side * w * 0.015, ty + lh);
-      ctx.lineTo(o - side * w * 0.02, ty + lh);
-      ctx.closePath();
-      ctx.fill();
-    }
-    ctx.fillRect(cx - w * 0.23, ty + lh * 0.3, w * 0.46, Math.max(1, lh * 0.2));
-  }
-  if (detail) {
-    ctx.fillStyle = "#FCA5A5";
-    ctx.fillRect(x + w * 0.05, ty + lh * 0.05, w * 0.16, Math.max(1, lh * 0.12));
-    ctx.fillRect(x + w * 0.79, ty + lh * 0.05, w * 0.16, Math.max(1, lh * 0.12));
-  }
+}
 
-  // Plate.
-  const pw = w * 0.27;
-  const ph = bh * 0.2;
-  const py = belt + bh * (body === "truck" ? 0.5 : 0.42);
+function paintGradient(ctx, c, from, to) {
+  const g = ctx.createLinearGradient(0, from, 0, to);
+  g.addColorStop(0, shade(c.color, 0.22));
+  g.addColorStop(0.28, c.color);
+  g.addColorStop(1, shade(c.color, -0.28));
+  return g;
+}
+
+function plateAt(ctx, c, y, plate, pw = c.w * 0.26, ph = c.bh * 0.17) {
+  const { cx, w } = c;
   ctx.fillStyle = "rgba(0,0,0,0.35)";
-  roundRect(ctx, cx - pw / 2 - w * 0.012, py - w * 0.01, pw + w * 0.024, ph + w * 0.02, w * 0.02);
+  roundRect(ctx, cx - pw / 2 - w * 0.012, y - w * 0.01, pw + w * 0.024, ph + w * 0.02, w * 0.02);
   ctx.fill();
   ctx.fillStyle = "#F8FAFC";
-  roundRect(ctx, cx - pw / 2, py, pw, ph, w * 0.012);
+  roundRect(ctx, cx - pw / 2, y, pw, ph, w * 0.012);
   ctx.fill();
   if (plate && w > 40) {
     ctx.fillStyle = "#111";
     ctx.font = `800 ${Math.max(6, ph * 0.66)}px 'Barlow Condensed', sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(plate.slice(0, 9).toUpperCase(), cx, py + ph / 2 + 0.5, pw * 0.92);
+    ctx.fillText(plate.slice(0, 9).toUpperCase(), cx, y + ph / 2 + 0.5, pw * 0.92);
+  }
+}
+
+function glow(ctx, c, x, y, w, h) {
+  if (!c.detail) return;
+  ctx.fillStyle = "rgba(239,68,68,0.16)";
+  roundRect(ctx, x, y, w, h, Math.min(w, h) / 2);
+  ctx.fill();
+}
+
+// Coupe, sedan and hatch.
+function drawSporty(ctx, c, { body, plate = "", sport = false, spoiler = "lip" }) {
+  const { cx, x, w, h, top, belt, bodyBottom, bh, s } = c;
+  const roofW = w * s.roof;
+  const baseW = w * s.base;
+  greenhouse(ctx, c, { roofW, baseW, upright: body === "hatch" });
+  mirrors(ctx, c, baseW / 2 + w * 0.035, belt - (belt - top) * 0.16);
+
+  // Body: flared hips, glossy paint.
+  const shell = new Path2D();
+  shell.moveTo(x + w * 0.05, bodyBottom);
+  shell.lineTo(x + w * 0.005, bodyBottom - bh * 0.3);
+  shell.quadraticCurveTo(x - w * 0.012, belt + bh * 0.12, x + w * 0.07, belt);
+  shell.lineTo(x + w * 0.93, belt);
+  shell.quadraticCurveTo(x + w * 1.012, belt + bh * 0.12, x + w * 0.995, bodyBottom - bh * 0.3);
+  shell.lineTo(x + w * 0.95, bodyBottom);
+  shell.closePath();
+  ctx.fillStyle = paintGradient(ctx, c, belt, bodyBottom);
+  ctx.fill(shell);
+
+  // Crisp trunk lip: a highlight with a shadow under it.
+  ctx.fillStyle = "rgba(255,255,255,0.22)";
+  ctx.fillRect(x + w * 0.1, belt + bh * 0.015, w * 0.8, Math.max(1, bh * 0.02));
+  ctx.fillStyle = shade(c.color, -0.35);
+  ctx.fillRect(x + w * 0.12, belt + bh * 0.045, w * 0.76, Math.max(1, bh * 0.018));
+
+  // L-shaped LED tail lights in smoked housings, reaching onto the trunk.
+  const ty = belt + bh * 0.08;
+  const th = bh * 0.17;
+  const legH = bh * 0.33;
+  for (const side of [-1, 1]) {
+    const outer = cx + side * w * 0.485;
+    const inner = cx + side * w * 0.19;
+    glow(ctx, c, Math.min(outer, inner) - w * 0.02, ty - th * 0.5, Math.abs(outer - inner) + w * 0.04, legH + th);
+    ctx.fillStyle = "#2B0508";
+    ctx.beginPath();
+    ctx.moveTo(outer, ty);
+    ctx.lineTo(inner, ty + th * 0.12);
+    ctx.lineTo(inner + side * w * 0.01, ty + th);
+    ctx.lineTo(outer - side * w * 0.1, ty + th);
+    ctx.lineTo(outer - side * w * 0.085, ty + legH);
+    ctx.lineTo(outer - side * w * 0.01, ty + legH * 0.92);
+    ctx.closePath();
+    ctx.fill();
+    // The lit "L".
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    for (const [wd, col] of c.detail ? [[3.2, "rgba(255,60,60,0.35)"], [1.2, "#FF2D2D"]] : [[1.2, "#FF2D2D"]]) {
+      ctx.strokeStyle = col;
+      ctx.lineWidth = Math.max(1, bh * 0.032 * wd);
+      ctx.beginPath();
+      ctx.moveTo(inner + side * w * 0.015, ty + th * 0.5);
+      ctx.lineTo(outer - side * w * 0.06, ty + th * 0.42);
+      ctx.lineTo(outer - side * w * 0.05, ty + legH * 0.8);
+      ctx.stroke();
+    }
   }
 
-  // Bumper: a black diffuser with fins and quad tips on your car; a plain
-  // lower bumper with one tip on traffic.
-  const dy = bodyBottom - bh * 0.22;
+  // Plate on the trunk, between the lights; a crease along the bumper.
+  plateAt(ctx, c, belt + bh * 0.2, plate);
+  ctx.fillStyle = shade(c.color, -0.3);
+  ctx.fillRect(x + w * 0.08, belt + bh * 0.56, w * 0.84, Math.max(1, bh * 0.02));
+  if (c.detail) {
+    ctx.fillStyle = "#991B1B";
+    ctx.fillRect(x + w * 0.04, belt + bh * 0.66, w * 0.07, Math.max(1, bh * 0.035));
+    ctx.fillRect(x + w * 0.89, belt + bh * 0.66, w * 0.07, Math.max(1, bh * 0.035));
+  }
+
+  // Bumper: diffuser with quad exhaust on your car; plain on traffic.
+  const dy = bodyBottom - bh * 0.25;
   if (sport) {
     ctx.fillStyle = "#0F0F0F";
     ctx.beginPath();
-    ctx.moveTo(x + w * 0.1, dy);
-    ctx.lineTo(x + w * 0.9, dy);
-    ctx.lineTo(x + w * 0.86, bodyBottom + h * 0.02);
-    ctx.lineTo(x + w * 0.14, bodyBottom + h * 0.02);
+    ctx.moveTo(x + w * 0.14, dy);
+    ctx.lineTo(x + w * 0.86, dy);
+    ctx.lineTo(x + w * 0.82, bodyBottom + h * 0.02);
+    ctx.lineTo(x + w * 0.18, bodyBottom + h * 0.02);
     ctx.closePath();
     ctx.fill();
-    if (detail) {
+    if (c.detail) {
       ctx.fillStyle = "#2A2A2A";
       for (let f = 0; f < 5; f++) ctx.fillRect(cx - w * 0.12 + f * w * 0.06, dy + bh * 0.04, Math.max(1, w * 0.012), bh * 0.2);
     }
-    for (const ex of [0.2, 0.29, 0.71, 0.8]) exhaust(ctx, x + w * ex, bodyBottom - bh * 0.07, w * 0.036);
+    for (const ex of [0.21, 0.295, 0.705, 0.79]) exhaust(ctx, x + w * ex, bodyBottom - bh * 0.08, w * 0.034);
   } else {
-    ctx.fillStyle = shade(color, -0.38);
-    ctx.fillRect(x + w * 0.1, dy + bh * 0.08, w * 0.8, bh * 0.16);
-    exhaust(ctx, x + w * 0.24, bodyBottom - bh * 0.04, w * 0.028);
+    ctx.fillStyle = shade(c.color, -0.4);
+    ctx.fillRect(x + w * 0.12, dy + bh * 0.08, w * 0.76, bh * 0.15);
+    exhaust(ctx, x + w * 0.25, bodyBottom - bh * 0.04, w * 0.027);
   }
 
   // Spoiler, on your car.
-  if (sport && spoiler === "wing" && body !== "truck") {
+  if (sport && spoiler === "wing") {
     const wy = belt - h * 0.17;
     ctx.fillStyle = "#151515";
     for (const side of [-1, 1]) ctx.fillRect(cx + side * w * 0.24 - w * 0.015, wy, w * 0.03, belt - wy + bh * 0.04);
     roundRect(ctx, x + w * 0.02, wy - h * 0.04, w * 0.96, h * 0.055, h * 0.015);
     ctx.fill();
-    ctx.fillStyle = shade(color, -0.1);
+    ctx.fillStyle = shade(c.color, -0.1);
     ctx.fillRect(x + w * 0.02, wy - h * 0.04, w * 0.96, Math.max(1, h * 0.012));
     ctx.fillStyle = "#151515";
     ctx.fillRect(x + w * 0.01, wy - h * 0.07, w * 0.025, h * 0.1);
     ctx.fillRect(x + w * 0.965, wy - h * 0.07, w * 0.025, h * 0.1);
   } else if (sport && spoiler === "lip") {
     ctx.fillStyle = "#151515";
-    if (body === "hatch" || body === "suv") {
-      roundRect(ctx, cx - roofW * 0.56, top + ch * 0.02, roofW * 1.12, ch * 0.1, ch * 0.04);
-    } else {
-      roundRect(ctx, x + w * 0.16, belt - h * 0.035, w * 0.68, h * 0.045, h * 0.02);
-    }
+    if (body === "hatch") roundRect(ctx, cx - roofW * 0.56, top + (belt - top) * 0.02, roofW * 1.12, (belt - top) * 0.1, (belt - top) * 0.04);
+    else roundRect(ctx, x + w * 0.16, belt - h * 0.03, w * 0.68, h * 0.04, h * 0.02);
     ctx.fill();
   }
 }
 
+function drawSuv(ctx, c, { plate = "", sport = false, spoiler = "lip" }) {
+  const { cx, x, w, h, top, belt, bodyBottom, bh, s } = c;
+  const roofW = w * s.roof;
+  const baseW = w * s.base;
+  const { ch } = greenhouse(ctx, c, { roofW, baseW, upright: true });
+  mirrors(ctx, c, baseW / 2 + w * 0.045, belt - ch * 0.15, 1.15);
+  // Roof rails and the roof spoiler over the glass.
+  if (c.detail) {
+    ctx.fillStyle = "#B8BCC4";
+    for (const side of [-1, 1]) ctx.fillRect(cx + side * roofW * 0.42 - w * 0.02, top - h * 0.035, w * 0.04, h * 0.04);
+  }
+  ctx.fillStyle = spoiler === "wing" && sport ? "#151515" : shade(c.color, -0.12);
+  roundRect(ctx, cx - roofW * 0.53, top - h * 0.005, roofW * 1.06, ch * (spoiler === "wing" && sport ? 0.13 : 0.09), ch * 0.04);
+  ctx.fill();
+
+  // Boxy body.
+  ctx.fillStyle = paintGradient(ctx, c, belt, bodyBottom);
+  roundRect(ctx, x + w * 0.01, belt, w * 0.98, bh, w * 0.05);
+  ctx.fill();
+  // Tailgate edges.
+  ctx.fillStyle = shade(c.color, -0.35);
+  for (const side of [-1, 1]) ctx.fillRect(cx + side * w * 0.31 - 0.5, belt, Math.max(1, w * 0.006), bh * 0.52);
+  ctx.fillRect(cx - w * 0.31, belt + bh * 0.52, w * 0.62, Math.max(1, w * 0.006));
+
+  // Wide tail lights reaching onto the tailgate, joined by a chrome strip.
+  const ty = belt + bh * 0.09;
+  const th = bh * 0.13;
+  for (const side of [-1, 1]) {
+    const a = side < 0 ? x + w * 0.03 : cx + w * 0.16;
+    const lw = w * 0.31;
+    glow(ctx, c, a - w * 0.01, ty - th * 0.6, lw + w * 0.02, th * 2.2);
+    ctx.fillStyle = "#C81E1E";
+    roundRect(ctx, a, ty, lw, th, th * 0.3);
+    ctx.fill();
+    if (c.detail) {
+      ctx.fillStyle = "#FF4D4D";
+      ctx.fillRect(a + lw * 0.06, ty + th * 0.2, lw * 0.88, Math.max(1, th * 0.18));
+      ctx.fillStyle = "#E5E7EB";
+      ctx.fillRect(side < 0 ? a + lw * 0.04 : a + lw * 0.78, ty + th * 0.55, lw * 0.18, th * 0.3);
+    }
+  }
+  ctx.fillStyle = "#D1D5DB";
+  ctx.fillRect(cx - w * 0.16, ty + th * 0.4, w * 0.32, Math.max(1, th * 0.22));
+  plateAt(ctx, c, belt + bh * 0.3, plate, w * 0.25, bh * 0.15);
+
+  // Black arch trim, a chunky lower bumper and a silver skid plate.
+  ctx.fillStyle = "#161616";
+  for (const side of [-1, 1]) {
+    const ax = side < 0 ? x : x + w * 0.88;
+    roundRect(ctx, ax, belt + bh * 0.5, w * 0.12, bodyBottom - belt - bh * 0.5, w * 0.03);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#1C1C1C";
+  roundRect(ctx, x + w * 0.08, belt + bh * 0.66, w * 0.84, bodyBottom - belt - bh * 0.66, w * 0.02);
+  ctx.fill();
+  const skid = ctx.createLinearGradient(0, bodyBottom - bh * 0.18, 0, bodyBottom);
+  skid.addColorStop(0, "#E5E7EB");
+  skid.addColorStop(1, "#8A8F98");
+  ctx.fillStyle = skid;
+  ctx.beginPath();
+  ctx.moveTo(cx - w * 0.24, bodyBottom - bh * 0.17);
+  ctx.lineTo(cx + w * 0.24, bodyBottom - bh * 0.17);
+  ctx.lineTo(cx + w * 0.2, bodyBottom);
+  ctx.lineTo(cx - w * 0.2, bodyBottom);
+  ctx.closePath();
+  ctx.fill();
+  if (sport) {
+    // Twin trapezoid tips set into the bumper.
+    ctx.fillStyle = "#D1D5DB";
+    for (const side of [-1, 1]) roundRect(ctx, cx + side * w * 0.33 - w * 0.05, bodyBottom - bh * 0.15, w * 0.1, bh * 0.07, bh * 0.02), ctx.fill();
+    ctx.fillStyle = "#0A0A0A";
+    for (const side of [-1, 1]) roundRect(ctx, cx + side * w * 0.33 - w * 0.04, bodyBottom - bh * 0.135, w * 0.08, bh * 0.04, bh * 0.015), ctx.fill();
+  }
+}
+
+function drawPickup(ctx, c, { plate = "", sport = false }) {
+  const { cx, x, w, h, top, belt, bodyBottom, bh, s } = c;
+  const cabW = w * s.base;
+  const ch = belt - top;
+  // Cab back, with the sliding rear window and a cargo/brake light.
+  ctx.fillStyle = paintGradient(ctx, c, top, belt);
+  ctx.beginPath();
+  ctx.moveTo(cx - cabW / 2, belt + 1);
+  ctx.lineTo(cx - cabW * 0.47, top + ch * 0.06);
+  ctx.quadraticCurveTo(cx, top - ch * 0.03, cx + cabW * 0.47, top + ch * 0.06);
+  ctx.lineTo(cx + cabW / 2, belt + 1);
+  ctx.closePath();
+  ctx.fill();
+  const wx = cx - cabW * 0.38;
+  const wy = top + ch * 0.2;
+  const ww = cabW * 0.76;
+  const wh = ch * 0.48;
+  const tint = ctx.createLinearGradient(0, wy, 0, wy + wh);
+  tint.addColorStop(0, "#1E293B");
+  tint.addColorStop(1, "#05070D");
+  ctx.fillStyle = tint;
+  roundRect(ctx, wx, wy, ww, wh, ch * 0.06);
+  ctx.fill();
+  if (c.detail) {
+    ctx.fillStyle = "#0A0A0A";
+    for (const f of [-0.13, 0.13]) ctx.fillRect(cx + cabW * f - w * 0.006, wy, w * 0.012, wh);
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    ctx.fillRect(wx + ww * 0.08, wy + wh * 0.12, ww * 0.18, wh * 0.12);
+  }
+  ctx.fillStyle = "#EF4444";
+  ctx.fillRect(cx - cabW * 0.12, top + ch * 0.07, cabW * 0.24, Math.max(1, ch * 0.05));
+  // Big towing mirrors.
+  if (c.detail) {
+    ctx.fillStyle = "#151515";
+    for (const side of [-1, 1]) roundRect(ctx, cx + side * (cabW / 2 + w * 0.05) - w * 0.04, belt - ch * 0.45, w * 0.08, ch * 0.28, w * 0.01), ctx.fill();
+  }
+
+  // The open bed seen over the tailgate, and the bed rails.
+  const railY = belt + bh * 0.07;
+  ctx.fillStyle = "#151515";
+  ctx.fillRect(x + w * 0.05, belt - bh * 0.02, w * 0.9, railY - belt + bh * 0.02);
+  ctx.fillStyle = shade(c.color, 0.1);
+  ctx.fillRect(x + w * 0.01, belt - bh * 0.03, w * 0.06, railY - belt + bh * 0.05);
+  ctx.fillRect(x + w * 0.93, belt - bh * 0.03, w * 0.06, railY - belt + bh * 0.05);
+
+  // Tailgate and the bed's back corners.
+  const bumperTop = bodyBottom - bh * 0.27;
+  ctx.fillStyle = paintGradient(ctx, c, railY, bumperTop);
+  roundRect(ctx, x + w * 0.01, railY, w * 0.98, bumperTop - railY, w * 0.015);
+  ctx.fill();
+  ctx.strokeStyle = shade(c.color, -0.3);
+  ctx.lineWidth = Math.max(1, w * 0.005);
+  ctx.strokeRect(x + w * 0.12, railY + bh * 0.08, w * 0.76, (bumperTop - railY) * 0.72);
+  ctx.fillStyle = "#111";
+  roundRect(ctx, cx - w * 0.06, railY + bh * 0.03, w * 0.12, bh * 0.045, bh * 0.015);
+  ctx.fill();
+  // Tall corner lights: red, with a clear reverse lens.
+  for (const lx of [x + w * 0.015, x + w * 0.925]) {
+    glow(ctx, c, lx - w * 0.015, railY - bh * 0.02, w * 0.09, bh * 0.5);
+    ctx.fillStyle = "#C81E1E";
+    roundRect(ctx, lx, railY + bh * 0.02, w * 0.06, bh * 0.42, w * 0.01);
+    ctx.fill();
+    ctx.fillStyle = "#E5E7EB";
+    ctx.fillRect(lx + w * 0.008, railY + bh * 0.28, w * 0.044, bh * 0.08);
+  }
+
+  // Chrome step bumper with step pads, the plate and a tow hitch.
+  const chrome = ctx.createLinearGradient(0, bumperTop, 0, bodyBottom + h * 0.02);
+  chrome.addColorStop(0, "#F5F5F5");
+  chrome.addColorStop(0.5, "#B8BCC4");
+  chrome.addColorStop(1, "#6B7280");
+  ctx.fillStyle = chrome;
+  roundRect(ctx, x, bumperTop, w, bodyBottom - bumperTop + h * 0.02, w * 0.02);
+  ctx.fill();
+  ctx.fillStyle = "#1A1A1A";
+  ctx.fillRect(x + w * 0.05, bumperTop + bh * 0.01, w * 0.18, Math.max(1, bh * 0.03));
+  ctx.fillRect(x + w * 0.77, bumperTop + bh * 0.01, w * 0.18, Math.max(1, bh * 0.03));
+  plateAt(ctx, c, bumperTop + bh * 0.06, plate, w * 0.24, bh * 0.14);
+  ctx.fillStyle = "#111";
+  ctx.fillRect(cx - w * 0.03, bodyBottom + h * 0.015, w * 0.06, h * 0.04);
+  if (sport) for (const ex of [0.18, 0.82]) exhaust(ctx, x + w * ex, bodyBottom + h * 0.035, w * 0.04);
+  else exhaust(ctx, x + w * 0.8, bodyBottom + h * 0.035, w * 0.03);
+}
+
 function exhaust(ctx, ex, ey, r) {
+
   const chrome = ctx.createLinearGradient(ex, ey - r, ex, ey + r);
   chrome.addColorStop(0, "#F3F4F6");
   chrome.addColorStop(1, "#6B7280");

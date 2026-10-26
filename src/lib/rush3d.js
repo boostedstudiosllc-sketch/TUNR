@@ -119,8 +119,10 @@ const SHAPES = {
   coupe: { L: 4.45, W: 1.9, clear: 0.16, belt: 0.86, deck: 0.9, roof: 1.27, glassRear: -1.45, roofRear: -0.45, roofFront: 0.25, glassFront: 1.05, cabinW: 0.78 },
   sedan: { L: 4.7, W: 1.86, clear: 0.17, belt: 0.92, deck: 0.98, roof: 1.42, glassRear: -1.35, roofRear: -0.6, roofFront: 0.35, glassFront: 1.15, cabinW: 0.8 },
   hatch: { L: 4.2, W: 1.82, clear: 0.17, belt: 0.95, deck: 1.0, roof: 1.48, glassRear: -1.95, roofRear: -1.7, roofFront: 0.3, glassFront: 1.0, cabinW: 0.8 },
-  suv: { L: 4.7, W: 1.95, clear: 0.24, belt: 1.12, deck: 1.15, roof: 1.75, glassRear: -2.2, roofRear: -2.0, roofFront: 0.5, glassFront: 1.25, cabinW: 0.86 },
-  truck: { L: 5.5, W: 2.0, clear: 0.28, belt: 1.15, deck: 1.15, roof: 1.9, glassRear: -0.35, roofRear: -0.3, roofFront: 0.9, glassFront: 1.55, cabinW: 0.86 },
+  suv: { L: 4.8, W: 1.98, clear: 0.28, belt: 1.15, deck: 1.18, roof: 1.82, glassRear: -2.25, roofRear: -2.12, roofFront: 0.5, glassFront: 1.3, cabinW: 0.88 },
+  // A pickup: cab from cabBack forward; behind it an open bed whose floor is
+  // at `floor` and whose rails (and tailgate top) are at `deck`.
+  truck: { L: 5.7, W: 2.04, clear: 0.32, belt: 1.22, deck: 1.22, floor: 0.82, roof: 1.98, cabBack: -0.25, glassRear: -0.25, roofRear: -0.25, roofFront: 1.05, glassFront: 1.65, cabinW: 0.9 },
 };
 
 const geoCache = new Map();
@@ -145,7 +147,7 @@ function bodyGeometries(body) {
   if (geoCache.has(body)) return geoCache.get(body);
   const s = SHAPES[body] || SHAPES.coupe;
   const half = s.L / 2;
-  const wheelR = body === "truck" || body === "suv" ? 0.4 : 0.34;
+  const wheelR = body === "truck" ? 0.44 : body === "suv" ? 0.41 : 0.34;
   const axle = half - (body === "truck" ? 1.05 : 0.88);
 
   // Lower body, with wheel arches cut out of the bottom edge.
@@ -153,8 +155,15 @@ function bodyGeometries(body) {
   const bottom = s.clear + 0.1;
   lower.moveTo(-half + 0.05, bottom);
   lower.lineTo(-half - 0.02, bottom + 0.25);
-  lower.quadraticCurveTo(-half - 0.06, s.deck - 0.05, -half + 0.12, s.deck);
-  lower.lineTo(s.glassRear - 0.05, s.deck + 0.02);
+  if (body === "truck") {
+    // Low under the bed, stepping up at the back of the cab.
+    lower.lineTo(-half, s.floor);
+    lower.lineTo(s.cabBack, s.floor);
+    lower.lineTo(s.cabBack, s.belt);
+  } else {
+    lower.quadraticCurveTo(-half - 0.06, s.deck - 0.05, -half + 0.12, s.deck);
+    lower.lineTo(s.glassRear - 0.05, s.deck + 0.02);
+  }
   lower.lineTo(s.glassFront + 0.1, s.belt + 0.02);
   lower.quadraticCurveTo(half - 0.1, s.belt - 0.08, half, s.belt - 0.2);
   lower.lineTo(half + 0.03, bottom + 0.15);
@@ -167,11 +176,18 @@ function bodyGeometries(body) {
 
   // Greenhouse (glass) and the painted roof on top of it.
   const cabin = new THREE.Shape();
-  cabin.moveTo(s.glassRear, s.deck - 0.02);
-  cabin.quadraticCurveTo(s.roofRear - 0.05, s.roof - 0.02, s.roofRear + 0.15, s.roof);
+  if (body === "truck") {
+    // The cab's back is upright.
+    cabin.moveTo(s.cabBack, s.belt - 0.02);
+    cabin.lineTo(s.cabBack + 0.02, s.roof - 0.04);
+    cabin.quadraticCurveTo(s.cabBack + 0.03, s.roof, s.roofRear + 0.15, s.roof);
+  } else {
+    cabin.moveTo(s.glassRear, s.deck - 0.02);
+    cabin.quadraticCurveTo(s.roofRear - 0.05, s.roof - 0.02, s.roofRear + 0.15, s.roof);
+  }
   cabin.lineTo(s.roofFront - 0.1, s.roof);
   cabin.quadraticCurveTo(s.roofFront + 0.1, s.roof - 0.02, s.glassFront, s.belt);
-  cabin.lineTo(s.glassRear, s.deck - 0.02);
+  cabin.lineTo(body === "truck" ? s.cabBack : s.glassRear, (body === "truck" ? s.belt : s.deck) - 0.02);
 
   const roof = new THREE.Shape();
   roof.moveTo(s.roofRear - 0.02, s.roof - 0.05);
@@ -190,11 +206,10 @@ function bodyGeometries(body) {
     tire: new THREE.CylinderGeometry(wheelR, wheelR, 0.26, 28).rotateZ(Math.PI / 2),
     rim: new THREE.CylinderGeometry(wheelR * 0.68, wheelR * 0.68, 0.02, 24).rotateZ(Math.PI / 2),
   };
-  // Truck: an open bed behind the cab.
+  // Truck: the open bed between the back of the cab and the tailgate.
   if (body === "truck") {
-    const bedLen = half + s.glassRear - 0.15;
-    geos.bedFloor = new THREE.BoxGeometry(s.W - 0.24, 0.06, bedLen);
-    geos.bedZ = half - bedLen / 2 - 0.05;
+    geos.bedLen = half + s.cabBack - 0.05;
+    geos.bedZ = half - geos.bedLen / 2 + 0.05;
   }
   geoCache.set(body, geos);
   return geos;
@@ -261,63 +276,132 @@ export function buildCar({ color = "#FF4500", body = "coupe", plate = "", sport 
   }
 
   const rear = half + 0.19; // the back face (the body's rounded edge sticks out past half)
-  if (body === "truck") {
-    const bed = new THREE.Mesh(g.bedFloor, MAT.trim);
-    bed.position.set(0, s.deck - 0.02, g.bedZ);
-    car.add(bed);
-    car.add(box(s.W - 0.1, 0.05, 0.08, MAT.trim, 0, s.deck + 0.02, rear - 0.12)); // tailgate cap
-    for (const side of [-1, 1]) car.add(box(0.1, 0.42, 0.06, MAT.tail, side * (s.W / 2 - 0.02), s.deck - 0.28, rear - 0.05));
-  } else {
-    // Slim LED tail lights joined by a light bar.
-    const ty = s.deck - 0.13;
-    for (const side of [-1, 1]) {
-      const light = box(0.48, 0.075, 0.04, MAT.tail, side * (s.W / 2 - 0.3), ty, rear);
-      light.rotation.z = side * -0.06;
-      car.add(light);
-    }
-    car.add(box(s.W - 1.15, 0.022, 0.03, MAT.tailDim, 0, ty + 0.01, rear));
-  }
-  // Third brake light at the top of the rear glass.
-  car.add(box(0.36, 0.03, 0.03, MAT.tail, 0, s.roof - 0.06, -s.roofRear + 0.06));
-
-  // Plate.
-  if (plate) {
-    const p = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.114), new THREE.MeshStandardMaterial({ map: plateTexture(plate), roughness: 0.4 }));
-    p.position.set(0, s.clear + 0.42, rear + 0.005);
+  const plateMat = plate
+    ? new THREE.MeshStandardMaterial({ map: plateTexture(plate), roughness: 0.4 })
+    : new THREE.MeshStandardMaterial({ color: 0xf1f1f1, roughness: 0.5 });
+  const addPlate = (y, z) => {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.114), plateMat);
+    p.position.set(0, y, z);
     car.add(p);
-  } else {
-    car.add(box(0.52, 0.114, 0.01, new THREE.MeshStandardMaterial({ color: 0xf1f1f1, roughness: 0.5 }), 0, s.clear + 0.42, rear));
-  }
+  };
+  const tip = (x, y, z, r = 0.055) => {
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 1.08, 0.18, 20).rotateX(Math.PI / 2), MAT.chrome);
+    t.position.set(x, y, z);
+    car.add(t);
+    const hole = new THREE.Mesh(new THREE.CircleGeometry(r * 0.76, 18), MAT.hole);
+    hole.position.set(x, y, z + 0.095);
+    car.add(hole);
+  };
+  let exhaustY = s.clear + 0.18;
+  let rearFace = rear;
 
-  // Lower bumper.
-  const by = s.clear + 0.2;
-  if (sport) {
-    car.add(box(s.W - 0.45, 0.17, 0.2, MAT.carbon, 0, by, rear - 0.05));
-    for (let f = -2; f <= 2; f++) car.add(box(0.025, 0.14, 0.24, MAT.trim, f * 0.13, by, rear - 0.03));
-    for (const x of [-0.62, -0.47, 0.47, 0.62]) {
-      const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.18, 20).rotateX(Math.PI / 2), MAT.chrome);
-      tip.position.set(x, by - 0.02, rear + 0.04);
-      car.add(tip);
-      const hole = new THREE.Mesh(new THREE.CircleGeometry(0.042, 18), MAT.hole);
-      hole.position.set(x, by - 0.02, rear + 0.135);
-      car.add(hole);
+  if (body === "truck") {
+    // Open bed: painted side walls with dark rail caps, a dark floor.
+    const wallH = s.deck - s.floor;
+    for (const side of [-1, 1]) {
+      const wall = box(0.12, wallH, g.bedLen, paintMat, side * (s.W / 2 - 0.06), s.floor + wallH / 2, g.bedZ);
+      wall.castShadow = true;
+      car.add(wall, box(0.15, 0.035, g.bedLen, MAT.trim, side * (s.W / 2 - 0.06), s.deck + 0.015, g.bedZ));
+    }
+    car.add(box(s.W - 0.24, 0.04, g.bedLen, MAT.trim, 0, s.floor + 0.02, g.bedZ));
+    // Tailgate with a center handle and a crease.
+    const gateTop = s.deck;
+    const gateBottom = s.clear + 0.36;
+    const gateZ = half + 0.08;
+    const gate = box(s.W - 0.02, gateTop - gateBottom, 0.1, paintMat, 0, (gateTop + gateBottom) / 2, gateZ);
+    gate.castShadow = true;
+    car.add(gate, box(0.26, 0.06, 0.03, MAT.trim, 0, gateTop - 0.09, gateZ + 0.06), box(s.W - 0.4, 0.015, 0.02, MAT.trim, 0, gateTop - 0.32, gateZ + 0.055));
+    // Tall corner lights: red with a clear reverse lens.
+    const white = new THREE.MeshStandardMaterial({ color: 0xe5e7eb, roughness: 0.2, emissive: 0x333333 });
+    for (const side of [-1, 1]) {
+      car.add(box(0.11, 0.42, 0.06, MAT.tail, side * (s.W / 2 - 0.05), gateTop - 0.25, gateZ + 0.04));
+      car.add(box(0.09, 0.08, 0.065, white, side * (s.W / 2 - 0.05), gateTop - 0.38, gateZ + 0.045));
+    }
+    // Back of the cab: sliding-window frames and a cargo/brake light.
+    const cabZ = -s.cabBack + 0.1;
+    for (const x of [-0.3, 0.3]) car.add(box(0.04, s.roof - s.belt - 0.2, 0.02, MAT.trim, x, (s.roof + s.belt) / 2, cabZ));
+    car.add(box(0.4, 0.04, 0.03, MAT.tail, 0, s.roof - 0.05, cabZ));
+    // Chrome step bumper with step pads, the plate and a tow hitch.
+    const bumperY = s.clear + 0.24;
+    const bumperZ = half + 0.2;
+    car.add(box(s.W + 0.04, 0.26, 0.3, MAT.chrome, 0, bumperY, bumperZ));
+    for (const side of [-1, 1]) car.add(box(0.4, 0.02, 0.22, MAT.trim, side * 0.72, bumperY + 0.135, bumperZ));
+    car.add(box(0.6, 0.15, 0.02, MAT.trim, 0, bumperY, bumperZ + 0.15));
+    addPlate(bumperY, bumperZ + 0.165);
+    car.add(box(0.1, 0.1, 0.26, MAT.trim, 0, bumperY - 0.2, bumperZ + 0.05));
+    rearFace = bumperZ + 0.15;
+    exhaustY = s.clear + 0.06;
+    if (sport) for (const x of [-0.72, 0.72]) tip(x, exhaustY, rearFace - 0.05, 0.065);
+    else tip(0.75, exhaustY, rearFace - 0.05, 0.05);
+    // Big towing mirrors.
+    for (const side of [-1, 1]) car.add(box(0.12, 0.3, 0.2, MAT.trim, side * (s.W / 2 + 0.12), s.belt + 0.2, -(s.glassFront - 0.3)));
+  } else if (body === "suv") {
+    // Wide tail lights reaching onto the tailgate, joined by a chrome strip.
+    const ty = s.deck - 0.14;
+    for (const side of [-1, 1]) {
+      car.add(box(0.66, 0.11, 0.05, MAT.tail, side * (s.W / 2 - 0.37), ty, rear));
+      car.add(box(0.14, 0.05, 0.055, new THREE.MeshStandardMaterial({ color: 0xe5e7eb, roughness: 0.2 }), side * (s.W / 2 - 0.12), ty - 0.02, rear + 0.002));
+    }
+    car.add(box(0.62, 0.035, 0.04, MAT.chrome, 0, ty, rear));
+    addPlate(s.deck - 0.4, rear + 0.005);
+    // Roof spoiler over the glass, and roof rails.
+    const roofW = s.W * s.cabinW;
+    car.add(box(roofW + 0.04, 0.06, 0.32, sport && spoiler === "wing" ? MAT.carbon : paintMat, 0, s.roof + 0.02, -s.roofRear + 0.06));
+    const railLen = s.roofFront - s.roofRear - 0.3;
+    for (const side of [-1, 1]) car.add(box(0.05, 0.05, railLen, MAT.rim, side * (roofW / 2 - 0.1), s.roof + 0.08, -(s.roofRear + s.roofFront) / 2));
+    // Black arch trim, a dark lower bumper and a silver skid plate.
+    for (const side of [-1, 1]) car.add(box(0.1, 0.42, 1.05, MAT.trim, side * (s.W / 2 + 0.02), g.wheelR + 0.12, g.axle));
+    const by = s.clear + 0.22;
+    car.add(box(s.W - 0.2, 0.28, 0.16, MAT.trim, 0, by, rear - 0.05));
+    car.add(box(0.95, 0.1, 0.06, MAT.chrome, 0, by - 0.08, rear + 0.04));
+    exhaustY = by;
+    if (sport) {
+      for (const side of [-1, 1]) {
+        car.add(box(0.2, 0.08, 0.04, MAT.chrome, side * 0.62, by, rear + 0.04));
+        car.add(box(0.16, 0.04, 0.045, MAT.hole, side * 0.62, by, rear + 0.045));
+      }
     }
   } else {
-    car.add(box(s.W - 0.5, 0.12, 0.16, MAT.trim, 0, by, rear - 0.06));
-    const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.14, 16).rotateX(Math.PI / 2), MAT.chrome);
-    tip.position.set(-0.55, by - 0.03, rear + 0.02);
-    car.add(tip);
+    // German sport style: L-shaped LED lights in smoked housings, the plate
+    // on the trunk between them.
+    const ty = s.deck - 0.13;
+    const smoke = new THREE.MeshPhysicalMaterial({ color: 0x1a0306, roughness: 0.1, clearcoat: 1 });
+    for (const side of [-1, 1]) {
+      const ox = side * (s.W / 2 - 0.05);
+      car.add(box(0.62, 0.17, 0.035, smoke, side * (s.W / 2 - 0.34), ty - 0.02, rear - 0.005));
+      car.add(box(0.15, 0.3, 0.035, smoke, ox - side * 0.05, ty - 0.1, rear - 0.005));
+      car.add(box(0.52, 0.04, 0.04, MAT.tail, side * (s.W / 2 - 0.34), ty + 0.02, rear + 0.01));
+      car.add(box(0.04, 0.24, 0.04, MAT.tail, ox - side * 0.06, ty - 0.09, rear + 0.01));
+    }
+    addPlate(s.deck - 0.33, rear + 0.005);
+    // Bumper crease and reflectors.
+    car.add(box(s.W - 0.3, 0.015, 0.02, MAT.trim, 0, s.clear + 0.42, rear - 0.01));
+    for (const side of [-1, 1]) car.add(box(0.12, 0.03, 0.02, MAT.tailDim, side * (s.W / 2 - 0.16), s.clear + 0.36, rear - 0.01));
+    const by = s.clear + 0.2;
+    exhaustY = by - 0.02;
+    if (sport) {
+      car.add(box(s.W - 0.55, 0.17, 0.2, MAT.carbon, 0, by, rear - 0.05));
+      for (let f = -2; f <= 2; f++) car.add(box(0.025, 0.14, 0.24, MAT.trim, f * 0.13, by, rear - 0.03));
+      for (const x of [-0.62, -0.48, 0.48, 0.62]) tip(x, exhaustY, rear + 0.04);
+    } else {
+      car.add(box(s.W - 0.6, 0.12, 0.16, MAT.trim, 0, by, rear - 0.06));
+      tip(-0.55, exhaustY, rear + 0.02, 0.04);
+    }
+    // Third brake light at the top of the rear glass.
+    car.add(box(0.36, 0.03, 0.03, MAT.tail, 0, s.roof - 0.06, -s.roofRear + 0.06));
   }
 
-  // Mirrors.
-  for (const side of [-1, 1]) {
-    const m = box(0.16, 0.1, 0.12, paintMat, side * (s.W * s.cabinW) / 2 + side * 0.1, s.belt + 0.1, -(s.glassFront - 0.25));
-    m.castShadow = true;
-    car.add(m);
+  // Mirrors (the pickup has its own towing mirrors).
+  if (body !== "truck") {
+    for (const side of [-1, 1]) {
+      const m = box(0.16, 0.1, 0.12, paintMat, side * (s.W * s.cabinW) / 2 + side * 0.1, s.belt + 0.1, -(s.glassFront - 0.25));
+      m.castShadow = true;
+      car.add(m);
+    }
   }
 
-  // Spoiler.
-  if (sport && body !== "truck") {
+  // Spoiler, on sporty cars.
+  if (sport && body !== "truck" && body !== "suv") {
     if (spoiler === "wing") {
       const wy = s.deck + 0.32;
       const wz = half - 0.28;
@@ -327,11 +411,8 @@ export function buildCar({ color = "#FF4500", body = "coupe", plate = "", sport 
         car.add(box(0.02, 0.16, 0.36, MAT.carbon, side * (s.W / 2 - 0.05), wy + 0.04, wz));
       }
     } else if (spoiler === "lip") {
-      if (body === "hatch" || body === "suv") {
-        car.add(box(s.W * s.cabinW, 0.04, 0.3, MAT.carbon, 0, s.roof + 0.03, -s.roofRear + 0.1));
-      } else {
-        car.add(box(s.W - 0.5, 0.05, 0.12, MAT.carbon, 0, s.deck + 0.05, half - 0.05));
-      }
+      if (body === "hatch") car.add(box(s.W * s.cabinW, 0.04, 0.3, MAT.carbon, 0, s.roof + 0.03, -s.roofRear + 0.1));
+      else car.add(box(s.W - 0.5, 0.05, 0.12, MAT.carbon, 0, s.deck + 0.05, half - 0.05));
     }
   }
 
@@ -354,8 +435,9 @@ export function buildCar({ color = "#FF4500", body = "coupe", plate = "", sport 
   shadow.position.y = 0.06;
   car.add(shadow);
 
-  car.userData.rear = rear;
-  car.userData.exhaustY = by - 0.02;
+  car.userData.rear = rearFace;
+  car.userData.exhaustX = body === "truck" ? 0.72 : body === "suv" ? 0.62 : 0.55;
+  car.userData.exhaustY = exhaustY;
   return car;
 }
 
@@ -679,7 +761,7 @@ export function createRush3D(glCanvas, hudCanvas, W, H, me, art = {}, opts = {})
     const rearZ = PLAYER_Z + player.userData.rear + 0.1;
     for (const f of flames) {
       f.visible = boosting;
-      f.position.set(px + f.userData.x, player.userData.exhaustY, rearZ);
+      f.position.set(px + Math.sign(f.userData.x) * player.userData.exhaustX, player.userData.exhaustY, rearZ);
       f.scale.set(1.2 * pop, 1.2 * pop, 1.15 * flicker * pop);
     }
     boostLight.intensity = boosting ? 9 * flicker * pop : 0;
