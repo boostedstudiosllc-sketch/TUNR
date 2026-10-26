@@ -368,6 +368,23 @@ export class RushAudio {
     this.thump(t, 80, 30, 0.4, 0.8);
   }
 
+  // A short reversing beep (Park Up).
+  beep() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator();
+    o.type = "square";
+    o.frequency.value = 1180;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.05, t + 0.01);
+    g.gain.setValueAtTime(0.05, t + 0.16);
+    g.gain.linearRampToValueAtTime(0, t + 0.18);
+    o.connect(g).connect(this.sfx);
+    o.start(t);
+    o.stop(t + 0.2);
+  }
+
   pickup() {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;

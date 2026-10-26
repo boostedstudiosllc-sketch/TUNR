@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { loadPerks, recordRedemption, loadProfile, track } from "../lib/store.js";
 import { loadMyPoints, hasPendingCard, takePendingCard } from "../lib/points.js";
 import { RewardsSheet } from "./Rewards.jsx";
-import TunrRush from "./TunrRush.jsx";
+import Arcade from "./Arcade.jsx";
 import DetailingRequest from "./DetailingRequest.jsx";
 
 const CATEGORY_LABELS = {
@@ -157,16 +157,16 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
           <span aria-hidden="true" style={{ fontSize: 28 }}>🎮</span>
           <span style={{ flex: 1 }}>
             <span style={{ display: "block", fontSize: 17, fontWeight: 900, letterSpacing: 0.5 }}>
-              TUNR <span style={{ color: "#0080F0" }}>RUSH</span>
+              TUNR <span style={{ color: "#0080F0" }}>ARCADE</span>
             </span>
             <span style={{ display: "block", fontSize: 12.5, color: "#7FBFF5", fontFamily: "'Barlow', sans-serif" }}>
-              Drive your own car. Pick Easy, Medium or Hard for up to +3 a day.
+              TUNR Rush for up to +3 points a day, plus Park Up and more games.
             </span>
           </span>
           <span aria-hidden="true" style={{ fontSize: 20, color: "#7FBFF5" }}>›</span>
         </button>
         {playing && (
-          <TunrRush
+          <Arcade
             user={user}
             onClose={() => setPlaying(false)}
             onToast={onToast}
