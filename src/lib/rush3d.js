@@ -437,6 +437,7 @@ export function buildCar({ color = "#FF4500", body = "coupe", plate = "", sport 
 
   car.userData.rear = rearFace;
   car.userData.exhaustX = body === "truck" ? 0.72 : body === "suv" ? 0.62 : 0.55;
+  car.userData.camLift = body === "truck" ? 0.75 : body === "suv" ? 0.45 : 0; // see over tall vehicles
   car.userData.exhaustY = exhaustY;
   return car;
 }
@@ -556,6 +557,76 @@ const LIGHT = {
   dusk: { turbidity: 9, rayleigh: 3.5, env: ["#2b2d6b", "#a46a9c", "#f3a6a0"], fog: 0x8f6f8c, sun: 0xff9476, sunPower: 1.7, sky: 0.55, exposure: 0.95 },
 };
 
+// Reflections come from a simple painted sky (blue overhead, warm haze at
+// the horizon, sand below, a bright sun) rather than the sky shader, whose
+// very bright values can break the lighting on some phones.
+function paintedSky(renderer, L, sun, on = true) {
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  if (!on) return { pmrem, envMap: null };
+  const envScene = new THREE.Scene();
+  const envTex = canvasTexture(16, 256, (ctx, w, h) => {
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, L.env[0]);
+    grad.addColorStop(0.42, L.env[1]);
+    grad.addColorStop(0.5, L.env[2]);
+    grad.addColorStop(0.53, "#b8946a");
+    grad.addColorStop(1, "#6e5338");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+  });
+  envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), new THREE.MeshBasicMaterial({ map: envTex, side: THREE.BackSide })));
+  const sunDisc = new THREE.Mesh(new THREE.SphereGeometry(3, 16, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(6, 5.4, 4.5) }));
+  sunDisc.position.copy(sun).multiplyScalar(40);
+  envScene.add(sunDisc);
+  return { pmrem, envMap: pmrem.fromScene(envScene, 0.02).texture };
+}
+
+// The garage preview: your car from behind, three-quarter view, in a dark
+// studio. show(look) swaps the car.
+export function createCarPreview(canvas, W, H) {
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(W, H, false);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.95;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x121212);
+  const sun = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(40), THREE.MathUtils.degToRad(140));
+  const { pmrem, envMap } = paintedSky(renderer, LIGHT.noon, sun);
+  scene.environment = envMap;
+  const key = new THREE.DirectionalLight(0xffffff, 2.2);
+  key.position.copy(sun).multiplyScalar(12);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  Object.assign(key.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, near: 1, far: 40 });
+  scene.add(key, new THREE.HemisphereLight(0xdde6ff, 0x222222, 0.6));
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(9, 48), new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.75 }));
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  scene.add(floor);
+  const camera = new THREE.PerspectiveCamera(30, W / H, 0.1, 100);
+  let car = null;
+  function show(look) {
+    if (car) scene.remove(car);
+    car = buildCar({ ...look, sport: true });
+    scene.add(car);
+    const far = look.body === "truck" ? 1.18 : look.body === "suv" ? 1.08 : 1;
+    camera.position.set(3.1 * far, 2.0 * far, 7.2 * far);
+    camera.lookAt(0, look.body === "truck" || look.body === "suv" ? 0.95 : 0.7, 0.4);
+    renderer.render(scene, camera);
+  }
+  function dispose() {
+    renderer.dispose();
+    pmrem.dispose();
+    envMap?.dispose();
+  }
+  return { show, dispose };
+}
+
+
 // opts: { reflections, shadows } — both on by default; off is lighter for
 // older phones. theme: the day's look.
 export function createRush3D(glCanvas, hudCanvas, W, H, me, art = {}, opts = {}) {
@@ -583,26 +654,7 @@ export function createRush3D(glCanvas, hudCanvas, W, H, me, art = {}, opts = {})
   sky.material.uniforms.mieDirectionalG.value = 0.82;
   sky.material.uniforms.sunPosition.value.copy(sun);
   scene.add(sky);
-  // Reflections come from a simple painted sky (blue overhead, warm haze at
-  // the horizon, sand below, a bright sun) rather than the sky shader,
-  // whose very bright values can break the lighting on some phones.
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const envScene = new THREE.Scene();
-  const envTex = canvasTexture(16, 256, (ctx, w, h) => {
-    const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, L.env[0]);
-    grad.addColorStop(0.42, L.env[1]);
-    grad.addColorStop(0.5, L.env[2]);
-    grad.addColorStop(0.53, "#b8946a");
-    grad.addColorStop(1, "#6e5338");
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, w, h);
-  });
-  envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), new THREE.MeshBasicMaterial({ map: envTex, side: THREE.BackSide })));
-  const sunDisc = new THREE.Mesh(new THREE.SphereGeometry(3, 16, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(6, 5.4, 4.5) }));
-  sunDisc.position.copy(sun).multiplyScalar(40);
-  envScene.add(sunDisc);
-  const envMap = reflections ? pmrem.fromScene(envScene, 0.02).texture : null;
+  const { pmrem, envMap } = paintedSky(renderer, L, sun, reflections);
   scene.environment = envMap;
   scene.fog = new THREE.Fog(L.fog, 140, 560);
 
@@ -789,7 +841,7 @@ export function createRush3D(glCanvas, hudCanvas, W, H, me, art = {}, opts = {})
     camera.fov = fov;
     camera.updateProjectionMatrix();
     const shake = g.crashT > 0.8 ? (Math.random() - 0.5) * 0.25 : 0;
-    camera.position.set(camX + shake, 2.9 + shake, PLAYER_Z + 8.6);
+    camera.position.set(camX + shake, 2.9 + player.userData.camLift + shake, PLAYER_Z + 8.6 + player.userData.camLift * 0.6);
     camera.lookAt(camX * 0.6, 0.9, PLAYER_Z - 14);
     sunLight.target.position.set(px, 0, PLAYER_Z - 20);
     sunLight.position.copy(sunLight.target.position).add(sun.clone().multiplyScalar(80));

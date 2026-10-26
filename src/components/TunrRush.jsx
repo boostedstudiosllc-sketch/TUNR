@@ -39,16 +39,19 @@ if (ART.boost) {
 
 const BODY_LABELS = { coupe: "Coupe", sedan: "Sedan", hatch: "Hatch", suv: "SUV", truck: "Truck" };
 const SPOILER_LABELS = { none: "None", lip: "Lip", wing: "Wing" };
-const GFX_KEY = "tunr.rush.gfx";
+const GFX_KEY = "tunr.rush.graphics";
+// Phones with few cores get 3D without shadows, to stay smooth.
+const LOW_POWER = typeof navigator !== "undefined" && (navigator.hardwareConcurrency || 8) <= 4;
 
-// 3D graphics (rush3d.js) are an admin preview for now; everyone else
-// plays the classic look. The choice is remembered on the device.
+// Graphics are 3D (rush3d.js) unless the player picks Classic, which is
+// lighter for older phones; a phone that can't run 3D falls back to
+// Classic by itself. The choice is remembered on the device.
 function loadGfx() {
   try {
-    return localStorage.getItem(GFX_KEY) === "3d" ? "3d" : "classic";
+    return localStorage.getItem(GFX_KEY) === "classic" ? "classic" : "3d";
   } catch (e) {
     console.warn("Couldn't read the graphics setting:", e.message);
-    return "classic";
+    return "3d";
   }
 }
 function saveGfx(v) {
@@ -89,7 +92,6 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
   const saveTimer = useRef(0);
   const audio = useRef(null);
   const [sound, setSound] = useState(loadSoundPrefs);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [gfx, setGfx] = useState(loadGfx);
 
   // Sound can only start from a tap, so it begins with the first START.
@@ -129,7 +131,6 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
     loadProfile(user.id)
       .then((p) => {
         if (p?.username) setPlate(p.username);
-        setIsAdmin(Boolean(p?.isAdmin));
       })
       .catch((e) => console.warn(e.message));
     refreshMine(true);
@@ -321,7 +322,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
                 👻 Your ghost drives your best today ({Number(ghost.distance).toLocaleString()} m). Beat it!
               </div>
             )}
-            <CarPreview look={look} plate={plate} />
+            <CarPreview look={look} plate={plate} gfx={gfx} />
             <div style={{ textAlign: "center", fontSize: 17, fontWeight: 900 }}>{carName}</div>
 
             {user && cars.length > 1 && (
@@ -372,25 +373,17 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
               ))}
             </div>
 
-            {isAdmin && (
-              <>
-                <div style={{ ...label, marginTop: 12 }}>GRAPHICS · ADMIN PREVIEW</div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {[
-                    ["classic", "Classic"],
-                    ["3d", "3D (realistic)"],
-                  ].map(([id, name]) => (
-                    <button
-                      key={id}
-                      onClick={() => (setGfx(id), saveGfx(id))}
-                      style={{ ...chip, ...(gfx === id ? chipOn : {}) }}
-                    >
-                      {name}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+            <div style={{ ...label, marginTop: 12 }}>GRAPHICS</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {[
+                ["3d", "3D"],
+                ["classic", "Classic (lighter, for older phones)"],
+              ].map(([id, name]) => (
+                <button key={id} onClick={() => (setGfx(id), saveGfx(id))} style={{ ...chip, ...(gfx === id ? chipOn : {}) }}>
+                  {name}
+                </button>
+              ))}
+            </div>
 
             {rules.enabled ? (
               <button
@@ -440,7 +433,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             forPoints={forPoints}
             onStarted={(res) => res?.today && setMine((m) => ({ ...(m || {}), today: res.today }))}
             audio={audio.current}
-            gfx={isAdmin ? gfx : "classic"}
+            gfx={gfx}
             onFallback={(why) => (setGfx("classic"), saveGfx("classic"), onToast(why))}
             vehicleId={user ? carId : null}
             signedIn={Boolean(user)}
@@ -687,9 +680,38 @@ function OtherColor({ color, onChange }) {
   );
 }
 
-function CarPreview({ look, plate }) {
+// Your car on the start screen, in 3D or classic to match the game.
+function CarPreview({ look, plate, gfx }) {
   const ref = useRef(null);
+  const view = useRef(null);
+  const [mode, setMode] = useState(gfx);
+  useEffect(() => setMode(gfx), [gfx]);
+
   useEffect(() => {
+    if (mode !== "3d") return;
+    let gone = false;
+    import("../lib/rush3d.js")
+      .then((m) => {
+        if (gone || !ref.current) return;
+        view.current = m.createCarPreview(ref.current, 300, 170);
+        view.current.show({ ...look, plate });
+      })
+      .catch((e) => {
+        console.warn("3D preview didn't load:", e.message);
+        setMode("classic");
+      });
+    return () => {
+      gone = true;
+      view.current?.dispose();
+      view.current = null;
+    };
+  }, [mode]);
+
+  useEffect(() => {
+    if (mode === "3d") {
+      view.current?.show({ ...look, plate });
+      return;
+    }
     const c = ref.current;
     if (!c) return;
     const dpr = window.devicePixelRatio || 1;
@@ -705,8 +727,9 @@ function CarPreview({ look, plate }) {
     ctx.fillStyle = "#222";
     ctx.fillRect(0, 140, 300, 30);
     drawCar(ctx, 150, 156, 170, { color: look.color, body: look.body, spoiler: look.spoiler, plate, sport: true });
-  }, [look.color, look.body, look.spoiler, plate]);
-  return <canvas ref={ref} style={{ width: "100%", maxWidth: 300, height: "auto", aspectRatio: "300 / 170", display: "block", margin: "14px auto 6px", borderRadius: 12 }} />;
+  }, [mode, look.color, look.body, look.spoiler, plate]);
+  // A canvas can't switch between 3D and 2D drawing, so each mode gets its own.
+  return <canvas key={mode} ref={ref} style={{ width: "100%", maxWidth: 300, height: "auto", aspectRatio: "300 / 170", display: "block", margin: "14px auto 6px", borderRadius: 12 }} />;
 }
 
 // The running game. Registers the run with the server (which hands back
@@ -782,7 +805,7 @@ function Game({ look, plate, rules, difficulty, forPoints, onStarted, ghostRun, 
     let view3d = null;
     if (want3d) {
       try {
-        view3d = mod3d.createRush3D(glRef.current, hudRef.current, W, H, me, ART, { theme });
+        view3d = mod3d.createRush3D(glRef.current, hudRef.current, W, H, me, ART, { theme, shadows: !LOW_POWER });
         draw = (g) => view3d.render(g, ghost);
       } catch (e) {
         onFallback?.(`This phone couldn't run 3D graphics, so it's the classic look. (${e.message})`);
