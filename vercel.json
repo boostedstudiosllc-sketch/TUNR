@@ -25,12 +25,19 @@
     },
     "api/daily.js": {
       "maxDuration": 60
+    },
+    "api/instagram-sync.js": {
+      "maxDuration": 60
     }
   },
   "crons": [
     {
       "path": "/api/daily",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/instagram-sync",
+      "schedule": "0 22 * * *"
     }
   ]
 }

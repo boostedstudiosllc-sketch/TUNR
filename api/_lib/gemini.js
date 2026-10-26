@@ -31,7 +31,7 @@ export function toGeminiSchema(node) {
 const RESPONSE_SCHEMA = toGeminiSchema(FLYER_SCHEMA);
 
 // { parsed } on success, or { error: "busy" | "unreadable" | "ai_failed" }.
-export async function readFlyerWithGemini({ apiKey, model = DEFAULT_MODEL, imageUrl, caption, now, fetchImpl = fetch }) {
+export async function readFlyerWithGemini({ apiKey, model = DEFAULT_MODEL, imageUrl, caption, postedAt, now, fetchImpl = fetch }) {
   const img = await fetchImpl(imageUrl);
   if (!img.ok) return { error: "unreadable" };
   const mime = (img.headers.get("content-type") || "image/jpeg").split(";")[0];
@@ -46,7 +46,7 @@ export async function readFlyerWithGemini({ apiKey, model = DEFAULT_MODEL, image
         role: "user",
         parts: [
           { inlineData: { mimeType: mime, data: bytes.toString("base64") } },
-          { text: buildUserText({ caption, now }) },
+          { text: buildUserText({ caption, postedAt, now }) },
         ],
       },
     ],

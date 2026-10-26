@@ -1,0 +1,27 @@
+name: Import meets from Instagram
+
+# Every two hours, ask the app to look for new meet flyers on @tunr.app
+# (api/instagram-sync.js). Vercel's free plan only runs its own schedule once
+# a day, so this fills the gaps. If CRON_SECRET is set in Vercel, add the
+# same value as a repository secret named CRON_SECRET.
+
+on:
+  schedule:
+    - cron: "17 */2 * * *"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run the import
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          auth=()
+          if [ -n "$CRON_SECRET" ]; then auth=(-H "Authorization: Bearer $CRON_SECRET"); fi
+          code=$(curl -sS -o out.json -w '%{http_code}' -X POST "${auth[@]}" https://tunr-gules.vercel.app/api/instagram-sync)
+          cat out.json; echo
+          # Not connected yet, or a run just happened: nothing to do.
+          if [ "$code" = "503" ] || [ "$code" = "429" ]; then exit 0; fi
+          [ "$code" = "200" ]

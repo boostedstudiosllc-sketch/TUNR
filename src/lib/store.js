@@ -1672,3 +1672,44 @@ export async function setPhotographerStatus(userId, status) {
   if (error) throw new Error(friendlyWriteError(error, "Couldn't change their photographer check."));
   kickPush();
 }
+
+// ---------- Instagram import (admin) ----------
+
+// Is @tunr.app connected, and how did the last run go (076_instagram_import.sql).
+export async function loadInstagramStatus() {
+  if (!supabase) throw new Error("Backend not configured");
+  const { data, error } = await supabase.rpc("instagram_status");
+  if (error) throw new Error(withReason("Couldn't load the Instagram import status.", error));
+  return data || {};
+}
+
+export async function loadInstagramPosts() {
+  if (!supabase) throw new Error("Backend not configured");
+  const { data, error } = await supabase
+    .from("instagram_posts")
+    .select("media_id, permalink, posted_at, status, reason, event_id, image_url, attempts, updated_at")
+    .order("posted_at", { ascending: false })
+    .limit(60);
+  if (error) throw new Error(withReason("Couldn't load the imported posts.", error));
+  return data || [];
+}
+
+const INSTAGRAM_ERRORS = {
+  instagram_not_connected: "Instagram isn't connected yet: put INSTAGRAM_ACCESS_TOKEN in Vercel (steps above).",
+  instagram_token_expired: "The Instagram token expired. Make a new one and put it in Vercel as INSTAGRAM_ACCESS_TOKEN.",
+  not_configured: "The flyer reader isn't set up: GEMINI_API_KEY is missing in Vercel.",
+  not_allowed: "Only admins can start an import.",
+  too_soon: "An import just ran. Try again in a few minutes.",
+};
+
+// Run the import now (api/instagram-sync.js). Returns the run's counts.
+export async function runInstagramImport() {
+  if (!supabase) throw new Error("Backend not configured");
+  const { data } = await supabase.auth.getSession();
+  const out = await callApi("/api/instagram-sync", {}, data?.session?.access_token);
+  if (out.error) {
+    const known = INSTAGRAM_ERRORS[out.error];
+    throw new Error(known ? `${known}${out.detail && out.error !== "not_allowed" ? ` (${out.detail})` : ""}` : `Couldn't run the import. (${out.error}${out.detail ? `: ${out.detail}` : ""})`);
+  }
+  return out;
+}

@@ -26,6 +26,7 @@ import BoostedPage, { BoostedAdmin } from "./BoostedStudios.jsx";
 import RushAdmin from "./RushAdmin.jsx";
 import RewardsPanel, { RewardsAdmin, RedemptionsAdmin, CheckinsAdmin, PurchasesAdmin, CardsAdmin, IssuesAdmin } from "./Rewards.jsx";
 import StickerOrdersAdmin from "./StickerOrdersAdmin.jsx";
+import InstagramImportAdmin from "./InstagramImportAdmin.jsx";
 
 const PAGES = {
   email: "Email",
@@ -59,6 +60,7 @@ const PAGES = {
   purchases: "Purchases",
   cards: "Points cards",
   stickerOrders: "Sticker orders",
+  instagramImport: "Instagram import",
   pointsHelp: "Points help",
   checkins: "Check-ins",
 };
@@ -371,6 +373,7 @@ export default function SettingsScreen({
               <Section title="ADMIN">
                 <Row icon="📥" label="Inbox" sub="Contact messages and suggestions" onClick={() => open("inbox")} />
                 <Row icon="🏁" label="Boosted businesses" sub="Edit the Boosted Studios page" onClick={() => open("boostedAdmin")} />
+                <Row icon="📸" label="Instagram import" sub="Meets from @tunr.app's posts, added by themselves" onClick={() => open("instagramImport")} />
                 <Row icon="🎮" label="TUNR Rush" sub="Game on/off, daily goal, points, boosts, traffic" onClick={() => open("rushAdmin")} />
                 <Row icon="📊" label="Insights" onClick={() => open("insights")} />
                 <Row icon="🚩" label="Community reports" onClick={() => open("reports")} />
@@ -478,6 +481,8 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
       return <CardsAdmin onToast={onToast} />;
     case "stickerOrders":
       return <StickerOrdersAdmin onToast={onToast} />;
+    case "instagramImport":
+      return <InstagramImportAdmin onToast={onToast} onOpenLink={onFollow} />;
     case "pointsHelp":
       return <IssuesAdmin onToast={onToast} />;
     case "checkins":
