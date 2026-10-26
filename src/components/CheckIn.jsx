@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   POINTS,
   setMeetPoints,
-  getCheckinCode,
   preciseLocation,
   checkIn,
   checkinMessage,
@@ -17,17 +16,15 @@ import { field, bigButton, muted, label } from "./Sheet.jsx";
 
 const BOOSTS = [5, 10];
 
-// The ⭐ box on a meet. Any meet gives a point for checking in (location and
-// meet hours only); a boosted meet gives more and needs the host's code. The
-// host (or an admin) sees the code to post at the meet; admins set the boost.
-// The database decides whether a check-in counts.
+// The ⭐ box on a meet. Any meet gives a point for checking in, and a boosted
+// meet gives more; either way the phone's location proves you're there
+// (within a quarter mile of the pin, during the meet). No codes. Admins set
+// the boost. The database decides whether a check-in counts.
 export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged }) {
   // Only for showing the admin controls; the database checks it again.
   const [isAdmin, setIsAdmin] = useState(false);
   const [boost, setBoost] = useState(event.boostPoints ?? null);
   const [custom, setCustom] = useState("");
-  const [code, setCode] = useState("");
-  const [hostCode, setHostCode] = useState(null);
   const [checkedIn, setCheckedIn] = useState(false);
   const [stayed, setStayed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -47,7 +44,6 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
   useEffect(() => {
     setBoost(event.boostPoints ?? null);
     setMessage("");
-    setCode("");
   }, [event.id, event.boostPoints]);
 
   useEffect(() => {
@@ -77,17 +73,6 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
       alive = false;
     };
   }, [on, user?.id, event.id, isHost]);
-
-  useEffect(() => {
-    if (!boost || !(isHost || isAdmin)) return setHostCode(null);
-    let alive = true;
-    getCheckinCode(event.id)
-      .then((r) => alive && setHostCode(r))
-      .catch((e) => alive && setHostCode({ status: "error", message: e.message }));
-    return () => {
-      alive = false;
-    };
-  }, [boost, isHost, isAdmin, event.id]);
 
   async function changeBoost(points) {
     if (points > 10) return onToast("Boosted meets top out at 10 points.");
@@ -124,15 +109,11 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
 
   async function submit() {
     if (!user) return onNeedAccount();
-    if (boost && code.replace(/[^A-Za-z0-9]/g, "").length < 6) {
-      setMessage("Enter the 6-character code from the host or the sign at the meet.");
-      return;
-    }
     setBusy(true);
     setMessage("");
     try {
       const pos = await preciseLocation();
-      const result = await checkIn(event.id, boost ? code : null, pos);
+      const result = await checkIn(event.id, null, pos);
       if (result.status === "ok") {
         setCheckedIn(true);
         onToast(`⭐ Checked in: +${result.points} point${result.points === 1 ? "" : "s"}${result.rsvp_bonus ? " (RSVP bonus)" : ""}`);
@@ -159,7 +140,7 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
       <div style={{ ...muted, marginTop: 4 }}>
         {boost ? (
           <>
-            Check in with the code shown at the meet for <b style={{ color: "#F0F0F0" }}>+{boost}</b>, plus{" "}
+            Check in at the meet for <b style={{ color: "#F0F0F0" }}>+{boost}</b>, plus{" "}
             <b style={{ color: "#F0F0F0" }}>+{POINTS.rsvpBonus}</b> if you RSVP'd going before it started.
           </>
         ) : on ? (
@@ -204,25 +185,6 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
         </div>
       )}
 
-      {boost && (isHost || isAdmin) && (
-        <div style={{ marginTop: 12, background: "#0D0D0D", border: "1px dashed #3A3A3A", borderRadius: 10, padding: "10px 12px" }}>
-          <div style={label}>TODAY'S CHECK-IN CODE {isHost ? "(HOSTS ONLY)" : "(ADMIN)"}</div>
-          {hostCode === null ? (
-            <div style={muted}>Loading…</div>
-          ) : hostCode.status === "ok" ? (
-            <>
-              <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: 6, color: "#FACC15" }}>{hostCode.code}</div>
-              <div style={{ ...muted, fontSize: 12 }}>
-                Post it on a sign or say it at the meet. It changes every meet day, so don't post it online.
-              </div>
-            </>
-          ) : hostCode.status === "not_today" ? (
-            <div style={muted}>The code shows up here on the day of the meet.</div>
-          ) : (
-            <div style={{ ...muted, color: "#F87171" }}>{hostCode.message || `Couldn't get the code. (${hostCode.status})`}</div>
-          )}
-        </div>
-      )}
       {isHost && on && <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>Hosts don't earn points at their own meet.</div>}
 
       {on && !isHost && !(checkedIn && stayed) && (
@@ -254,19 +216,6 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
           </div>
         ) : (
           <div style={{ marginTop: 12 }}>
-            {boost && (
-              <input
-                style={{ ...field, textAlign: "center", letterSpacing: 6, fontSize: 18, fontWeight: 800, textTransform: "uppercase", marginBottom: 8 }}
-                placeholder="CODE"
-                aria-label="Check-in code"
-                maxLength={8}
-                autoCapitalize="characters"
-                autoCorrect="off"
-                spellCheck={false}
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-              />
-            )}
             <button
               className="action-btn"
               onClick={submit}

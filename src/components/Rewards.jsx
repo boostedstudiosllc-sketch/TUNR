@@ -61,7 +61,7 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
   const [rewards, setRewards] = useState([]);
   const [claims, setClaims] = useState([]);
   const [history, setHistory] = useState([]);
-  const [rates, setRates] = useState({ points_per_dollar: 1, member_bonus: 50 });
+  const [rates, setRates] = useState({ points_per_dollar: 1, member_bonus: 50, referral_points: 1, welcome_points: 1 });
   const [streak, setStreak] = useState(null);
   const [showBoard, setShowBoard] = useState(false);
   const [error, setError] = useState("");
@@ -199,11 +199,15 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
         )}
         <EarnRow icon="📍" text="Check in at any meet, at the meet" pts="+1" />
         <EarnRow icon="🏁" text="Check in again at the end: stayed the whole meet" pts="+1" />
-        <EarnRow icon="⭐" text="Check in at a boosted meet (code shown at the meet)" pts="+5 to +10" />
+        <EarnRow icon="⭐" text="Check in at a boosted meet, at the meet" pts="+5 to +10" />
         <EarnRow icon="🙋" text="RSVP “Going” to a boosted meet, then show up" pts={`+${POINTS.rsvpBonus}`} />
         <EarnRow icon="🎮" text="TUNR Rush (Perks tab): clear today's level (Easy, Medium or Hard)" pts="+1–3" />
-        <EarnRow icon="🤝" text="Bring a friend (invite link or your car's QR): when they check in at their first meet" pts="+5" />
-        <EarnRow icon="👋" text="Your own first meet check-in, if a friend brought you" pts="+2" />
+        {rates.referral_points > 0 && (
+          <EarnRow icon="🤝" text="Bring a friend (invite link or your car's QR): when they check in at their first meet" pts={`+${rates.referral_points}`} />
+        )}
+        {rates.welcome_points > 0 && (
+          <EarnRow icon="👋" text="Your own first meet check-in, if a friend brought you" pts={`+${rates.welcome_points}`} />
+        )}
         <EarnRow
           icon="🔥"
           text={`Weekly streak: ${STREAK_MILESTONES.map(([w, b]) => `${w} wks +${b}`).join(", ")}`}
@@ -219,7 +223,7 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
           </div>
         )}
         <div style={{ ...muted, fontSize: 12, marginTop: 10 }}>
-          Check in from the meet itself, during the meet. Boosted meets also need the code shown
+          Check in from the meet itself, during the meet: your phone's location shows you're
           there. One check-in per meet per day, 3 a day at most.
         </div>
       </div>
@@ -1001,6 +1005,18 @@ export function PurchasesAdmin({ onToast }) {
             <Field name="MEMBERSHIP BONUS">
               <input style={field} inputMode="numeric" value={rates.member_bonus} onChange={(e) => setRates((r) => ({ ...r, member_bonus: e.target.value.replace(/\D/g, "") }))} />
             </Field>
+          </div>
+          <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+            <Field name="INVITE POINTS">
+              <input style={field} inputMode="numeric" maxLength={2} value={rates.referral_points ?? 1} onChange={(e) => setRates((r) => ({ ...r, referral_points: e.target.value.replace(/\D/g, "") }))} />
+            </Field>
+            <Field name="WELCOME POINTS">
+              <input style={field} inputMode="numeric" maxLength={2} value={rates.welcome_points ?? 1} onChange={(e) => setRates((r) => ({ ...r, welcome_points: e.target.value.replace(/\D/g, "") }))} />
+            </Field>
+          </div>
+          <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>
+            Invite points go to the person who invited someone, and welcome points to the new member, when
+            the new member checks in at their first meet (up to 10 invites paid a month; 0 turns either off).
           </div>
           <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>
             The rate fills in points when you make cards and record sales. Points already given stay.

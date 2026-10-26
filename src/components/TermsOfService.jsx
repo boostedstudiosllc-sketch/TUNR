@@ -274,10 +274,10 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           lottery. Some rewards are only for buyers who have spent a minimum amount. A refunded or
           cancelled order loses its points, and each points card works once, for the account that
           adds it first. Points have no cash value and can't be sold,
-          transferred or combined between accounts. Checking in needs your location at that moment (and, at
-          boosted meets, the code shown there); you must actually be there. Using points cards that aren't yours,
-          using fake locations, sharing codes
-          with people who aren't there, extra accounts, or any other trick to earn points breaks
+          transferred or combined between accounts. Checking in needs your location at that moment; you must
+          actually be there. Using points cards that aren't yours,
+          using fake locations, checking in for someone who isn't
+          there, extra accounts, or any other trick to earn points breaks
           these terms: we can remove those points, cancel rewards claimed with them, and suspend
           the account. Rewards from a business are provided by that business on its own terms.
           We can change point values, rewards and the rules, or end the program, at any time;

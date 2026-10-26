@@ -31,7 +31,6 @@ const CHECKIN_COPY = {
   no_pin: "This meet has no map pin yet, so check-in can't confirm you're there. Ask the host to add the address.",
   location_needed: "Turn on location so TUNR can confirm you're at the meet (Settings → Location).",
   weak_location: "Your location isn't precise enough. Turn on precise location (or step outside) and try again.",
-  wrong_code: "That code isn't right. Get today's code from the host or the sign at the meet.",
   already: "You already checked in to this meet today.",
   daily_limit: "That's 3 check-ins in 24 hours, the limit. Try again tomorrow.",
 };
@@ -97,13 +96,6 @@ export async function setPointsMeet(eventId, on) {
   need();
   const { error } = await supabase.rpc("set_points_meet", { p_event: eventId, p_on: on });
   if (error) throw new Error(friendlyWriteError(error, on ? "Couldn't turn on points for this meet." : "Couldn't turn off points for this meet."));
-}
-
-export async function getCheckinCode(eventId) {
-  need();
-  const { data, error } = await supabase.rpc("get_checkin_code", { p_event: eventId });
-  if (error) throw new Error(withReason("Couldn't get today's check-in code.", error));
-  return data || {};
 }
 
 // Asks the phone where it is, once, at the moment of checking in.
@@ -298,10 +290,14 @@ export const STORES = [
 ];
 
 export async function loadPointsSettings() {
-  if (!supabase) return { points_per_dollar: 10, member_bonus: 500 };
-  const { data, error } = await supabase.from("points_settings").select("points_per_dollar, member_bonus").maybeSingle();
+  const fallback = { points_per_dollar: 1, member_bonus: 50, referral_points: 1, welcome_points: 1 };
+  if (!supabase) return fallback;
+  const { data, error } = await supabase
+    .from("points_settings")
+    .select("points_per_dollar, member_bonus, referral_points, welcome_points")
+    .maybeSingle();
   if (error) throw new Error(withReason("Couldn't load the points rates.", error));
-  return data || { points_per_dollar: 10, member_bonus: 500 };
+  return data || fallback;
 }
 
 // ============ POINTS CARDS ============
@@ -367,6 +363,8 @@ export async function savePointsSettings(settings) {
     .update({
       points_per_dollar: Number(settings.points_per_dollar),
       member_bonus: Number(settings.member_bonus),
+      referral_points: Number(settings.referral_points),
+      welcome_points: Number(settings.welcome_points),
       updated_at: new Date().toISOString(),
     })
     .eq("id", true);

@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { UNLOCKS, inviteLink, loadMyInvites, shareInvite } from "../lib/invites.js";
 import Sheet, { sheetTitle, muted, label, bigButton, quietButton } from "./Sheet.jsx";
+import useInvitePoints, { plusPoints } from "./useInvitePoints.js";
 
 // Your invite link, how many friends count, and what that unlocks.
 export default function InviteSheet({ reason = "", onClose, onToast, onOpenPerson }) {
   const [data, setData] = useState(null);
+  const pts = useInvitePoints();
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -39,8 +41,14 @@ export default function InviteSheet({ reason = "", onClose, onToast, onOpenPerso
       {reason && <div style={{ ...muted, color: "#FACC15", marginTop: 6 }}>🔒 {reason}</div>}
       <div style={{ ...muted, marginTop: 6 }}>
         Share your link. Each friend who signs up with it and confirms their email counts toward
-        unlocking more of TUNR, and you get <b style={{ color: "#FACC15" }}>+5 points</b> when they check in at their
-        first meet (they get +2 too). The QR sticker on your car counts the same way.
+        unlocking more of TUNR.
+        {pts?.invite > 0 && (
+          <>
+            {" "}You get <b style={{ color: "#FACC15" }}>{plusPoints(pts.invite)}</b> when they check in at their first meet
+            {pts.welcome > 0 ? ` (they get ${plusPoints(pts.welcome)} too)` : ""}.
+          </>
+        )}{" "}
+        The QR sticker on your car counts the same way.
       </div>
       {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
 

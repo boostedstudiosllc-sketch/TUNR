@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { loadMeetHistory, loadSignIns, signOutOtherDevices, deviceLabel } from "../lib/activity.js";
 import { loadMyInvites, openInvites } from "../lib/invites.js";
-import { loadPointHistory, loadMyRedemptions } from "../lib/points.js";
+import { loadPointHistory, loadMyRedemptions, loadPointsSettings } from "../lib/points.js";
 import { loadAlertSound, saveAlertSound, playAlertSound, clipToDataUrl, SOUND_LIMITS } from "../lib/activity.js";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 
@@ -47,6 +47,13 @@ export function MeetHistory({ onOpenLink }) {
 
 // Everyone who used your link: counted, or waiting on their email.
 export function InviteHistory({ onOpenLink }) {
+  // Invite points are set by admins (points_settings.referral_points).
+  const [invitePoints, setInvitePoints] = useState(null);
+  useEffect(() => {
+    loadPointsSettings()
+      .then((r) => setInvitePoints(r.referral_points))
+      .catch((e) => console.warn(e.message));
+  }, []);
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   useEffect(() => {
@@ -80,10 +87,12 @@ export function InviteHistory({ onOpenLink }) {
             </span>
             <span style={{ display: "block", fontSize: 12, fontWeight: 700, color: f.points === true ? "#10B981" : f.points === false ? "#A0A0A0" : "#A08A40", fontFamily: "'Barlow', sans-serif" }}>
               {f.points === true
-                ? "⭐ +5 earned: they checked in at a meet"
+                ? "⭐ Invite points earned: they checked in at a meet"
                 : f.points === false
                   ? "Checked in, but past this month's 10-referral limit"
-                  : "⭐ +5 when they check in at their first meet"}
+                  : invitePoints
+                    ? `⭐ +${invitePoints} when they check in at their first meet`
+                    : "Counts once they check in at their first meet"}
             </span>
           </span>
           <span style={{ fontSize: 12, fontWeight: 800, color: f.confirmed ? "#10B981" : "#FACC15", whiteSpace: "nowrap" }}>

@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { buildPageUrl, loadScanStats, setBuildPagePublic } from "../lib/buildpage.js";
 import { loadMyInvites } from "../lib/invites.js";
 import Sheet, { sheetTitle, muted, label, bigButton, quietButton } from "./Sheet.jsx";
+import useInvitePoints, { plusPoints } from "./useInvitePoints.js";
 
 // A car's "Scan my build" QR: turn its public page on, see scans, print the
 // sticker (one big, two small), or share the link.
 export default function StickerSheet({ vehicle, onClose, onToast, onChanged }) {
+  const pts = useInvitePoints();
   const [code, setCode] = useState(null);
   const [qr, setQr] = useState("");
   const [isPublic, setIsPublic] = useState(Boolean(vehicle.public_page));
@@ -99,7 +101,7 @@ export default function StickerSheet({ vehicle, onClose, onToast, onChanged }) {
       <div style={{ ...muted, marginTop: 4 }}>
         A QR sticker for your window. At meets, people scan it to see your {name}, its build notes and
         your @username, even when you're not around. If they join TUNR from it, it counts as your
-        invite, and you get +5 points when they check in at their first meet.
+        invite{pts?.invite > 0 ? `, and you get ${plusPoints(pts.invite)} when they check in at their first meet` : ""}.
       </div>
 
       <div
