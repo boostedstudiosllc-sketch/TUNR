@@ -32,6 +32,25 @@ if (ART.boost) {
 
 const BODY_LABELS = { coupe: "Coupe", sedan: "Sedan", hatch: "Hatch", suv: "SUV", truck: "Truck" };
 const SPOILER_LABELS = { none: "None", lip: "Lip", wing: "Wing" };
+const GFX_KEY = "tunr.rush.gfx";
+
+// 3D graphics (rush3d.js) are an admin preview for now; everyone else
+// plays the classic look. The choice is remembered on the device.
+function loadGfx() {
+  try {
+    return localStorage.getItem(GFX_KEY) === "3d" ? "3d" : "classic";
+  } catch (e) {
+    console.warn("Couldn't read the graphics setting:", e.message);
+    return "classic";
+  }
+}
+function saveGfx(v) {
+  try {
+    localStorage.setItem(GFX_KEY, v);
+  } catch (e) {
+    console.warn("Couldn't save the graphics setting:", e.message);
+  }
+}
 const DEFAULT_LOOK = { color: "#FF4500", body: "coupe", spoiler: "lip" };
 
 // TUNR Rush: a full-screen driving game in your own car. Reach the daily
@@ -51,6 +70,8 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
   const saveTimer = useRef(0);
   const audio = useRef(null);
   const [sound, setSound] = useState(loadSoundPrefs);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [gfx, setGfx] = useState(loadGfx);
 
   // Sound can only start from a tap, so it begins with the first START.
   function play() {
@@ -87,7 +108,10 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
       })
       .catch((e) => setError(e.message));
     loadProfile(user.id)
-      .then((p) => p?.username && setPlate(p.username))
+      .then((p) => {
+        if (p?.username) setPlate(p.username);
+        setIsAdmin(Boolean(p?.isAdmin));
+      })
       .catch((e) => console.warn(e.message));
     loadMyGame()
       .then(setMine)
@@ -241,6 +265,26 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
               ))}
             </div>
 
+            {isAdmin && (
+              <>
+                <div style={{ ...label, marginTop: 12 }}>GRAPHICS · ADMIN PREVIEW</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {[
+                    ["classic", "Classic"],
+                    ["3d", "3D (realistic)"],
+                  ].map(([id, name]) => (
+                    <button
+                      key={id}
+                      onClick={() => (setGfx(id), saveGfx(id))}
+                      style={{ ...chip, ...(gfx === id ? chipOn : {}) }}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
             {rules.enabled ? (
               <button className="action-btn" onClick={play} style={{ ...bigButton, marginTop: 18, fontSize: 18, padding: "16px 0" }}>
                 🏁 START
@@ -279,6 +323,8 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             plate={plate}
             rules={rules}
             audio={audio.current}
+            gfx={isAdmin ? gfx : "classic"}
+            onFallback={(why) => (setGfx("classic"), saveGfx("classic"), onToast(why))}
             vehicleId={user ? carId : null}
             signedIn={Boolean(user)}
             onDone={(r) => {
@@ -495,8 +541,16 @@ function CarPreview({ look, plate }) {
 }
 
 // The running game. Registers the run with the server, plays, and reports.
-function Game({ look, plate, rules, audio, vehicleId, signedIn, onDone, onQuit }) {
+function Game({ look, plate, rules, audio, gfx = "classic", onFallback, vehicleId, signedIn, onDone, onQuit }) {
   const canvasRef = useRef(null);
+  const glRef = useRef(null);
+  const hudRef = useRef(null);
+  const [mod3d, setMod3d] = useState(null);
+  const [size] = useState(() => {
+    const W = Math.min(430, window.innerWidth) - 32;
+    return { W, H: Math.min(Math.round(W * 1.45), window.innerHeight - 120) };
+  });
+  const want3d = gfx === "3d";
   const stateRef = useRef(null);
   const runRef = useRef(null);
   const touch = useRef(null);
@@ -507,6 +561,12 @@ function Game({ look, plate, rules, audio, vehicleId, signedIn, onDone, onQuit }
       startRun(vehicleId)
         .then((id) => (runRef.current = id))
         .catch((e) => console.warn(e.message));
+    }
+    // Load the 3D renderer during the countdown.
+    if (want3d) {
+      import("../lib/rush3d.js")
+        .then(setMod3d)
+        .catch((e) => onFallback?.(`3D graphics didn't load, so it's the classic look. (${e.message})`));
     }
     const timer = setInterval(
       () =>
@@ -519,21 +579,34 @@ function Game({ look, plate, rules, audio, vehicleId, signedIn, onDone, onQuit }
     return () => clearInterval(timer);
   }, []);
 
+  const ready = countdown <= 0 && (!want3d || mod3d);
   useEffect(() => {
-    if (countdown > 0) return;
-    const c = canvasRef.current;
-    const W = Math.min(430, window.innerWidth) - 32;
-    const H = Math.min(Math.round(W * 1.45), window.innerHeight - 120);
-    const dpr = window.devicePixelRatio || 1;
-    c.width = W * dpr;
-    c.height = H * dpr;
-    c.style.width = `${W}px`;
-    c.style.height = `${H}px`;
-    const ctx = c.getContext("2d");
-    ctx.scale(dpr, dpr);
+    if (!ready) return;
+    const { W, H } = size;
+    const me = { color: look.color, body: look.body, spoiler: look.spoiler, plate };
+    let draw;
+    let view3d = null;
+    if (want3d) {
+      try {
+        view3d = mod3d.createRush3D(glRef.current, hudRef.current, W, H, me, ART);
+        draw = (g) => view3d.render(g);
+      } catch (e) {
+        onFallback?.(`This phone couldn't run 3D graphics, so it's the classic look. (${e.message})`);
+        return;
+      }
+    } else {
+      const c = canvasRef.current;
+      const dpr = window.devicePixelRatio || 1;
+      c.width = W * dpr;
+      c.height = H * dpr;
+      c.style.width = `${W}px`;
+      c.style.height = `${H}px`;
+      const ctx = c.getContext("2d");
+      ctx.scale(dpr, dpr);
+      draw = (g) => drawGame(ctx, W, H, g, me, ART);
+    }
     const g = newGame(Math.random, rules);
     stateRef.current = g;
-    const me = { color: look.color, body: look.body, spoiler: look.spoiler, plate };
     let last = performance.now();
     let raf = 0;
     let ended = false;
@@ -554,7 +627,7 @@ function Game({ look, plate, rules, audio, vehicleId, signedIn, onDone, onQuit }
           else if (ev === "boostEnd") audio.boostEnd();
         }
       }
-      drawGame(ctx, W, H, g, me, ART);
+      draw(g);
       if (g.over && !ended) {
         ended = true;
         audio?.stopEngine();
@@ -578,8 +651,9 @@ function Game({ look, plate, rules, audio, vehicleId, signedIn, onDone, onQuit }
       cancelAnimationFrame(raf);
       window.removeEventListener("keydown", onKey);
       audio?.stopEngine();
+      view3d?.dispose();
     };
-  }, [countdown <= 0]);
+  }, [ready, want3d]);
 
   function onPointerDown(e) {
     touch.current = { x: e.clientX, t: Date.now() };
@@ -598,9 +672,18 @@ function Game({ look, plate, rules, audio, vehicleId, signedIn, onDone, onQuit }
 
   return (
     <div style={{ marginTop: 10, position: "relative" }}>
-      {countdown > 0 ? (
-        <div style={{ height: 420, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 96, fontWeight: 900, color: "#FF4500" }}>
-          {countdown}
+      {!ready ? (
+        <div style={{ height: 420, display: "flex", alignItems: "center", justifyContent: "center", fontSize: countdown > 0 ? 96 : 22, fontWeight: 900, color: "#FF4500" }}>
+          {countdown > 0 ? countdown : "Loading 3D…"}
+        </div>
+      ) : want3d ? (
+        <div
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+          style={{ position: "relative", width: size.W, height: size.H, margin: "0 auto", borderRadius: 14, overflow: "hidden", touchAction: "none", userSelect: "none" }}
+        >
+          <canvas ref={glRef} style={{ display: "block", width: size.W, height: size.H }} />
+          <canvas ref={hudRef} style={{ position: "absolute", inset: 0, width: size.W, height: size.H, pointerEvents: "none" }} />
         </div>
       ) : (
         <canvas

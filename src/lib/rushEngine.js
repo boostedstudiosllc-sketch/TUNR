@@ -589,6 +589,12 @@ export function drawGame(ctx, W, H, g, me, art = {}) {
     }
   }
 
+  drawHud(ctx, W, H, g, art);
+}
+
+// The overlay on top of the road (shared with the 3D view in rush3d.js):
+// the boost banner and the dashboard.
+export function drawHud(ctx, W, H, g, art = {}) {
   // Boost banner: the Boosted Studios logo and what's left of the boost.
   if (g.boostT > 0) {
     const bw = Math.min(W * 0.62, 240);
