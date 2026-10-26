@@ -41,6 +41,7 @@ import {
 } from "../lib/points.js";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
 import Leaderboard from "./Leaderboard.jsx";
+import PrintPage from "./PrintPage.jsx";
 
 const KIND_LABELS = { merch: "MERCH", discount: "DISCOUNT", experience: "EXPERIENCE", other: "REWARD" };
 
@@ -720,6 +721,7 @@ export function CardsAdmin({ onToast }) {
   const [batches, setBatches] = useState(null);
   const [rate, setRate] = useState(10);
   const [draft, setDraft] = useState({ label: "", price: "", points: "", count: "25", months: "12" });
+  const [printing, setPrinting] = useState(null); // { html, count }
   const [pointsEdited, setPointsEdited] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -753,8 +755,6 @@ export function CardsAdmin({ onToast }) {
     if (!draft.label.trim()) return setError("Say what the card is for, like “Boosted tee” or “Full detail”.");
     if (!(points >= 1)) return setError("Set how many points each card gives.");
     if (!(count >= 1 && count <= 500)) return setError("Make between 1 and 500 cards at a time.");
-    // Opened now, while the tap still counts, so the browser doesn't block it.
-    const win = window.open("", "_blank");
     setBusy(true);
     setError("");
     try {
@@ -762,12 +762,11 @@ export function CardsAdmin({ onToast }) {
       const expiresAt = months > 0 ? new Date(Date.now() + months * 30.44 * 86400000).toISOString() : null;
       const codes = await createPointCards({ label: draft.label.trim(), points, valueCents: cents || 0, count, expiresAt });
       onToast(`Made ${codes.length} cards`);
-      await printCards(win, codes.map((code) => ({ code, label: draft.label.trim(), points, expires_at: expiresAt })));
+      setPrinting(await cardsPage(codes.map((code) => ({ code, label: draft.label.trim(), points, expires_at: expiresAt }))));
       setDraft((d) => ({ ...d, price: "", points: "" }));
       setPointsEdited(false);
       refresh();
     } catch (e) {
-      if (win) win.close();
       setError(e.message);
     } finally {
       setBusy(false);
@@ -775,16 +774,11 @@ export function CardsAdmin({ onToast }) {
   }
 
   async function reprint(batch) {
-    const win = window.open("", "_blank");
     try {
       const cards = await loadUnusedCards(batch.batch_id);
-      if (!cards.length) {
-        if (win) win.close();
-        return onToast("Every card in that batch has been used or cancelled.");
-      }
-      await printCards(win, cards);
+      if (!cards.length) return onToast("Every card in that batch has been used or cancelled.");
+      setPrinting(await cardsPage(cards));
     } catch (e) {
-      if (win) win.close();
       onToast(e.message);
     }
   }
@@ -802,6 +796,16 @@ export function CardsAdmin({ onToast }) {
 
   return (
     <div>
+      {printing && (
+        <PrintPage
+          title="TUNR points cards"
+          tip={`${printing.count} cards. Print on card stock and cut along the dashed lines, or save as PDF.`}
+          html={printing.html}
+          css={CARDS_CSS}
+          pageMargin="0.5in 0.75in"
+          onBack={() => setPrinting(null)}
+        />
+      )}
       <div style={muted}>
         Print a card for each shirt bag, sale or detail. The buyer scans it and the points land at
         once; each card works one time. No orders to check.
@@ -881,10 +885,9 @@ export function CardsAdmin({ onToast }) {
   );
 }
 
-// A sheet of business-card-size cards (10 to a page) in a new tab, ready to
+// A sheet of business-card-size cards (10 to a page), shown in the app to
 // print or save as a PDF. The QR opens TUNR with the code filled in.
-async function printCards(win, cards) {
-  if (!win) throw new Error("Your browser blocked the print window. Allow pop-ups for TUNR and try again.");
+async function cardsPage(cards) {
   const { default: QRCode } = await import("qrcode");
   const origin = window.location.origin;
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -896,26 +899,23 @@ async function printCards(win, cards) {
       return `<div class="card"><div class="qr">${svg}</div><div class="txt"><div class="brand">BOOSTED STUDIOS</div><div class="pts">+${c.points} POINTS</div><div class="lbl">${esc(c.label)}</div><div class="how">Scan with your phone camera, or enter the code in TUNR: Perks → ⭐ Points</div><div class="code">${pretty}</div><div class="fine">One-time use. No cash value. ${exp}</div></div></div>`;
     })
   );
-  win.document.open();
-  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>TUNR points cards</title><style>
-    @page { size: letter; margin: 0.5in 0.75in; }
-    body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111; }
-    .bar { padding: 12px; font-size: 14px; background: #FFF4E5; border-bottom: 1px solid #F0D0A0; }
-    .bar button { font-size: 14px; padding: 6px 14px; margin-left: 8px; }
-    .grid { display: grid; grid-template-columns: repeat(2, 3.5in); gap: 0; justify-content: center; }
-    .card { width: 3.5in; height: 2in; box-sizing: border-box; border: 1px dashed #999; padding: 0.15in; display: flex; gap: 0.12in; align-items: center; break-inside: avoid; }
-    .qr { width: 1.3in; height: 1.3in; flex-shrink: 0; }
-    .qr svg { width: 100%; height: 100%; }
-    .brand { font-size: 8pt; letter-spacing: 1.5px; font-weight: 700; color: #0080F0; }
-    .pts { font-size: 17pt; font-weight: 900; line-height: 1.1; }
-    .lbl { font-size: 9pt; font-weight: 700; }
-    .how { font-size: 6.5pt; color: #444; margin-top: 3px; line-height: 1.25; }
-    .code { font-family: "Courier New", monospace; font-size: 10.5pt; font-weight: 700; margin-top: 4px; letter-spacing: 0.5px; }
-    .fine { font-size: 5.5pt; color: #777; margin-top: 2px; }
-    @media print { .bar { display: none; } }
-  </style></head><body><div class="bar">${cards.length} cards. Print on card stock and cut along the dashed lines, or save as PDF.<button onclick="window.print()">Print</button></div><div class="grid">${items.join("")}</div></body></html>`);
-  win.document.close();
+  return { html: `<div class="grid">${items.join("")}</div>`, count: cards.length };
 }
+
+const CARDS_CSS = `
+  .print-page .grid { display: grid; grid-template-columns: repeat(2, 3.5in); gap: 0; justify-content: center; padding: 0.3in 0; }
+  .print-page .card { width: 3.5in; height: 2in; box-sizing: border-box; border: 1px dashed #999; padding: 0.15in; display: flex; gap: 0.12in; align-items: center; break-inside: avoid; }
+  .print-page .qr { width: 1.3in; height: 1.3in; flex-shrink: 0; }
+  .print-page .qr svg { width: 100%; height: 100%; }
+  .print-page .brand { font-size: 8pt; letter-spacing: 1.5px; font-weight: 700; color: #0080F0; }
+  .print-page .pts { font-size: 17pt; font-weight: 900; line-height: 1.1; }
+  .print-page .lbl { font-size: 9pt; font-weight: 700; }
+  .print-page .how { font-size: 6.5pt; color: #444; margin-top: 3px; line-height: 1.25; }
+  .print-page .code { font-family: "Courier New", monospace; font-size: 10.5pt; font-weight: 700; margin-top: 4px; letter-spacing: 0.5px; }
+  .print-page .fine { font-size: 5.5pt; color: #777; margin-top: 2px; }
+  @media screen and (max-width: 760px) { .print-page .grid { grid-template-columns: 3.5in; } }
+  @media print { .print-page .grid { padding: 0; } }
+`;
 
 // Sales recorded by hand (in person, no card on you), what's come in, and
 // the rates.

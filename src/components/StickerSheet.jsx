@@ -3,6 +3,7 @@ import { buildPageUrl, loadScanStats, setBuildPagePublic } from "../lib/buildpag
 import { loadMyInvites } from "../lib/invites.js";
 import Sheet, { sheetTitle, muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import useInvitePoints, { plusPoints } from "./useInvitePoints.js";
+import PrintPage from "./PrintPage.jsx";
 
 // A car's "Scan my build" QR: turn its public page on, see scans, print the
 // sticker (one big, two small), or share the link.
@@ -61,39 +62,33 @@ export default function StickerSheet({ vehicle, onClose, onToast, onChanged }) {
     }
   }
 
+  // One big sticker and two small ones, shown in the app to print.
+  const [printHtml, setPrintHtml] = useState("");
   async function print() {
-    const win = window.open("", "_blank");
-    if (!win) return onToast("Your browser blocked the print window. Allow pop-ups for TUNR and try again.");
     try {
       const { default: QRCode } = await import("qrcode");
       const svg = await QRCode.toString(url, { type: "svg", margin: 0, errorCorrectionLevel: "M" });
       const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-      const sticker = (size) => `<div class="s s${size}"><div class="t">SCAN MY BUILD</div><div class="q">${svg}</div><div class="n">${esc(name)}</div><div class="b">TUNR · Georgia car meets</div></div>`;
-      win.document.open();
-      win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Scan my build sticker</title><style>
-        @page { size: letter; margin: 0.5in; }
-        body { margin: 0; font-family: Arial, Helvetica, sans-serif; }
-        .bar { padding: 12px; font-size: 14px; background: #FFF4E5; border-bottom: 1px solid #F0D0A0; }
-        .bar button { font-size: 14px; padding: 6px 14px; margin-left: 8px; }
-        .wrap { display: flex; flex-wrap: wrap; gap: 0.4in; padding: 0.4in; align-items: flex-start; }
-        .s { background: #0A0A0A; color: #fff; border-radius: 0.18in; text-align: center; box-sizing: border-box; border: 1px dashed #999; }
-        .sL { width: 3.5in; padding: 0.22in; }
-        .sS { width: 2in; padding: 0.13in; }
-        .t { font-weight: 900; letter-spacing: 2px; color: #3CABFD; }
-        .sL .t { font-size: 16pt; } .sS .t { font-size: 8.5pt; }
-        .q { background: #fff; border-radius: 0.08in; margin: 0.1in auto; padding: 0.08in; }
-        .sL .q { width: 2.6in; } .sS .q { width: 1.5in; }
-        .q svg { width: 100%; height: auto; display: block; }
-        .n { font-weight: 800; } .sL .n { font-size: 12pt; } .sS .n { font-size: 7pt; }
-        .b { color: #aaa; } .sL .b { font-size: 8pt; } .sS .b { font-size: 5.5pt; }
-        @media print { .bar { display: none; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-      </style></head><body><div class="bar">Print on sticker paper (or regular paper and tape it inside the window), then cut along the dashed lines.<button onclick="window.print()">Print</button></div><div class="wrap">${sticker("L")}${sticker("S")}${sticker("S")}</div></body></html>`);
-      win.document.close();
+      const sticker = (size) =>
+        `<div class="s s${size}"><div class="t">SCAN MY BUILD</div><div class="q">${svg}</div><div class="n">${esc(name)}</div><div class="b">TUNR · Georgia car meets</div></div>`;
+      setPrintHtml(`<div class="wrap">${sticker("L")}${sticker("S")}${sticker("S")}</div>`);
     } catch (e) {
-      win.close();
       onToast(`Couldn't make the sticker. (${e.message})`);
     }
   }
+
+  if (printHtml) {
+    return (
+      <PrintPage
+        title="Scan my build sticker"
+        tip="Print on sticker paper (or regular paper and tape it inside the window), then cut along the dashed lines."
+        html={printHtml}
+        css={STICKER_CSS}
+        onBack={() => setPrintHtml("")}
+      />
+    );
+  }
+
 
   return (
     <Sheet onClose={onClose} label="Scan my build sticker" zIndex={296}>
@@ -174,3 +169,17 @@ export default function StickerSheet({ vehicle, onClose, onToast, onChanged }) {
     </Sheet>
   );
 }
+
+const STICKER_CSS = `
+  .print-page .wrap { display: flex; flex-wrap: wrap; gap: 0.4in; padding: 0.4in; align-items: flex-start; justify-content: center; }
+  .print-page .s { background: #0A0A0A; color: #fff; border-radius: 0.18in; text-align: center; box-sizing: border-box; border: 1px dashed #999; }
+  .print-page .sL { width: 3.5in; max-width: 100%; padding: 0.22in; }
+  .print-page .sS { width: 2in; padding: 0.13in; }
+  .print-page .t { font-weight: 900; letter-spacing: 2px; color: #3CABFD; }
+  .print-page .sL .t { font-size: 16pt; } .print-page .sS .t { font-size: 8.5pt; }
+  .print-page .q { background: #fff; border-radius: 0.08in; margin: 0.1in auto; padding: 0.08in; }
+  .print-page .sL .q { width: 2.6in; max-width: 100%; box-sizing: border-box; } .print-page .sS .q { width: 1.5in; }
+  .print-page .q svg { width: 100%; height: auto; display: block; }
+  .print-page .n { font-weight: 800; } .print-page .sL .n { font-size: 12pt; } .print-page .sS .n { font-size: 7pt; }
+  .print-page .b { color: #aaa; } .print-page .sL .b { font-size: 8pt; } .print-page .sS .b { font-size: 5.5pt; }
+`;
