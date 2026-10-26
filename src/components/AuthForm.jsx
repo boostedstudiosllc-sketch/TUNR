@@ -199,7 +199,7 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
                 borderRadius: 7,
                 border: "none",
                 cursor: "pointer",
-                background: mode === m ? "#FF4500" : "transparent",
+                background: mode === m ? "#0080F0" : "transparent",
                 color: mode === m ? "#fff" : "#777",
                 fontSize: 12,
                 fontWeight: 800,
@@ -347,7 +347,7 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
           width: "100%",
           marginTop: 14,
           padding: "15px 0",
-          background: canSubmit && !busy ? "#FF4500" : "#1E1E1E",
+          background: canSubmit && !busy ? "#0080F0" : "#1E1E1E",
           color: canSubmit && !busy ? "#fff" : "#555",
           border: "none",
           borderRadius: 10,
@@ -355,7 +355,7 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
           fontWeight: 900,
           letterSpacing: 1.6,
           fontFamily: "'Barlow Condensed', sans-serif",
-          boxShadow: canSubmit && !busy ? "0 4px 20px rgba(255,69,0,0.35)" : "none",
+          boxShadow: canSubmit && !busy ? "0 4px 20px rgba(0, 128, 240,0.35)" : "none",
         }}
       >
         {busy
@@ -384,7 +384,7 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
           ✉️ <b style={{ color: "#DDD" }}>You'll need to confirm your email.</b> We'll email you a link right away and a
           reminder after a few days. Accounts that aren't confirmed within 7 days are deleted automatically. Until
           then you can browse and RSVP; chatting, posting and linkups unlock once you confirm.{" "}
-          <button type="button" onClick={() => setShowWhy((v) => !v)} style={{ ...legalLink, color: "#FF7A00" }}>
+          <button type="button" onClick={() => setShowWhy((v) => !v)} style={{ ...legalLink, color: "#3CABFD" }}>
             {showWhy ? "Hide" : "Why?"}
           </button>
           {showWhy && <div style={{ marginTop: 6, color: "#888" }}>{CLEANUP_WHY}</div>}

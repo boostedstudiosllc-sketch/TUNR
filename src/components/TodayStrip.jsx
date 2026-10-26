@@ -11,8 +11,8 @@ export default function TodayStrip({ events, rsvps, now, onOpen }) {
     <div style={{ padding: "0 20px 16px" }}>
       <div
         style={{
-          background: "linear-gradient(135deg, #1A0A00, #240E00)",
-          border: "1px solid #FF4500",
+          background: "linear-gradient(135deg, #000F1F, #00172E)",
+          border: "1px solid #0080F0",
           borderRadius: 10,
           padding: "13px 14px 11px",
         }}
@@ -23,12 +23,12 @@ export default function TodayStrip({ events, rsvps, now, onOpen }) {
               width: 8,
               height: 8,
               borderRadius: "50%",
-              background: "#FF4500",
-              boxShadow: "0 0 8px #FF4500",
+              background: "#0080F0",
+              boxShadow: "0 0 8px #0080F0",
               flexShrink: 0,
             }}
           />
-          <div style={{ fontSize: 11, color: "#FF4500", letterSpacing: 2, fontWeight: 700 }}>
+          <div style={{ fontSize: 11, color: "#0080F0", letterSpacing: 2, fontWeight: 700 }}>
             YOU'RE ON FOR TODAY
           </div>
         </div>
@@ -47,7 +47,7 @@ export default function TodayStrip({ events, rsvps, now, onOpen }) {
                   alignItems: "center",
                   gap: 10,
                   background: "rgba(0,0,0,0.35)",
-                  border: "1px solid #2A1200",
+                  border: "1px solid #001A33",
                   borderRadius: 8,
                   padding: "9px 11px",
                 }}
@@ -57,7 +57,7 @@ export default function TodayStrip({ events, rsvps, now, onOpen }) {
                     width: 4,
                     alignSelf: "stretch",
                     borderRadius: 2,
-                    background: VIBES[event.vibe] || "#FF4500",
+                    background: VIBES[event.vibe] || "#0080F0",
                     flexShrink: 0,
                   }}
                 />
@@ -88,9 +88,9 @@ export default function TodayStrip({ events, rsvps, now, onOpen }) {
                       letterSpacing: 1,
                       padding: "4px 8px",
                       borderRadius: 4,
-                      color: live ? "#0A0A0A" : "#FF7A00",
-                      background: live ? "#FF4500" : "rgba(255,122,0,0.12)",
-                      border: `1px solid ${live ? "#FF4500" : "rgba(255,122,0,0.4)"}`,
+                      color: live ? "#0A0A0A" : "#3CABFD",
+                      background: live ? "#0080F0" : "rgba(60, 171, 253,0.12)",
+                      border: `1px solid ${live ? "#0080F0" : "rgba(60, 171, 253,0.4)"}`,
                     }}
                   >
                     {label}

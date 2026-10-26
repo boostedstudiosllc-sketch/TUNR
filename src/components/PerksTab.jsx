@@ -117,9 +117,9 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
               display: "inline-block",
               padding: "5px 12px",
               borderRadius: 20,
-              background: "rgba(255,69,0,0.14)",
-              border: "1px solid #FF4500",
-              color: "#FF4500",
+              background: "rgba(0, 128, 240,0.14)",
+              border: "1px solid #0080F0",
+              color: "#0080F0",
               fontSize: 11,
               fontWeight: 800,
               letterSpacing: 1.2,
@@ -145,8 +145,8 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
             alignItems: "center",
             gap: 12,
             padding: "14px 16px",
-            background: "linear-gradient(135deg, #2A0E00, #141414)",
-            border: "1px solid #5A2200",
+            background: "linear-gradient(135deg, #001830, #141414)",
+            border: "1px solid #003A75",
             borderRadius: 12,
             color: "#F0F0F0",
             textAlign: "left",
@@ -157,13 +157,13 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
           <span aria-hidden="true" style={{ fontSize: 28 }}>🎮</span>
           <span style={{ flex: 1 }}>
             <span style={{ display: "block", fontSize: 17, fontWeight: 900, letterSpacing: 0.5 }}>
-              TUNR <span style={{ color: "#FF4500" }}>RUSH</span>
+              TUNR <span style={{ color: "#0080F0" }}>RUSH</span>
             </span>
-            <span style={{ display: "block", fontSize: 12.5, color: "#C2724A", fontFamily: "'Barlow', sans-serif" }}>
+            <span style={{ display: "block", fontSize: 12.5, color: "#7FBFF5", fontFamily: "'Barlow', sans-serif" }}>
               Drive your own car. Pick Easy, Medium or Hard for up to +3 a day.
             </span>
           </span>
-          <span aria-hidden="true" style={{ fontSize: 20, color: "#C2724A" }}>›</span>
+          <span aria-hidden="true" style={{ fontSize: 20, color: "#7FBFF5" }}>›</span>
         </button>
         {playing && (
           <TunrRush
@@ -270,7 +270,7 @@ function JoinCard({ count, user, onNeedAccount }) {
     <div
       style={{
         background: "#111",
-        border: "1px solid #FF4500",
+        border: "1px solid #0080F0",
         borderRadius: 12,
         padding: "18px 20px",
         marginBottom: 16,
@@ -299,7 +299,7 @@ function JoinCard({ count, user, onNeedAccount }) {
           width: "100%",
           marginTop: 14,
           padding: "13px 0",
-          background: user ? "#1A1A1A" : "#FF4500",
+          background: user ? "#1A1A1A" : "#0080F0",
           color: user ? "#666" : "#fff",
           border: user ? "1px solid #2A2A2A" : "none",
           borderRadius: 9,
@@ -379,7 +379,7 @@ export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount, onRequ
             flexShrink: 0,
             fontSize: 15,
             fontWeight: 900,
-            color: "#FF4500",
+            color: "#0080F0",
             letterSpacing: 0.3,
           }}
         >
@@ -437,9 +437,9 @@ export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount, onRequ
               padding: "11px 0",
               textAlign: "center",
               background: "#0C0C0C",
-              border: "1px dashed #FF4500",
+              border: "1px dashed #0080F0",
               borderRadius: 8,
-              color: "#FF4500",
+              color: "#0080F0",
               fontSize: 17,
               fontWeight: 900,
               letterSpacing: 4,
@@ -461,10 +461,10 @@ export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount, onRequ
           <div
             style={{
               padding: "10px 12px",
-              background: "rgba(255,69,0,0.08)",
-              border: "1px solid rgba(255,69,0,0.4)",
+              background: "rgba(0, 128, 240,0.08)",
+              border: "1px solid rgba(0, 128, 240,0.4)",
               borderRadius: 8,
-              color: "#FF7A00",
+              color: "#3CABFD",
               fontSize: 12.5,
               fontFamily: "'Barlow', sans-serif",
             }}
@@ -509,10 +509,10 @@ export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount, onRequ
 const unlockButton = {
   width: "100%",
   padding: "10px 0",
-  background: "rgba(255,69,0,0.12)",
-  border: "1px solid #FF4500",
+  background: "rgba(0, 128, 240,0.12)",
+  border: "1px solid #0080F0",
   borderRadius: 8,
-  color: "#FF4500",
+  color: "#0080F0",
   fontSize: 12,
   fontWeight: 800,
   letterSpacing: 1.2,

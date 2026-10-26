@@ -138,7 +138,7 @@ export default function HostVerification({ user, profile, onToast }) {
           ) : (
             <>
               <div style={{ ...bodyStyle, color: "#999" }}>
-                Verifying as <strong style={{ color: "#FF4500" }}>@{host}</strong>
+                Verifying as <strong style={{ color: "#0080F0" }}>@{host}</strong>
               </div>
               <input
                 style={{ ...inputStyle, marginTop: 10 }}
@@ -157,7 +157,7 @@ export default function HostVerification({ user, profile, onToast }) {
                   width: "100%",
                   marginTop: 10,
                   padding: "12px 0",
-                  background: handle.trim() ? "#FF4500" : "#1A1A1A",
+                  background: handle.trim() ? "#0080F0" : "#1A1A1A",
                   color: handle.trim() ? "#fff" : "#555",
                   border: "none",
                   borderRadius: 8,
@@ -254,7 +254,7 @@ export function VerificationQueue({ onToast }) {
                 href={instagramUrl(row.instagram_handle)}
                 target="_blank"
                 rel="noreferrer"
-                style={{ color: "#FF4500" }}
+                style={{ color: "#0080F0" }}
               >
                 @{row.instagram_handle} ↗
               </a>
@@ -349,8 +349,8 @@ export function HostInvites({ onToast }) {
           onClick={create}
           disabled={busy || !handle.trim()}
           style={{
-            ...pillStyle(handle.trim() ? "#fff" : "#555", handle.trim() ? "#FF4500" : "#2A2A2A"),
-            background: handle.trim() ? "#FF4500" : "transparent",
+            ...pillStyle(handle.trim() ? "#fff" : "#555", handle.trim() ? "#0080F0" : "#2A2A2A"),
+            background: handle.trim() ? "#0080F0" : "transparent",
             flexShrink: 0,
           }}
         >
@@ -430,7 +430,7 @@ function Card({ children, accent = false }) {
     <div
       style={{
         background: "#111",
-        border: `1px solid ${accent ? "#FF4500" : "#2A2A2A"}`,
+        border: `1px solid ${accent ? "#0080F0" : "#2A2A2A"}`,
         borderRadius: 10,
         padding: "16px 18px",
         marginBottom: 12,

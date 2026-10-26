@@ -39,7 +39,7 @@ export default function ConfirmEmailBanner({ account, onToast }) {
         <button
           disabled={busy}
           onClick={resend}
-          style={{ background: "#FF4500", border: "none", color: "#fff", borderRadius: 6, padding: "8px 10px", fontSize: 11, fontWeight: 800, letterSpacing: 0.8, cursor: "pointer", flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif" }}
+          style={{ background: "#0080F0", border: "none", color: "#fff", borderRadius: 6, padding: "8px 10px", fontSize: 11, fontWeight: 800, letterSpacing: 0.8, cursor: "pointer", flexShrink: 0, fontFamily: "'Barlow Condensed', sans-serif" }}
         >
           {busy ? "…" : "RESEND"}
         </button>

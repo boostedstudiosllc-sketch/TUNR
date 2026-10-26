@@ -118,7 +118,7 @@ function AccessGate({ event, user, onNeedAccount, onToast, onJoined }) {
             disabled={busy || !isCompletePasscode(code)}
             style={{
               padding: "0 20px",
-              background: isCompletePasscode(code) ? "#FF4500" : "#1A1A1A",
+              background: isCompletePasscode(code) ? "#0080F0" : "#1A1A1A",
               color: isCompletePasscode(code) ? "#fff" : "#555",
               border: "none",
               borderRadius: 8,
@@ -143,9 +143,9 @@ function AccessGate({ event, user, onNeedAccount, onToast, onJoined }) {
             marginTop: 10,
             padding: "12px 0",
             background: requested ? "#141414" : "#1A1A1A",
-            border: `1px solid ${requested ? "#2A2A2A" : "#FF4500"}`,
+            border: `1px solid ${requested ? "#2A2A2A" : "#0080F0"}`,
             borderRadius: 8,
-            color: requested ? "#666" : "#FF4500",
+            color: requested ? "#666" : "#0080F0",
             fontSize: 13,
             fontWeight: 800,
             letterSpacing: 1.5,
@@ -219,14 +219,14 @@ function HostPanel({ event, onToast }) {
               style={{
                 flex: 1,
                 background: "#0C0C0C",
-                border: "1px dashed #FF4500",
+                border: "1px dashed #0080F0",
                 borderRadius: 8,
                 padding: "12px 0",
                 textAlign: "center",
                 fontSize: 22,
                 fontWeight: 900,
                 letterSpacing: 8,
-                color: "#FF4500",
+                color: "#0080F0",
               }}
             >
               {event.passcode}

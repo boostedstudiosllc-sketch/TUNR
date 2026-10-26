@@ -107,14 +107,14 @@ export default function HostProfile({
                 width: 64,
                 height: 64,
                 borderRadius: "50%",
-                background: "linear-gradient(135deg, #FF4500, #FF7A00)",
+                background: "linear-gradient(135deg, #0080F0, #3CABFD)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: 26,
                 fontWeight: 900,
-                border: "3px solid #FF4500",
-                boxShadow: "0 0 18px rgba(255,69,0,0.35)",
+                border: "3px solid #0080F0",
+                boxShadow: "0 0 18px rgba(0, 128, 240,0.35)",
                 flexShrink: 0,
                 fontFamily: "'Barlow Condensed', sans-serif",
               }}
@@ -132,27 +132,27 @@ export default function HostProfile({
                 }}
               >
                 {host}
-                {verified && <span style={{ color: "#FF4500" }}> ✓</span>}
+                {verified && <span style={{ color: "#0080F0" }}> ✓</span>}
                 {founding && (
                   <span style={{ marginLeft: 7 }}>
                     <Badge kind="founding_host" size={20} />
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: 12, color: "#FF7A00", marginTop: 2 }}>@{host}</div>
+              <div style={{ fontSize: 12, color: "#3CABFD", marginTop: 2 }}>@{host}</div>
             </div>
           </div>
 
           {/* Stats */}
           <div style={{ display: "flex", gap: 24, marginTop: 16 }}>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#FF4500" }}>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#0080F0" }}>
                 {upcoming.length}
               </div>
               <div style={{ fontSize: 9, color: "#555", letterSpacing: 1.4 }}>UPCOMING</div>
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#FF4500" }}>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#0080F0" }}>
                 {followers === null ? "—" : followers}
               </div>
               <div style={{ fontSize: 9, color: "#555", letterSpacing: 1.4 }}>
@@ -160,7 +160,7 @@ export default function HostProfile({
               </div>
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#FF4500" }}>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#0080F0" }}>
                 {hostEvents.length}
               </div>
               <div style={{ fontSize: 9, color: "#555", letterSpacing: 1.4 }}>TOTAL MEETS</div>
@@ -174,10 +174,10 @@ export default function HostProfile({
               marginTop: 16,
               width: "100%",
               padding: "12px 0",
-              background: following ? "rgba(255,69,0,0.12)" : "#FF4500",
-              border: following ? "1px solid #FF4500" : "none",
+              background: following ? "rgba(0, 128, 240,0.12)" : "#0080F0",
+              border: following ? "1px solid #0080F0" : "none",
               borderRadius: 10,
-              color: following ? "#FF4500" : "#fff",
+              color: following ? "#0080F0" : "#fff",
               fontSize: 13.5,
               fontWeight: 800,
               letterSpacing: 1.5,

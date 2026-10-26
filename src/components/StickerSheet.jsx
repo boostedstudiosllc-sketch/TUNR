@@ -79,7 +79,7 @@ export default function StickerSheet({ vehicle, onClose, onToast, onChanged }) {
         .s { background: #0A0A0A; color: #fff; border-radius: 0.18in; text-align: center; box-sizing: border-box; border: 1px dashed #999; }
         .sL { width: 3.5in; padding: 0.22in; }
         .sS { width: 2in; padding: 0.13in; }
-        .t { font-weight: 900; letter-spacing: 2px; color: #FF7A00; }
+        .t { font-weight: 900; letter-spacing: 2px; color: #3CABFD; }
         .sL .t { font-size: 16pt; } .sS .t { font-size: 8.5pt; }
         .q { background: #fff; border-radius: 0.08in; margin: 0.1in auto; padding: 0.08in; }
         .sL .q { width: 2.6in; } .sS .q { width: 1.5in; }
@@ -136,7 +136,7 @@ export default function StickerSheet({ vehicle, onClose, onToast, onChanged }) {
       </div>
 
       <div style={{ background: "#0A0A0A", border: "1px solid #222", borderRadius: 16, padding: 18, marginTop: 14, textAlign: "center" }}>
-        <div style={{ fontSize: 14, fontWeight: 900, letterSpacing: 2, color: "#FF7A00" }}>SCAN MY BUILD</div>
+        <div style={{ fontSize: 14, fontWeight: 900, letterSpacing: 2, color: "#3CABFD" }}>SCAN MY BUILD</div>
         {qr ? (
           <img src={qr} alt={`QR code for ${name}`} style={{ width: 200, height: 200, background: "#fff", borderRadius: 10, padding: 8, marginTop: 10 }} />
         ) : (

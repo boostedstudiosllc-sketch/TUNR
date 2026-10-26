@@ -4,7 +4,7 @@ import { displayDate, displayTime, startsInLabel, isHappeningNow } from "../lib/
 import IssueFlag from "./IssueFlag.jsx";
 
 export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now, index = 0 }) {
-  const color = VIBES[event.vibe] || "#FF4500";
+  const color = VIBES[event.vibe] || "#0080F0";
   const going = rsvp === "going";
   const interested = rsvp === "interested";
   // Only within a day of starting; further out the date line says it better.
@@ -99,7 +99,7 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
           }}
           style={{
             fontSize: 12,
-            color: "#FF4500",
+            color: "#0080F0",
             marginTop: 3,
             display: "inline-block",
             cursor: onOpenHost ? "pointer" : "default",
@@ -137,9 +137,9 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
                 letterSpacing: 1,
                 padding: "2px 7px",
                 borderRadius: 3,
-                color: live ? "#0A0A0A" : "#FF7A00",
-                background: live ? "#FF4500" : "rgba(255,122,0,0.12)",
-                border: `1px solid ${live ? "#FF4500" : "rgba(255,122,0,0.4)"}`,
+                color: live ? "#0A0A0A" : "#3CABFD",
+                background: live ? "#0080F0" : "rgba(60, 171, 253,0.12)",
+                border: `1px solid ${live ? "#0080F0" : "rgba(60, 171, 253,0.4)"}`,
               }}
             >
               {countdown}
@@ -153,7 +153,7 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
             <>
               📍 {event.location} · {event.city}
               {event.distanceLabel && (
-                <span style={{ color: "#FF7A00" }}> · {event.distanceLabel}</span>
+                <span style={{ color: "#3CABFD" }}> · {event.distanceLabel}</span>
               )}
             </>
           )}
@@ -189,9 +189,9 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
               style={{
                 flex: 1,
                 padding: "9px 0",
-                background: "rgba(255,69,0,0.12)",
-                color: "#FF4500",
-                border: "1px solid #FF4500",
+                background: "rgba(0, 128, 240,0.12)",
+                color: "#0080F0",
+                border: "1px solid #0080F0",
                 borderRadius: 5,
                 fontSize: 12,
                 fontWeight: 700,
@@ -212,9 +212,9 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
               style={{
                 flex: 1,
                 padding: "9px 0",
-                background: going ? "#FF4500" : "#1A1A1A",
+                background: going ? "#0080F0" : "#1A1A1A",
                 color: going ? "#fff" : "#888",
-                border: going ? "1px solid #FF4500" : "1px solid #2A2A2A",
+                border: going ? "1px solid #0080F0" : "1px solid #2A2A2A",
                 borderRadius: 5,
                 fontSize: 12,
                 fontWeight: 700,
@@ -234,8 +234,8 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
                 flex: 1,
                 padding: "9px 0",
                 background: interested ? "#1A0800" : "#1A1A1A",
-                color: interested ? "#FF7A00" : "#666",
-                border: interested ? "1px solid #FF7A00" : "1px solid #2A2A2A",
+                color: interested ? "#3CABFD" : "#666",
+                border: interested ? "1px solid #3CABFD" : "1px solid #2A2A2A",
                 borderRadius: 5,
                 fontSize: 12,
                 fontWeight: 700,
@@ -257,9 +257,9 @@ function Badge({ children, accent = false, points = false }) {
   return (
     <div
       style={{
-        background: points ? "rgba(26,21,0,0.9)" : accent ? "rgba(255,69,0,0.2)" : "rgba(0,0,0,0.7)",
-        border: points ? "1px solid #FACC15" : accent ? "1px solid #FF4500" : "1px solid #444",
-        color: points ? "#FACC15" : accent ? "#FF4500" : "#aaa",
+        background: points ? "rgba(26,21,0,0.9)" : accent ? "rgba(0, 128, 240,0.2)" : "rgba(0,0,0,0.7)",
+        border: points ? "1px solid #FACC15" : accent ? "1px solid #0080F0" : "1px solid #444",
+        color: points ? "#FACC15" : accent ? "#0080F0" : "#aaa",
         fontSize: 9,
         fontWeight: 700,
         padding: "3px 7px",

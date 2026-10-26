@@ -118,9 +118,9 @@ export function CohostsSection({ event, user, onToast, onChanged, onSteppedDown 
             style={{
               ...smallButton,
               padding: "0 14px",
-              background: username.trim() ? "#FF4500" : "transparent",
+              background: username.trim() ? "#0080F0" : "transparent",
               color: username.trim() ? "#fff" : "#555",
-              border: `1px solid ${username.trim() ? "#FF4500" : "#2A2A2A"}`,
+              border: `1px solid ${username.trim() ? "#0080F0" : "#2A2A2A"}`,
             }}
           >
             {busy ? "…" : "INVITE"}
@@ -211,7 +211,7 @@ export function CohostInvites({ user, onToast, onChanged }) {
 
 const card = {
   background: "#111",
-  border: "1px solid #FF4500",
+  border: "1px solid #0080F0",
   borderRadius: 10,
   padding: "16px 18px",
   marginBottom: 12,

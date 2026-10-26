@@ -84,9 +84,9 @@ export default function ListingRequest({ event }) {
               fontSize: 11.5,
               fontWeight: 700,
               cursor: "pointer",
-              background: kind === k.id ? "#FF4500" : "#1A1A1A",
+              background: kind === k.id ? "#0080F0" : "#1A1A1A",
               color: kind === k.id ? "#fff" : "#999",
-              border: `1px solid ${kind === k.id ? "#FF4500" : "#2A2A2A"}`,
+              border: `1px solid ${kind === k.id ? "#0080F0" : "#2A2A2A"}`,
               fontFamily: "'Barlow Condensed', sans-serif",
             }}
           >
@@ -136,7 +136,7 @@ export default function ListingRequest({ event }) {
           style={{
             ...button,
             flex: 1,
-            background: canSubmit ? "#FF4500" : "#1E1E1E",
+            background: canSubmit ? "#0080F0" : "#1E1E1E",
             color: canSubmit ? "#fff" : "#555",
             border: "none",
           }}

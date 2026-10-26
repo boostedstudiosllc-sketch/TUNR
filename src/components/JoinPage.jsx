@@ -146,7 +146,7 @@ export default function JoinPage({ user, onEnter }) {
         }}
       >
         <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1 }}>
-          TUN<span style={{ color: "#FF4500" }}>R</span>
+          TUN<span style={{ color: "#0080F0" }}>R</span>
         </div>
         <div style={{ fontSize: 10.5, color: "#555", letterSpacing: 2.5, marginTop: 3 }}>
           ATLANTA, GA
@@ -187,7 +187,7 @@ export default function JoinPage({ user, onEnter }) {
               <div
                 style={{
                   background: "#111",
-                  border: "1px solid #FF7A00",
+                  border: "1px solid #3CABFD",
                   borderRadius: 12,
                   padding: "16px 18px",
                   marginBottom: 20,
@@ -245,7 +245,7 @@ function Welcome({ profile, perks, onEnter, onShare, copied }) {
     <div style={{ textAlign: "center", animation: "fadeIn 0.3s ease" }}>
       {profile.dayOne ? (
         <>
-          <div style={{ fontSize: 11, color: "#FF7A00", letterSpacing: 2.5, fontWeight: 800 }}>
+          <div style={{ fontSize: 11, color: "#3CABFD", letterSpacing: 2.5, fontWeight: 800 }}>
             YOU'RE IN
           </div>
           <div style={{ marginTop: 14 }}>
@@ -280,7 +280,7 @@ function Welcome({ profile, perks, onEnter, onShare, copied }) {
           width: "100%",
           marginTop: 22,
           padding: "16px 0",
-          background: "#FF4500",
+          background: "#0080F0",
           color: "#fff",
           border: "none",
           borderRadius: 10,
@@ -288,7 +288,7 @@ function Welcome({ profile, perks, onEnter, onShare, copied }) {
           fontWeight: 800,
           letterSpacing: 2,
           fontFamily: "'Barlow Condensed', sans-serif",
-          boxShadow: "0 6px 26px rgba(255,69,0,0.4)",
+          boxShadow: "0 6px 26px rgba(0, 128, 240,0.4)",
         }}
       >
         FIND A MEET →

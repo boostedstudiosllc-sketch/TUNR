@@ -102,9 +102,9 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
               fontSize: 11.5,
               fontWeight: 700,
               cursor: "pointer",
-              background: reason === r ? "#FF4500" : "#1A1A1A",
+              background: reason === r ? "#0080F0" : "#1A1A1A",
               color: reason === r ? "#fff" : "#999",
-              border: `1px solid ${reason === r ? "#FF4500" : "#2A2A2A"}`,
+              border: `1px solid ${reason === r ? "#0080F0" : "#2A2A2A"}`,
               fontFamily: "'Barlow Condensed', sans-serif",
             }}
           >
@@ -182,7 +182,7 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
           style={{
             flex: 1,
             padding: "9px 0",
-            background: reason && !busy ? "#FF4500" : "#1E1E1E",
+            background: reason && !busy ? "#0080F0" : "#1E1E1E",
             border: "none",
             borderRadius: 8,
             color: reason && !busy ? "#fff" : "#555",

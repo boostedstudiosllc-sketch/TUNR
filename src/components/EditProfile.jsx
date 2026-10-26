@@ -8,9 +8,9 @@ const BIO_MAX = 160;
 // Lowercase letters, numbers, _ and . — what the database accepts.
 const cleanUsername = (value) => String(value || "").trim().toLowerCase().replace(/[^a-z0-9_.]/g, "");
 
-// A round profile photo, or the orange initial when there isn't one (or it
+// A round profile photo, or the blue initial when there isn't one (or it
 // won't load).
-export function Avatar({ url, name, size = 64, ring = false, ringColor = "#FF4500" }) {
+export function Avatar({ url, name, size = 64, ring = false, ringColor = "#0080F0" }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [url]);
   const frame = {
@@ -36,7 +36,7 @@ export function Avatar({ url, name, size = 64, ring = false, ringColor = "#FF450
       aria-hidden="true"
       style={{
         ...frame,
-        background: "linear-gradient(135deg, #FF4500, #FF7A00)",
+        background: "linear-gradient(135deg, #0080F0, #3CABFD)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -144,7 +144,7 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 14 }}>
         <Avatar url={draft.avatarUrl} name={draft.username} size={84} ring ringColor={draft.profileColor || undefined} />
         <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
-          <label style={{ ...pill, color: "#FF7A00", borderColor: "#FF4500", opacity: uploading ? 0.6 : 1 }}>
+          <label style={{ ...pill, color: "#3CABFD", borderColor: "#0080F0", opacity: uploading ? 0.6 : 1 }}>
             {uploading ? "UPLOADING…" : draft.avatarUrl ? "📷 CHANGE PHOTO" : "📷 ADD A PHOTO"}
             <input
               type="file"
@@ -198,7 +198,7 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
       <div style={{ marginTop: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <div style={label}>BIO</div>
-          <div style={{ fontSize: 11, color: draft.bio.length >= BIO_MAX ? "#FF7A00" : "#555", fontFamily: "'Barlow', sans-serif" }}>
+          <div style={{ fontSize: 11, color: draft.bio.length >= BIO_MAX ? "#3CABFD" : "#555", fontFamily: "'Barlow', sans-serif" }}>
             {draft.bio.length}/{BIO_MAX}
           </div>
         </div>

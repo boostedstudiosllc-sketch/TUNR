@@ -258,7 +258,7 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
             width: "100%",
             marginTop: 18,
             padding: "15px 0",
-            background: busy || uploading ? "#1E1E1E" : "#FF4500",
+            background: busy || uploading ? "#1E1E1E" : "#0080F0",
             color: busy || uploading ? "#555" : "#fff",
             border: "none",
             borderRadius: 10,

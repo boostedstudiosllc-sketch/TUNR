@@ -78,9 +78,9 @@ export function FeedbackPage({ kind, user, onToast }) {
               padding: "8px 12px",
               minHeight: 36,
               borderRadius: 18,
-              border: `1px solid ${topic === t.id ? "#FF4500" : "#2A2A2A"}`,
-              background: topic === t.id ? "rgba(255,69,0,0.12)" : "#141414",
-              color: topic === t.id ? "#FF7A00" : "#BBB",
+              border: `1px solid ${topic === t.id ? "#0080F0" : "#2A2A2A"}`,
+              background: topic === t.id ? "rgba(0, 128, 240,0.12)" : "#141414",
+              color: topic === t.id ? "#3CABFD" : "#BBB",
               fontSize: 12.5,
               fontWeight: 800,
               cursor: "pointer",
@@ -139,8 +139,8 @@ export function FeedbackPage({ kind, user, onToast }) {
               </div>
               <div style={{ ...muted, color: "#DDD", marginTop: 6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{f.message}</div>
               {f.reply && (
-                <div style={{ marginTop: 8, borderLeft: "3px solid #FF4500", paddingLeft: 10 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: "#FF7A00", letterSpacing: 1 }}>TUNR</div>
+                <div style={{ marginTop: 8, borderLeft: "3px solid #0080F0", paddingLeft: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: "#3CABFD", letterSpacing: 1 }}>TUNR</div>
                   <div style={{ ...muted, color: "#EEE", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{f.reply}</div>
                 </div>
               )}
@@ -185,7 +185,7 @@ export function FeedbackInbox({ onToast }) {
     }
   }
 
-  const tab = (active) => ({ ...quietButton, flex: 1, padding: "10px 0", ...(active ? { border: "1px solid #FF4500", color: "#FF7A00" } : {}) });
+  const tab = (active) => ({ ...quietButton, flex: 1, padding: "10px 0", ...(active ? { border: "1px solid #0080F0", color: "#3CABFD" } : {}) });
 
   return (
     <div>

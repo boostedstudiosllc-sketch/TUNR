@@ -61,7 +61,7 @@ function saveGfx(v) {
     console.warn("Couldn't save the graphics setting:", e.message);
   }
 }
-const DEFAULT_LOOK = { color: "#FF4500", body: "coupe", spoiler: "lip" };
+const DEFAULT_LOOK = { color: "#1D4ED8", body: "coupe", spoiler: "lip" };
 export const LEVELS = {
   easy: { name: "Easy", color: "#10B981" },
   medium: { name: "Medium", color: "#FACC15" },
@@ -233,7 +233,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 1 }}>
-            🎮 TUNR <span style={{ color: "#FF4500" }}>RUSH</span>
+            🎮 TUNR <span style={{ color: "#0080F0" }}>RUSH</span>
           </div>
           <div style={{ display: "flex", gap: 6 }}>
             <button
@@ -472,7 +472,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
               <ResultLine result={result} triesLimit={triesLimit} today={today} />
             </div>
             {result.server && result.dist >= (result.server.best || 0) && result.dist > 0 && (
-              <div style={{ marginTop: 6, color: "#FF7A00", fontWeight: 900 }}>🔥 NEW PERSONAL BEST</div>
+              <div style={{ marginTop: 6, color: "#3CABFD", fontWeight: 900 }}>🔥 NEW PERSONAL BEST</div>
             )}
             {result.ghostDist !== null && result.ghostDist !== undefined && (
               <div style={{ marginTop: 6, color: result.dist > result.ghostDist ? "#34D399" : "#C4B5FD", fontWeight: 800 }}>
@@ -523,7 +523,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
                 <button
                   key={id}
                   onClick={() => loadBoard(id, boardLevel)}
-                  style={{ ...quietButton, flex: 1, padding: "10px 0", ...(boardPeriod === id ? { border: "1px solid #FF4500", color: "#FF7A00" } : {}) }}
+                  style={{ ...quietButton, flex: 1, padding: "10px 0", ...(boardPeriod === id ? { border: "1px solid #0080F0", color: "#3CABFD" } : {}) }}
                 >
                   {name}
                 </button>
@@ -622,7 +622,7 @@ function BoardList({ rows, top = null }) {
           gap: 10,
           padding: "10px 6px",
           borderBottom: "1px solid #1A1A1A",
-          background: r.is_me ? "rgba(255,69,0,0.1)" : "none",
+          background: r.is_me ? "rgba(0, 128, 240,0.1)" : "none",
           borderRadius: 8,
         }}
       >
@@ -672,7 +672,7 @@ function OtherColor({ color, onChange }) {
       <input
         type="color"
         aria-label="Pick any color"
-        value={/^#[0-9a-f]{6}$/i.test(color) ? color : "#ff4500"}
+        value={/^#[0-9a-f]{6}$/i.test(color) ? color : "#0080F0"}
         onChange={(e) => onChange(e.target.value.toUpperCase())}
         style={{ position: "absolute", inset: 0, opacity: 0, width: "100%", height: "100%", cursor: "pointer", border: 0, padding: 0 }}
       />
@@ -907,7 +907,7 @@ function Game({ look, plate, rules, difficulty, forPoints, onStarted, ghostRun, 
   return (
     <div style={{ marginTop: 10, position: "relative" }}>
       {!ready ? (
-        <div style={{ height: 420, display: "flex", alignItems: "center", justifyContent: "center", fontSize: countdown > 0 ? 96 : 22, fontWeight: 900, color: "#FF4500" }}>
+        <div style={{ height: 420, display: "flex", alignItems: "center", justifyContent: "center", fontSize: countdown > 0 ? 96 : 22, fontWeight: 900, color: "#0080F0" }}>
           {countdown > 0 ? countdown : "Loading…"}
         </div>
       ) : want3d ? (
@@ -945,4 +945,4 @@ const chip = {
   whiteSpace: "nowrap",
   fontFamily: "'Barlow Condensed', sans-serif",
 };
-const chipOn = { border: "1px solid #FF4500", color: "#FF7A00", background: "rgba(255,69,0,0.12)" };
+const chipOn = { border: "1px solid #0080F0", color: "#3CABFD", background: "rgba(0, 128, 240,0.12)" };

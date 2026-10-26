@@ -191,7 +191,7 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
                   style={{
                     ...wideButton,
                     flex: 1,
-                    background: person.i_follow ? "#1A1A1A" : "#FF4500",
+                    background: person.i_follow ? "#1A1A1A" : "#0080F0",
                     color: person.i_follow ? "#DDD" : "#fff",
                     border: person.i_follow ? "1px solid #333" : "none",
                   }}
@@ -271,7 +271,7 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
                       <Logo url={c.logo_url} fallback={kindLabel(c.kind).split(" ")[0]} size={30} />
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 800 }}>{c.name}</div>
-                        {c.role !== "member" && <div style={{ fontSize: 9.5, color: "#FF7A00", fontWeight: 800, letterSpacing: 0.8 }}>{c.role.toUpperCase()}</div>}
+                        {c.role !== "member" && <div style={{ fontSize: 9.5, color: "#3CABFD", fontWeight: 800, letterSpacing: 0.8 }}>{c.role.toUpperCase()}</div>}
                       </div>
                     </div>
                   ))}
@@ -338,8 +338,8 @@ function PhotographerCheck({ person, isMe, busy, isAdmin, onAdmin }) {
                   flex: 1,
                   padding: "8px 0",
                   fontSize: 11,
-                  color: on ? "#FF7A00" : "#888",
-                  border: `1px solid ${on ? "#FF4500" : "#2A2A2A"}`,
+                  color: on ? "#3CABFD" : "#888",
+                  border: `1px solid ${on ? "#0080F0" : "#2A2A2A"}`,
                 }}
               >
                 ADMIN: {text}

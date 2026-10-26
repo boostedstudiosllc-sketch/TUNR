@@ -125,7 +125,7 @@ export default function ModerationQueue({ onToast }) {
               </div>
             )}
             {row.event_hidden && (
-              <div style={{ fontSize: 11, color: "#FF7A00", marginTop: 6, fontWeight: 700 }}>
+              <div style={{ fontSize: 11, color: "#3CABFD", marginTop: 6, fontWeight: 700 }}>
                 already hidden
               </div>
             )}

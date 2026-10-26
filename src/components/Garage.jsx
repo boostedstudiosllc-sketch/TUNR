@@ -153,10 +153,10 @@ export default function Garage({ user, onToast }) {
             onClick={startAdding}
             style={{
               padding: "6px 12px",
-              background: "rgba(255,69,0,0.12)",
-              border: "1px solid #FF4500",
+              background: "rgba(0, 128, 240,0.12)",
+              border: "1px solid #0080F0",
               borderRadius: 6,
-              color: "#FF4500",
+              color: "#0080F0",
               fontSize: 11,
               fontWeight: 800,
               letterSpacing: 1,
@@ -192,7 +192,7 @@ export default function Garage({ user, onToast }) {
                 display: "flex",
                 gap: 11,
                 background: "#0F0F0F",
-                border: `1px solid ${v.is_primary ? "#FF4500" : "#242424"}`,
+                border: `1px solid ${v.is_primary ? "#0080F0" : "#242424"}`,
                 borderRadius: 8,
                 padding: 10,
               }}
@@ -243,11 +243,11 @@ export default function Garage({ user, onToast }) {
                   </div>
                 )}
                 <div style={{ display: "flex", gap: 6, marginTop: 7, flexWrap: "wrap" }}>
-                  <button className="action-btn" onClick={() => setSticker(v)} style={{ ...linkStyle, color: "#FF7A00" }}>
+                  <button className="action-btn" onClick={() => setSticker(v)} style={{ ...linkStyle, color: "#3CABFD" }}>
                     🔳 QR sticker{v.public_page ? " · page on" : ""}
                   </button>
                   {v.is_primary ? (
-                    <span style={tagStyle("#FF4500")}>MAIN CAR</span>
+                    <span style={tagStyle("#0080F0")}>MAIN CAR</span>
                   ) : (
                     <button className="action-btn" onClick={() => makePrimary(v)} style={linkStyle}>
                       make main
@@ -446,7 +446,7 @@ export default function Garage({ user, onToast }) {
               style={{
                 flex: 1,
                 padding: "11px 0",
-                background: editing.make && editing.model.trim() ? "#FF4500" : "#1A1A1A",
+                background: editing.make && editing.model.trim() ? "#0080F0" : "#1A1A1A",
                 color: editing.make && editing.model.trim() ? "#fff" : "#555",
                 border: "none",
                 borderRadius: 8,
@@ -473,7 +473,7 @@ function tagStyle(color) {
     padding: "3px 7px",
     borderRadius: 3,
     color,
-    background: "rgba(255,69,0,0.12)",
+    background: "rgba(0, 128, 240,0.12)",
     border: `1px solid ${color}`,
     fontFamily: "'Barlow Condensed', sans-serif",
   };

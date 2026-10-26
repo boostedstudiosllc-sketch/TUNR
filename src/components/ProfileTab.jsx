@@ -354,8 +354,8 @@ function SignedIn({
             onClick={() => setEditing(true)}
             style={{
               ...noticeCard,
-              background: "rgba(255,69,0,0.1)",
-              border: "1px solid #FF4500",
+              background: "rgba(0, 128, 240,0.1)",
+              border: "1px solid #0080F0",
             }}
           >
             <span style={{ fontSize: 22 }}>✍️</span>
@@ -365,7 +365,7 @@ function SignedIn({
                 It's how people find you, and the name your meets and posts go out under.
               </span>
             </span>
-            <span style={{ color: "#FF7A00", fontSize: 20 }}>›</span>
+            <span style={{ color: "#3CABFD", fontSize: 20 }}>›</span>
           </button>
         )}
 
@@ -415,7 +415,7 @@ function SignedIn({
                 padding: "9px 0 7px",
                 background: "none",
                 border: "none",
-                borderBottom: `2px solid ${active ? "#FF4500" : "transparent"}`,
+                borderBottom: `2px solid ${active ? "#0080F0" : "transparent"}`,
                 color: active ? "#F0F0F0" : "#8A8A8A",
                 cursor: "pointer",
                 fontFamily: "'Barlow Condensed', sans-serif",
@@ -563,7 +563,7 @@ function MeetsPanel({ events, rsvps, filter, onFilter, onOpenMeet }) {
                   <div style={{ fontSize: 15.5, fontWeight: 800, letterSpacing: 0.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {e.title}
                   </div>
-                  <div style={{ fontSize: 12, color: "#FF7A00", fontWeight: 700, letterSpacing: 0.6, marginTop: 1 }}>
+                  <div style={{ fontSize: 12, color: "#3CABFD", fontWeight: 700, letterSpacing: 0.6, marginTop: 1 }}>
                     {past ? "PAST · " : ""}
                     {displayDate(e)} · {displayTime(e)}
                   </div>
@@ -665,7 +665,7 @@ function ClubsPanel({ clubs, error, onOpenLink }) {
           <Logo url={c.logo_url} fallback={kindLabel(c.kind).split(" ")[0]} size={44} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 15.5, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, marginTop: 2, color: c.role === "member" ? "#777" : "#FF7A00" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, marginTop: 2, color: c.role === "member" ? "#777" : "#3CABFD" }}>
               {String(c.role || "member").toUpperCase()} · {kindLabel(c.kind).replace(/^\S+\s+/, "").toUpperCase()}
             </div>
           </div>

@@ -186,7 +186,7 @@ function LinkupCard({ linkup, miles, onOpen }) {
         textAlign: "left",
         background: "#111",
         border: `1px solid ${mine ? "#3A1E0E" : "#222"}`,
-        borderLeft: `3px solid ${status.live ? "#10B981" : "#FF4500"}`,
+        borderLeft: `3px solid ${status.live ? "#10B981" : "#0080F0"}`,
         borderRadius: 10,
         padding: "12px 12px",
         color: "#E6E6E6",
@@ -198,7 +198,7 @@ function LinkupCard({ linkup, miles, onOpen }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontSize: 15.5, fontWeight: 800 }}>{kind.label}</span>
-          <span style={{ fontSize: 13, color: "#FF7A00", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 13, color: "#3CABFD", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             @{linkup.username}
           </span>
           <Badges photographer={linkup.photographer} photographerVerified={linkup.photographerVerified} size={14} />
@@ -212,7 +212,7 @@ function LinkupCard({ linkup, miles, onOpen }) {
         <div style={{ fontSize: 18, fontWeight: 900 }}>{linkup.headcount}</div>
         <div style={{ fontSize: 9, color: "#666", letterSpacing: 1.2 }}>IN</div>
         {mine && (
-          <div style={{ fontSize: 9, color: "#FF4500", fontWeight: 800, letterSpacing: 0.8, marginTop: 3 }}>
+          <div style={{ fontSize: 9, color: "#0080F0", fontWeight: 800, letterSpacing: 0.8, marginTop: 3 }}>
             {mine === "host" ? (linkup.requests ? `${linkup.requests} ASKING` : "YOURS") : mine === "in" ? "YOU'RE IN" : "ASKED"}
           </div>
         )}

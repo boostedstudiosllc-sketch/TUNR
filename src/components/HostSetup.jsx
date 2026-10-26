@@ -126,7 +126,7 @@ export default function HostSetup({ user, token, invite, onStart }) {
       }}
     >
       <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1 }}>
-        TUN<span style={{ color: "#FF4500" }}>R</span>
+        TUN<span style={{ color: "#0080F0" }}>R</span>
       </div>
       <div style={{ fontSize: 10.5, color: "#555", letterSpacing: 2.5, marginTop: 3, marginBottom: 26 }}>
         FOR HOSTS
@@ -193,13 +193,13 @@ function Verified({ profile, onStart }) {
       {profile.foundingHost ? (
         <Badge kind="founding_host" size={60} />
       ) : (
-        <div style={{ fontSize: 46, color: "#FF4500", lineHeight: 1 }}>✓</div>
+        <div style={{ fontSize: 46, color: "#0080F0", lineHeight: 1 }}>✓</div>
       )}
       <div style={{ fontSize: 28, fontWeight: 900, marginTop: 14, lineHeight: 1.1 }}>
         You're verified
       </div>
       <div style={{ ...paragraph, marginTop: 8 }}>
-        <strong style={{ color: "#FF7A00" }}>@{profile.username}</strong> is yours. Your meets carry
+        <strong style={{ color: "#3CABFD" }}>@{profile.username}</strong> is yours. Your meets carry
         the verified check and nobody else can post under that name.
         {profile.foundingHost &&
           " You're also a founding host — that badge on your name is one nobody can get after launch."}
@@ -224,8 +224,8 @@ function InviteProblem({ result, username, detail }) {
       style={{
         ...small,
         color: "#FF8A65",
-        background: "rgba(255,69,0,0.08)",
-        border: "1px solid rgba(255,69,0,0.35)",
+        background: "rgba(0, 128, 240,0.08)",
+        border: "1px solid rgba(0, 128, 240,0.35)",
         borderRadius: 8,
         padding: "10px 12px",
         marginBottom: 18,
@@ -321,7 +321,7 @@ function PrimaryButton({ children, onClick, disabled = false }) {
         width: "100%",
         marginTop: 18,
         padding: "15px 0",
-        background: disabled ? "#1E1E1E" : "#FF4500",
+        background: disabled ? "#1E1E1E" : "#0080F0",
         color: disabled ? "#555" : "#fff",
         border: "none",
         borderRadius: 10,
@@ -329,7 +329,7 @@ function PrimaryButton({ children, onClick, disabled = false }) {
         fontWeight: 800,
         letterSpacing: 2,
         fontFamily: "'Barlow Condensed', sans-serif",
-        boxShadow: disabled ? "none" : "0 6px 26px rgba(255,69,0,0.4)",
+        boxShadow: disabled ? "none" : "0 6px 26px rgba(0, 128, 240,0.4)",
       }}
     >
       {children}

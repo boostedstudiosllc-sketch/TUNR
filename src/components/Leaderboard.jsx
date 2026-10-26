@@ -35,7 +35,7 @@ export default function Leaderboard({ onClose, onOpenPerson }) {
           <button
             key={id}
             onClick={() => setKind(id)}
-            style={{ ...quietButton, flex: 1, padding: "10px 0", ...(kind === id ? { borderColor: "#FF4500", color: "#FF7A00" } : {}) }}
+            style={{ ...quietButton, flex: 1, padding: "10px 0", ...(kind === id ? { borderColor: "#0080F0", color: "#3CABFD" } : {}) }}
           >
             {name}
           </button>
@@ -59,7 +59,7 @@ export default function Leaderboard({ onClose, onOpenPerson }) {
               gap: 12,
               width: "100%",
               padding: "10px 8px",
-              background: r.is_me ? "rgba(255,69,0,0.08)" : "none",
+              background: r.is_me ? "rgba(0, 128, 240,0.08)" : "none",
               border: "none",
               borderBottom: "1px solid #1A1A1A",
               borderRadius: r.is_me ? 8 : 0,

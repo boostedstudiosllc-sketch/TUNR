@@ -99,7 +99,7 @@ export default function LinkupDetail({ linkup, user, miles, onClose, onChanged, 
         <div style={{ fontSize: 40 }}>{kind.emoji}</div>
         <div style={{ minWidth: 0 }}>
           <div style={sheetTitle}>{kind.label.toUpperCase()} LINKUP</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#FF7A00", fontWeight: 700 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#3CABFD", fontWeight: 700 }}>
             <button
               onClick={() => onOpenPerson(linkup.userId)}
               style={{ background: "none", border: "none", padding: 0, color: "inherit", font: "inherit", cursor: "pointer" }}
@@ -118,7 +118,7 @@ export default function LinkupDetail({ linkup, user, miles, onClose, onChanged, 
       </div>
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 12 }}>
-        <Tag color={status.live ? "#10B981" : status.over ? "#666" : "#FF7A00"}>{status.text.toUpperCase()}</Tag>
+        <Tag color={status.live ? "#10B981" : status.over ? "#666" : "#3CABFD"}>{status.text.toUpperCase()}</Tag>
         <Tag color="#888">{linkup.visibility === "private" ? "🔒 PRIVATE" : "🌐 PUBLIC"}</Tag>
         <Tag color="#888">{linkup.headcount} IN</Tag>
         {miles != null && <Tag color="#888">{formatMiles(miles).toUpperCase()}</Tag>}
@@ -202,7 +202,7 @@ export default function LinkupDetail({ linkup, user, miles, onClose, onChanged, 
           <div style={label}>WANT TO JOIN ({requests.length})</div>
           {requests.map((p) => (
             <PersonRow key={p.user_id} person={p} onOpen={() => onOpenPerson(p.user_id)}>
-              <button disabled={busy} onClick={() => act(() => acceptRequest(linkup.id, p.user_id), `@${p.username} is in`)} style={smallButton("#FF4500", "#fff")}>
+              <button disabled={busy} onClick={() => act(() => acceptRequest(linkup.id, p.user_id), `@${p.username} is in`)} style={smallButton("#0080F0", "#fff")}>
                 ACCEPT
               </button>
               <button disabled={busy} onClick={() => act(() => removeFromLinkup(linkup.id, p.user_id), "Declined")} style={smallButton("#1A1A1A", "#999")}>
@@ -244,7 +244,7 @@ export default function LinkupDetail({ linkup, user, miles, onClose, onChanged, 
         TUNR doesn't organize or supervise linkups. Meet in public, trust your gut, call 911 in an emergency.{" "}
         <a
           href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`Linkup report ${linkup.id}`)}`}
-          style={{ color: "#FF7A00", fontWeight: 700 }}
+          style={{ color: "#3CABFD", fontWeight: 700 }}
         >
           Report this linkup
         </a>
@@ -289,7 +289,7 @@ function Chat({ linkup, user, messages, onSent, onToast, onOpenPerson, closed })
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <button
                   onClick={() => onOpenPerson(m.user_id)}
-                  style={{ background: "none", border: "none", padding: 0, color: m.user_id === linkup.userId ? "#FF7A00" : "#CCC", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}
+                  style={{ background: "none", border: "none", padding: 0, color: m.user_id === linkup.userId ? "#3CABFD" : "#CCC", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}
                 >
                   @{m.username}
                 </button>
@@ -346,7 +346,7 @@ function PersonRow({ person, onOpen, children }) {
         <span style={{ fontSize: 14, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis" }}>@{person.username}</span>
         <Badges photographer={person.photographer} photographerVerified={person.photographer_verified} size={14} />
         <span style={{ fontSize: 13 }}>{AS_TEXT[person.going_as] || ""}</span>
-        {person.is_host && <span style={{ fontSize: 10, color: "#FF7A00", fontWeight: 800, letterSpacing: 1 }}>HOST</span>}
+        {person.is_host && <span style={{ fontSize: 10, color: "#3CABFD", fontWeight: 800, letterSpacing: 1 }}>HOST</span>}
       </button>
       {children}
     </div>

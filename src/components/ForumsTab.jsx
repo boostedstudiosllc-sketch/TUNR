@@ -119,7 +119,7 @@ export default function ForumsTab({ user, open, onOpened, onNeedAccount, onToast
                 {f.description || `${f.posts} posts`}
               </span>
             </span>
-            <span style={{ fontSize: 10.5, color: f.i_follow ? "#FF7A00" : "#666", fontWeight: 800, letterSpacing: 0.6, whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: 10.5, color: f.i_follow ? "#3CABFD" : "#666", fontWeight: 800, letterSpacing: 0.6, whiteSpace: "nowrap" }}>
               {f.i_follow ? "FOLLOWING" : `${f.followers} ★`}
             </span>
           </button>
@@ -218,7 +218,7 @@ function ForumForm({ user, onClose, onToast, onCreated }) {
             key={i}
             onClick={() => setIcon(i)}
             aria-pressed={icon === i}
-            style={{ width: 42, height: 42, fontSize: 21, borderRadius: 10, cursor: "pointer", background: icon === i ? "rgba(255,69,0,0.16)" : "#161616", border: `1px solid ${icon === i ? "#FF4500" : "#2A2A2A"}` }}
+            style={{ width: 42, height: 42, fontSize: 21, borderRadius: 10, cursor: "pointer", background: icon === i ? "rgba(0, 128, 240,0.16)" : "#161616", border: `1px solid ${icon === i ? "#0080F0" : "#2A2A2A"}` }}
           >
             {i}
           </button>

@@ -82,7 +82,7 @@ export const field = {
 export const bigButton = {
   width: "100%",
   padding: "14px 0",
-  background: "#FF4500",
+  background: "#0080F0",
   border: "none",
   borderRadius: 8,
   color: "#fff",
@@ -100,7 +100,7 @@ export const quietButton = {
   color: "#CCC",
 };
 
-export function Chip({ active, onClick, children, color = "#FF4500" }) {
+export function Chip({ active, onClick, children, color = "#0080F0" }) {
   return (
     <button
       type="button"
@@ -115,8 +115,8 @@ export function Chip({ active, onClick, children, color = "#FF4500" }) {
         letterSpacing: 0.6,
         whiteSpace: "nowrap",
         cursor: "pointer",
-        background: active ? "rgba(255,69,0,0.16)" : "#161616",
-        color: active ? "#FF7A00" : "#888",
+        background: active ? "rgba(0, 128, 240,0.16)" : "#161616",
+        color: active ? "#3CABFD" : "#888",
         border: `1px solid ${active ? color : "#2A2A2A"}`,
         fontFamily: "'Barlow Condensed', sans-serif",
       }}

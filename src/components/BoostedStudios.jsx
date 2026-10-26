@@ -41,8 +41,8 @@ export default function BoostedPage({ onOpenPerks, user, onToast, onNeedAccount 
                 width: 48,
                 height: 48,
                 borderRadius: 12,
-                background: "linear-gradient(135deg, #2A1200, #141414)",
-                border: "1px solid #3A2000",
+                background: "linear-gradient(135deg, #001A33, #141414)",
+                border: "1px solid #002A55",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -222,7 +222,7 @@ const chip = {
   fontFamily: "'Barlow Condensed', sans-serif",
 };
 
-const chipHot = { background: "#FF4500", borderColor: "#FF4500", color: "#fff" };
+const chipHot = { background: "#0080F0", borderColor: "#0080F0", color: "#fff" };
 
 const perkButton = {
   display: "block",

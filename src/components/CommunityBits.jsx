@@ -33,10 +33,10 @@ export function VoteBox({ kind, id, score, myVote, user, onNeedAccount, onToast,
   });
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }} onClick={(e) => e.stopPropagation()}>
-      <button aria-label="Upvote" aria-pressed={mine === 1} onClick={() => cast(1)} style={btn(mine === 1, "#FF4500")}>
+      <button aria-label="Upvote" aria-pressed={mine === 1} onClick={() => cast(1)} style={btn(mine === 1, "#0080F0")}>
         👍
       </button>
-      <span style={{ minWidth: 18, textAlign: "center", fontSize: compact ? 12 : 14, fontWeight: 800, color: mine === 1 ? "#FF7A00" : mine === -1 ? "#7DA2FF" : "#BBB" }}>
+      <span style={{ minWidth: 18, textAlign: "center", fontSize: compact ? 12 : 14, fontWeight: 800, color: mine === 1 ? "#3CABFD" : mine === -1 ? "#7DA2FF" : "#BBB" }}>
         {total}
       </span>
       <button aria-label="Downvote" aria-pressed={mine === -1} onClick={() => cast(-1)} style={btn(mine === -1, "#7DA2FF")}>
@@ -64,7 +64,7 @@ export function PostCard({ post, onOpen, showForum, user, onNeedAccount, onToast
       }}
     >
       <div style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 11, color: "#777", fontFamily: "'Barlow', sans-serif", flexWrap: "wrap" }}>
-        {post.pinned && <span style={{ color: "#FF7A00", fontWeight: 800 }}>📌 PINNED</span>}
+        {post.pinned && <span style={{ color: "#3CABFD", fontWeight: 800 }}>📌 PINNED</span>}
         {showForum && (
           <span style={{ color: "#BBB", fontWeight: 700 }}>
             {post.forum_icon} {post.forum_name}
@@ -106,7 +106,7 @@ export function Author({ name, photographer, photographerVerified, onOpen }) {
           e.stopPropagation();
           onOpen && onOpen();
         }}
-        style={{ background: "none", border: "none", padding: 0, color: "#FF7A00", fontWeight: 800, fontSize: 12.5, cursor: onOpen ? "pointer" : "default" }}
+        style={{ background: "none", border: "none", padding: 0, color: "#3CABFD", fontWeight: 800, fontSize: 12.5, cursor: onOpen ? "pointer" : "default" }}
       >
         @{name}
       </button>
@@ -173,7 +173,7 @@ export function Segments({ options, value, onChange }) {
             borderRadius: 8,
             border: "none",
             cursor: "pointer",
-            background: value === id ? "#FF4500" : "transparent",
+            background: value === id ? "#0080F0" : "transparent",
             color: value === id ? "#fff" : "#888",
             fontSize: 12.5,
             fontWeight: 800,

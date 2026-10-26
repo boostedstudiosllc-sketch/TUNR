@@ -71,7 +71,7 @@ export default function HostPitch({ user, onStart }) {
         }}
       >
         <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1 }}>
-          TUN<span style={{ color: "#FF4500" }}>R</span>
+          TUN<span style={{ color: "#0080F0" }}>R</span>
         </div>
         <div style={{ fontSize: 10.5, color: "#555", letterSpacing: 2.5, marginTop: 3 }}>
           FOR HOSTS · ATLANTA, GA
@@ -81,8 +81,8 @@ export default function HostPitch({ user, onStart }) {
           <div
             style={{
               marginTop: 22,
-              background: "rgba(255,69,0,0.1)",
-              border: "1px solid #FF4500",
+              background: "rgba(0, 128, 240,0.1)",
+              border: "1px solid #0080F0",
               borderRadius: 10,
               padding: "11px 14px",
               fontSize: 14,
@@ -91,7 +91,7 @@ export default function HostPitch({ user, onStart }) {
               lineHeight: 1.5,
             }}
           >
-            <strong style={{ color: "#FF7A00" }}>@{invite.instagram_handle}</strong>, you're
+            <strong style={{ color: "#3CABFD" }}>@{invite.instagram_handle}</strong>, you're
             invited. Sign up through this link and your page is verified on the spot.
           </div>
         )}
@@ -156,7 +156,7 @@ export default function HostPitch({ user, onStart }) {
             <br />
             <br />
             It's also early, so here's what isn't built yet:{" "}
-            <strong style={{ color: "#FF7A00" }}>notifications</strong>. Right now people have to
+            <strong style={{ color: "#3CABFD" }}>notifications</strong>. Right now people have to
             open the app to see your meet. Push reminders are next, and they're the whole point —
             "meet in Kennesaw tonight, 4 miles away" landing on a phone.
             <br />
@@ -197,7 +197,7 @@ export default function HostPitch({ user, onStart }) {
           style={{
             width: "100%",
             padding: "16px 0",
-            background: "#FF4500",
+            background: "#0080F0",
             color: "#fff",
             border: "none",
             borderRadius: 10,
@@ -205,7 +205,7 @@ export default function HostPitch({ user, onStart }) {
             fontWeight: 800,
             letterSpacing: 2,
             fontFamily: "'Barlow Condensed', sans-serif",
-            boxShadow: "0 6px 26px rgba(255,69,0,0.4)",
+            boxShadow: "0 6px 26px rgba(0, 128, 240,0.4)",
           }}
         >
           {invited ? "CLAIM YOUR HOST SPOT →" : "GET STARTED →"}
@@ -237,7 +237,7 @@ const paragraph = {
 function Section({ title, children }) {
   return (
     <div style={{ marginBottom: 30 }}>
-      <div style={{ fontSize: 11, color: "#FF4500", letterSpacing: 2.5, fontWeight: 800 }}>
+      <div style={{ fontSize: 11, color: "#0080F0", letterSpacing: 2.5, fontWeight: 800 }}>
         {title}
       </div>
       {children}

@@ -80,7 +80,7 @@ export default function CalendarView({ events, rsvps, onOpen, now = new Date() }
         <div style={{ textAlign: "center", marginTop: 6 }}>
           <button
             onClick={goToday}
-            style={{ background: "none", border: "none", color: "#FF7A00", fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "'Barlow', sans-serif" }}
+            style={{ background: "none", border: "none", color: "#3CABFD", fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "'Barlow', sans-serif" }}
           >
             Back to today
           </button>
@@ -116,27 +116,27 @@ export default function CalendarView({ events, rsvps, onOpen, now = new Date() }
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "space-between",
-                background: isPicked ? "rgba(255,69,0,0.16)" : meets.length ? "#141414" : "transparent",
-                border: `1px solid ${isPicked ? "#FF4500" : isToday ? "#555" : meets.length ? "#222" : "transparent"}`,
+                background: isPicked ? "rgba(0, 128, 240,0.16)" : meets.length ? "#141414" : "transparent",
+                border: `1px solid ${isPicked ? "#0080F0" : isToday ? "#555" : meets.length ? "#222" : "transparent"}`,
                 opacity: past && !isPicked ? 0.45 : 1,
                 color: "#E6E6E6",
                 fontFamily: "'Barlow Condensed', sans-serif",
               }}
             >
-              <span style={{ fontSize: 14, fontWeight: isToday ? 900 : 700, color: isToday ? "#FF7A00" : undefined }}>
+              <span style={{ fontSize: 14, fontWeight: isToday ? 900 : 700, color: isToday ? "#3CABFD" : undefined }}>
                 {day}
               </span>
               <span style={{ display: "flex", gap: 2, alignItems: "center", minHeight: 8 }}>
                 {meets.slice(0, 3).map((e, j) => (
                   <span
                     key={j}
-                    style={{ width: 6, height: 6, borderRadius: "50%", background: VIBES[e.vibe] || "#FF4500" }}
+                    style={{ width: 6, height: 6, borderRadius: "50%", background: VIBES[e.vibe] || "#0080F0" }}
                   />
                 ))}
                 {meets.length > 3 && <span style={{ fontSize: 9, color: "#999", fontWeight: 700 }}>+{meets.length - 3}</span>}
               </span>
               {mine ? (
-                <span style={{ fontSize: 8, color: "#FF4500", fontWeight: 800, letterSpacing: 0.4 }}>GOING</span>
+                <span style={{ fontSize: 8, color: "#0080F0", fontWeight: 800, letterSpacing: 0.4 }}>GOING</span>
               ) : (
                 <span style={{ fontSize: 8 }}>&nbsp;</span>
               )}
@@ -169,7 +169,7 @@ export default function CalendarView({ events, rsvps, onOpen, now = new Date() }
                     {" "}
                     <button
                       onClick={() => setPicked(nextDay)}
-                      style={{ background: "none", border: "none", padding: 0, color: "#FF7A00", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", fontSize: "inherit" }}
+                      style={{ background: "none", border: "none", padding: 0, color: "#3CABFD", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", fontSize: "inherit" }}
                     >
                       Next up: {dayLabel(nextDay)} →
                     </button>
@@ -190,14 +190,14 @@ export default function CalendarView({ events, rsvps, onOpen, now = new Date() }
                       textAlign: "left",
                       background: "#111",
                       border: "1px solid #222",
-                      borderLeft: `3px solid ${VIBES[e.vibe] || "#FF4500"}`,
+                      borderLeft: `3px solid ${VIBES[e.vibe] || "#0080F0"}`,
                       borderRadius: 8,
                       padding: "10px 12px",
                       color: "#E6E6E6",
                       cursor: "pointer",
                     }}
                   >
-                    <div style={{ width: 58, flexShrink: 0, fontSize: 12.5, fontWeight: 800, color: "#FF7A00" }}>
+                    <div style={{ width: 58, flexShrink: 0, fontSize: 12.5, fontWeight: 800, color: "#3CABFD" }}>
                       {displayTime(e)}
                     </div>
                     <div style={{ minWidth: 0, flex: 1 }}>
@@ -210,7 +210,7 @@ export default function CalendarView({ events, rsvps, onOpen, now = new Date() }
                       </div>
                     </div>
                     {rsvps[e.id] === "going" && (
-                      <span style={{ fontSize: 9.5, color: "#FF4500", fontWeight: 800, letterSpacing: 0.8 }}>GOING</span>
+                      <span style={{ fontSize: 9.5, color: "#0080F0", fontWeight: 800, letterSpacing: 0.8 }}>GOING</span>
                     )}
                   </button>
                 ))}

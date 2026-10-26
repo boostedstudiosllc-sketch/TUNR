@@ -82,9 +82,9 @@ export default function MeetPhotos({ eventId, user, isHost, onNeedAccount, onToa
             fontSize: 11,
             fontWeight: 800,
             letterSpacing: 1,
-            color: "#FF4500",
-            border: "1px solid #FF4500",
-            background: "rgba(255,69,0,0.1)",
+            color: "#0080F0",
+            border: "1px solid #0080F0",
+            background: "rgba(0, 128, 240,0.1)",
             borderRadius: 6,
             padding: "5px 11px",
             cursor: "pointer",
@@ -178,7 +178,7 @@ export default function MeetPhotos({ eventId, user, isHost, onNeedAccount, onToa
             onClick={(e) => e.stopPropagation()}
             style={{ marginTop: 12, textAlign: "center", maxWidth: 380 }}
           >
-            <div style={{ fontSize: 12.5, color: "#FF7A00", fontWeight: 700 }}>
+            <div style={{ fontSize: 12.5, color: "#3CABFD", fontWeight: 700 }}>
               @{viewing.username}
             </div>
             {viewing.caption && (

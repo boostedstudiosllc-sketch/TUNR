@@ -11,7 +11,7 @@ const heading = {
   fontSize: 13,
   fontWeight: 800,
   letterSpacing: 1.5,
-  color: "#FF4500",
+  color: "#0080F0",
   marginTop: 20,
   marginBottom: 6,
 };
@@ -64,7 +64,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <div style={{ fontSize: 28, fontWeight: 900 }}>
-              TUN<span style={{ color: "#FF4500" }}>R</span>
+              TUN<span style={{ color: "#0080F0" }}>R</span>
             </div>
             <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4 }}>Terms of Service</div>
             <div style={{ fontSize: 12, color: "#555", marginTop: 2, fontFamily: "'Barlow', sans-serif" }}>
@@ -239,7 +239,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
         <div style={heading}>9. COPYRIGHT &amp; TAKEDOWN</div>
         <div style={body}>
           If something on TUNR infringes your copyright, email{" "}
-          <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#FF4500" }}>
+          <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#0080F0" }}>
             {CONTACT_EMAIL}
           </a>{" "}
           with: what work was copied, where it appears in TUNR, your contact details, a statement
@@ -354,7 +354,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
         <div style={body}>
           TUNR is operated by {LEGAL_ENTITY}. Questions, complaints, or anything that needs a
           human:{" "}
-          <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#FF4500" }}>
+          <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#0080F0" }}>
             {CONTACT_EMAIL}
           </a>
         </div>
@@ -391,7 +391,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
             style={{
               width: "100%",
               padding: "16px 0",
-              background: scrolledToEnd ? "#FF4500" : "#1E1E1E",
+              background: scrolledToEnd ? "#0080F0" : "#1E1E1E",
               color: scrolledToEnd ? "#fff" : "#555",
               border: "none",
               borderRadius: 12,
@@ -399,7 +399,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
               fontWeight: 900,
               letterSpacing: 2,
               cursor: scrolledToEnd ? "pointer" : "not-allowed",
-              boxShadow: scrolledToEnd ? "0 4px 24px rgba(255,69,0,0.4)" : "none",
+              boxShadow: scrolledToEnd ? "0 4px 24px rgba(0, 128, 240,0.4)" : "none",
               fontFamily: "'Barlow Condensed', sans-serif",
             }}
           >

@@ -61,7 +61,7 @@ export default function MapView({ events, onSelect, spots = [], onSelectSpot }) 
     events
       .filter((e) => e.lat != null && e.lng != null)
       .forEach((event) => {
-        const color = VIBES[event.vibe] || "#FF4500";
+        const color = VIBES[event.vibe] || "#0080F0";
         const el = document.createElement("div");
         el.style.cssText = `
           width: 30px; height: 30px;

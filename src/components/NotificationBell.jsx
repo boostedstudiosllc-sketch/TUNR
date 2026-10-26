@@ -81,7 +81,7 @@ export default function NotificationBell({ user, onOpenLink, onToast, onOpenSett
               height: 17,
               padding: "0 4px",
               borderRadius: 9,
-              background: "#FF4500",
+              background: "#0080F0",
               color: "#fff",
               fontSize: 10,
               fontWeight: 800,

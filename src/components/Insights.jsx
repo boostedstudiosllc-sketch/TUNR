@@ -10,7 +10,7 @@ import GoingTicker from "./GoingTicker.jsx";
 // but an admin, and RSVP history is kept permanently (rsvp_log), so the
 // counts survive un-RSVPs, deleted accounts and deleted meets.
 
-const ACCENT = "#FF4500";
+const ACCENT = "#0080F0";
 const UP = "#10B981";
 const DOWN = "#EF6A5A";
 
@@ -284,7 +284,7 @@ function DailyBars({ days, field, unit }) {
                 style={{
                   width: "100%",
                   height: v ? `${Math.max(4, (v / max) * 100)}%` : 0,
-                  background: hover === null || hover === i ? ACCENT : "rgba(255,69,0,0.35)",
+                  background: hover === null || hover === i ? ACCENT : "rgba(0, 128, 240,0.35)",
                   borderRadius: "4px 4px 0 0",
                 }}
               />
@@ -367,7 +367,7 @@ function Chips({ options, value, onChange, small }) {
             fontSize: small ? 10.5 : 11.5,
             fontWeight: 700,
             cursor: "pointer",
-            background: value === o.id ? "rgba(255,69,0,0.14)" : "#161616",
+            background: value === o.id ? "rgba(0, 128, 240,0.14)" : "#161616",
             color: value === o.id ? ACCENT : "#888",
             border: `1px solid ${value === o.id ? ACCENT : "#2A2A2A"}`,
             fontFamily: "'Barlow Condensed', sans-serif",

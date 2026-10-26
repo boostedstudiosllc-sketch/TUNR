@@ -61,7 +61,7 @@ const BADGES = {
   },
   founding_host: {
     title: "Founding host",
-    gradient: "linear-gradient(135deg, #FF5A1F, #C21E00)",
+    gradient: "linear-gradient(135deg, #3CABFD, #0050A0)",
     explain: () =>
       "One of the first car meet hosts on TUNR, verified before launch. Nobody can get this one now.",
     glyph: (
@@ -71,7 +71,7 @@ const BADGES = {
         <path d="M7.5 5h11v9h-11z" fill="#fff" />
         <path
           d="M7.5 5h2.75v3h-2.75zM13 5h2.75v3H13zM10.25 8H13v3h-2.75zM15.75 8h2.75v3h-2.75zM7.5 11h2.75v3H7.5zM13 11h2.75v3H13z"
-          fill="#8A1400"
+          fill="#003A75"
         />
       </g>
     ),

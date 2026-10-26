@@ -130,9 +130,9 @@ function List({ clubs, onOpen }) {
               {c.city ? ` · ${c.city}` : ""}
             </span>
           </span>
-          {c.requests > 0 && <span style={{ fontSize: 10.5, color: "#FF4500", fontWeight: 800 }}>{c.requests} ASKING</span>}
+          {c.requests > 0 && <span style={{ fontSize: 10.5, color: "#0080F0", fontWeight: 800 }}>{c.requests} ASKING</span>}
           {c.my_role && !c.requests && (
-            <span style={{ fontSize: 10, color: "#FF7A00", fontWeight: 800, letterSpacing: 0.8 }}>{c.my_role === "requested" ? "ASKED" : c.my_role.toUpperCase()}</span>
+            <span style={{ fontSize: 10, color: "#3CABFD", fontWeight: 800, letterSpacing: 0.8 }}>{c.my_role === "requested" ? "ASKED" : c.my_role.toUpperCase()}</span>
           )}
         </button>
       ))}

@@ -10,7 +10,7 @@ const heading = {
   fontSize: 13,
   fontWeight: 800,
   letterSpacing: 1.5,
-  color: "#FF4500",
+  color: "#0080F0",
   marginTop: 20,
   marginBottom: 6,
 };
@@ -273,7 +273,7 @@ export default function PrivacyPolicy({ onClose }) {
         <div style={heading}>CONTACT</div>
         <div style={body}>
           Questions about your data, or anything in this policy:{" "}
-          <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#FF4500" }}>
+          <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#0080F0" }}>
             {CONTACT_EMAIL}
           </a>
         </div>

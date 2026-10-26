@@ -63,7 +63,7 @@ export default function DetailingRequest({ user, onClose, onToast, onNeedAccount
         <>
           <div style={{ ...muted, marginTop: 4 }}>
             Tell us what you need and we'll get back to you with a time and price. Your{" "}
-            <b style={{ color: "#FF7A00" }}>10% TUNR discount</b> is included automatically.
+            <b style={{ color: "#3CABFD" }}>10% TUNR discount</b> is included automatically.
           </div>
 
           <div style={{ ...label, marginTop: 14 }}>WHAT DO YOU NEED?</div>
@@ -131,4 +131,4 @@ const chip = {
   cursor: "pointer",
   fontFamily: "'Barlow Condensed', sans-serif",
 };
-const chipOn = { border: "1px solid #FF4500", color: "#FF7A00", background: "rgba(255,69,0,0.12)" };
+const chipOn = { border: "1px solid #0080F0", color: "#3CABFD", background: "rgba(0, 128, 240,0.12)" };

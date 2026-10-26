@@ -158,7 +158,7 @@ function Stepper({ name, help, value, show, changed, onStep, atMin, atMax }) {
       <button aria-label={`Less ${name}`} disabled={atMin} onClick={() => onStep(-1)} style={stepBtn}>
         −
       </button>
-      <span style={{ width: 82, textAlign: "center", fontWeight: 900, color: changed ? "#FF7A00" : "#F0F0F0" }}>{show(value)}</span>
+      <span style={{ width: 82, textAlign: "center", fontWeight: 900, color: changed ? "#3CABFD" : "#F0F0F0" }}>{show(value)}</span>
       <button aria-label={`More ${name}`} disabled={atMax} onClick={() => onStep(1)} style={stepBtn}>
         +
       </button>

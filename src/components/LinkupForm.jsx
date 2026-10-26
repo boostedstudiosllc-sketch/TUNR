@@ -164,8 +164,8 @@ export default function LinkupForm({ user, onClose, onPosted, onToast }) {
               padding: "10px 12px",
               borderRadius: 10,
               cursor: "pointer",
-              background: draft.visibility === id ? "rgba(255,69,0,0.12)" : "#141414",
-              border: `1px solid ${draft.visibility === id ? "#FF4500" : "#2A2A2A"}`,
+              background: draft.visibility === id ? "rgba(0, 128, 240,0.12)" : "#141414",
+              border: `1px solid ${draft.visibility === id ? "#0080F0" : "#2A2A2A"}`,
               color: "#E6E6E6",
             }}
           >

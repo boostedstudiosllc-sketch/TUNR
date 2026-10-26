@@ -30,7 +30,7 @@ Confirm your TUNR email
   {{ end }}
 
   <p style="margin:24px 0">
-    <a href="{{ .ConfirmationURL }}" style="background:#FF4500;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:6px;display:inline-block">Confirm my email</a>
+    <a href="{{ .ConfirmationURL }}" style="background:#0080F0;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:6px;display:inline-block">Confirm my email</a>
   </p>
 
   <p><b>What happens if you don't:</b> accounts whose email isn't confirmed within 7 days of signing up are
@@ -68,7 +68,7 @@ Reset your TUNR password
     <table role="presentation" cellpadding="0" cellspacing="0"><tr>
       <td style="vertical-align:middle"><img src="https://tunr-gules.vercel.app/icon-192.png" width="44" height="44" alt="TUNR" style="display:block;border-radius:10px"></td>
       <td style="vertical-align:middle;padding-left:12px">
-        <div style="font-size:26px;font-weight:900;letter-spacing:-0.5px;color:#ffffff">TUN<span style="color:#FF4500">R</span></div>
+        <div style="font-size:26px;font-weight:900;letter-spacing:-0.5px;color:#ffffff">TUN<span style="color:#0080F0">R</span></div>
         <div style="font-size:11px;color:#9a9a9a;letter-spacing:1.5px">CAR MEETS · ATLANTA</div>
       </td>
     </tr></table>
@@ -81,7 +81,7 @@ Reset your TUNR password
     If that was you, tap the button below and choose a new password.</p>
 
     <p style="margin:24px 0">
-      <a href="{{ .ConfirmationURL }}" style="background:#FF4500;color:#ffffff;text-decoration:none;font-weight:bold;padding:13px 24px;border-radius:6px;display:inline-block">Choose a new password</a>
+      <a href="{{ .ConfirmationURL }}" style="background:#0080F0;color:#ffffff;text-decoration:none;font-weight:bold;padding:13px 24px;border-radius:6px;display:inline-block">Choose a new password</a>
     </p>
 
     <p style="font-size:13px;color:#444">This link works once and expires in 1 hour. Your new password needs at least

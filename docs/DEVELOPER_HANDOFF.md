@@ -68,7 +68,7 @@ TUNR is a mobile-first web app for finding and attending car meets, launched in 
 
 ### Stack
 
-- **Frontend:** React 18 and Vite 5, plain JavaScript (no TypeScript), no router (screens are picked from `window.location.pathname` in `App.jsx`), no state library. Styles are inline objects. Dark theme: background `#0A0A0A`, cards `#111`/`#141414`, borders `#222`/`#2A2A2A`, accent `#FF4500`/`#FF7A00`. Fonts: Barlow Condensed for headings and buttons, Barlow for body text (loaded from Google Fonts in `App.jsx`). The layout is 430 px wide at most.
+- **Frontend:** React 18 and Vite 5, plain JavaScript (no TypeScript), no router (screens are picked from `window.location.pathname` in `App.jsx`), no state library. Styles are inline objects. Dark theme: background `#0A0A0A`, cards `#111`/`#141414`, borders `#222`/`#2A2A2A`, accent Boosted Studios blue `#0080F0`/`#3CABFD` (was orange until Oct 2026). Fonts: Barlow Condensed for headings and buttons, Barlow for body text (loaded from Google Fonts in `App.jsx`). The layout is 430 px wide at most.
 - **Backend:** Supabase (Postgres with row-level security, Auth, Storage, Realtime). The browser talks to Supabase directly with the public anon key.
 - **Server code:** Vercel serverless functions in `api/` (Node, ESM), for the few jobs that need a secret key or an outside API. There's one daily Vercel Cron.
 - **Outside services:** Mapbox (maps and geocoding), Google Gemini (flyer reading), Web Push (VAPID, using the `web-push` npm package), and Gmail SMTP through Supabase Auth (email).

@@ -548,7 +548,7 @@ export function RedemptionsAdmin({ onToast }) {
           ["fulfilled", "COLLECTED"],
           ["cancelled", "CANCELLED"],
         ].map(([id, name]) => (
-          <button key={id} onClick={() => setStatus(id)} style={{ ...quietButton, flex: 1, padding: "10px 0", ...(status === id ? { borderColor: "#FF4500", color: "#FF7A00" } : {}) }}>
+          <button key={id} onClick={() => setStatus(id)} style={{ ...quietButton, flex: 1, padding: "10px 0", ...(status === id ? { borderColor: "#0080F0", color: "#3CABFD" } : {}) }}>
             {name}
           </button>
         ))}
@@ -906,7 +906,7 @@ async function printCards(win, cards) {
     .card { width: 3.5in; height: 2in; box-sizing: border-box; border: 1px dashed #999; padding: 0.15in; display: flex; gap: 0.12in; align-items: center; break-inside: avoid; }
     .qr { width: 1.3in; height: 1.3in; flex-shrink: 0; }
     .qr svg { width: 100%; height: 100%; }
-    .brand { font-size: 8pt; letter-spacing: 1.5px; font-weight: 700; color: #FF4500; }
+    .brand { font-size: 8pt; letter-spacing: 1.5px; font-weight: 700; color: #0080F0; }
     .pts { font-size: 17pt; font-weight: 900; line-height: 1.1; }
     .lbl { font-size: 9pt; font-weight: 700; }
     .how { font-size: 6.5pt; color: #444; margin-top: 3px; line-height: 1.25; }
@@ -1186,7 +1186,7 @@ export function IssuesAdmin({ onToast }) {
           ["resolved", "ADDED"],
           ["declined", "DECLINED"],
         ].map(([id, name]) => (
-          <button key={id} onClick={() => setStatus(id)} style={{ ...quietButton, flex: 1, padding: "10px 0", ...(status === id ? { borderColor: "#FF4500", color: "#FF7A00" } : {}) }}>
+          <button key={id} onClick={() => setStatus(id)} style={{ ...quietButton, flex: 1, padding: "10px 0", ...(status === id ? { borderColor: "#0080F0", color: "#3CABFD" } : {}) }}>
             {name}
           </button>
         ))}

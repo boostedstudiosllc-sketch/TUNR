@@ -160,7 +160,7 @@ export default function Comments({ eventId, user, onNeedAccount, onToast, onOpen
         disabled={busy}
         style={{
           padding: "0 16px",
-          background: body.trim() && !busy ? "#FF4500" : "#1E1E1E",
+          background: body.trim() && !busy ? "#0080F0" : "#1E1E1E",
           color: body.trim() && !busy ? "#fff" : "#555",
           border: "none",
           borderRadius: 20,
@@ -214,7 +214,7 @@ export default function Comments({ eventId, user, onNeedAccount, onToast, onOpen
                     width: 30,
                     height: 30,
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg,#FF4500,#FF7A00)",
+                    background: "linear-gradient(135deg,#0080F0,#3CABFD)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -236,7 +236,7 @@ export default function Comments({ eventId, user, onNeedAccount, onToast, onOpen
                         padding: 0,
                         fontSize: 12.5,
                         fontWeight: 800,
-                        color: "#FF7A00",
+                        color: "#3CABFD",
                         cursor: onOpenPerson ? "pointer" : "default",
                         fontFamily: "inherit",
                       }}
@@ -339,9 +339,9 @@ function Thumb({ icon, count, active, onClick, label }) {
         borderRadius: 12,
         fontSize: 11.5,
         cursor: "pointer",
-        background: active ? "rgba(255,69,0,0.14)" : "#141414",
-        border: `1px solid ${active ? "#FF4500" : "#262626"}`,
-        color: active ? "#FF7A00" : "#888",
+        background: active ? "rgba(0, 128, 240,0.14)" : "#141414",
+        border: `1px solid ${active ? "#0080F0" : "#262626"}`,
+        color: active ? "#3CABFD" : "#888",
         fontFamily: "'Barlow', sans-serif",
         fontWeight: 700,
       }}

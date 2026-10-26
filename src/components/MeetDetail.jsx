@@ -78,7 +78,7 @@ export default function MeetDetail({
   }
 
 
-  const color = VIBES[event.vibe] || "#FF4500";
+  const color = VIBES[event.vibe] || "#0080F0";
   const hasCoords = event.lat != null && event.lng != null;
   const directions = directionsUrl(event);
 
@@ -194,7 +194,7 @@ export default function MeetDetail({
               onClick={() => onOpenHost && onOpenHost(event.host)}
               style={{
                 fontSize: 13,
-                color: "#FF4500",
+                color: "#0080F0",
                 cursor: onOpenHost ? "pointer" : "default",
               }}
             >
@@ -208,7 +208,7 @@ export default function MeetDetail({
                     {i > 0 && ", "}
                     <span
                       onClick={() => onOpenHost && onOpenHost(c)}
-                      style={{ color: "#FF7A00", cursor: onOpenHost ? "pointer" : "default" }}
+                      style={{ color: "#3CABFD", cursor: onOpenHost ? "pointer" : "default" }}
                     >
                       @{c}
                     </span>
@@ -222,9 +222,9 @@ export default function MeetDetail({
               style={{
                 padding: "5px 12px",
                 borderRadius: 20,
-                background: following ? "rgba(255,69,0,0.15)" : "#1A1A1A",
-                border: `1px solid ${following ? "#FF4500" : "#2A2A2A"}`,
-                color: following ? "#FF4500" : "#888",
+                background: following ? "rgba(0, 128, 240,0.15)" : "#1A1A1A",
+                border: `1px solid ${following ? "#0080F0" : "#2A2A2A"}`,
+                color: following ? "#0080F0" : "#888",
                 fontSize: 11,
                 fontWeight: 800,
                 letterSpacing: 1,
@@ -275,7 +275,7 @@ export default function MeetDetail({
               <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
                 {event.city}
                 {event.distanceLabel && (
-                  <span style={{ color: "#FF7A00" }}> · {event.distanceLabel} away</span>
+                  <span style={{ color: "#3CABFD" }}> · {event.distanceLabel} away</span>
                 )}
               </div>
             </div>
@@ -441,10 +441,10 @@ export default function MeetDetail({
                 style={{
                   flex: 1,
                   padding: "12px 0",
-                  background: "rgba(255,69,0,0.12)",
-                  border: "1px solid #FF4500",
+                  background: "rgba(0, 128, 240,0.12)",
+                  border: "1px solid #0080F0",
                   borderRadius: 10,
-                  color: "#FF4500",
+                  color: "#0080F0",
                   fontSize: 13,
                   fontWeight: 800,
                   letterSpacing: 1.5,
@@ -634,8 +634,8 @@ function Flyer({ url, title }) {
 // Stays at the bottom of the meet while you scroll: your answer, and the way there.
 function ActionBar({ rsvp, onRsvp, goingAs, onGoingAs, directions }) {
   const options = [
-    { id: "going", label: "GOING", on: "✓ GOING", color: "#FF4500", fill: true },
-    { id: "interested", label: "MAYBE", on: "★ MAYBE", color: "#FF7A00" },
+    { id: "going", label: "GOING", on: "✓ GOING", color: "#0080F0", fill: true },
+    { id: "interested", label: "MAYBE", on: "★ MAYBE", color: "#3CABFD" },
     { id: "not_going", label: "NOT GOING", on: "✕ NOT GOING", color: "#888" },
   ];
   return (
@@ -668,9 +668,9 @@ function ActionBar({ rsvp, onRsvp, goingAs, onGoingAs, directions }) {
                   letterSpacing: 0.6,
                   whiteSpace: "nowrap",
                   cursor: "pointer",
-                  background: active ? "rgba(255,69,0,0.16)" : "#161616",
-                  color: active ? "#FF7A00" : "#888",
-                  border: `1px solid ${active ? "#FF4500" : "#2A2A2A"}`,
+                  background: active ? "rgba(0, 128, 240,0.16)" : "#161616",
+                  color: active ? "#3CABFD" : "#888",
+                  border: `1px solid ${active ? "#0080F0" : "#2A2A2A"}`,
                   fontFamily: "'Barlow Condensed', sans-serif",
                 }}
               >
@@ -700,7 +700,7 @@ function ActionBar({ rsvp, onRsvp, goingAs, onGoingAs, directions }) {
                 fontWeight: 800,
                 letterSpacing: 1.2,
                 fontFamily: "'Barlow Condensed', sans-serif",
-                boxShadow: active && o.fill ? "0 4px 20px rgba(255,69,0,0.4)" : "none",
+                boxShadow: active && o.fill ? "0 4px 20px rgba(0, 128, 240,0.4)" : "none",
               }}
             >
               {active ? o.on : o.label}

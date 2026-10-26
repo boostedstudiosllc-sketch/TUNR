@@ -37,7 +37,7 @@ export default function CommunityReports({ onToast, onOpenLink }) {
 
   return (
     <div style={{ background: "#111", border: "1px solid #2A2A2A", borderRadius: 10, padding: "14px 18px", marginBottom: 12 }}>
-      <div style={{ fontSize: 13, fontWeight: 800 }}>Community reports {items.length > 0 && <span style={{ color: "#FF4500" }}>({items.length})</span>}</div>
+      <div style={{ fontSize: 13, fontWeight: 800 }}>Community reports {items.length > 0 && <span style={{ color: "#0080F0" }}>({items.length})</span>}</div>
       {error && <div style={{ fontSize: 12, color: "#EF4444", marginTop: 6 }}>{error}</div>}
       {rows && items.length === 0 && <div style={{ fontSize: 12, color: "#666", marginTop: 4, fontFamily: "'Barlow', sans-serif" }}>Nothing reported in forums or clubs.</div>}
       {items.map((r) => (

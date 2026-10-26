@@ -30,9 +30,9 @@ export default function TimeFilter({ value, onChange }) {
               letterSpacing: 0.6,
               whiteSpace: "nowrap",
               cursor: "pointer",
-              background: preset === p.id ? "#FF4500" : "#161616",
+              background: preset === p.id ? "#0080F0" : "#161616",
               color: preset === p.id ? "#fff" : "#888",
-              border: `1px solid ${preset === p.id ? "#FF4500" : "#2A2A2A"}`,
+              border: `1px solid ${preset === p.id ? "#0080F0" : "#2A2A2A"}`,
               fontFamily: "'Barlow Condensed', sans-serif",
               flexShrink: 0,
             }}

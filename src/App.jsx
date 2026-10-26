@@ -636,7 +636,7 @@ export default function App() {
       >
         <div>
           <div style={{ fontSize: 38, fontWeight: 900, letterSpacing: -1, lineHeight: 1 }}>
-            TUN<span style={{ color: "#FF4500" }}>R</span>
+            TUN<span style={{ color: "#0080F0" }}>R</span>
           </div>
           <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, marginTop: 1 }}>
             ATLANTA, GA
@@ -655,7 +655,7 @@ export default function App() {
             setShowSubmit(true);
           }}
           style={{
-            background: "#FF4500",
+            background: "#0080F0",
             color: "#fff",
             fontSize: 12,
             fontWeight: 700,
@@ -753,9 +753,9 @@ export default function App() {
                   fontWeight: 700,
                   letterSpacing: 0.8,
                   whiteSpace: "nowrap",
-                  background: filter === f ? "#FF4500" : "#161616",
+                  background: filter === f ? "#0080F0" : "#161616",
                   color: filter === f ? "#fff" : "#666",
-                  border: filter === f ? "1px solid #FF4500" : "1px solid #222",
+                  border: filter === f ? "1px solid #0080F0" : "1px solid #222",
                   fontFamily: "'Barlow Condensed', sans-serif",
                 }}
               >
@@ -799,9 +799,9 @@ export default function App() {
                   fontWeight: 700,
                   letterSpacing: 0.6,
                   whiteSpace: "nowrap",
-                  background: sort === s.id ? "rgba(255,69,0,0.14)" : "transparent",
-                  color: sort === s.id ? "#FF4500" : "#666",
-                  border: `1px solid ${sort === s.id ? "#FF4500" : "#242424"}`,
+                  background: sort === s.id ? "rgba(0, 128, 240,0.14)" : "transparent",
+                  color: sort === s.id ? "#0080F0" : "#666",
+                  border: `1px solid ${sort === s.id ? "#0080F0" : "#242424"}`,
                   fontFamily: "'Barlow Condensed', sans-serif",
                 }}
               >
@@ -827,8 +827,8 @@ export default function App() {
                     letterSpacing: 0.6,
                     whiteSpace: "nowrap",
                     border: "none",
-                    background: view === id ? "rgba(255,69,0,0.14)" : "transparent",
-                    color: view === id ? "#FF4500" : "#666",
+                    background: view === id ? "rgba(0, 128, 240,0.14)" : "transparent",
+                    color: view === id ? "#0080F0" : "#666",
                     fontFamily: "'Barlow Condensed', sans-serif",
                     cursor: "pointer",
                   }}
@@ -872,8 +872,8 @@ export default function App() {
               }}
               style={{
                 margin: "0 20px 16px",
-                background: "linear-gradient(135deg, #1A0A00, #2A1000)",
-                border: "1px solid #FF4500",
+                background: "linear-gradient(135deg, #000F1F, #001A33)",
+                border: "1px solid #0080F0",
                 borderRadius: 6,
                 padding: "10px 14px",
                 display: "flex",
@@ -886,13 +886,13 @@ export default function App() {
                   width: 8,
                   height: 8,
                   borderRadius: "50%",
-                  background: "#FF4500",
-                  boxShadow: "0 0 8px #FF4500",
+                  background: "#0080F0",
+                  boxShadow: "0 0 8px #0080F0",
                   flexShrink: 0,
                 }}
               />
               <div>
-                <div style={{ fontSize: 11, color: "#FF4500", letterSpacing: 2, fontWeight: 700 }}>
+                <div style={{ fontSize: 11, color: "#0080F0", letterSpacing: 2, fontWeight: 700 }}>
                   HAPPENING TODAY
                 </div>
                 <div style={{ fontSize: 13, color: "#CCC", marginTop: 1 }}>
@@ -1064,7 +1064,7 @@ export default function App() {
             <div
               style={{
                 background: "#111",
-                border: "1px solid #FF4500",
+                border: "1px solid #0080F0",
                 borderRadius: 12,
                 padding: "22px 20px",
               }}
@@ -1237,7 +1237,7 @@ export default function App() {
             <span
               style={{
                 fontSize: 20,
-                color: tab === t.id ? "#FF4500" : "#333",
+                color: tab === t.id ? "#0080F0" : "#333",
                 position: "relative",
               }}
             >
@@ -1252,7 +1252,7 @@ export default function App() {
                     height: 15,
                     padding: "0 4px",
                     borderRadius: 8,
-                    background: "#FF4500",
+                    background: "#0080F0",
                     color: "#fff",
                     fontSize: 9,
                     fontWeight: 800,
@@ -1270,7 +1270,7 @@ export default function App() {
                 fontSize: 9,
                 letterSpacing: 1.5,
                 fontWeight: 700,
-                color: tab === t.id ? "#FF4500" : "#333",
+                color: tab === t.id ? "#0080F0" : "#333",
                 fontFamily: "'Barlow Condensed', sans-serif",
               }}
             >
@@ -1281,7 +1281,7 @@ export default function App() {
                 style={{
                   width: 20,
                   height: 2,
-                  background: "#FF4500",
+                  background: "#0080F0",
                   borderRadius: 2,
                   marginTop: 1,
                 }}
@@ -1392,7 +1392,7 @@ export default function App() {
             left: "50%",
             transform: "translateX(-50%)",
             background: "#131315",
-            border: "1px solid #FF4500",
+            border: "1px solid #0080F0",
             color: "#F0F0F0",
             padding: "11px 18px",
             borderRadius: 10,
@@ -1444,7 +1444,7 @@ function GlobalStyles() {
       @keyframes fadeIn { from{opacity:0} to{opacity:1} }
       @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
       .meet-card { transition: transform 0.18s ease, box-shadow 0.18s ease; cursor: pointer; }
-      .meet-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(255,69,0,0.18); }
+      .meet-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0, 128, 240,0.18); }
       .filter-pill { transition: all 0.2s ease; cursor: pointer; border: none; }
       .action-btn { transition: all 0.18s ease; cursor: pointer; border: none; }
       .action-btn:hover { opacity: 0.85; }

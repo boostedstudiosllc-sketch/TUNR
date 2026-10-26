@@ -119,7 +119,7 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
               type="checkbox"
               checked={me.show_on_profile !== false}
               onChange={(e) => act(() => setClubOnProfile(club.id, user.id, e.target.checked), e.target.checked ? "Shows on your profile" : "Hidden from your profile")}
-              style={{ accentColor: "#FF4500", width: 16, height: 16 }}
+              style={{ accentColor: "#0080F0", width: 16, height: 16 }}
             />
             Show this club on my profile
           </label>
@@ -132,7 +132,7 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
           <div style={label}>WANT TO JOIN ({requests.length})</div>
           {requests.map((p) => (
             <Row key={p.user_id} p={p} onOpen={() => onOpenPerson(p.user_id)}>
-              <button disabled={busy} onClick={() => act(() => manageClubMember(club.id, p.user_id, "accept"), `@${p.username} is in`)} style={small("#FF4500", "#fff")}>
+              <button disabled={busy} onClick={() => act(() => manageClubMember(club.id, p.user_id, "accept"), `@${p.username} is in`)} style={small("#0080F0", "#fff")}>
                 ACCEPT
               </button>
               <button disabled={busy} onClick={() => act(() => manageClubMember(club.id, p.user_id, "remove"), "Declined")} style={small("#1A1A1A", "#999")}>
@@ -157,7 +157,7 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
                 <span style={{ display: "block", fontSize: 14, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.event.title}</span>
                 <span style={{ display: "block", fontSize: 11.5, color: "#777" }}>{displayDate(m.event)} · {m.event.city}</span>
               </span>
-              <span style={{ fontSize: 12, color: "#FF7A00", fontWeight: 800, whiteSpace: "nowrap" }}>{m.members_going} going</span>
+              <span style={{ fontSize: 12, color: "#3CABFD", fontWeight: 800, whiteSpace: "nowrap" }}>{m.members_going} going</span>
             </button>
           ))}
         </div>
@@ -169,7 +169,7 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
           <div style={label}>MEMBERS ({members.length})</div>
           {members.map((p) => (
             <Row key={p.user_id} p={p} onOpen={() => onOpenPerson(p.user_id)}>
-              {ROLE[p.role] && <span style={{ fontSize: 10, color: "#FF7A00", fontWeight: 800, letterSpacing: 1 }}>{ROLE[p.role]}</span>}
+              {ROLE[p.role] && <span style={{ fontSize: 10, color: "#3CABFD", fontWeight: 800, letterSpacing: 1 }}>{ROLE[p.role]}</span>}
               {runs && p.role !== "owner" && p.user_id !== user?.id && (role === "owner" || p.role === "member") && (
                 <>
                   {role === "owner" && (
@@ -248,7 +248,7 @@ function ClubEdit({ club, onDone, onToast }) {
       <div style={{ ...label, marginTop: 10 }}>ABOUT</div>
       <textarea style={{ ...field, minHeight: 70 }} maxLength={500} value={description} onChange={(e) => setDescription(e.target.value)} />
       <label style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10, fontSize: 13, color: "#CCC" }}>
-        <input type="checkbox" checked={visibility === "private"} onChange={(e) => setVisibility(e.target.checked ? "private" : "public")} style={{ accentColor: "#FF4500" }} />
+        <input type="checkbox" checked={visibility === "private"} onChange={(e) => setVisibility(e.target.checked ? "private" : "public")} style={{ accentColor: "#0080F0" }} />
         Private — approve who joins
       </label>
       <button
@@ -302,7 +302,7 @@ function ClubChat({ club, user, messages, runs, onSent, onToast, onOpenPerson })
             <div key={m.id} style={{ marginBottom: 8 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <Author name={m.username} photographer={m.photographer} photographerVerified={m.photographer_verified} onOpen={() => onOpenPerson(m.user_id)} />
-                {ROLE[m.role] && <span style={{ fontSize: 9.5, color: "#FF7A00", fontWeight: 800 }}>{ROLE[m.role]}</span>}
+                {ROLE[m.role] && <span style={{ fontSize: 9.5, color: "#3CABFD", fontWeight: 800 }}>{ROLE[m.role]}</span>}
                 <span style={{ fontSize: 10.5, color: "#555" }}>{new Date(m.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</span>
                 {(m.user_id === user.id || runs) && (
                   <button

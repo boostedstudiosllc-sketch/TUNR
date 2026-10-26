@@ -52,7 +52,7 @@ export default function BuildPage({ vehicleId, user, onClose, onOpenPerson, onJo
 
   return (
     <Sheet onClose={onClose} label="Build page" zIndex={299}>
-      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: "#FF7A00" }}>🔳 SCAN MY BUILD</div>
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: "#3CABFD" }}>🔳 SCAN MY BUILD</div>
       {car === undefined && <div style={{ ...muted, marginTop: 14 }}>Loading the build…</div>}
       {car === null && (
         <div style={{ ...muted, marginTop: 14 }}>

@@ -120,7 +120,7 @@ export default function AlertSettings({ user, onClose, onToast }) {
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <span style={label}>WITHIN</span>
-                <span style={{ fontSize: 16, fontWeight: 900, color: "#FF7A00" }}>{settings.radius_miles} miles</span>
+                <span style={{ fontSize: 16, fontWeight: 900, color: "#3CABFD" }}>{settings.radius_miles} miles</span>
               </div>
               <input
                 type="range"
@@ -132,7 +132,7 @@ export default function AlertSettings({ user, onClose, onToast }) {
                 onChange={(e) => setSettings((s) => ({ ...s, radius_miles: Number(e.target.value) }))}
                 onPointerUp={(e) => save({ radius_miles: Number(e.currentTarget.value) })}
                 onKeyUp={(e) => save({ radius_miles: Number(e.currentTarget.value) })}
-                style={{ width: "100%", accentColor: "#FF4500" }}
+                style={{ width: "100%", accentColor: "#0080F0" }}
               />
             </div>
             <div style={{ ...muted, marginTop: 6 }}>
@@ -181,7 +181,7 @@ function Toggle({ on, onChange, title, sub }) {
         type="checkbox"
         checked={Boolean(on)}
         onChange={(e) => onChange(e.target.checked)}
-        style={{ accentColor: "#FF4500", width: 18, height: 18, marginTop: 2, flexShrink: 0 }}
+        style={{ accentColor: "#0080F0", width: 18, height: 18, marginTop: 2, flexShrink: 0 }}
       />
       <span>
         <span style={{ display: "block", fontSize: 14, fontWeight: 800 }}>{title}</span>

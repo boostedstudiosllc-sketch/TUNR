@@ -243,7 +243,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                 flex: 1,
                 height: 3,
                 borderRadius: 2,
-                background: s <= step ? "#FF4500" : "#1E1E1E",
+                background: s <= step ? "#0080F0" : "#1E1E1E",
                 transition: "background 0.3s ease",
               }}
             />
@@ -346,9 +346,9 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                       flex: 1,
                       padding: "11px 0",
                       borderRadius: 8,
-                      background: draft.visibility === v.id ? "rgba(255,69,0,0.12)" : "#161616",
-                      border: `1.5px solid ${draft.visibility === v.id ? "#FF4500" : "#2A2A2A"}`,
-                      color: draft.visibility === v.id ? "#FF4500" : "#777",
+                      background: draft.visibility === v.id ? "rgba(0, 128, 240,0.12)" : "#161616",
+                      border: `1.5px solid ${draft.visibility === v.id ? "#0080F0" : "#2A2A2A"}`,
+                      color: draft.visibility === v.id ? "#0080F0" : "#777",
                       fontFamily: "'Barlow Condensed', sans-serif",
                       cursor: "pointer",
                     }}
@@ -383,9 +383,9 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                         textAlign: "left",
                         padding: "9px 11px",
                         borderRadius: 6,
-                        background: draft.accessMode === m.id ? "rgba(255,69,0,0.1)" : "#0F0F0F",
-                        border: `1px solid ${draft.accessMode === m.id ? "#FF4500" : "#242424"}`,
-                        color: draft.accessMode === m.id ? "#FF4500" : "#888",
+                        background: draft.accessMode === m.id ? "rgba(0, 128, 240,0.1)" : "#0F0F0F",
+                        border: `1px solid ${draft.accessMode === m.id ? "#0080F0" : "#242424"}`,
+                        color: draft.accessMode === m.id ? "#0080F0" : "#888",
                         fontFamily: "'Barlow Condensed', sans-serif",
                         cursor: "pointer",
                       }}
@@ -568,7 +568,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
             style={{
               flex: 1,
               padding: "14px 0",
-              background: canContinue ? "#FF4500" : "#1E1E1E",
+              background: canContinue ? "#0080F0" : "#1E1E1E",
               color: canContinue ? "#fff" : "#444",
               border: "none",
               borderRadius: 8,
@@ -576,7 +576,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
               fontWeight: 800,
               letterSpacing: 2,
               fontFamily: "'Barlow Condensed', sans-serif",
-              boxShadow: canContinue ? "0 4px 20px rgba(255,69,0,0.35)" : "none",
+              boxShadow: canContinue ? "0 4px 20px rgba(0, 128, 240,0.35)" : "none",
             }}
           >
             {step === 2
@@ -604,9 +604,9 @@ function FlyerStart({ reader, flyerUrl, onPick, caption, setCaption, showCaption
         marginTop: 11,
         padding: "11px 0",
         borderRadius: 8,
-        background: "rgba(255,69,0,0.12)",
-        border: "1px solid #FF4500",
-        color: "#FF4500",
+        background: "rgba(0, 128, 240,0.12)",
+        border: "1px solid #0080F0",
+        color: "#0080F0",
         fontSize: 12.5,
         fontWeight: 800,
         letterSpacing: 1.2,
@@ -623,7 +623,7 @@ function FlyerStart({ reader, flyerUrl, onPick, caption, setCaption, showCaption
     <div
       style={{
         background: "#131313",
-        border: `1px solid ${reader.status === "done" ? "#10B981" : "rgba(255,69,0,0.45)"}`,
+        border: `1px solid ${reader.status === "done" ? "#10B981" : "rgba(0, 128, 240,0.45)"}`,
         borderRadius: 10,
         padding: "14px 15px",
       }}

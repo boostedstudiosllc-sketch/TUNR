@@ -281,7 +281,7 @@ export default function SettingsScreen({
                 icon="👤"
                 label="Edit profile"
                 value={profile.username ? `@${profile.username}` : "Add a username"}
-                valueColor={profile.username ? "#777" : "#FF7A00"}
+                valueColor={profile.username ? "#777" : "#3CABFD"}
                 onClick={onEditProfile}
               />
               <Row
@@ -590,7 +590,7 @@ function EmailPage({ user, account, onToast }) {
               width: "100%",
               marginTop: 12,
               padding: "13px 0",
-              background: "#FF4500",
+              background: "#0080F0",
               color: "#fff",
               borderRadius: 8,
               fontSize: 14,
@@ -747,7 +747,7 @@ const countBadge = {
   height: 22,
   padding: "0 7px",
   borderRadius: 11,
-  background: "#FF4500",
+  background: "#0080F0",
   color: "#fff",
   fontSize: 12,
   fontWeight: 800,

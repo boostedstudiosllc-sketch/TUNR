@@ -12,7 +12,7 @@ export const UNLOCKS = [
   { need: 5, key: "flair", icon: "🎨", title: "Profile flair", sub: "Pick your profile color and get the 🔗 Connector badge." },
 ];
 
-export const FLAIR_COLORS = ["#FF4500", "#FACC15", "#10B981", "#38BDF8", "#A855F7", "#EC4899", "#EF4444", "#F0F0F0"];
+export const FLAIR_COLORS = ["#0080F0", "#FF4500", "#FACC15", "#10B981", "#38BDF8", "#A855F7", "#EC4899", "#EF4444", "#F0F0F0"];
 
 export const inviteLink = (code) => `${window.location.origin}/?${INVITE_PARAM}=${code}`;
 

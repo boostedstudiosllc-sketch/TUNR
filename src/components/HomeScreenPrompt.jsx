@@ -43,7 +43,7 @@ export default function HomeScreenPrompt() {
       </div>
       <button
         onClick={() => setSteps(true)}
-        style={{ background: "#FF4500", border: "none", color: "#fff", borderRadius: 6, padding: "7px 10px", fontSize: 11.5, fontWeight: 800, letterSpacing: 0.8, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" }}
+        style={{ background: "#0080F0", border: "none", color: "#fff", borderRadius: 6, padding: "7px 10px", fontSize: 11.5, fontWeight: 800, letterSpacing: 0.8, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" }}
       >
         HOW
       </button>

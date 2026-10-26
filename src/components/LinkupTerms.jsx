@@ -39,14 +39,14 @@ export default function LinkupTerms({ onAgreed, onClose, onShowTerms }) {
           type="checkbox"
           checked={checked}
           onChange={(e) => setChecked(e.target.checked)}
-          style={{ accentColor: "#FF4500", width: 18, height: 18, marginTop: 2, flexShrink: 0 }}
+          style={{ accentColor: "#0080F0", width: 18, height: 18, marginTop: 2, flexShrink: 0 }}
         />
         <span style={{ ...muted, color: "#CCC" }}>
           I'm 18 or older, I agree to these rules and the{" "}
           <button
             type="button"
             onClick={onShowTerms}
-            style={{ background: "none", border: "none", padding: 0, color: "#FF7A00", fontWeight: 700, cursor: "pointer", font: "inherit" }}
+            style={{ background: "none", border: "none", padding: 0, color: "#3CABFD", fontWeight: 700, cursor: "pointer", font: "inherit" }}
           >
             Terms of Service
           </button>

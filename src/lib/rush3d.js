@@ -247,7 +247,7 @@ function box(w, h, d, mat, x, y, z) {
 
 // A whole car: body, glass, roof, wheels, lights, plate, bumper. `sport`
 // is your car (diffuser, quad exhaust, spoiler); traffic stays plain.
-export function buildCar({ color = "#FF4500", body = "coupe", plate = "", sport = false, spoiler = "lip" }) {
+export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport = false, spoiler = "lip" }) {
   const g = bodyGeometries(body);
   const s = g.s;
   const half = s.L / 2;
