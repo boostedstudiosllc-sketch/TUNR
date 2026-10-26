@@ -841,8 +841,9 @@ export function createRush3D(glCanvas, hudCanvas, W, H, me, art = {}, opts = {})
     camera.fov = fov;
     camera.updateProjectionMatrix();
     const shake = g.crashT > 0.8 ? (Math.random() - 0.5) * 0.25 : 0;
-    camera.position.set(camX + shake, 2.9 + player.userData.camLift + shake, PLAYER_Z + 8.6 + player.userData.camLift * 0.6);
-    camera.lookAt(camX * 0.6, 0.9, PLAYER_Z - 14);
+    // A raised chase view: you, plus plenty of road ahead.
+    camera.position.set(camX + shake, 4.1 + player.userData.camLift + shake, PLAYER_Z + 9.6 + player.userData.camLift * 0.6);
+    camera.lookAt(camX * 0.6, 0.4, PLAYER_Z - 18);
     sunLight.target.position.set(px, 0, PLAYER_Z - 20);
     sunLight.position.copy(sunLight.target.position).add(sun.clone().multiplyScalar(80));
 

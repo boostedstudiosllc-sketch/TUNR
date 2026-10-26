@@ -17,12 +17,12 @@ const FIELDS = [
   { key: "clockChance", name: "How often ⏱ shows up", help: "Share of traffic rows with one", min: 0, max: 0.5, step: 0.02, show: pct },
   { key: "crashSeconds", name: "A crash costs", min: 0, max: 15, step: 0.5, show: secs },
   { key: "traffic", name: "Traffic", help: "100% is normal; higher = more cars", min: 0.5, max: 2.5, step: 0.05, show: pct },
-  { key: "startSpeed", name: "Starting speed", min: 10, max: 100, step: 1, show: mph },
+  { key: "startSpeed", name: "Starting speed", min: 10, max: 120, step: 1, show: mph },
   { key: "ramp", name: "Speeds up", help: "Meters per +1 m/s; lower = speeds up quicker", min: 10, max: 200, step: 5, show: (v) => `every ${v} m` },
-  { key: "topSpeed", name: "Top speed", min: 30, max: 100, step: 1, show: mph },
+  { key: "topSpeed", name: "Top speed", min: 30, max: 130, step: 1, show: mph },
   { key: "boostSeconds", name: "Boost lasts", help: "The Boosted badge; off = no badges", min: 0, max: 10, step: 0.5, show: secs },
   { key: "boostChance", name: "How often the badge shows up", help: "Share of traffic rows with one", min: 0, max: 0.3, step: 0.01, show: pct },
-  { key: "boostSpeed", name: "Boost speed", min: 30, max: 130, step: 1, show: mph },
+  { key: "boostSpeed", name: "Boost speed", min: 30, max: 160, step: 1, show: mph },
 ];
 
 const round = (v, step) => Math.round(v / step) * step;

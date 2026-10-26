@@ -29,14 +29,14 @@ export const DEFAULT_RULES = {
   topSpeed: 85, // m/s
   boostSpeed: 115, // m/s while boosting; the server allows the faster of the two plus 5
 };
-// The three difficulty levels (065/066 set the same defaults on the
+// The three difficulty levels (065–067 set the same defaults on the
 // server; admins can change them). Each is shorter, faster and busier
 // than the one before, and worth more points.
 export const LEVEL_IDS = ["easy", "medium", "hard"];
 export const DEFAULT_LEVELS = {
-  easy: { goal: 1500, points: 1, startTime: 35, clockSeconds: 3, crashSeconds: 3, boostSeconds: 3, boostChance: 0.1, clockChance: 0.2, traffic: 0.85, startSpeed: 35, ramp: 45, topSpeed: 75, boostSpeed: 105 },
-  medium: { goal: 1900, points: 2, startTime: 30, clockSeconds: 2.5, crashSeconds: 4, boostSeconds: 3, boostChance: 0.08, clockChance: 0.14, traffic: 1.05, startSpeed: 40, ramp: 40, topSpeed: 85, boostSpeed: 115 },
-  hard: { goal: 2600, points: 3, startTime: 26, clockSeconds: 2, crashSeconds: 5, boostSeconds: 3, boostChance: 0.06, clockChance: 0.14, traffic: 1.15, startSpeed: 45, ramp: 35, topSpeed: 95, boostSpeed: 125 },
+  easy: { goal: 1600, points: 1, startTime: 35, clockSeconds: 3, crashSeconds: 3, boostSeconds: 3, boostChance: 0.1, clockChance: 0.2, traffic: 0.85, startSpeed: 40, ramp: 45, topSpeed: 86, boostSpeed: 120 },
+  medium: { goal: 2000, points: 2, startTime: 30, clockSeconds: 2.5, crashSeconds: 4, boostSeconds: 3, boostChance: 0.08, clockChance: 0.14, traffic: 1.05, startSpeed: 46, ramp: 40, topSpeed: 98, boostSpeed: 132 },
+  hard: { goal: 2700, points: 3, startTime: 26, clockSeconds: 2, crashSeconds: 5, boostSeconds: 3, boostChance: 0.06, clockChance: 0.14, traffic: 1.15, startSpeed: 52, ramp: 35, topSpeed: 110, boostSpeed: 144 },
 };
 export const GOAL_METERS = DEFAULT_RULES.goal;
 export const START_TIME = DEFAULT_RULES.startTime;
@@ -202,7 +202,7 @@ export function step(g, dt) {
     events.push("pop");
   }
   g.dist += g.speed * dt;
-  g.laneX += Math.sign(g.lane - g.laneX) * Math.min(Math.abs(g.lane - g.laneX), dt * 9);
+  g.laneX += Math.sign(g.lane - g.laneX) * Math.min(Math.abs(g.lane - g.laneX), dt * 11);
 
   const dz = (g.speed * dt) / ROAD_DEPTH;
   g.stripe = (g.stripe + dz * 6) % 1;
