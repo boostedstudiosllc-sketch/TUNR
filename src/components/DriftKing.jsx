@@ -17,7 +17,8 @@ import {
 import { RushAudio } from "../lib/rushAudio.js";
 import { muted, bigButton, quietButton } from "./Sheet.jsx";
 
-// Drift King: hold anywhere to swing right, let go to swing left, and keep
+// Drift King: hold the left side to swing left, the right side to swing
+// right (let go and it keeps going the way it's pointed), and keep
 // the car on the floating road for as long as you can. Free play; your best
 // is kept on this phone.
 export default function DriftKing({ onClose }) {
@@ -192,7 +193,7 @@ export default function DriftKing({ onClose }) {
             position: "absolute",
             left: 16,
             right: 16,
-            bottom: "calc(40px + env(safe-area-inset-bottom))",
+            bottom: "calc(130px + env(safe-area-inset-bottom))",
             margin: "0 auto",
             maxWidth: 360,
             textAlign: "center",
@@ -208,12 +209,13 @@ export default function DriftKing({ onClose }) {
             }}
           >
             <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 1 }}>
-              HOLD = DRIFT <span style={{ color: "#3CABFD" }}>RIGHT</span> · LET
-              GO = <span style={{ color: "#3CABFD" }}>LEFT</span>
+              HOLD <span style={{ color: "#3CABFD" }}>◀ LEFT</span> OR{" "}
+              <span style={{ color: "#3CABFD" }}>RIGHT ▶</span> TO DRIFT
             </div>
             <div style={{ ...muted, fontSize: 13, marginTop: 4 }}>
-              Stay on the road as it zig-zags. It speeds up the further you go.
-              Touch and hold to start.
+              Hold either side of the screen to swing that way. Let go and you
+              keep going the way you're pointed. It speeds up the further you
+              go. Hold a side to start.
             </div>
           </div>
         </div>
@@ -277,7 +279,8 @@ export default function DriftKing({ onClose }) {
   );
 }
 
-// The road and the car on a canvas, with the game loop. Hold anywhere.
+// The road and the car on a canvas, with the game loop. The left half of
+// the screen steers left, the right half right; the last side pressed wins.
 function DriftBoard({ audio, onStart, onScore, onOver }) {
   const wrap = useRef(null);
   const canvas = useRef(null);
@@ -291,8 +294,15 @@ function DriftBoard({ audio, onStart, onScore, onOver }) {
     const g = newDrift(Date.now());
     const cam = { x: 0, y: g.y };
     const smoke = [];
-    const pointers = new Set();
-    const keys = new Set();
+    const held = []; // sides held, oldest first: [{ id, side }]
+    const hold = (id, side) => {
+      release(id);
+      held.push({ id, side });
+    };
+    const release = (id) => {
+      const i = held.findIndex((h) => h.id === id);
+      if (i >= 0) held.splice(i, 1);
+    };
     let size = { w: 0, h: 0, dpr: 1 };
     let sky = null;
     let raf = 0;
@@ -322,27 +332,34 @@ function DriftBoard({ audio, onStart, onScore, onOver }) {
     const down = (e) => {
       e.preventDefault();
       el.setPointerCapture?.(e.pointerId);
-      pointers.add(e.pointerId);
+      const x = e.clientX - el.getBoundingClientRect().left;
+      hold(`p${e.pointerId}`, x < size.w / 2 ? "left" : "right");
       press();
     };
-    const up = (e) => pointers.delete(e.pointerId);
-    const HOLD_KEYS = new Set([" ", "ArrowRight", "ArrowUp", "d", "Enter"]);
+    const up = (e) => release(`p${e.pointerId}`);
+    const KEY_SIDE = {
+      ArrowLeft: "left",
+      a: "left",
+      ArrowRight: "right",
+      d: "right",
+    };
     const keyDown = (e) => {
-      if (!HOLD_KEYS.has(e.key)) return;
+      const side = KEY_SIDE[e.key];
+      if (!side) return;
       e.preventDefault();
-      keys.add(e.key);
+      if (!e.repeat) hold(`k${e.key}`, side);
       press();
     };
-    const keyUp = (e) => keys.delete(e.key);
+    const keyUp = (e) => release(`k${e.key}`);
 
     function frame(now) {
       raf = requestAnimationFrame(frame);
       const dt = Math.min(0.05, last ? (now - last) / 1000 : 0);
       last = now;
-      const holding = pointers.size > 0 || keys.size > 0;
+      const steer = held.length ? held[held.length - 1].side : null;
       acc += dt;
       while (acc >= STEP) {
-        tick(g, holding);
+        tick(g, steer);
         acc -= STEP;
       }
       const slip = g.state === "driving" ? slipOf(g) : 0;
@@ -378,6 +395,7 @@ function DriftBoard({ audio, onStart, onScore, onOver }) {
       const { w, h, dpr } = size;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (sky) drawDrift(ctx, { w, h }, sky, g, cam, smoke);
+      drawButtons(ctx, w, h, steer);
     }
 
     resize();
@@ -406,7 +424,7 @@ function DriftBoard({ audio, onStart, onScore, onOver }) {
     <div ref={wrap} style={{ flex: 1, position: "relative", minHeight: 0 }}>
       <canvas
         ref={canvas}
-        aria-label="Drift King road. Hold anywhere to drift right, let go to drift left."
+        aria-label="Drift King road. Hold the left side to drift left, the right side to drift right."
         style={{
           display: "block",
           touchAction: "none",
@@ -416,4 +434,30 @@ function DriftBoard({ audio, onStart, onScore, onOver }) {
       />
     </div>
   );
+}
+
+// The two hold buttons in the bottom corners (the whole half of the screen
+// works; these show where), lit while held.
+function drawButtons(ctx, w, h, steer) {
+  const r = Math.min(44, w * 0.12);
+  const y = h - r - 22;
+  for (const side of ["left", "right"]) {
+    const x = side === "left" ? r + 20 : w - r - 20;
+    const on = steer === side;
+    ctx.fillStyle = on ? "rgba(0,128,240,0.55)" : "rgba(10,14,30,0.45)";
+    ctx.strokeStyle = on ? "#3CABFD" : "rgba(255,255,255,0.35)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = on ? "#FFFFFF" : "rgba(255,255,255,0.8)";
+    const d = side === "left" ? -1 : 1;
+    ctx.beginPath();
+    ctx.moveTo(x + d * r * 0.38, y);
+    ctx.lineTo(x - d * r * 0.22, y - r * 0.34);
+    ctx.lineTo(x - d * r * 0.22, y + r * 0.34);
+    ctx.closePath();
+    ctx.fill();
+  }
 }

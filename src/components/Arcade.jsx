@@ -46,7 +46,7 @@ const GAMES = [
       </>
     ),
     blurb:
-      "Hold to drift right, let go to drift left. Stay on the floating road as it speeds up.",
+      "Hold left or right to drift that way. Stay on the floating road as it speeds up.",
     badge: { text: "FREE PLAY", color: "#7FBFF5", border: "#003A75" },
   },
   {

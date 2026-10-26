@@ -1,5 +1,6 @@
 // Drift King: an endless zig-zag road floating over the city. The car never
-// stops; hold to swing up-right, let go to swing up-left. The tail slides
+// stops; hold the right side to swing up-right, the left side to swing
+// up-left (let go and it keeps going the way it's pointed). The tail slides
 // out through every corner. Run off the edge and you fall. The further you
 // get, the faster it goes. Pure logic, no imports, so the game and the tests
 // share it.
@@ -10,8 +11,8 @@
 export const STEP = 1 / 120;
 export const ROAD_W = 70;
 export const CAR = { w: 24, h: 50 };
-export const RIGHT = Math.PI / 4; // holding
-export const LEFT = -Math.PI / 4; // let go
+export const RIGHT = Math.PI / 4;
+export const LEFT = -Math.PI / 4;
 const TURN_RATE = 5.2; // how fast the nose swings (rad/s)
 const GRIP = 4.2; // how fast the slide catches up with the nose (rad/s)
 const START_SPEED = 210;
@@ -58,6 +59,7 @@ export function newDrift(seed = Date.now()) {
     x: 0,
     y: 0,
     heading: LEFT, // where the nose points
+    target: LEFT, // where it's swinging to (the last side held)
     slide: LEFT, // where the car is actually going
     speed: START_SPEED,
     distance: 0, // along the road, in units
@@ -108,11 +110,12 @@ function pieceAt(g) {
   return found;
 }
 
-// One step. holding: the screen (or a key) is held down.
-export function tick(g, holding, dt = STEP) {
+// One step. steer: "left" or "right" while that side is held; null when
+// neither is (the car keeps swinging to the last side held).
+export function tick(g, steer, dt = STEP) {
   if (g.state === "over") return g;
   if (g.state === "ready") {
-    if (!holding) return g;
+    if (!steer) return g;
     g.state = "driving";
   }
   g.time += dt;
@@ -125,7 +128,9 @@ export function tick(g, holding, dt = STEP) {
     return g;
   }
 
-  g.heading = turnToward(g.heading, holding ? RIGHT : LEFT, TURN_RATE * dt);
+  if (steer === "right") g.target = RIGHT;
+  else if (steer === "left") g.target = LEFT;
+  g.heading = turnToward(g.heading, g.target, TURN_RATE * dt);
   g.slide = turnToward(g.slide, g.heading, GRIP * dt);
   g.speed = Math.min(TOP_SPEED, g.speed + SPEED_UP * dt);
   const [vx, vy] = dirOf(g.slide);

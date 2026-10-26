@@ -21,7 +21,7 @@ function byTiming(g, lead) {
   const w = where(g);
   if (!w) return false;
   const next = g.road[g.road.indexOf(w.s) + 1];
-  return (w.s.len - w.along < g.speed * lead ? next.heading : w.s.heading) === RIGHT;
+  return (w.s.len - w.along < g.speed * lead ? next.heading : w.s.heading) === RIGHT ? "right" : "left";
 }
 
 // A driver that looks ahead: tries holding and letting go for a moment and
@@ -33,20 +33,34 @@ function lookAhead(g) {
     for (; t < 1.6 && c.state === "driving"; t += 1 / 120) tick(c, t < 0.12 ? first : byTiming(c, 0.25));
     return t;
   };
-  const a = tryIt(true);
-  const b = tryIt(false);
-  return a === b ? byTiming(g, 0.25) : a > b;
+  const a = tryIt("right");
+  const b = tryIt("left");
+  return a === b ? byTiming(g, 0.25) : a > b ? "right" : "left";
 }
 
 test("waits for the first hold, then drives itself", () => {
   const g = newDrift(5);
-  tick(g, false);
+  tick(g, null);
   assert.equal(g.state, "ready");
-  tick(g, true);
+  tick(g, "left");
   assert.equal(g.state, "driving");
   const y = g.y;
-  for (let i = 0; i < 60; i++) tick(g, false);
+  for (let i = 0; i < 60; i++) tick(g, null);
   assert.ok(g.y < y, "moves up the screen on its own");
+});
+
+test("letting go keeps the last side held", () => {
+  const g = newDrift(5);
+  tick(g, "left");
+  tick(g, "right");
+  const tapped = g.heading;
+  for (let i = 0; i < 12; i++) tick(g, null);
+  assert.equal(g.target, RIGHT);
+  assert.ok(g.heading > tapped + 0.4, "keeps swinging right after letting go");
+  tick(g, "left");
+  const back = g.heading;
+  for (let i = 0; i < 12; i++) tick(g, null);
+  assert.ok(g.heading < back - 0.4, "and back left");
 });
 
 test("the same seed lays the same road; the road is joined up", () => {
@@ -64,16 +78,16 @@ test("the same seed lays the same road; the road is joined up", () => {
 
 test("never turning runs off the road and falls", () => {
   const g = newDrift(7);
-  tick(g, true);
-  for (let i = 0; i < 120 * 20 && g.state !== "over"; i++) tick(g, false);
+  tick(g, "left");
+  for (let i = 0; i < 120 * 20 && g.state !== "over"; i++) tick(g, null);
   assert.equal(g.state, "over");
   assert.ok(meters(g) > 5 && meters(g) < 80);
 });
 
-test("holding swings the nose right and the tail slides", () => {
+test("holding right swings the nose right and the tail slides", () => {
   const g = newDrift(3);
-  tick(g, true);
-  for (let i = 0; i < 24; i++) tick(g, true);
+  tick(g, "right");
+  for (let i = 0; i < 24; i++) tick(g, "right");
   assert.ok(g.heading > LEFT, "nose turning right");
   assert.ok(slipOf(g) > 0.1, "sliding");
 });
@@ -81,8 +95,8 @@ test("holding swings the nose right and the tail slides", () => {
 test("the road stays drivable: a look-ahead driver lasts 90 seconds", { timeout: 120000 }, () => {
   for (const seed of [1, 2, 3]) {
     const g = newDrift(seed);
-    tick(g, true);
-    let hold = false;
+    tick(g, "left");
+    let hold = "left";
     for (let i = 0; i < 120 * 90 && g.state === "driving"; i++) {
       if (i % 4 === 0) hold = lookAhead(g);
       tick(g, hold);
