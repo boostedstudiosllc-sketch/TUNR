@@ -467,28 +467,36 @@ function buildRock(rand) {
 
 // ---------- the scene ----------
 
+// Lighting for each day's look (rushEngine.js THEMES).
+const LIGHT = {
+  noon: { turbidity: 3.5, rayleigh: 2.6, env: ["#3d78c2", "#a9c8e6", "#f1dcc0"], fog: 0xd9c7a8, sun: 0xfff1d6, sunPower: 2.6, sky: 0.7, exposure: 0.9 },
+  golden: { turbidity: 6, rayleigh: 2, env: ["#5a7fb8", "#f6c38a", "#ffd39a"], fog: 0xe6b98d, sun: 0xffbe7a, sunPower: 2.5, sky: 0.6, exposure: 0.85 },
+  dusk: { turbidity: 9, rayleigh: 3.5, env: ["#2b2d6b", "#a46a9c", "#f3a6a0"], fog: 0x8f6f8c, sun: 0xff9476, sunPower: 1.7, sky: 0.55, exposure: 0.95 },
+};
+
 // opts: { reflections, shadows } — both on by default; off is lighter for
-// older phones.
+// older phones. theme: the day's look.
 export function createRush3D(glCanvas, hudCanvas, W, H, me, art = {}, opts = {}) {
-  const { reflections = true, shadows = true } = opts;
+  const { reflections = true, shadows = true, theme = { id: "noon", sun: 58 } } = opts;
+  const L = LIGHT[theme.id] || LIGHT.noon;
   const renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(W, H, false);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.9;
+  renderer.toneMappingExposure = L.exposure;
   renderer.shadowMap.enabled = shadows;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(58, W / H, 0.5, 900);
 
-  // Late-afternoon desert sky, which also lights the paint's reflections.
+  // The day's desert sky, which also lights the paint's reflections.
   const sky = new Sky();
   sky.scale.setScalar(10000);
-  const sun = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(58), THREE.MathUtils.degToRad(155));
-  sky.material.uniforms.turbidity.value = 3.5;
-  sky.material.uniforms.rayleigh.value = 2.6;
+  const sun = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(90 - theme.sun), THREE.MathUtils.degToRad(155));
+  sky.material.uniforms.turbidity.value = L.turbidity;
+  sky.material.uniforms.rayleigh.value = L.rayleigh;
   sky.material.uniforms.mieCoefficient.value = 0.003;
   sky.material.uniforms.mieDirectionalG.value = 0.82;
   sky.material.uniforms.sunPosition.value.copy(sun);
@@ -500,9 +508,9 @@ export function createRush3D(glCanvas, hudCanvas, W, H, me, art = {}, opts = {})
   const envScene = new THREE.Scene();
   const envTex = canvasTexture(16, 256, (ctx, w, h) => {
     const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, "#3d78c2");
-    grad.addColorStop(0.42, "#a9c8e6");
-    grad.addColorStop(0.5, "#f1dcc0");
+    grad.addColorStop(0, L.env[0]);
+    grad.addColorStop(0.42, L.env[1]);
+    grad.addColorStop(0.5, L.env[2]);
     grad.addColorStop(0.53, "#b8946a");
     grad.addColorStop(1, "#6e5338");
     ctx.fillStyle = grad;
@@ -514,16 +522,16 @@ export function createRush3D(glCanvas, hudCanvas, W, H, me, art = {}, opts = {})
   envScene.add(sunDisc);
   const envMap = reflections ? pmrem.fromScene(envScene, 0.02).texture : null;
   scene.environment = envMap;
-  scene.fog = new THREE.Fog(0xd9c7a8, 140, 560);
+  scene.fog = new THREE.Fog(L.fog, 140, 560);
 
-  const sunLight = new THREE.DirectionalLight(0xfff1d6, 2.6);
+  const sunLight = new THREE.DirectionalLight(L.sun, L.sunPower);
   sunLight.position.copy(sun).multiplyScalar(80);
   sunLight.castShadow = true;
   sunLight.shadow.mapSize.set(1024, 1024);
   Object.assign(sunLight.shadow.camera, { left: -14, right: 14, top: 40, bottom: -40, near: 1, far: 200 });
   sunLight.shadow.bias = -0.0005;
   scene.add(sunLight, sunLight.target);
-  scene.add(new THREE.HemisphereLight(0xbcd6ff, 0xc9a06a, 0.7));
+  scene.add(new THREE.HemisphereLight(0xbcd6ff, 0xc9a06a, L.sky));
 
   // Road and desert.
   const roadTex = roadTexture();
@@ -585,6 +593,25 @@ export function createRush3D(glCanvas, hudCanvas, W, H, me, art = {}, opts = {})
   }
   setMe(me);
 
+  // The ghost: your car, see-through, with its own materials.
+  let ghostCar = null;
+  function makeGhost() {
+    ghostCar = buildCar({ ...me, plate: "GHOST", sport: true });
+    ghostCar.traverse((o) => {
+      if (!o.isMesh) return;
+      const swap = (m) => {
+        const c = m.clone();
+        c.transparent = true;
+        c.opacity = 0.35;
+        c.depthWrite = false;
+        return c;
+      };
+      o.material = Array.isArray(o.material) ? o.material.map(swap) : swap(o.material);
+      o.castShadow = false;
+    });
+    scene.add(ghostCar);
+  }
+
   const flameOuter = new THREE.MeshBasicMaterial({ color: 0x2563eb, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false });
   const flameInner = new THREE.MeshBasicMaterial({ color: 0xbfe9ff, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
   const flameGeo = new THREE.ConeGeometry(0.11, 1, 16, 1, true).translate(0, -0.5, 0).rotateX(-Math.PI / 2);
@@ -624,8 +651,14 @@ export function createRush3D(glCanvas, hudCanvas, W, H, me, art = {}, opts = {})
   let camX = 0;
   let fov = 58;
 
-  function render(g) {
+  function render(g, ghost = null) {
     const boosting = g.boostT > 0;
+    if (ghost && !ghostCar) makeGhost();
+    if (ghostCar) {
+      const ahead = ghost ? ghost.dist - g.dist : 0;
+      ghostCar.visible = Boolean(ghost) && ahead > 2 && ahead < DEPTH;
+      ghostCar.position.set(ghost ? (ghost.laneX - 1) * LANE_W : 0, 0, PLAYER_Z - ahead);
+    }
     const px = (g.laneX - 1) * LANE_W;
 
     // Road and scenery scroll with distance.
@@ -681,7 +714,7 @@ export function createRush3D(glCanvas, hudCanvas, W, H, me, art = {}, opts = {})
 
     renderer.render(scene, camera);
     hud.clearRect(0, 0, W, H);
-    drawHud(hud, W, H, g, art);
+    drawHud(hud, W, H, g, art, ghost);
   }
 
   function dispose() {

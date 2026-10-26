@@ -131,7 +131,9 @@ export default function PrivacyPolicy({ onClose }) {
           <br />
           <br />
           <strong>TUNR Rush:</strong> each run you play while signed in (when it started and
-          ended, the level, the distance and score, and which of your cars you drove), the level you
+          ended, the level, the distance and score, which of your cars you drove, and the moments
+          you changed lanes, which our server uses to replay the run and check it, and which
+          become your ghost on later tries that day), the level you
           pick each day and how many tries you've used, plus the color and
           body style you pick for each car. Your best run this week and of all time can appear on the
           game leaderboards with your username and car, unless you turn off “Show me on leaderboards”.

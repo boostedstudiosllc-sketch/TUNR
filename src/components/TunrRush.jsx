@@ -8,8 +8,11 @@ import {
   SPOILERS,
   GAME_COLORS,
   newGame,
-  step,
-  steer,
+  tick,
+  seededRand,
+  themeFor,
+  gameToday,
+  STEP,
   scoreOf,
   drawGame,
   drawCar,
@@ -19,6 +22,7 @@ import {
   loadGameLeaderboard,
   saveGameLook,
   loadGameSettings,
+  loadGhost,
 } from "../lib/rush.js";
 import { RushAudio, loadSoundPrefs } from "../lib/rushAudio.js";
 import { loadVehicles, loadProfile } from "../lib/store.js";
@@ -74,6 +78,8 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
   const [settings, setSettings] = useState({ enabled: true, triesPerDay: 3, levels: DEFAULT_LEVELS });
   const [level, setLevel] = useState("medium");
   const [boardLevel, setBoardLevel] = useState("medium");
+  const [theme] = useState(() => themeFor(gameToday()));
+  const [ghost, setGhost] = useState(null);
   const rules = levelRules(settings, level);
   const [plate, setPlate] = useState("TUNR");
   const [mine, setMine] = useState(null);
@@ -128,6 +134,15 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
       .catch((e) => console.warn(e.message));
     refreshMine(true);
   }, [user?.id]);
+
+  // Your best run today on this level is the ghost for your next try.
+  useEffect(() => {
+    setGhost(null);
+    if (!user) return;
+    loadGhost(level)
+      .then(setGhost)
+      .catch((e) => console.warn(e.message));
+  }, [user?.id, level]);
 
   // Today's pick and tries, and your bests. On first load, start on the
   // level you picked today.
@@ -291,7 +306,13 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             </div>
             <div style={{ ...muted, fontSize: 12, marginTop: 2 }}>
               Goal: <b style={{ color: "#FACC15" }}>{rules.goal.toLocaleString()} m</b> in one run, starting with {rules.startTime} seconds.
+              Today's course: {theme.name}. A new course every day, the same for all your tries today.
             </div>
+            {ghost && (
+              <div style={{ ...muted, fontSize: 12.5, marginTop: 4, color: "#C4B5FD" }}>
+                👻 Your ghost drives your best today ({Number(ghost.distance).toLocaleString()} m). Beat it!
+              </div>
+            )}
             <CarPreview look={look} plate={plate} />
             <div style={{ textAlign: "center", fontSize: 17, fontWeight: 900 }}>{carName}</div>
 
@@ -405,6 +426,8 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             look={look}
             plate={plate}
             rules={rules}
+            ghostRun={ghost}
+            theme={theme}
             difficulty={level}
             forPoints={forPoints}
             onStarted={(res) => res?.today && setMine((m) => ({ ...(m || {}), today: res.today }))}
@@ -418,7 +441,12 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
               setScreen("result");
               // The run is saved by now, so the board includes it.
               loadBoard("week", level);
-              if (user) refreshMine();
+              if (user) {
+                refreshMine();
+                loadGhost(level)
+                  .then(setGhost)
+                  .catch((e) => console.warn(e.message));
+              }
             }}
             onQuit={() => setScreen("garage")}
           />
@@ -444,6 +472,13 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             </div>
             {result.server && result.dist >= (result.server.best || 0) && result.dist > 0 && (
               <div style={{ marginTop: 6, color: "#FF7A00", fontWeight: 900 }}>🔥 NEW PERSONAL BEST</div>
+            )}
+            {result.ghostDist !== null && result.ghostDist !== undefined && (
+              <div style={{ marginTop: 6, color: result.dist > result.ghostDist ? "#34D399" : "#C4B5FD", fontWeight: 800 }}>
+                {result.dist > result.ghostDist
+                  ? `👻 You beat your ghost by ${(result.dist - result.ghostDist).toLocaleString()} m!`
+                  : `👻 ${(result.ghostDist - result.dist).toLocaleString()} m behind your ghost.`}
+              </div>
             )}
             <button className="action-btn" onClick={play} style={{ ...bigButton, marginTop: 18, ...(forPoints ? {} : { background: "#2A2A2A" }) }}>
               {forPoints ? "🔁 RUN IT BACK" : "🔁 PRACTICE RUN"}
@@ -652,8 +687,15 @@ function CarPreview({ look, plate }) {
   return <canvas ref={ref} style={{ width: "100%", maxWidth: 300, height: "auto", aspectRatio: "300 / 170", display: "block", margin: "14px auto 6px", borderRadius: 12 }} />;
 }
 
-// The running game. Registers the run with the server, plays, and reports.
-function Game({ look, plate, rules, difficulty, forPoints, onStarted, audio, gfx = "classic", onFallback, vehicleId, signedIn, onDone, onQuit }) {
+// The running game. Registers the run with the server (which hands back
+// today's course seed), plays it in fixed steps while logging your lane
+// changes, then sends those for the server to replay. Your ghost, if any,
+// is a replay of your best run today, driving alongside.
+const FINISH_STATUS = {
+  too_fast: "This run finished faster than the game allows, so it didn't count. (too_fast)",
+  too_long: "This run took over 10 minutes, so it didn't count. (too_long)",
+};
+function Game({ look, plate, rules, difficulty, forPoints, onStarted, ghostRun, theme, audio, gfx = "classic", onFallback, vehicleId, signedIn, onDone, onQuit }) {
   const startNote = useRef("");
   const canvasRef = useRef(null);
   const glRef = useRef(null);
@@ -664,20 +706,30 @@ function Game({ look, plate, rules, difficulty, forPoints, onStarted, audio, gfx
     return { W, H: Math.min(Math.round(W * 1.45), window.innerHeight - 120) };
   });
   const want3d = gfx === "3d";
-  const stateRef = useRef(null);
   const runRef = useRef(null);
+  const queue = useRef([]); // lane changes waiting for the next step
   const touch = useRef(null);
   const [countdown, setCountdown] = useState(3);
+  // Guests (and runs the server wouldn't start) get a random course.
+  const [seed, setSeed] = useState(signedIn ? null : 1 + Math.floor(Math.random() * 2147483645));
 
   useEffect(() => {
     if (signedIn) {
       startRun(vehicleId, difficulty, forPoints)
         .then((res) => {
-          if (res?.status === "ok") runRef.current = res.run_id;
-          else if (res) startNote.current = START_COPY[res.status] || `This run didn't count. (${res.status})`;
+          if (res?.status === "ok") {
+            runRef.current = res.run_id;
+            setSeed(res.seed);
+          } else {
+            startNote.current = START_COPY[res?.status] || `This run didn't count. (${res?.status || "no answer"})`;
+            setSeed(1 + Math.floor(Math.random() * 2147483645));
+          }
           onStarted?.(res);
         })
-        .catch((e) => (startNote.current = e.message));
+        .catch((e) => {
+          startNote.current = e.message;
+          setSeed(1 + Math.floor(Math.random() * 2147483645));
+        });
     }
     // Load the 3D renderer during the countdown.
     if (want3d) {
@@ -696,17 +748,20 @@ function Game({ look, plate, rules, difficulty, forPoints, onStarted, audio, gfx
     return () => clearInterval(timer);
   }, []);
 
-  const ready = countdown <= 0 && (!want3d || mod3d);
+  const ready = countdown <= 0 && seed !== null && (!want3d || mod3d);
   useEffect(() => {
     if (!ready) return;
     const { W, H } = size;
     const me = { color: look.color, body: look.body, spoiler: look.spoiler, plate };
+    // The ghost only makes sense on the same course.
+    const ghost = ghostRun && ghostRun.seed === seed ? newGame(seededRand(seed), rules, () => 0.5) : null;
+    if (ghost) ghost.script = ghostRun.moves;
     let draw;
     let view3d = null;
     if (want3d) {
       try {
-        view3d = mod3d.createRush3D(glRef.current, hudRef.current, W, H, me, ART);
-        draw = (g) => view3d.render(g);
+        view3d = mod3d.createRush3D(glRef.current, hudRef.current, W, H, me, ART, { theme });
+        draw = (g) => view3d.render(g, ghost);
       } catch (e) {
         onFallback?.(`This phone couldn't run 3D graphics, so it's the classic look. (${e.message})`);
         return;
@@ -720,18 +775,29 @@ function Game({ look, plate, rules, difficulty, forPoints, onStarted, audio, gfx
       c.style.height = `${H}px`;
       const ctx = c.getContext("2d");
       ctx.scale(dpr, dpr);
-      draw = (g) => drawGame(ctx, W, H, g, me, ART);
+      draw = (g) => drawGame(ctx, W, H, g, me, ART, ghost);
     }
-    const g = newGame(Math.random, rules);
-    stateRef.current = g;
+    const g = newGame(seededRand(seed), rules);
+    g.theme = theme;
+    if (import.meta.env.DEV) window.__rush = g; // for checking replays in tests
+    queue.current = [];
     let last = performance.now();
+    let acc = 0;
     let raf = 0;
     let ended = false;
     audio?.startEngine();
 
     const frame = (now) => {
-      const events = step(g, (now - last) / 1000);
+      // Fixed steps, so the server's replay matches exactly. A long pause
+      // (like switching apps) doesn't fast-forward the game.
+      acc += Math.min(0.25, (now - last) / 1000);
       last = now;
+      const events = [];
+      while (acc >= STEP && !g.over) {
+        events.push(...tick(g, queue.current.splice(0)));
+        if (ghost) tick(ghost);
+        acc -= STEP;
+      }
       if (events.includes("crash") && navigator.vibrate) navigator.vibrate(120);
       if (events.includes("boost") && navigator.vibrate) navigator.vibrate([40, 30, 40]);
       if (audio) {
@@ -748,11 +814,17 @@ function Game({ look, plate, rules, difficulty, forPoints, onStarted, audio, gfx
       if (g.over && !ended) {
         ended = true;
         audio?.stopEngine();
-        const r = { dist: Math.floor(g.dist), score: scoreOf(g), pickups: g.pickups, boosts: g.boosts, crashes: g.crashes };
+        const r = { dist: Math.floor(g.dist), score: scoreOf(g), pickups: g.pickups, boosts: g.boosts, crashes: g.crashes, ghostDist: ghost ? ghostRun.distance : null };
         if (!signedIn) return onDone(r);
         if (!runRef.current) return onDone({ ...r, serverError: startNote.current || "This run couldn't be saved, so it didn't count." });
-        finishRun(runRef.current, g)
-          .then((server) => onDone({ ...r, server: server?.status === "ok" ? server : null, serverError: server && server.status !== "ok" ? `Run not counted (${server.status}).` : "" }))
+        finishRun(runRef.current, g.log)
+          .then((server) => {
+            if (server?.status !== "ok") {
+              return onDone({ ...r, serverError: FINISH_STATUS[server?.status] || `This run didn't count. (${server?.status || "no answer"})` });
+            }
+            // The server's replay is the official result.
+            onDone({ ...r, ...(server.run ? { dist: server.run.dist, score: server.run.score } : {}), server });
+          })
           .catch((e) => onDone({ ...r, serverError: e.message }));
         return;
       }
@@ -761,8 +833,8 @@ function Game({ look, plate, rules, difficulty, forPoints, onStarted, audio, gfx
     raf = requestAnimationFrame(frame);
 
     const onKey = (e) => {
-      if (e.key === "ArrowLeft" || e.key === "a") steer(g, -1);
-      if (e.key === "ArrowRight" || e.key === "d") steer(g, 1);
+      if (e.key === "ArrowLeft" || e.key === "a") queue.current.push(-1);
+      if (e.key === "ArrowRight" || e.key === "d") queue.current.push(1);
     };
     window.addEventListener("keydown", onKey);
     return () => {
@@ -777,13 +849,12 @@ function Game({ look, plate, rules, difficulty, forPoints, onStarted, audio, gfx
     touch.current = { x: e.clientX, t: Date.now() };
   }
   function onPointerUp(e) {
-    const g = stateRef.current;
-    if (!g || !touch.current) return;
+    if (!touch.current) return;
     const dx = e.clientX - touch.current.x;
-    if (Math.abs(dx) > 30) steer(g, dx > 0 ? 1 : -1);
+    if (Math.abs(dx) > 30) queue.current.push(dx > 0 ? 1 : -1);
     else {
       const rect = e.currentTarget.getBoundingClientRect();
-      steer(g, e.clientX < rect.left + rect.width / 2 ? -1 : 1);
+      queue.current.push(e.clientX < rect.left + rect.width / 2 ? -1 : 1);
     }
     touch.current = null;
   }
@@ -792,7 +863,7 @@ function Game({ look, plate, rules, difficulty, forPoints, onStarted, audio, gfx
     <div style={{ marginTop: 10, position: "relative" }}>
       {!ready ? (
         <div style={{ height: 420, display: "flex", alignItems: "center", justifyContent: "center", fontSize: countdown > 0 ? 96 : 22, fontWeight: 900, color: "#FF4500" }}>
-          {countdown > 0 ? countdown : "Loading 3D…"}
+          {countdown > 0 ? countdown : "Loading…"}
         </div>
       ) : want3d ? (
         <div

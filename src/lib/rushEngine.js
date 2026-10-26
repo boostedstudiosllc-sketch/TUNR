@@ -2,8 +2,14 @@
 // tested in plain Node. A 3-lane desert highway in pseudo-3D (like the old
 // flash taxi games): dodge traffic, cones and barrels, grab ⏱ for time and
 // the Boosted Studios badge for a boost.
-// The server re-checks every run (060_tunr_rush.sql); its calls are in
-// rush.js. No imports here, so it runs in plain Node for the tests.
+//
+// Runs are exact replays: the game always advances in fixed steps (STEP),
+// the course (where traffic and pickups sit) comes from a seed, and your
+// lane changes are logged by step. So the same seed and moves always give
+// the same run. The server uses that to replay every run itself and pay
+// points on the distance it gets (api/rush-finish.js), and the ghost of
+// your best attempt is a replay running beside you.
+// No imports here, so it runs in plain Node (tests and the server).
 
 // The game's rules. Admins change them in the app (063_rush_settings.sql);
 // these are the defaults when the settings can't be loaded.
@@ -23,14 +29,14 @@ export const DEFAULT_RULES = {
   topSpeed: 85, // m/s
   boostSpeed: 115, // m/s while boosting; the server allows the faster of the two plus 5
 };
-// The three difficulty levels (065_rush_difficulty.sql has the same
-// defaults; admins can change them). Each is shorter, faster and busier
+// The three difficulty levels (065/066 set the same defaults on the
+// server; admins can change them). Each is shorter, faster and busier
 // than the one before, and worth more points.
 export const LEVEL_IDS = ["easy", "medium", "hard"];
 export const DEFAULT_LEVELS = {
   easy: { goal: 1500, points: 1, startTime: 35, clockSeconds: 3, crashSeconds: 3, boostSeconds: 3, boostChance: 0.1, clockChance: 0.2, traffic: 0.85, startSpeed: 35, ramp: 45, topSpeed: 75, boostSpeed: 105 },
-  medium: { goal: 1950, points: 2, startTime: 30, clockSeconds: 2.5, crashSeconds: 4, boostSeconds: 3, boostChance: 0.08, clockChance: 0.18, traffic: 1, startSpeed: 40, ramp: 40, topSpeed: 85, boostSpeed: 115 },
-  hard: { goal: 2500, points: 3, startTime: 26, clockSeconds: 2, crashSeconds: 5, boostSeconds: 3, boostChance: 0.06, clockChance: 0.14, traffic: 1.15, startSpeed: 45, ramp: 35, topSpeed: 95, boostSpeed: 125 },
+  medium: { goal: 1900, points: 2, startTime: 30, clockSeconds: 2.5, crashSeconds: 4, boostSeconds: 3, boostChance: 0.08, clockChance: 0.14, traffic: 1.05, startSpeed: 40, ramp: 40, topSpeed: 85, boostSpeed: 115 },
+  hard: { goal: 2600, points: 3, startTime: 26, clockSeconds: 2, crashSeconds: 5, boostSeconds: 3, boostChance: 0.06, clockChance: 0.14, traffic: 1.15, startSpeed: 45, ramp: 35, topSpeed: 95, boostSpeed: 125 },
 };
 export const GOAL_METERS = DEFAULT_RULES.goal;
 export const START_TIME = DEFAULT_RULES.startTime;
@@ -42,14 +48,47 @@ export const BODIES = ["coupe", "sedan", "hatch", "suv", "truck"];
 export const GAME_COLORS = ["#E11D2E", "#FF7A00", "#FACC15", "#10B981", "#1D4ED8", "#A855F7", "#F5F5F5", "#9CA3AF", "#111827"];
 const TRAFFIC_COLORS = ["#F59E0B", "#2563EB", "#7C3AED", "#16A34A", "#DC2626", "#0EA5E9", "#9333EA"];
 const ROAD_DEPTH = 190; // meters of road on screen
+export const STEP = 1 / 60; // seconds per game step
+const FIRST_ROW = 110; // meters to the first row of traffic
+
+// A repeatable random number source from a seed (1 to 2147483646).
+export function seededRand(seed) {
+  let s = Math.abs(Math.floor(seed)) % 2147483647 || 1;
+  return () => (s = (s * 16807) % 2147483647) / 2147483647;
+}
+
+// Each day looks different too: noon, golden hour or dusk, in turn.
+export const THEMES = [
+  { id: "noon", name: "Noon", sky: ["#7DD3FC", "#E0F2FE"], sand: "#F3D58B", sun: 58 },
+  { id: "golden", name: "Golden hour", sky: ["#F59E0B", "#FDE68A"], sand: "#E8B872", sun: 14 },
+  { id: "dusk", name: "Dusk", sky: ["#3B2A6B", "#F9A8D4"], sand: "#C79A74", sun: 5 },
+];
+// "2026-10-26" → that day's theme.
+export function themeFor(day) {
+  const n = Math.floor(Date.parse(`${day}T12:00:00Z`) / 86400000);
+  return THEMES[((n % THEMES.length) + THEMES.length) % THEMES.length] || THEMES[0];
+}
+// Today's date in Atlanta, like the server's game_today().
+export function gameToday(now = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(now);
+}
 
 // ---------- engine ----------
 
-export function newGame(rand = Math.random, rules = {}) {
+// rand lays out the course; fx is for looks only (exhaust pops, cacti), so
+// it never changes how a run plays out.
+export function newGame(rand = Math.random, rules = {}, fx = Math.random) {
   const r = { ...DEFAULT_RULES, ...rules };
   return {
     rand,
+    fx,
     rules: r,
+    stepNo: 0,
+    log: [], // [step, direction] for every lane change
+    script: null, // a replay's moves
+    scriptAt: 0,
+    nextRow: FIRST_ROW,
+    theme: THEMES[0],
     t: 0,
     timeLeft: r.startTime,
     speed: r.startSpeed,
@@ -58,7 +97,6 @@ export function newGame(rand = Math.random, rules = {}) {
     laneX: 1,
     objects: [],
     scenery: [0.15, 0.4, 0.65, 0.9].map((z, i) => ({ z, side: i % 2 ? 1 : -1 })),
-    spawnIn: 1.2,
     stripe: 0,
     crashT: 0,
     crashes: 0,
@@ -75,13 +113,22 @@ export function steer(g, dir) {
   g.lane = Math.max(0, Math.min(2, g.lane + dir));
 }
 
-function spawnRow(g) {
+// A row of traffic at `at` meters, and the gap to the next row: rows get
+// closer the further you go, and closer still with more traffic.
+function spawnRow(g, at) {
   const r = g.rand;
   const blocked = r() < 0.35 ? 2 : 1;
-  const lanes = [0, 1, 2].sort(() => r() - 0.5);
+  // Shuffle the lanes the same way on every phone and the server (a sort
+  // with a random comparison differs between browsers).
+  const lanes = [0, 1, 2];
+  for (let i = 2; i > 0; i--) {
+    const j = Math.floor(r() * (i + 1));
+    [lanes[i], lanes[j]] = [lanes[j], lanes[i]];
+  }
   for (let i = 0; i < blocked; i++) {
     const roll = r();
     g.objects.push({
+      at,
       z: 1,
       lane: lanes[i],
       kind: roll < 0.7 ? "car" : roll < 0.85 ? "cone" : "barrel",
@@ -89,10 +136,49 @@ function spawnRow(g) {
       body: BODIES[Math.floor(r() * BODIES.length)],
     });
   }
-  const { clockChance, boostChance, boostSeconds } = g.rules;
+  const { clockChance, boostChance, boostSeconds, traffic } = g.rules;
   const bonus = r();
-  if (bonus < clockChance) g.objects.push({ z: 1, lane: lanes[2], kind: "clock" });
-  else if (bonus < clockChance + boostChance && boostSeconds > 0 && g.boostT <= 0) g.objects.push({ z: 1, lane: lanes[2], kind: "boost" });
+  if (bonus < clockChance) g.objects.push({ at, z: 1, lane: lanes[2], kind: "clock" });
+  else if (bonus < clockChance + boostChance && boostSeconds > 0) g.objects.push({ at, z: 1, lane: lanes[2], kind: "boost" });
+  return (Math.max(34, 64 - at / 150) * (0.8 + r() * 0.4)) / traffic;
+}
+
+// One fixed step: apply this step's lane changes (yours, logged, or a
+// replay's), then advance. Returns the step's events.
+export function tick(g, dirs = []) {
+  if (g.over) return [];
+  if (g.script) {
+    while (g.scriptAt < g.script.length && g.script[g.scriptAt][0] <= g.stepNo) {
+      steer(g, g.script[g.scriptAt][1]);
+      g.scriptAt += 1;
+    }
+  }
+  for (const d of dirs) {
+    steer(g, d);
+    g.log.push([g.stepNo, d]);
+  }
+  const events = step(g, STEP);
+  g.stepNo += 1;
+  return events;
+}
+
+// Play a whole run from its seed and moves, as the server does.
+export function replay(seed, rules, moves, maxSteps = 600 / STEP) {
+  const g = newGame(seededRand(seed), rules, () => 0.5);
+  g.script = moves;
+  while (!g.over && g.stepNo < maxSteps) tick(g);
+  return g;
+}
+
+// The moves a client sends: up to 5,000 [step, ±1] pairs in step order.
+export function validMoves(moves) {
+  if (!Array.isArray(moves) || moves.length > 5000) return false;
+  let last = 0;
+  for (const m of moves) {
+    if (!Array.isArray(m) || m.length !== 2 || !Number.isInteger(m[0]) || m[0] < last || (m[1] !== 1 && m[1] !== -1)) return false;
+    last = m[0];
+  }
+  return true;
 }
 
 // Advance the game by dt seconds. Returns events for sounds/vibration.
@@ -111,7 +197,7 @@ export function step(g, dt) {
   g.popT = Math.max(0, g.popT - dt);
   if (boosting && g.boostT === 0) events.push("boostEnd");
   // Exhaust pops and burbles while boosting.
-  if (g.boostT > 0 && g.rand() < dt * 7) {
+  if (g.boostT > 0 && g.fx() < dt * 7) {
     g.popT = 0.1;
     events.push("pop");
   }
@@ -124,19 +210,16 @@ export function step(g, dt) {
     s.z -= dz;
     if (s.z < 0) {
       s.z += 1;
-      s.side = g.rand() < 0.5 ? -1 : 1;
+      s.side = g.fx() < 0.5 ? -1 : 1;
     }
   }
 
-  g.spawnIn -= dt;
-  if (g.spawnIn <= 0) {
-    spawnRow(g);
-    g.spawnIn = (Math.max(0.5, 1.25 - g.dist / 9000) * (0.8 + g.rand() * 0.4)) / R.traffic;
-  }
+  while (g.nextRow <= g.dist + ROAD_DEPTH) g.nextRow += spawnRow(g, g.nextRow);
 
   const myLane = Math.round(g.laneX);
   for (const o of g.objects) {
-    o.z -= dz;
+    if (o.at === undefined) o.at = g.dist - g.speed * dt + o.z * ROAD_DEPTH; // placed by hand (tests, previews)
+    o.z = (o.at - g.dist) / ROAD_DEPTH;
     if (o.hit || o.z > 0.06 || o.z < -0.02 || o.lane !== myLane) continue;
     o.hit = true;
     if (o.kind === "clock") {
@@ -417,7 +500,9 @@ function exhaust(ctx, ex, ey, r) {
 // images ({ boost, logo }), drawn only once they've loaded.
 const ready = (img) => img && img.complete && img.naturalWidth > 0;
 
-export function drawGame(ctx, W, H, g, me, art = {}) {
+// `ghost` is a replay of your best run today, drawn see-through.
+export function drawGame(ctx, W, H, g, me, art = {}, ghost = null) {
+  const theme = g.theme || THEMES[0];
   const y0 = H * 0.3;
   const yPlayer = H * 0.86;
   const hw0 = W * 0.03;
@@ -428,11 +513,11 @@ export function drawGame(ctx, W, H, g, me, art = {}) {
 
   // Sky and sand.
   const sky = ctx.createLinearGradient(0, 0, 0, y0);
-  sky.addColorStop(0, "#7DD3FC");
-  sky.addColorStop(1, "#E0F2FE");
+  sky.addColorStop(0, theme.sky[0]);
+  sky.addColorStop(1, theme.sky[1]);
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, W, y0);
-  ctx.fillStyle = "#F3D58B";
+  ctx.fillStyle = theme.sand;
   ctx.fillRect(0, y0, W, H - y0);
 
   // Road.
@@ -541,6 +626,17 @@ export function drawGame(ctx, W, H, g, me, art = {}) {
     }
   }
 
+  // Your ghost, if it's on screen ahead of you.
+  if (ghost) {
+    const gz = (ghost.dist - g.dist) / ROAD_DEPTH;
+    if (gz > 0.01 && gz < 1) {
+      const y = yOf(gz);
+      ctx.globalAlpha = 0.42;
+      drawCar(ctx, laneXAt(ghost.laneX, y), y, W * 0.27 * (hwOf(y) / hwB), { sport: true, ...me, plate: "GHOST" });
+      ctx.globalAlpha = 1;
+    }
+  }
+
   // You.
   const myX = W / 2 + (g.laneX - 1) * hwOf(yPlayer) * 0.64;
   const myW = W * 0.27;
@@ -600,12 +696,12 @@ export function drawGame(ctx, W, H, g, me, art = {}) {
     }
   }
 
-  drawHud(ctx, W, H, g, art);
+  drawHud(ctx, W, H, g, art, ghost);
 }
 
 // The overlay on top of the road (shared with the 3D view in rush3d.js):
 // the boost banner and the dashboard.
-export function drawHud(ctx, W, H, g, art = {}) {
+export function drawHud(ctx, W, H, g, art = {}, ghost = null) {
   // Boost banner: the Boosted Studios logo and what's left of the boost.
   if (g.boostT > 0) {
     const bw = Math.min(W * 0.62, 240);
@@ -648,5 +744,19 @@ export function drawHud(ctx, W, H, g, art = {}) {
   ctx.fillRect(W - 118, 38, 100, 6);
   ctx.fillStyle = pct >= 1 ? "#10B981" : "#FACC15";
   ctx.fillRect(W - 118, 38, 100 * pct, 6);
+
+  // Versus your ghost: ahead (green) or behind (red).
+  if (ghost) {
+    const gap = Math.round(g.dist - ghost.dist);
+    const text = ghost.over && gap > 0 ? "👻 BEST BEATEN!" : `👻 ${gap >= 0 ? "+" : "−"}${Math.abs(gap).toLocaleString()} m`;
+    ctx.font = "800 13px 'Barlow Condensed', sans-serif";
+    const w = ctx.measureText(text).width + 18;
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    roundRect(ctx, 8, H - 32, w, 22, 8);
+    ctx.fill();
+    ctx.fillStyle = gap >= 0 ? "#34D399" : "#F87171";
+    ctx.textAlign = "left";
+    ctx.fillText(text, 17, H - 21);
+  }
 }
 

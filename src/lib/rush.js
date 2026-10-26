@@ -2,12 +2,13 @@
 // 065_rush_difficulty.sql). The game itself is in rushEngine.js.
 import { supabase } from "./supabase.js";
 import { friendlyWriteError, withReason } from "./errors.js";
-import { scoreOf, DEFAULT_RULES, DEFAULT_LEVELS, LEVEL_IDS } from "./rushEngine.js";
+import { DEFAULT_RULES, DEFAULT_LEVELS, LEVEL_IDS } from "./rushEngine.js";
 
 export * from "./rushEngine.js";
 
 // Start a run at a level. forPoints: a try at today's points (the day's
-// first one locks in the level). Returns { status, run_id, counts, today }.
+// first one locks in the level). Returns { status, run_id, seed, counts,
+// today }; the seed is today's course.
 export async function startRun(vehicleId, difficulty, forPoints) {
   if (!supabase) return null;
   const { data, error } = await supabase.rpc("start_game_run", {
@@ -54,14 +55,36 @@ export async function saveGameSettings({ enabled, triesPerDay, levels }) {
 // The rules for one level, ready for newGame().
 export const levelRules = (settings, id) => ({ ...DEFAULT_RULES, ...settings.levels[id], enabled: settings.enabled });
 
-export async function finishRun(runId, g) {
+// Finish a run: send the lane changes; the server replays them and pays
+// on its own result (api/rush-finish.js). Returns its answer, including
+// the replayed run.
+const FINISH_COPY = {
+  not_signed_in: "You were signed out, so this run didn't count.",
+  bad_moves: "This run's moves didn't make sense to the server, so it didn't count. (bad_moves)",
+  not_found: "The server couldn't find this run, so it didn't count. (not_found)",
+  already: "This run was already saved.",
+};
+export async function finishRun(runId, moves) {
   if (!supabase || !runId) return null;
-  const { data, error } = await supabase.rpc("finish_game_run", {
-    p_run: runId,
-    p_distance: Math.floor(g.dist),
-    p_score: scoreOf(g),
+  const { data: session } = await supabase.auth.getSession();
+  const token = session?.session?.access_token;
+  const res = await fetch("/api/rush-finish", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ run: runId, moves }),
   });
-  if (error) throw new Error(withReason("Couldn't save your run.", error));
+  const body = await res.json().catch((e) => ({ error: "bad_reply", detail: e.message }));
+  if (!res.ok) {
+    throw new Error(FINISH_COPY[body.error] || `Couldn't save your run. (${body.error || res.status}${body.detail ? `: ${body.detail}` : ""})`);
+  }
+  return body;
+}
+
+// Your best run today on this level: the ghost for your next try.
+export async function loadGhost(difficulty) {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("my_ghost", { p_difficulty: difficulty });
+  if (error) throw new Error(withReason("Couldn't load your ghost.", error));
   return data || null;
 }
 
