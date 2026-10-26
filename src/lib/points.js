@@ -290,7 +290,7 @@ export const STORES = [
 ];
 
 export async function loadPointsSettings() {
-  const fallback = { points_per_dollar: 1, member_bonus: 50, referral_points: 1, welcome_points: 1 };
+  const fallback = { points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1 };
   if (!supabase) return fallback;
   const { data, error } = await supabase
     .from("points_settings")

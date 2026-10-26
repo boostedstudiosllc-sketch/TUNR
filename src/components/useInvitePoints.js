@@ -7,7 +7,7 @@ export default function useInvitePoints() {
   const [pts, setPts] = useState(null);
   useEffect(() => {
     loadPointsSettings()
-      .then((r) => setPts({ invite: Number(r.referral_points ?? 1), welcome: Number(r.welcome_points ?? 1) }))
+      .then((r) => setPts({ invite: Number(r.referral_points ?? 5), welcome: Number(r.welcome_points ?? 1) }))
       .catch((e) => console.warn(e.message));
   }, []);
   return pts;
