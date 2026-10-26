@@ -368,6 +368,40 @@ export class RushAudio {
     this.thump(t, 80, 30, 0.4, 0.8);
   }
 
+  // Tyre squeal while sliding (Drift King): filtered noise, louder with the slide.
+  startSqueal() {
+    if (!this.ctx || this.squealOn) return;
+    this.squealOn = true;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noise;
+    src.loop = true;
+    this.squealBp = this.ctx.createBiquadFilter();
+    this.squealBp.type = "bandpass";
+    this.squealBp.frequency.value = 1600;
+    this.squealBp.Q.value = 7;
+    this.squealGain = this.ctx.createGain();
+    this.squealGain.gain.value = 0;
+    src.connect(this.squealBp).connect(this.squealGain).connect(this.sfx);
+    src.start();
+    this.squealSrc = src;
+  }
+
+  // amount: 0 (gripping) … 1 (full slide).
+  squeal(amount) {
+    if (!this.squealOn) return;
+    const t = this.ctx.currentTime;
+    this.squealGain.gain.setTargetAtTime(Math.max(0, amount) * 0.22, t, 0.05);
+    this.squealBp.frequency.setTargetAtTime(1300 + amount * 900, t, 0.08);
+  }
+
+  stopSqueal() {
+    if (!this.squealOn) return;
+    this.squealOn = false;
+    const t = this.ctx.currentTime;
+    this.squealGain.gain.setTargetAtTime(0, t, 0.05);
+    this.squealSrc.stop(t + 0.4);
+  }
+
   // A short reversing beep (Park Up).
   beep() {
     if (!this.ctx) return;
