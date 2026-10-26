@@ -99,3 +99,15 @@ test("the game follows the admin's rules", () => {
   }
   assert.equal(badges, 0);
 });
+
+test("each level is shorter, faster and worth more than the one before", async () => {
+  const { DEFAULT_LEVELS } = await import("../src/lib/rushEngine.js");
+  const { easy, medium, hard } = DEFAULT_LEVELS;
+  assert.ok(easy.startTime > medium.startTime && medium.startTime > hard.startTime);
+  assert.ok(easy.startSpeed < medium.startSpeed && medium.startSpeed < hard.startSpeed);
+  assert.ok(easy.traffic < medium.traffic && medium.traffic < hard.traffic);
+  assert.deepEqual([easy.points, medium.points, hard.points], [1, 2, 3]);
+  const g = newGame(seeded(), hard);
+  assert.equal(g.timeLeft, hard.startTime);
+  assert.equal(g.speed, hard.startSpeed);
+});

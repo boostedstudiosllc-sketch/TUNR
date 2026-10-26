@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  DEFAULT_RULES,
+  DEFAULT_LEVELS,
+  LEVEL_IDS,
+  START_COPY,
+  levelRules,
   BODIES,
   SPOILERS,
   GAME_COLORS,
@@ -52,16 +55,26 @@ function saveGfx(v) {
   }
 }
 const DEFAULT_LOOK = { color: "#FF4500", body: "coupe", spoiler: "lip" };
+export const LEVELS = {
+  easy: { name: "Easy", color: "#10B981" },
+  medium: { name: "Medium", color: "#FACC15" },
+  hard: { name: "Hard", color: "#EF4444" },
+};
 
-// TUNR Rush: a full-screen driving game in your own car. Reach the daily
-// distance for points once a day (checked by the server); weekly
-// leaderboard. Admins set the rules (Settings → Admin → TUNR Rush).
+// TUNR Rush: a full-screen driving game in your own car. Each day you pick
+// Easy (+1), Medium (+2) or Hard (+3); the first run locks it in, and you
+// get a few tries to reach its goal (checked by the server). Other runs are
+// practice. Leaderboards per level. Admins set the rules (Settings → Admin
+// → TUNR Rush).
 export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
   const [screen, setScreen] = useState("garage"); // garage | play | result | board
   const [cars, setCars] = useState([]);
   const [carId, setCarId] = useState(null);
   const [look, setLook] = useState(DEFAULT_LOOK);
-  const [rules, setRules] = useState(DEFAULT_RULES);
+  const [settings, setSettings] = useState({ enabled: true, triesPerDay: 3, levels: DEFAULT_LEVELS });
+  const [level, setLevel] = useState("medium");
+  const [boardLevel, setBoardLevel] = useState("medium");
+  const rules = levelRules(settings, level);
   const [plate, setPlate] = useState("TUNR");
   const [mine, setMine] = useState(null);
   const [result, setResult] = useState(null);
@@ -94,7 +107,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
 
   useEffect(() => {
     loadGameSettings()
-      .then(setRules)
+      .then(setSettings)
       .catch((e) => console.warn(e.message));
   }, []);
 
@@ -113,10 +126,26 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
         setIsAdmin(Boolean(p?.isAdmin));
       })
       .catch((e) => console.warn(e.message));
-    loadMyGame()
-      .then(setMine)
-      .catch((e) => console.warn(e.message));
+    refreshMine(true);
   }, [user?.id]);
+
+  // Today's pick and tries, and your bests. On first load, start on the
+  // level you picked today.
+  function refreshMine(first = false) {
+    loadMyGame()
+      .then((m) => {
+        setMine(m);
+        if (first && m?.today?.difficulty) setLevel(m.today.difficulty);
+      })
+      .catch((e) => console.warn(e.message));
+  }
+
+  const today = mine?.today || null;
+  const triesLimit = settings.triesPerDay;
+  const outOfTries = Boolean(today && triesLimit > 0 && today.tries >= triesLimit);
+  const forPoints = Boolean(user) && (!today || (today.difficulty === level && !today.done && !outOfTries));
+  const todayName = today ? LEVELS[today.difficulty].name : "";
+  const todayPoints = today ? settings.levels[today.difficulty].points : 0;
 
   function pick(c) {
     setCarId(c.id);
@@ -136,20 +165,21 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
     }
   }
 
-  async function loadBoard(period = "week") {
+  async function loadBoard(period = "week", lvl = boardLevel) {
     setBoardPeriod(period);
+    setBoardLevel(lvl);
     setBoard(null);
     try {
-      setBoard(await loadGameLeaderboard(period));
+      setBoard(await loadGameLeaderboard(period, lvl));
     } catch (e) {
       setError(e.message);
       setBoard([]);
     }
   }
 
-  function openBoard(period = "week") {
+  function openBoard(period = "week", lvl = boardLevel) {
     setScreen("board");
-    loadBoard(period);
+    loadBoard(period, lvl);
   }
 
   // The phone's back gesture and Escape close the game.
@@ -210,9 +240,57 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             <div style={{ ...muted, marginTop: 6 }}>
               Dodge traffic and grab ⏱ for extra time. Grab the Boosted badge{" "}
               <img src="/game/boost.webp" alt="" style={{ width: 22, height: "auto", verticalAlign: "middle" }} /> for a{" "}
-              <b style={{ color: "#38BDF8" }}>boost</b>: a few seconds flat out with big blue flames. You still have to dodge, and a crash ends it. Reach <b style={{ color: "#FACC15" }}>{rules.goal.toLocaleString()} m</b>{" "}
-              for <b style={{ color: "#FACC15" }}>+{rules.dailyPoints} point{rules.dailyPoints === 1 ? "" : "s"}</b>, once a day.{" "}
-              {mine?.today_done ? <span style={{ color: "#10B981" }}>✓ Today's point is in.</span> : null}
+              <b style={{ color: "#38BDF8" }}>boost</b>: a few seconds flat out with big blue flames. You still have to dodge, and a crash ends it.
+            </div>
+
+            <div style={{ ...label, marginTop: 14 }}>TODAY'S LEVEL</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {LEVEL_IDS.map((id) => {
+                const L = settings.levels[id];
+                const on = level === id;
+                const isToday = today?.difficulty === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setLevel(id)}
+                    aria-pressed={on}
+                    style={{
+                      flex: 1,
+                      padding: "10px 4px",
+                      borderRadius: 12,
+                      cursor: "pointer",
+                      background: on ? `${LEVELS[id].color}22` : "#141414",
+                      border: `${on ? 2 : 1}px solid ${on ? LEVELS[id].color : "#2A2A2A"}`,
+                      color: "#F0F0F0",
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      opacity: today && !isToday ? 0.6 : 1,
+                    }}
+                  >
+                    <span style={{ display: "block", fontSize: 17, fontWeight: 900, color: LEVELS[id].color }}>{LEVELS[id].name.toUpperCase()}</span>
+                    <span style={{ display: "block", fontSize: 15, fontWeight: 900 }}>+{L.points} PT{L.points === 1 ? "" : "S"}</span>
+                    <span style={{ display: "block", fontSize: 11.5, color: "#999", fontFamily: "'Barlow', sans-serif" }}>
+                      {L.startTime}s · {L.goal.toLocaleString()} m
+                    </span>
+                    {isToday && <span style={{ display: "block", fontSize: 10.5, fontWeight: 900, color: LEVELS[id].color, marginTop: 2 }}>TODAY</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ ...muted, color: "#DDD", marginTop: 8, fontSize: 13 }}>
+              {!user
+                ? "Playing as a guest: practice only."
+                : !today
+                  ? `Pick one. Your first run locks it in until tomorrow, with ${triesLimit > 0 ? `${triesLimit} ${triesLimit === 1 ? "try" : "tries"}` : "unlimited tries"} to reach the goal.`
+                  : today.done
+                    ? `✓ Today's +${todayPoints} from ${todayName} is in. Every run now is practice.`
+                    : outOfTries
+                      ? `Out of tries on ${todayName} today. Practice only until tomorrow.`
+                      : today.difficulty !== level
+                        ? `Today's level is ${todayName}. Runs on ${LEVELS[level].name} are practice (no points).`
+                        : `Today: ${todayName}. ${triesLimit > 0 ? `${triesLimit - today.tries} of ${triesLimit} tries left.` : "Unlimited tries."}`}
+            </div>
+            <div style={{ ...muted, fontSize: 12, marginTop: 2 }}>
+              Goal: <b style={{ color: "#FACC15" }}>{rules.goal.toLocaleString()} m</b> in one run, starting with {rules.startTime} seconds.
             </div>
             <CarPreview look={look} plate={plate} />
             <div style={{ textAlign: "center", fontSize: 17, fontWeight: 900 }}>{carName}</div>
@@ -286,8 +364,12 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             )}
 
             {rules.enabled ? (
-              <button className="action-btn" onClick={play} style={{ ...bigButton, marginTop: 18, fontSize: 18, padding: "16px 0" }}>
-                🏁 START
+              <button
+                className="action-btn"
+                onClick={play}
+                style={{ ...bigButton, marginTop: 18, fontSize: 18, padding: "16px 0", ...(forPoints ? {} : { background: "#2A2A2A" }) }}
+              >
+                {forPoints ? (today ? "🏁 START" : `🏁 START · LOCK IN ${LEVELS[level].name.toUpperCase()}`) : "🏁 PRACTICE RUN"}
               </button>
             ) : (
               <div style={{ ...muted, marginTop: 18, textAlign: "center", color: "#FACC15" }}>
@@ -295,11 +377,12 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
               </div>
             )}
             <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-              <button className="action-btn" onClick={() => openBoard("week")} style={{ ...quietButton, flex: 1 }}>🏆 LEADERBOARD</button>
+              <button className="action-btn" onClick={() => openBoard("week", level)} style={{ ...quietButton, flex: 1 }}>🏆 LEADERBOARD</button>
             </div>
             {mine && (
               <div style={{ ...muted, textAlign: "center", marginTop: 10 }}>
-                Your best: {Number(mine.best).toLocaleString()} m · this week: {Number(mine.week_best).toLocaleString()} m
+                Your best on {LEVELS[level].name}: {Number(mine.best?.[level] || 0).toLocaleString()} m · this week:{" "}
+                {Number(mine.week_best?.[level] || 0).toLocaleString()} m
               </div>
             )}
             {!user && (
@@ -322,17 +405,20 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             look={look}
             plate={plate}
             rules={rules}
+            difficulty={level}
+            forPoints={forPoints}
+            onStarted={(res) => res?.today && setMine((m) => ({ ...(m || {}), today: res.today }))}
             audio={audio.current}
             gfx={isAdmin ? gfx : "classic"}
             onFallback={(why) => (setGfx("classic"), saveGfx("classic"), onToast(why))}
             vehicleId={user ? carId : null}
             signedIn={Boolean(user)}
             onDone={(r) => {
-              setResult(r);
+              setResult({ ...r, level, goal: rules.goal });
               setScreen("result");
               // The run is saved by now, so the board includes it.
-              loadBoard("week");
-              if (r.server) setMine((m) => ({ ...(m || {}), best: r.server.best, today_done: r.server.today_done }));
+              loadBoard("week", level);
+              if (user) refreshMine();
             }}
             onQuit={() => setScreen("garage")}
           />
@@ -341,7 +427,11 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
         {screen === "result" && result && (
           <div style={{ textAlign: "center", marginTop: 18 }}>
             <div style={{ ...label, marginBottom: 0 }}>YOU DROVE</div>
-            <div style={{ fontSize: 56, fontWeight: 900, lineHeight: 1, color: result.dist >= rules.goal ? "#10B981" : "#F0F0F0" }}>
+            <div style={{ fontSize: 13, fontWeight: 900, color: LEVELS[result.level].color, letterSpacing: 1.5 }}>
+              {LEVELS[result.level].name.toUpperCase()}
+              {result.server && !result.server.counts ? " · PRACTICE" : ""}
+            </div>
+            <div style={{ fontSize: 56, fontWeight: 900, lineHeight: 1, color: result.dist >= result.goal ? "#10B981" : "#F0F0F0" }}>
               {result.dist.toLocaleString()} m
             </div>
             <div style={{ ...muted, marginTop: 6 }}>
@@ -350,37 +440,45 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
               {result.score.toLocaleString()}
             </div>
             <div style={{ marginTop: 14, fontSize: 17, fontWeight: 900, color: result.server?.earned ? "#FACC15" : "#AAA" }}>
-              {result.serverError
-                ? result.serverError
-                : result.server?.earned
-                  ? `⭐ +${result.server.earned} point${result.server.earned === 1 ? "" : "s"}! Today's daily drive is done.`
-                  : result.dist >= rules.goal
-                    ? result.server
-                      ? "✓ Goal hit. Today's point was already in; come back tomorrow."
-                      : "Goal hit! Sign in to earn points for it."
-                    : `${(rules.goal - result.dist).toLocaleString()} m short of today's points. One more?`}
+              <ResultLine result={result} triesLimit={triesLimit} today={today} />
             </div>
             {result.server && result.dist >= (result.server.best || 0) && result.dist > 0 && (
               <div style={{ marginTop: 6, color: "#FF7A00", fontWeight: 900 }}>🔥 NEW PERSONAL BEST</div>
             )}
-            <button className="action-btn" onClick={play} style={{ ...bigButton, marginTop: 18 }}>
-              🔁 RUN IT BACK
+            <button className="action-btn" onClick={play} style={{ ...bigButton, marginTop: 18, ...(forPoints ? {} : { background: "#2A2A2A" }) }}>
+              {forPoints ? "🔁 RUN IT BACK" : "🔁 PRACTICE RUN"}
             </button>
 
             <div style={{ textAlign: "left", marginTop: 20 }}>
-              <div style={label}>🏆 THIS WEEK'S LEADERBOARD</div>
-              <RankLine rows={board} period="week" signedIn={Boolean(user)} onNeedAccount={onNeedAccount} />
+              <div style={label}>🏆 THIS WEEK ON {LEVELS[result.level].name.toUpperCase()}</div>
+              <RankLine rows={board} period="week" level={result.level} signedIn={Boolean(user)} onNeedAccount={onNeedAccount} />
               <BoardList rows={board} top={5} />
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
               <button className="action-btn" onClick={() => setScreen("garage")} style={{ ...quietButton, flex: 1 }}>GARAGE</button>
-              <button className="action-btn" onClick={() => openBoard("week")} style={{ ...quietButton, flex: 1 }}>FULL BOARD</button>
+              <button className="action-btn" onClick={() => openBoard("week", result.level)} style={{ ...quietButton, flex: 1 }}>FULL BOARD</button>
             </div>
           </div>
         )}
 
         {screen === "board" && (
           <div style={{ marginTop: 12 }}>
+            <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+              {LEVEL_IDS.map((id) => (
+                <button
+                  key={id}
+                  onClick={() => loadBoard(boardPeriod, id)}
+                  style={{
+                    ...quietButton,
+                    flex: 1,
+                    padding: "10px 0",
+                    ...(boardLevel === id ? { border: `1px solid ${LEVELS[id].color}`, color: LEVELS[id].color } : {}),
+                  }}
+                >
+                  {LEVELS[id].name.toUpperCase()}
+                </button>
+              ))}
+            </div>
             <div style={{ display: "flex", gap: 6 }}>
               {[
                 ["week", "THIS WEEK"],
@@ -388,7 +486,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
               ].map(([id, name]) => (
                 <button
                   key={id}
-                  onClick={() => openBoard(id)}
+                  onClick={() => loadBoard(id, boardLevel)}
                   style={{ ...quietButton, flex: 1, padding: "10px 0", ...(boardPeriod === id ? { border: "1px solid #FF4500", color: "#FF7A00" } : {}) }}
                 >
                   {name}
@@ -396,9 +494,9 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
               ))}
             </div>
             <div style={{ ...muted, marginTop: 10 }}>
-              Longest single run {boardPeriod === "week" ? "this week (Monday to Sunday)" : "ever"}.
+              Longest single run on {LEVELS[boardLevel].name} {boardPeriod === "week" ? "this week (Monday to Sunday)" : "ever"}.
             </div>
-            <RankLine rows={board} period={boardPeriod} signedIn={Boolean(user)} />
+            <RankLine rows={board} period={boardPeriod} level={boardLevel} signedIn={Boolean(user)} />
             <BoardList rows={board} />
             <button className="action-btn" onClick={() => setScreen(result ? "result" : "garage")} style={{ ...quietButton, marginTop: 14 }}>
               ‹ BACK
@@ -410,12 +508,26 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
   );
 }
 
-// Where you stand: "You're #4 of 23 drivers this week."
-function RankLine({ rows, period, signedIn, onNeedAccount }) {
+// What this run earned, or why it didn't.
+function ResultLine({ result, triesLimit, today }) {
+  const { server, dist, goal } = result;
+  const short = `${(goal - dist).toLocaleString()} m short of the goal.`;
+  if (result.serverError) return result.serverError;
+  if (!server) return dist >= goal ? "Goal hit! Sign in to earn points for it." : short;
+  if (!server.counts) return `Practice run: no points.${dist >= goal ? " You'd have cleared it!" : ""}`;
+  if (server.earned) return `⭐ +${server.earned} point${server.earned === 1 ? "" : "s"}! ${LEVELS[result.level].name} cleared for today.`;
+  if (dist >= goal) return "✓ Goal hit, but points need a confirmed email. Check Settings → Account.";
+  const left = triesLimit > 0 && today ? triesLimit - today.tries : null;
+  if (left === 0) return `${short} No tries left today. Practice, and come back tomorrow!`;
+  return `${short} ${left === null ? "Go again!" : `${left} ${left === 1 ? "try" : "tries"} left today.`}`;
+}
+
+// Where you stand: "You're #4 of 23 drivers on Hard this week."
+function RankLine({ rows, period, level, signedIn, onNeedAccount }) {
   if (!rows) return <div style={{ ...muted, marginTop: 10 }}>Loading…</div>;
   const me = rows.find((r) => r.is_me);
   const drivers = rows[0]?.drivers || 0;
-  const when = period === "week" ? "this week" : "all time";
+  const when = `on ${LEVELS[level].name} ${period === "week" ? "this week" : "all time"}`;
   let text;
   if (me) {
     const ahead = rows.filter((r) => r.score > me.score).at(-1) || null;
@@ -541,7 +653,8 @@ function CarPreview({ look, plate }) {
 }
 
 // The running game. Registers the run with the server, plays, and reports.
-function Game({ look, plate, rules, audio, gfx = "classic", onFallback, vehicleId, signedIn, onDone, onQuit }) {
+function Game({ look, plate, rules, difficulty, forPoints, onStarted, audio, gfx = "classic", onFallback, vehicleId, signedIn, onDone, onQuit }) {
+  const startNote = useRef("");
   const canvasRef = useRef(null);
   const glRef = useRef(null);
   const hudRef = useRef(null);
@@ -558,9 +671,13 @@ function Game({ look, plate, rules, audio, gfx = "classic", onFallback, vehicleI
 
   useEffect(() => {
     if (signedIn) {
-      startRun(vehicleId)
-        .then((id) => (runRef.current = id))
-        .catch((e) => console.warn(e.message));
+      startRun(vehicleId, difficulty, forPoints)
+        .then((res) => {
+          if (res?.status === "ok") runRef.current = res.run_id;
+          else if (res) startNote.current = START_COPY[res.status] || `This run didn't count. (${res.status})`;
+          onStarted?.(res);
+        })
+        .catch((e) => (startNote.current = e.message));
     }
     // Load the 3D renderer during the countdown.
     if (want3d) {
@@ -632,7 +749,8 @@ function Game({ look, plate, rules, audio, gfx = "classic", onFallback, vehicleI
         ended = true;
         audio?.stopEngine();
         const r = { dist: Math.floor(g.dist), score: scoreOf(g), pickups: g.pickups, boosts: g.boosts, crashes: g.crashes };
-        if (!signedIn || !runRef.current) return onDone(r);
+        if (!signedIn) return onDone(r);
+        if (!runRef.current) return onDone({ ...r, serverError: startNote.current || "This run couldn't be saved, so it didn't count." });
         finishRun(runRef.current, g)
           .then((server) => onDone({ ...r, server: server?.status === "ok" ? server : null, serverError: server && server.status !== "ok" ? `Run not counted (${server.status}).` : "" }))
           .catch((e) => onDone({ ...r, serverError: e.message }));

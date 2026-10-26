@@ -18,8 +18,19 @@ export const DEFAULT_RULES = {
   boostChance: 0.08, // share of traffic rows with a badge
   clockChance: 0.22, // share with a ⏱
   traffic: 1, // more than 1 = traffic comes faster
+  startSpeed: 28, // m/s at the start
+  ramp: 70, // meters driven per +1 m/s of speed (lower = speeds up quicker)
   topSpeed: 85, // m/s
   boostSpeed: 115, // m/s while boosting; the server allows the faster of the two plus 5
+};
+// The three difficulty levels (065_rush_difficulty.sql has the same
+// defaults; admins can change them). Each is shorter, faster and busier
+// than the one before, and worth more points.
+export const LEVEL_IDS = ["easy", "medium", "hard"];
+export const DEFAULT_LEVELS = {
+  easy: { goal: 1500, points: 1, startTime: 35, clockSeconds: 3, crashSeconds: 3, boostSeconds: 3, boostChance: 0.1, clockChance: 0.2, traffic: 0.85, startSpeed: 35, ramp: 45, topSpeed: 75, boostSpeed: 105 },
+  medium: { goal: 1950, points: 2, startTime: 30, clockSeconds: 2.5, crashSeconds: 4, boostSeconds: 3, boostChance: 0.08, clockChance: 0.18, traffic: 1, startSpeed: 40, ramp: 40, topSpeed: 85, boostSpeed: 115 },
+  hard: { goal: 2500, points: 3, startTime: 26, clockSeconds: 2, crashSeconds: 5, boostSeconds: 3, boostChance: 0.06, clockChance: 0.14, traffic: 1.15, startSpeed: 45, ramp: 35, topSpeed: 95, boostSpeed: 125 },
 };
 export const GOAL_METERS = DEFAULT_RULES.goal;
 export const START_TIME = DEFAULT_RULES.startTime;
@@ -41,7 +52,7 @@ export function newGame(rand = Math.random, rules = {}) {
     rules: r,
     t: 0,
     timeLeft: r.startTime,
-    speed: 28,
+    speed: r.startSpeed,
     dist: 0,
     lane: 1,
     laneX: 1,
@@ -93,7 +104,7 @@ export function step(g, dt) {
   g.timeLeft -= dt;
   const R = g.rules;
   const boosting = g.boostT > 0;
-  const target = boosting ? R.boostSpeed : Math.min(R.topSpeed, 28 + g.dist / 70);
+  const target = boosting ? R.boostSpeed : Math.min(R.topSpeed, R.startSpeed + g.dist / R.ramp);
   g.speed += (target - g.speed) * Math.min(1, dt * (boosting ? 3 : g.crashT > 0 ? 0.6 : 1.5));
   g.crashT = Math.max(0, g.crashT - dt);
   g.boostT = Math.max(0, g.boostT - dt);

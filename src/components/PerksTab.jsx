@@ -160,7 +160,7 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
               TUNR <span style={{ color: "#FF4500" }}>RUSH</span>
             </span>
             <span style={{ display: "block", fontSize: 12.5, color: "#C2724A", fontFamily: "'Barlow', sans-serif" }}>
-              Drive your own car. Hit the daily distance for points.
+              Drive your own car. Pick Easy, Medium or Hard for up to +3 a day.
             </span>
           </span>
           <span aria-hidden="true" style={{ fontSize: 20, color: "#C2724A" }}>›</span>
