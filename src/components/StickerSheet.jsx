@@ -4,6 +4,7 @@ import { loadMyInvites } from "../lib/invites.js";
 import Sheet, { sheetTitle, muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import useInvitePoints, { plusPoints } from "./useInvitePoints.js";
 import PrintPage from "./PrintPage.jsx";
+import StickerOrder from "./StickerOrder.jsx";
 
 // A car's "Scan my build" QR: turn its public page on, see scans, print the
 // sticker (one big, two small), or share the link.
@@ -66,12 +67,7 @@ export default function StickerSheet({ vehicle, onClose, onToast, onChanged }) {
   const [printHtml, setPrintHtml] = useState("");
   async function print() {
     try {
-      const { default: QRCode } = await import("qrcode");
-      const svg = await QRCode.toString(url, { type: "svg", margin: 0, errorCorrectionLevel: "M" });
-      const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-      const sticker = (size) =>
-        `<div class="s s${size}"><div class="t">SCAN MY BUILD</div><div class="q">${svg}</div><div class="n">${esc(name)}</div><div class="b">TUNR · Georgia car meets</div></div>`;
-      setPrintHtml(`<div class="wrap">${sticker("L")}${sticker("S")}${sticker("S")}</div>`);
+      setPrintHtml(await stickerHtml(url, name, ["L", "S", "S"]));
     } catch (e) {
       onToast(`Couldn't make the sticker. (${e.message})`);
     }
@@ -163,14 +159,22 @@ export default function StickerSheet({ vehicle, onClose, onToast, onChanged }) {
           SHARE
         </button>
       </div>
-      <div style={{ ...muted, fontSize: 12, marginTop: 8 }}>
-        Free to print at home. Want a weatherproof vinyl one? When available, it's a reward in Points &amp; rewards.
-      </div>
+      <StickerOrder vehicle={vehicle} name={name} isPublic={isPublic} onToast={onToast} />
     </Sheet>
   );
 }
 
-const STICKER_CSS = `
+// The sticker artwork for PrintPage: one per size given ("L" 3.5 in, "S" 2 in).
+export async function stickerHtml(url, name, sizes) {
+  const { default: QRCode } = await import("qrcode");
+  const svg = await QRCode.toString(url, { type: "svg", margin: 0, errorCorrectionLevel: "M" });
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const sticker = (size) =>
+    `<div class="s s${size}"><div class="t">SCAN MY BUILD</div><div class="q">${svg}</div><div class="n">${esc(name)}</div><div class="b">TUNR · Georgia car meets</div></div>`;
+  return `<div class="wrap">${sizes.map(sticker).join("")}</div>`;
+}
+
+export const STICKER_CSS = `
   .print-page .wrap { display: flex; flex-wrap: wrap; gap: 0.4in; padding: 0.4in; align-items: flex-start; justify-content: center; }
   .print-page .s { background: #0A0A0A; color: #fff; border-radius: 0.18in; text-align: center; box-sizing: border-box; border: 1px dashed #999; }
   .print-page .sL { width: 3.5in; max-width: 100%; padding: 0.22in; }

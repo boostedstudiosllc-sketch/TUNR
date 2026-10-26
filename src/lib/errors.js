@@ -38,6 +38,8 @@ const WRITE_ERROR_COPY = {
   confirmation_blocked: "You can't confirm this photographer.",
   rate_limit_confirmations: "That's 10 confirmations today — the limit. Try again tomorrow.",
   admins_only: "Only TUNR admins can do that.",
+  sticker_order_locked: "That sticker order can't be changed now (it's paid, sent or already cancelled).",
+  sticker_order_missing: "That sticker order no longer exists.",
   rate_limit_forums: "That's 3 new forums this week — the limit. Try again in a few days.",
   forum_name_taken: "There's already a forum with that name — join that one, or pick another name.",
   forum_unavailable: "That forum isn't available any more.",

@@ -25,6 +25,7 @@ import { loadMyStreak, setHiddenFromLeaderboards } from "../lib/points.js";
 import BoostedPage, { BoostedAdmin } from "./BoostedStudios.jsx";
 import RushAdmin from "./RushAdmin.jsx";
 import RewardsPanel, { RewardsAdmin, RedemptionsAdmin, CheckinsAdmin, PurchasesAdmin, CardsAdmin, IssuesAdmin } from "./Rewards.jsx";
+import StickerOrdersAdmin from "./StickerOrdersAdmin.jsx";
 
 const PAGES = {
   email: "Email",
@@ -57,6 +58,7 @@ const PAGES = {
   claims: "Reward claims",
   purchases: "Purchases",
   cards: "Points cards",
+  stickerOrders: "Sticker orders",
   pointsHelp: "Points help",
   checkins: "Check-ins",
 };
@@ -378,6 +380,7 @@ export default function SettingsScreen({
                 <Row icon="📨" label="Host invites" onClick={() => open("hostInvites")} />
                 <Row icon="📈" label="Sign-up stats" onClick={() => open("signups")} />
                 <Row icon="🎁" label="Rewards" sub="What points can buy" onClick={() => open("rewardsAdmin")} />
+                <Row icon="📦" label="Sticker orders" sub="Mailed QR stickers: price, payment link, orders" onClick={() => open("stickerOrders")} />
                 {SHOP_OPEN && (
                   <Row icon="🎟️" label="Points cards" sub="Print scan-to-earn cards for orders and details" onClick={() => open("cards")} />
                 )}
@@ -473,6 +476,8 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
       return <PurchasesAdmin onToast={onToast} />;
     case "cards":
       return <CardsAdmin onToast={onToast} />;
+    case "stickerOrders":
+      return <StickerOrdersAdmin onToast={onToast} />;
     case "pointsHelp":
       return <IssuesAdmin onToast={onToast} />;
     case "checkins":
