@@ -2,7 +2,7 @@
 // 065_rush_difficulty.sql). The game itself is in rushEngine.js.
 import { supabase } from "./supabase.js";
 import { friendlyWriteError, withReason } from "./errors.js";
-import { DEFAULT_RULES, DEFAULT_LEVELS, LEVEL_IDS } from "./rushEngine.js";
+import { DEFAULT_RULES, DEFAULT_LEVELS, LEVEL_IDS, SCENERY, SCENERY_IDS } from "./rushEngine.js";
 
 export * from "./rushEngine.js";
 
@@ -111,4 +111,72 @@ export async function saveGameLook(vehicleId, { color, body, spoiler }) {
     .update({ game_color: color, game_body: body, game_spoiler: spoiler })
     .eq("id", vehicleId);
   if (error) throw new Error(withReason("Couldn't save your car's look.", error));
+}
+
+// ---------- scenery (078_rush_scenery.sql) ----------
+
+const SCENERY_KEY = "tunr.rush.scenery";
+
+// What's for sale (price in points) and what you own. The desert is free.
+export async function loadScenery(userId) {
+  const fallback = SCENERY_IDS.map((id, i) => ({ id, name: SCENERY[id].name, price: id === "desert" ? 0 : null, active: id === "desert", sort: i }));
+  if (!supabase) return { list: fallback, owned: new Set(["desert"]) };
+  const { data, error } = await supabase.from("rush_scenery").select("id, name, price, active, sort").order("sort");
+  if (error) throw new Error(withReason("Couldn't load the scenery.", error));
+  const owned = new Set(["desert"]);
+  if (userId) {
+    const mine = await supabase.from("rush_scenery_owned").select("scenery").eq("user_id", userId);
+    if (mine.error) throw new Error(withReason("Couldn't load your scenery.", mine.error));
+    for (const r of mine.data || []) owned.add(r.scenery);
+  }
+  for (const r of data || []) if (r.price === 0) owned.add(r.id);
+  // Only places the game knows how to draw.
+  return { list: (data || []).filter((r) => SCENERY[r.id]), owned };
+}
+
+const UNLOCK_COPY = {
+  not_signed_in: "Sign in to unlock scenery.",
+  unconfirmed: "Confirm your email first. Tap the link we emailed you.",
+  not_found: "That scenery isn't available right now.",
+  owned: "You already have that one.",
+};
+
+export function unlockMessage(result) {
+  const status = result?.status || "unknown";
+  if (status === "not_enough") return `You need ${result.cost} points and have ${result.balance}.`;
+  return UNLOCK_COPY[status] || `Couldn't unlock that. (${status})`;
+}
+
+// Spend points on a place. Returns { status: "ok", balance } or why not.
+export async function unlockScenery(id) {
+  if (!supabase) throw new Error("Unlocking scenery needs an account.");
+  const { data, error } = await supabase.rpc("unlock_rush_scenery", { p_scenery: id });
+  if (error) throw new Error(withReason("Couldn't unlock that scenery.", error));
+  return data || {};
+}
+
+// Admin: change a place's price, or take it off sale.
+export async function saveSceneryPrice(id, patch) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { error } = await supabase.from("rush_scenery").update(patch).eq("id", id);
+  if (error) throw new Error(friendlyWriteError(error, "Couldn't save that scenery price."));
+}
+
+// The place picked on this phone (checked against what you own when used).
+export function loadPickedScenery() {
+  try {
+    const id = localStorage.getItem(SCENERY_KEY);
+    return SCENERY[id] ? id : "desert";
+  } catch (e) {
+    console.warn("Couldn't read the scenery pick:", e.message);
+    return "desert";
+  }
+}
+
+export function savePickedScenery(id) {
+  try {
+    localStorage.setItem(SCENERY_KEY, id);
+  } catch (e) {
+    console.warn("Couldn't save the scenery pick:", e.message);
+  }
 }

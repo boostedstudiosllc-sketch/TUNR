@@ -79,17 +79,47 @@ function roadTexture() {
   );
 }
 
-function sandTexture() {
+// The ground for a place: a base color, grain, soft blotches, and for some
+// places a little extra (lava cracks, craters, snow drifts).
+function groundTexture(look) {
   return canvasTexture(
     512,
     512,
     (ctx, w, h) => {
-      speckle(ctx, w, h, "#d8b27a", 30, 50000, 2);
-      ctx.fillStyle = "rgba(120,80,40,0.08)";
+      speckle(ctx, w, h, look.ground, look.grain ?? 30, 50000, 2);
+      ctx.fillStyle = look.blotch;
       for (let i = 0; i < 40; i++) {
         ctx.beginPath();
         ctx.ellipse(Math.random() * w, Math.random() * h, 20 + Math.random() * 60, 6 + Math.random() * 14, 0, 0, Math.PI * 2);
         ctx.fill();
+      }
+      if (look.extra === "lava") {
+        ctx.strokeStyle = "rgba(255,110,20,0.75)";
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 14; i++) {
+          let x = Math.random() * w;
+          let y = Math.random() * h;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          for (let k = 0; k < 6; k++) ctx.lineTo((x += Math.random() * 40 - 20), (y += Math.random() * 40 - 20));
+          ctx.stroke();
+        }
+      }
+      if (look.extra === "craters") {
+        for (let i = 0; i < 18; i++) {
+          const x = Math.random() * w;
+          const y = Math.random() * h;
+          const r = 6 + Math.random() * 22;
+          ctx.fillStyle = "rgba(0,0,0,0.22)";
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(255,255,255,0.12)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(x - 1, y - 1, r, Math.PI * 0.9, Math.PI * 1.7);
+          ctx.stroke();
+        }
       }
     },
     { repeat: [30, 30] }
@@ -537,15 +567,385 @@ function buildCactus(rand) {
   return g;
 }
 
-function buildRock(rand) {
+function buildRock(rand, color = 0x9a6a44, big = 1) {
   const m = new THREE.Mesh(
-    new THREE.DodecahedronGeometry(0.6 + rand() * 1.4, 0),
-    new THREE.MeshStandardMaterial({ color: 0x9a6a44, roughness: 0.95, flatShading: true })
+    new THREE.DodecahedronGeometry((0.6 + rand() * 1.4) * big, 0),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.95, flatShading: true })
   );
   m.scale.y = 0.55;
   m.rotation.y = rand() * 6;
   m.castShadow = true;
   return m;
+}
+
+// ---------- scenery for each place ----------
+
+const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.9, ...extra });
+
+function buildPine(rand, snow = false) {
+  const g = new THREE.Group();
+  const h = 6 + rand() * 5;
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, h * 0.35, 8), mat(0x5a3b22));
+  trunk.position.y = h * 0.17;
+  g.add(trunk);
+  const green = mat(snow ? 0x2f5a3a : 0x2d5a27, { flatShading: true });
+  for (let i = 0; i < 3; i++) {
+    const r = (1.9 - i * 0.5) * (h / 8);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(r, h * 0.38, 9), green);
+    cone.position.y = h * (0.32 + i * 0.2);
+    cone.castShadow = true;
+    g.add(cone);
+    if (snow) {
+      const cap = new THREE.Mesh(new THREE.ConeGeometry(r * 0.75, h * 0.16, 9), mat(0xf4f8fb, { flatShading: true }));
+      cap.position.y = h * (0.42 + i * 0.2);
+      g.add(cap);
+    }
+  }
+  return g;
+}
+
+function buildOak(rand) {
+  const g = new THREE.Group();
+  const h = 3 + rand() * 2.5;
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.4, h, 8), mat(0x4e3420));
+  trunk.position.y = h / 2;
+  g.add(trunk);
+  const leaves = mat(0x3f7a2c, { flatShading: true });
+  for (let i = 0; i < 3; i++) {
+    const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(1.6 + rand() * 1.1, 0), leaves);
+    ball.position.set((rand() - 0.5) * 1.8, h + 0.6 + rand() * 1.2, (rand() - 0.5) * 1.8);
+    ball.castShadow = true;
+    g.add(ball);
+  }
+  return g;
+}
+
+function buildPalm(rand) {
+  const g = new THREE.Group();
+  const bark = mat(0x8b6b46);
+  const lean = (rand() - 0.5) * 0.5;
+  let y = 0;
+  let x = 0;
+  for (let i = 0; i < 6; i++) {
+    const seg = new THREE.Mesh(new THREE.CylinderGeometry(0.2 - i * 0.015, 0.24 - i * 0.015, 1.3, 7), bark);
+    x += lean * 0.25 * i * 0.3;
+    seg.position.set(x, y + 0.65, 0);
+    seg.rotation.z = -lean * 0.3;
+    g.add(seg);
+    y += 1.25;
+  }
+  const frond = mat(0x3a7d2c, { side: THREE.DoubleSide, flatShading: true });
+  for (let i = 0; i < 7; i++) {
+    const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.45, 3.4, 4, 1).rotateZ(Math.PI / 2).translate(1.7, 0, 0), frond);
+    leaf.scale.set(1, 0.25, 1);
+    leaf.position.set(x, y + 0.2, 0);
+    leaf.rotation.set(0, (i / 7) * Math.PI * 2, -0.45);
+    leaf.castShadow = true;
+    g.add(leaf);
+  }
+  return g;
+}
+
+function buildUmbrella(rand) {
+  const g = new THREE.Group();
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.4, 6), mat(0xeeeeee));
+  pole.position.y = 1.2;
+  const colors = ["#ef4444", "#0080f0", "#facc15", "#10b981"];
+  const c = colors[Math.floor(rand() * colors.length)];
+  const tex = canvasTexture(128, 16, (ctx, w, h) => {
+    for (let i = 0; i < 8; i++) {
+      ctx.fillStyle = i % 2 ? "#ffffff" : c;
+      ctx.fillRect((i * w) / 8, 0, w / 8, h);
+    }
+  });
+  const top = new THREE.Mesh(new THREE.ConeGeometry(1.4, 0.6, 16, 1, true), new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide, roughness: 0.8 }));
+  top.position.y = 2.45;
+  top.castShadow = true;
+  const towel = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.8).rotateX(-Math.PI / 2), mat(c === "#facc15" ? 0x0080f0 : 0xfacc15));
+  towel.position.set(1.2, 0.03, 0.4);
+  g.add(pole, top, towel);
+  return g;
+}
+
+function buildDeadTree(rand) {
+  const g = new THREE.Group();
+  const bark = mat(0x3a3328, { flatShading: true });
+  const h = 4 + rand() * 4;
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.4, h, 6), bark);
+  trunk.position.y = h / 2;
+  trunk.castShadow = true;
+  g.add(trunk);
+  for (let i = 0; i < 4; i++) {
+    const len = 1 + rand() * 2;
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.12, len, 5).translate(0, len / 2, 0), bark);
+    b.position.y = h * (0.45 + rand() * 0.45);
+    b.rotation.set((rand() - 0.5) * 1.2, rand() * 6, 0.7 + rand() * 0.5);
+    g.add(b);
+  }
+  // Hanging moss.
+  const moss = mat(0x6b7f4a, { transparent: true, opacity: 0.85 });
+  for (let i = 0; i < 3; i++) {
+    const m = new THREE.Mesh(new THREE.ConeGeometry(0.25, 1.2, 5), moss);
+    m.rotation.x = Math.PI;
+    m.position.set((rand() - 0.5) * 1.6, h * 0.75, (rand() - 0.5) * 1.6);
+    g.add(m);
+  }
+  return g;
+}
+
+function buildReeds(rand) {
+  const g = new THREE.Group();
+  const reed = mat(0x8a8a4a);
+  for (let i = 0; i < 9; i++) {
+    const h = 0.8 + rand() * 1.2;
+    const r = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, h, 4), reed);
+    r.position.set((rand() - 0.5) * 1.4, h / 2, (rand() - 0.5) * 1.4);
+    r.rotation.z = (rand() - 0.5) * 0.3;
+    g.add(r);
+  }
+  return g;
+}
+
+// Still, dark water that mirrors the sky.
+function buildPuddle(rand) {
+  const m = new THREE.Mesh(
+    new THREE.CircleGeometry(2.5 + rand() * 4, 20).rotateX(-Math.PI / 2),
+    new THREE.MeshStandardMaterial({ color: 0x2a3a26, roughness: 0.08, metalness: 0.4 })
+  );
+  m.scale.set(1.4, 1, 1);
+  m.position.y = 0.03;
+  return m;
+}
+
+function buildIce(rand) {
+  const m = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.8 + rand() * 1.4, 0),
+    new THREE.MeshStandardMaterial({ color: 0xbfe6ff, roughness: 0.1, metalness: 0.1, transparent: true, opacity: 0.85, flatShading: true })
+  );
+  m.scale.y = 1.3;
+  m.position.y = 0.6;
+  m.rotation.y = rand() * 6;
+  m.castShadow = true;
+  return m;
+}
+
+function buildSnowman() {
+  const g = new THREE.Group();
+  const snow = mat(0xf7fbff);
+  [0.65, 0.48, 0.34].reduce((y, r) => {
+    const b = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), snow);
+    b.position.y = y + r;
+    b.castShadow = true;
+    g.add(b);
+    return y + r * 1.8;
+  }, 0);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.35, 8).rotateX(Math.PI / 2), mat(0xf97316));
+  nose.position.set(0, 2.25, 0.36);
+  g.add(nose);
+  return g;
+}
+
+function buildLavaRock(rand) {
+  const g = new THREE.Group();
+  g.add(buildRock(rand, 0x26201d, 1.2));
+  const glow = new THREE.Mesh(new THREE.CircleGeometry(0.8 + rand(), 14).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xff5a14 }));
+  glow.position.set(1.4, 0.05, 0.3);
+  g.add(glow);
+  return g;
+}
+
+function buildCrystal(rand) {
+  const g = new THREE.Group();
+  const color = rand() < 0.5 ? 0x8b5cf6 : 0x22d3ee;
+  const m = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.9, roughness: 0.2, flatShading: true });
+  for (let i = 0; i < 4; i++) {
+    const h = 1 + rand() * 2.4;
+    const c = new THREE.Mesh(new THREE.OctahedronGeometry(0.35, 0), m);
+    c.scale.set(1, h, 1);
+    c.position.set((rand() - 0.5) * 1.2, h * 0.3, (rand() - 0.5) * 1.2);
+    c.rotation.set((rand() - 0.5) * 0.6, rand() * 6, (rand() - 0.5) * 0.6);
+    g.add(c);
+  }
+  return g;
+}
+
+function buildStreetLight() {
+  const g = new THREE.Group();
+  const metal = mat(0x3a3f45, { metalness: 0.6, roughness: 0.4 });
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 7, 8), metal);
+  pole.position.y = 3.5;
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 0.1), metal);
+  arm.position.set(-1.0, 6.9, 0);
+  const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.18, 0.35), new THREE.MeshStandardMaterial({ color: 0xfff3c4, emissive: 0xffe08a, emissiveIntensity: 1.4 }));
+  lamp.position.set(-2.0, 6.8, 0);
+  g.add(pole, arm, lamp);
+  g.userData.faceRoad = true; // the arm reaches over the road
+  return g;
+}
+
+const windowTex = (lit) =>
+  canvasTexture(
+    64,
+    128,
+    (ctx, w, h) => {
+      ctx.fillStyle = "#2b3038";
+      ctx.fillRect(0, 0, w, h);
+      for (let y = 4; y < h - 4; y += 8) {
+        for (let x = 4; x < w - 4; x += 8) {
+          const on = Math.random() < lit;
+          ctx.fillStyle = on ? (Math.random() < 0.8 ? "#ffd27a" : "#9fd3ff") : "#3d4552";
+          ctx.fillRect(x, y, 4, 5);
+        }
+      }
+    },
+    { repeat: [1, 1] }
+  );
+
+function buildBuilding(rand, texs) {
+  const w = 6 + rand() * 10;
+  const h = 10 + rand() * 30;
+  const tex = texs[Math.floor(rand() * texs.length)];
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, w * (0.8 + rand() * 0.4)), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, metalness: 0.2 }));
+  m.position.y = h / 2;
+  m.castShadow = true;
+  m.userData.setBack = 10 + rand() * 18; // keep buildings off the sidewalk
+  return m;
+}
+
+// What each place looks like in 3D. ground: [base, blotch] for the texture.
+// light: tweaks to the day's lighting. backdrop: what's on the horizon.
+// props: roadside things and how often each shows up.
+const PLACES = {
+  desert: { ground: "#d8b27a", blotch: "rgba(120,80,40,0.08)", shoulder: 0x8a7458, hemiGround: 0xc9a06a, envGround: ["#b8946a", "#6e5338"], backdrop: "mesas",
+    props: [[(r) => buildCactus(r), 0.6], [(r) => buildRock(r), 0.4]] },
+  city: { ground: "#5b5f66", blotch: "rgba(255,255,255,0.05)", grain: 22, shoulder: 0xa3a39c, hemiGround: 0x6b6b6b, envGround: ["#7a7f86", "#3e4248"], fog: 0xb9c2cc, backdrop: "skyline",
+    props: [[(r, k) => buildBuilding(r, k.windows), 0.55], [() => buildStreetLight(), 0.3], [(r) => buildOak(r), 0.15]] },
+  forest: { ground: "#3f6b2c", blotch: "rgba(20,50,10,0.18)", shoulder: 0x5c4a33, hemiGround: 0x4a6b33, envGround: ["#4d6b3a", "#2c3f22"], fog: 0xa9c0a0, backdrop: "hills",
+    props: [[(r) => buildPine(r), 0.55], [(r) => buildOak(r), 0.35], [(r) => buildRock(r, 0x6f6f66), 0.1]] },
+  beach: { ground: "#efdcae", blotch: "rgba(200,170,110,0.12)", shoulder: 0xd9c38f, hemiGround: 0xe6d3a3, envGround: ["#9fd0e6", "#d8c08a"], fog: 0xcfe7f2, fogNear: 220, fogFar: 880, backdrop: "ocean",
+    props: [[(r) => buildPalm(r), 0.65], [(r) => buildUmbrella(r), 0.35]] },
+  mountain: { ground: "#6c8650", blotch: "rgba(40,60,30,0.15)", shoulder: 0x7a6a55, hemiGround: 0x5f7a48, envGround: ["#8aa0b8", "#4f5f44"], fog: 0xc2d0de, backdrop: "peaks",
+    props: [[(r) => buildPine(r), 0.6], [(r) => buildRock(r, 0x8a8a84, 1.6), 0.4]] },
+  swamp: { ground: "#3d4a2c", blotch: "rgba(20,30,10,0.25)", shoulder: 0x4d4532, hemiGround: 0x3f4a2e, envGround: ["#6d7a5c", "#2a3020"], fog: 0x76836a, fogNear: 50, fogFar: 300, light: { sun: 0.6, sky: 0.85, exposure: 0.95 }, backdrop: "swamp",
+    props: [[(r) => buildDeadTree(r), 0.4], [(r) => buildReeds(r), 0.3], [(r) => buildPuddle(r), 0.3]] },
+  arctic: { ground: "#eef5fa", blotch: "rgba(150,180,210,0.14)", grain: 12, shoulder: 0xd3e0ea, hemiGround: 0xe6f0f8, envGround: ["#dbe9f4", "#aac2d6"], fog: 0xdce9f4, light: { exposure: 0.8 }, backdrop: "icePeaks",
+    props: [[(r) => buildPine(r, true), 0.45], [(r) => buildIce(r), 0.35], [() => buildSnowman(), 0.2]] },
+  volcano: { ground: "#2b2522", blotch: "rgba(0,0,0,0.25)", extra: "lava", shoulder: 0x3a2f2a, hemiGround: 0x3a2018, envGround: ["#5a2a1a", "#1a1210"], fog: 0x5b2a1c, fogNear: 80, fogFar: 420, light: { sun: 0.75, exposure: 1.0 }, skyTurbidity: 18, backdrop: "volcano",
+    props: [[(r) => buildLavaRock(r), 0.6], [(r) => buildRock(r, 0x1d1917, 1.3), 0.4]] },
+  space: { ground: "#6a6585", blotch: "rgba(0,0,0,0.12)", extra: "craters", shoulder: 0x2f2b40, hemiGround: 0x2a2540, envGround: ["#2b2350", "#0d0a1a"], fog: 0x0b0820, fogNear: 160, fogFar: 700, light: { sun: 1.3, sky: 1.6, exposure: 1.25, color: 0xdfe7ff }, noSky: true, backdrop: "planet",
+    props: [[(r) => buildCrystal(r), 0.6], [(r) => buildRock(r, 0x6b6880), 0.4]] },
+};
+
+// What's on the horizon (doesn't move).
+function buildBackdrop(scene, kind, rand, kit) {
+  const far = (i) => ({ side: i % 2 ? 1 : -1, x: 90 + rand() * 260, z: -380 - rand() * 320 });
+  if (kind === "mesas") {
+    const m0 = mat(0xb07a4f, { flatShading: true });
+    for (let i = 0; i < 14; i++) {
+      const r = 30 + rand() * 60;
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(r * (0.5 + rand() * 0.3), r, 18 + rand() * 40, 7), m0);
+      const p = far(i);
+      m.position.set(p.side * p.x, 8, p.z);
+      scene.add(m);
+    }
+  } else if (kind === "skyline") {
+    for (let i = 0; i < 46; i++) {
+      const w = 14 + rand() * 30;
+      const h = 30 + rand() * 120;
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), new THREE.MeshStandardMaterial({ map: kit.windows[i % kit.windows.length], roughness: 0.5, metalness: 0.3 }));
+      const side = i % 2 ? 1 : -1;
+      m.position.set(side * (45 + rand() * 300), h / 2, -200 - rand() * 480);
+      scene.add(m);
+    }
+  } else if (kind === "hills" || kind === "swamp") {
+    const m0 = mat(kind === "swamp" ? 0x2f3a24 : 0x2f5a25, { flatShading: true });
+    for (let i = 0; i < 16; i++) {
+      const r = 50 + rand() * 90;
+      const m = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), m0);
+      m.scale.y = 0.35 + rand() * 0.3;
+      const p = far(i);
+      m.position.set(p.side * p.x, 0, p.z);
+      scene.add(m);
+    }
+  } else if (kind === "peaks" || kind === "icePeaks") {
+    // Far off, so drawn crisp (no haze), in a blue-grey that reads as distance.
+    const rock = mat(kind === "icePeaks" ? 0x8fa9bf : 0x56606b, { flatShading: true, fog: false });
+    const snow = mat(0xf6fafd, { flatShading: true, fog: false });
+    for (let i = 0; i < 12; i++) {
+      const r = 90 + rand() * 80;
+      const h = 170 + rand() * 150;
+      const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, 7), rock);
+      const side = i % 2 ? 1 : -1;
+      m.position.set(side * (40 + rand() * 360), h / 2 - 6, -640 - rand() * 220);
+      const cap = new THREE.Mesh(new THREE.ConeGeometry(r * 0.42, h * 0.42, 7), snow);
+      cap.position.y = h * 0.29 + 0.5;
+      m.add(cap);
+      scene.add(m);
+    }
+  } else if (kind === "ocean") {
+    // The sea on the right, dunes on the left.
+    const sea = new THREE.Mesh(new THREE.PlaneGeometry(1200, 1600), new THREE.MeshStandardMaterial({ color: 0x0b5f95, roughness: 0.45, metalness: 0, envMapIntensity: 0.35 }));
+    sea.rotation.x = -Math.PI / 2;
+    sea.position.set(611.5, 0.05, -500); // from just past the shoulder
+    // White surf where it meets the sand.
+    const surf = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1600), new THREE.MeshStandardMaterial({ color: 0xf2f8fb, roughness: 0.6 }));
+    surf.rotation.x = -Math.PI / 2;
+    surf.position.set(12, 0.06, -500);
+    scene.add(surf);
+    scene.add(sea);
+    const dune = mat(0xe3c98f, { flatShading: true });
+    for (let i = 0; i < 10; i++) {
+      const r = 30 + rand() * 50;
+      const m = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), dune);
+      m.scale.y = 0.25;
+      m.position.set(-(70 + rand() * 260), 0, -300 - rand() * 400);
+      scene.add(m);
+    }
+  } else if (kind === "volcano") {
+    const cone = new THREE.Mesh(new THREE.CylinderGeometry(34, 230, 240, 12, 1, true), mat(0x221a16, { flatShading: true, side: THREE.DoubleSide, fog: false }));
+    cone.position.set(-90, 118, -840);
+    scene.add(cone);
+    const crater = new THREE.Mesh(new THREE.CircleGeometry(34, 20).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xff6a1a, fog: false }));
+    crater.position.set(-90, 237, -840);
+    scene.add(crater);
+    // Lava running down the side, and a glow over the top.
+    const lava = new THREE.MeshBasicMaterial({ color: 0xff4d0d, fog: false });
+    for (let i = 0; i < 4; i++) {
+      const flow = new THREE.Mesh(new THREE.PlaneGeometry(6 + rand() * 6, 200), lava);
+      flow.position.set(-90 + (rand() - 0.5) * 90, 120, -840 + 120);
+      flow.rotation.set(-0.5, 0, (rand() - 0.5) * 0.5);
+      scene.add(flow);
+    }
+    const glow = new THREE.Mesh(new THREE.SphereGeometry(60, 16, 10), new THREE.MeshBasicMaterial({ color: 0xff5a14, transparent: true, opacity: 0.25, fog: false, depthWrite: false }));
+    glow.position.set(-90, 250, -840);
+    scene.add(glow);
+    const m0 = mat(0x1d1714, { flatShading: true });
+    for (let i = 0; i < 8; i++) {
+      const r = 30 + rand() * 50;
+      const m = new THREE.Mesh(new THREE.ConeGeometry(r, 40 + rand() * 60, 6), m0);
+      const p = far(i);
+      m.position.set(p.side * p.x, 20, p.z);
+      scene.add(m);
+    }
+  } else if (kind === "planet") {
+    const planet = new THREE.Mesh(new THREE.SphereGeometry(120, 40, 24), new THREE.MeshStandardMaterial({ color: 0xd08a4a, roughness: 0.8, emissive: 0x5a2a10, emissiveIntensity: 0.6, fog: false }));
+    planet.position.set(140, 200, -820);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(160, 240, 64), new THREE.MeshBasicMaterial({ color: 0xe8c9a0, side: THREE.DoubleSide, transparent: true, opacity: 0.6, fog: false }));
+    ring.rotation.set(1.2, 0.3, 0);
+    planet.add(ring);
+    const moon = new THREE.Mesh(new THREE.SphereGeometry(26, 24, 16), new THREE.MeshStandardMaterial({ color: 0xbfc3d0, emissive: 0x2a2c33, fog: false }));
+    moon.position.set(-230, 230, -760);
+    scene.add(planet, moon);
+    // Stars all around.
+    const pts = [];
+    for (let i = 0; i < 1500; i++) {
+      const v = new THREE.Vector3(rand() - 0.5, rand() * 0.9 + 0.05, rand() - 0.5).normalize().multiplyScalar(1500);
+      pts.push(v.x, v.y, v.z);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+    scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 2.2, sizeAttenuation: false, fog: false })));
+  }
 }
 
 // ---------- the scene ----------
@@ -560,7 +960,7 @@ const LIGHT = {
 // Reflections come from a simple painted sky (blue overhead, warm haze at
 // the horizon, sand below, a bright sun) rather than the sky shader, whose
 // very bright values can break the lighting on some phones.
-function paintedSky(renderer, L, sun, on = true) {
+function paintedSky(renderer, L, sun, on = true, envGround = ["#b8946a", "#6e5338"]) {
   const pmrem = new THREE.PMREMGenerator(renderer);
   if (!on) return { pmrem, envMap: null };
   const envScene = new THREE.Scene();
@@ -569,8 +969,8 @@ function paintedSky(renderer, L, sun, on = true) {
     grad.addColorStop(0, L.env[0]);
     grad.addColorStop(0.42, L.env[1]);
     grad.addColorStop(0.5, L.env[2]);
-    grad.addColorStop(0.53, "#b8946a");
-    grad.addColorStop(1, "#6e5338");
+    grad.addColorStop(0.53, envGround[0]);
+    grad.addColorStop(1, envGround[1]);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
   });
@@ -628,10 +1028,22 @@ export function createCarPreview(canvas, W, H) {
 
 
 // opts: { reflections, shadows } — both on by default; off is lighter for
-// older phones. theme: the day's look.
+// older phones. theme: the day's look. place: the scenery (rushEngine.js
+// SCENERY), desert unless unlocked.
 export function createRush3D(glCanvas, hudCanvas, W, H, me, art = {}, opts = {}) {
-  const { reflections = true, shadows = true, theme = { id: "noon", sun: 58 } } = opts;
-  const L = LIGHT[theme.id] || LIGHT.noon;
+  const { reflections = true, shadows = true, theme = { id: "noon", sun: 58 }, place = "desert" } = opts;
+  const P = PLACES[place] || PLACES.desert;
+  const base = LIGHT[theme.id] || LIGHT.noon;
+  const tweak = P.light || {};
+  const L = {
+    ...base,
+    sunPower: base.sunPower * (tweak.sun ?? 1),
+    sky: base.sky * (tweak.sky ?? 1),
+    exposure: base.exposure * (tweak.exposure ?? 1),
+    fog: P.fog ?? base.fog,
+    sun: tweak.color ?? base.sun,
+    env: P.noSky ? ["#05010f", "#1e1b4b", "#2b2350"] : base.env,
+  };
   const renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(W, H, false);
@@ -644,19 +1056,24 @@ export function createRush3D(glCanvas, hudCanvas, W, H, me, art = {}, opts = {})
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(58, W / H, 0.5, 900);
 
-  // The day's desert sky, which also lights the paint's reflections.
-  const sky = new Sky();
-  sky.scale.setScalar(10000);
+  // The day's sky (space has none: black, stars and a planet), which also
+  // lights the paint's reflections.
   const sun = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(90 - theme.sun), THREE.MathUtils.degToRad(155));
-  sky.material.uniforms.turbidity.value = L.turbidity;
-  sky.material.uniforms.rayleigh.value = L.rayleigh;
-  sky.material.uniforms.mieCoefficient.value = 0.003;
-  sky.material.uniforms.mieDirectionalG.value = 0.82;
-  sky.material.uniforms.sunPosition.value.copy(sun);
-  scene.add(sky);
-  const { pmrem, envMap } = paintedSky(renderer, L, sun, reflections);
+  if (P.noSky) {
+    scene.background = new THREE.Color(0x05010f);
+  } else {
+    const sky = new Sky();
+    sky.scale.setScalar(10000);
+    sky.material.uniforms.turbidity.value = P.skyTurbidity ?? L.turbidity;
+    sky.material.uniforms.rayleigh.value = L.rayleigh;
+    sky.material.uniforms.mieCoefficient.value = 0.003;
+    sky.material.uniforms.mieDirectionalG.value = 0.82;
+    sky.material.uniforms.sunPosition.value.copy(sun);
+    scene.add(sky);
+  }
+  const { pmrem, envMap } = paintedSky(renderer, L, sun, reflections, P.envGround);
   scene.environment = envMap;
-  scene.fog = new THREE.Fog(L.fog, 140, 560);
+  scene.fog = new THREE.Fog(L.fog, P.fogNear ?? 140, P.fogFar ?? 560);
 
   const sunLight = new THREE.DirectionalLight(L.sun, L.sunPower);
   sunLight.position.copy(sun).multiplyScalar(80);
@@ -665,9 +1082,9 @@ export function createRush3D(glCanvas, hudCanvas, W, H, me, art = {}, opts = {})
   Object.assign(sunLight.shadow.camera, { left: -14, right: 14, top: 40, bottom: -40, near: 1, far: 200 });
   sunLight.shadow.bias = -0.0005;
   scene.add(sunLight, sunLight.target);
-  scene.add(new THREE.HemisphereLight(0xbcd6ff, 0xc9a06a, L.sky));
+  scene.add(new THREE.HemisphereLight(P.noSky ? 0x8f8ad8 : 0xbcd6ff, P.hemiGround, L.sky));
 
-  // Road and desert.
+  // Road and the ground around it.
   const roadTex = roadTexture();
   const roadLen = 1000;
   roadTex.repeat.set(1, roadLen / ROAD_TILE);
@@ -676,7 +1093,7 @@ export function createRush3D(glCanvas, hudCanvas, W, H, me, art = {}, opts = {})
   road.position.set(0, 0.04, -roadLen / 2 + 30);
   road.receiveShadow = true;
   scene.add(road);
-  const shoulderMat = new THREE.MeshStandardMaterial({ color: 0x8a7458, roughness: 1 });
+  const shoulderMat = new THREE.MeshStandardMaterial({ color: P.shoulder, roughness: 1 });
   for (const side of [-1, 1]) {
     const sh = new THREE.Mesh(new THREE.PlaneGeometry(2.5, roadLen), shoulderMat);
     sh.rotation.x = -Math.PI / 2;
@@ -684,31 +1101,33 @@ export function createRush3D(glCanvas, hudCanvas, W, H, me, art = {}, opts = {})
     sh.receiveShadow = true;
     scene.add(sh);
   }
-  const sandTex = sandTexture();
+  const sandTex = groundTexture(P);
   const sand = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), new THREE.MeshStandardMaterial({ map: sandTex, roughness: 1 }));
   sand.rotation.x = -Math.PI / 2;
   sand.position.z = -500;
   sand.receiveShadow = true;
   scene.add(sand);
 
-  // Distant mesas.
+  // On the horizon.
   let seed = 11;
   const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  const mesaMat = new THREE.MeshStandardMaterial({ color: 0xb07a4f, roughness: 1, flatShading: true });
-  for (let i = 0; i < 14; i++) {
-    const r = 30 + rand() * 60;
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(r * (0.5 + rand() * 0.3), r, 18 + rand() * 40, 7), mesaMat);
-    const side = i % 2 ? 1 : -1;
-    m.position.set(side * (90 + rand() * 260), 8, -420 - rand() * 280);
-    scene.add(m);
-  }
+  const kit = { windows: P.backdrop === "skyline" ? [windowTex(0.35), windowTex(0.55), windowTex(0.2)] : [] };
+  buildBackdrop(scene, P.backdrop, rand, kit);
 
   // Roadside scenery that loops past.
   const scenery = [];
+  const total = P.props.reduce((n, [, w]) => n + w, 0);
   for (let i = 0; i < 26; i++) {
-    const item = rand() < 0.6 ? buildCactus(rand) : buildRock(rand);
-    const side = rand() < 0.5 ? -1 : 1;
-    item.position.x = side * (LANE_W * 1.5 + 4 + rand() * 30);
+    let pick = rand() * total;
+    const [make] = P.props.find(([, w]) => (pick -= w) <= 0) || P.props[0];
+    const item = make(rand, kit);
+    // The sea's on the right at the beach: keep things on the sand side.
+    const side = P.backdrop === "ocean" ? -1 : rand() < 0.5 ? -1 : 1;
+    item.position.x = side * (LANE_W * 1.5 + 4 + (item.userData.setBack ?? 0) + rand() * 30);
+    if (item.userData.faceRoad) {
+      item.position.x = side * (LANE_W * 1.5 + 2.6);
+      item.rotation.y = side > 0 ? 0 : Math.PI;
+    }
     item.userData.base = rand() * LOOP;
     scene.add(item);
     scenery.push(item);

@@ -23,7 +23,14 @@ import {
   saveGameLook,
   loadGameSettings,
   loadGhost,
+  SCENERY,
+  loadScenery,
+  unlockScenery,
+  unlockMessage,
+  loadPickedScenery,
+  savePickedScenery,
 } from "../lib/rush.js";
+import { loadMyPoints } from "../lib/points.js";
 import { RushAudio, loadSoundPrefs } from "../lib/rushAudio.js";
 import { loadVehicles, loadProfile } from "../lib/store.js";
 import { Avatar } from "./EditProfile.jsx";
@@ -93,6 +100,11 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
   const audio = useRef(null);
   const [sound, setSound] = useState(loadSoundPrefs);
   const [gfx, setGfx] = useState(loadGfx);
+  const [scenery, setScenery] = useState({ list: [], owned: new Set(["desert"]) });
+  const [place, setPlace] = useState(loadPickedScenery);
+  const [buying, setBuying] = useState(null); // the scenery being unlocked
+  const [balance, setBalance] = useState(null);
+  const [unlocking, setUnlocking] = useState(false);
 
   // Sound can only start from a tap, so it begins with the first START.
   function play() {
@@ -118,6 +130,50 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
       .then(setSettings)
       .catch((e) => console.warn(e.message));
   }, []);
+
+  useEffect(() => {
+    loadScenery(user?.id)
+      .then(setScenery)
+      .catch((e) => setError(e.message));
+  }, [user?.id]);
+  // Only drive somewhere you own (a pick from another account falls back).
+  const placeNow = scenery.owned.has(place) ? place : "desert";
+
+  function choosePlace(id) {
+    setPlace(id);
+    savePickedScenery(id);
+  }
+
+  async function startBuying(item) {
+    if (!user) return onNeedAccount();
+    setBuying(item);
+    setBalance(null);
+    try {
+      const p = await loadMyPoints();
+      setBalance(Number(p.balance || 0));
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function confirmBuy() {
+    setUnlocking(true);
+    try {
+      const r = await unlockScenery(buying.id);
+      if (r.status !== "ok" && r.status !== "owned") {
+        onToast(unlockMessage(r));
+        return;
+      }
+      setScenery((sc) => ({ ...sc, owned: new Set([...sc.owned, buying.id]) }));
+      choosePlace(buying.id);
+      onToast(`${SCENERY[buying.id].emoji} ${buying.name} unlocked${r.balance != null ? ` · ${r.balance} points left` : ""}`);
+      setBuying(null);
+    } catch (e) {
+      onToast(e.message);
+    } finally {
+      setUnlocking(false);
+    }
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -385,6 +441,72 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
               ))}
             </div>
 
+            <div style={{ ...label, marginTop: 12 }}>SCENERY · UNLOCK MORE WITH POINTS</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+              {scenery.list
+                .filter((sc) => sc.active || scenery.owned.has(sc.id))
+                .map((sc) => {
+                  const look = SCENERY[sc.id];
+                  const owned = scenery.owned.has(sc.id);
+                  const on = placeNow === sc.id;
+                  const sky = look.sky || ["#7DD3FC", "#E0F2FE"];
+                  return (
+                    <button
+                      key={sc.id}
+                      className="action-btn"
+                      aria-pressed={on}
+                      aria-label={owned ? `Drive in the ${sc.name}` : `Unlock ${sc.name} for ${sc.price} points`}
+                      onClick={() => (owned ? choosePlace(sc.id) : startBuying(sc))}
+                      style={{
+                        position: "relative",
+                        height: 74,
+                        borderRadius: 10,
+                        cursor: "pointer",
+                        border: on ? "2px solid #3CABFD" : "1px solid #2A2A2A",
+                        background: `linear-gradient(180deg, ${sky[0]} 0%, ${sky[1]} 52%, ${look.ground || "#d8b27a"} 52%)`,
+                        color: "#fff",
+                        padding: 0,
+                        overflow: "hidden",
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                      }}
+                    >
+                      <span aria-hidden="true" style={{ fontSize: 26, filter: owned ? "none" : "grayscale(0.6)" }}>
+                        {look.emoji}
+                      </span>
+                      <span style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", fontSize: 12, fontWeight: 800, padding: "2px 0", letterSpacing: 0.5 }}>
+                        {on ? "✓ " : ""}
+                        {sc.name}
+                        {!owned && <span style={{ color: "#FACC15" }}> · 🔒 {sc.price} pts</span>}
+                      </span>
+                    </button>
+                  );
+                })}
+            </div>
+            {buying && (
+              <div role="dialog" aria-label={`Unlock ${buying.name}`} style={{ marginTop: 8, background: "#141414", border: "1px solid #3A3000", borderRadius: 12, padding: 12 }}>
+                <div style={{ fontSize: 17, fontWeight: 900 }}>
+                  {SCENERY[buying.id].emoji} Unlock {buying.name} for <span style={{ color: "#FACC15" }}>{buying.price} points</span>?
+                </div>
+                <div style={{ ...muted, fontSize: 12.5, marginTop: 2 }}>
+                  {balance === null ? "Checking your points…" : `You have ${balance} points.`} Yours to keep, on every run. Scenery is looks
+                  only: the course and points are the same everywhere.
+                </div>
+                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                  <button
+                    className="action-btn"
+                    disabled={unlocking || balance === null || balance < buying.price}
+                    onClick={confirmBuy}
+                    style={{ ...bigButton, flex: 2, padding: "11px 0", opacity: unlocking || balance === null || balance < buying.price ? 0.5 : 1 }}
+                  >
+                    {unlocking ? "UNLOCKING…" : balance !== null && balance < buying.price ? `NEED ${buying.price - balance} MORE` : `UNLOCK · ${buying.price} PTS`}
+                  </button>
+                  <button className="action-btn" onClick={() => setBuying(null)} style={{ ...quietButton, flex: 1, padding: "11px 0" }}>
+                    CANCEL
+                  </button>
+                </div>
+              </div>
+            )}
+
             {rules.enabled ? (
               <button
                 className="action-btn"
@@ -429,6 +551,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
             rules={rules}
             ghostRun={ghost}
             theme={theme}
+            place={placeNow}
             difficulty={level}
             forPoints={forPoints}
             onStarted={(res) => res?.today && setMine((m) => ({ ...(m || {}), today: res.today }))}
@@ -740,7 +863,7 @@ const FINISH_STATUS = {
   too_fast: "This run finished faster than the game allows, so it didn't count. (too_fast)",
   too_long: "This run took over 10 minutes, so it didn't count. (too_long)",
 };
-function Game({ look, plate, rules, difficulty, forPoints, onStarted, ghostRun, theme, audio, gfx = "classic", onFallback, vehicleId, signedIn, onDone, onQuit }) {
+function Game({ look, plate, rules, difficulty, forPoints, onStarted, ghostRun, theme, place = "desert", audio, gfx = "classic", onFallback, vehicleId, signedIn, onDone, onQuit }) {
   const startNote = useRef("");
   const canvasRef = useRef(null);
   const glRef = useRef(null);
@@ -805,7 +928,7 @@ function Game({ look, plate, rules, difficulty, forPoints, onStarted, ghostRun, 
     let view3d = null;
     if (want3d) {
       try {
-        view3d = mod3d.createRush3D(glRef.current, hudRef.current, W, H, me, ART, { theme, shadows: !LOW_POWER });
+        view3d = mod3d.createRush3D(glRef.current, hudRef.current, W, H, me, ART, { theme, place, shadows: !LOW_POWER });
         draw = (g) => view3d.render(g, ghost);
       } catch (e) {
         onFallback?.(`This phone couldn't run 3D graphics, so it's the classic look. (${e.message})`);
@@ -824,6 +947,7 @@ function Game({ look, plate, rules, difficulty, forPoints, onStarted, ghostRun, 
     }
     const g = newGame(seededRand(seed), rules);
     g.theme = theme;
+    g.place = place;
     if (import.meta.env.DEV) window.__rush = g; // for checking replays in tests
     queue.current = [];
     let last = performance.now();

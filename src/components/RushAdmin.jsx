@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { DEFAULT_LEVELS, LEVEL_IDS, loadGameSettings, saveGameSettings } from "../lib/rush.js";
+import { DEFAULT_LEVELS, LEVEL_IDS, loadGameSettings, saveGameSettings, SCENERY, loadScenery, saveSceneryPrice } from "../lib/rush.js";
 import { LEVELS } from "./TunrRush.jsx";
-import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
+import { muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
 
 const mph = (ms) => `${Math.round(ms * 2.237)} MPH`;
 const secs = (v) => (v === 0 ? "off" : `${v} sec`);
@@ -144,6 +144,81 @@ export default function RushAdmin({ onToast }) {
           Last changed {new Date(saved.updatedAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
         </div>
       )}
+
+      <SceneryPrices onToast={onToast} />
+    </div>
+  );
+}
+
+// What each place costs in points, and whether it's on sale. Anyone who
+// already unlocked a place keeps it.
+function SceneryPrices({ onToast }) {
+  const [list, setList] = useState(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState("");
+
+  useEffect(() => {
+    loadScenery(null)
+      .then((r) => setList(r.list.map((x) => ({ ...x, draft: String(x.price) }))))
+      .catch((e) => setError(e.message));
+  }, []);
+
+  async function save(item, patch) {
+    setBusy(item.id);
+    setError("");
+    try {
+      await saveSceneryPrice(item.id, patch);
+      setList((l) => l.map((x) => (x.id === item.id ? { ...x, ...patch, draft: String(patch.price ?? x.price) } : x)));
+      onToast(`${item.name} saved`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy("");
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 26 }}>
+      <div style={label}>SCENERY PRICES (POINTS)</div>
+      <div style={{ ...muted, fontSize: 12.5 }}>
+        Players unlock these once with reward points (10 points = $1 of value). Looks only; the desert is always free. Taking one off
+        sale hides it from new buyers; people who own it keep it.
+      </div>
+      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {list === null && !error && <div style={{ ...muted, marginTop: 8 }}>Loading…</div>}
+      {(list || [])
+        .filter((x) => x.id !== "desert")
+        .map((x) => {
+          const n = Number(x.draft);
+          const valid = x.draft !== "" && Number.isInteger(n) && n >= 1 && n <= 100000;
+          return (
+            <div key={x.id} style={{ ...row, opacity: x.active ? 1 : 0.6 }}>
+              <span aria-hidden="true" style={{ fontSize: 22 }}>{SCENERY[x.id]?.emoji}</span>
+              <span style={{ flex: 1, fontSize: 16, fontWeight: 900 }}>{x.name}</span>
+              <input
+                aria-label={`${x.name} price in points`}
+                inputMode="numeric"
+                value={x.draft}
+                onChange={(e) => setList((l) => l.map((y) => (y.id === x.id ? { ...y, draft: e.target.value.replace(/\D/g, "") } : y)))}
+                style={{ ...field, width: 70, padding: "8px 8px", textAlign: "right" }}
+              />
+              <button
+                disabled={busy === x.id || !valid || n === x.price}
+                onClick={() => save(x, { price: n })}
+                style={{ ...quietButton, width: "auto", padding: "8px 10px", fontSize: 12.5, opacity: !valid || n === x.price ? 0.4 : 1 }}
+              >
+                SAVE
+              </button>
+              <button
+                disabled={busy === x.id}
+                onClick={() => save(x, { active: !x.active })}
+                style={{ ...quietButton, width: "auto", padding: "8px 10px", fontSize: 12.5, color: x.active ? "#10B981" : "#888" }}
+              >
+                {x.active ? "ON SALE" : "OFF"}
+              </button>
+            </div>
+          );
+        })}
     </div>
   );
 }

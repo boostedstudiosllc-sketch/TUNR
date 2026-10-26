@@ -64,6 +64,24 @@ export const THEMES = [
   { id: "golden", name: "Golden hour", sky: ["#F59E0B", "#FDE68A"], sand: "#E8B872", sun: 14 },
   { id: "dusk", name: "Dusk", sky: ["#3B2A6B", "#F9A8D4"], sand: "#C79A74", sun: 5 },
 ];
+// Scenery: where the road runs. Looks only (the course is the same
+// everywhere). The desert is free; the rest are unlocked with reward points
+// (078_rush_scenery.sql has the prices). For the Classic (2D) drawing: the
+// ground, the road, roadside emoji, and a sky of its own where the day's
+// sky wouldn't fit. The 3D looks are in rush3d.js.
+export const SCENERY = {
+  desert: { name: "Desert", emoji: "🌵", side: ["🌵", "🌵", "🪨"] },
+  city: { name: "City", emoji: "🏙️", ground: "#6B7280", side: ["🏢", "🏬", "🏢", "🚦"] },
+  forest: { name: "Forest", emoji: "🌲", ground: "#3F7D3A", side: ["🌲", "🌳", "🌲", "🍄"] },
+  beach: { name: "Beach", emoji: "🏖️", ground: "#F3DFA2", side: ["🌴", "🌴", "⛱️", "🐚"] },
+  mountain: { name: "Mountains", emoji: "🏔️", ground: "#6E8B4E", side: ["🌲", "🪨", "🏔️", "🌲"] },
+  swamp: { name: "Swamp", emoji: "🐊", ground: "#4B5D3A", sky: ["#4A5A40", "#B5C3A0"], side: ["🌿", "🪵", "🐊", "🌾"] },
+  arctic: { name: "Arctic", emoji: "❄️", ground: "#EAF4FA", sky: ["#7CC4F0", "#EAF6FF"], side: ["☃️", "🧊", "❄️", "🐧"] },
+  volcano: { name: "Volcano", emoji: "🌋", ground: "#2A2420", road: "#4B4642", sky: ["#2A0707", "#C2410C"], side: ["🌋", "🔥", "🪨", "🔥"] },
+  space: { name: "Space", emoji: "🪐", ground: "#3B3552", road: "#2E2A40", sky: ["#05010F", "#1E1B4B"], side: ["🪐", "⭐", "☄️", "🛸"] },
+};
+export const SCENERY_IDS = Object.keys(SCENERY);
+
 // "2026-10-26" → that day's theme.
 export function themeFor(day) {
   const n = Math.floor(Date.parse(`${day}T12:00:00Z`) / 86400000);
@@ -97,7 +115,7 @@ export function newGame(rand = Math.random, rules = {}, fx = Math.random) {
     lane: 1,
     laneX: 1,
     objects: [],
-    scenery: [0.15, 0.4, 0.65, 0.9].map((z, i) => ({ z, side: i % 2 ? 1 : -1 })),
+    scenery: [0.15, 0.4, 0.65, 0.9].map((z, i) => ({ z, side: i % 2 ? 1 : -1, pick: i / 4 })),
     stripe: 0,
     crashT: 0,
     crashes: 0,
@@ -212,6 +230,7 @@ export function step(g, dt) {
     if (s.z < 0) {
       s.z += 1;
       s.side = g.fx() < 0.5 ? -1 : 1;
+      s.pick = g.fx();
     }
   }
 
@@ -708,6 +727,7 @@ const ready = (img) => img && img.complete && img.naturalWidth > 0;
 // `ghost` is a replay of your best run today, drawn see-through.
 export function drawGame(ctx, W, H, g, me, art = {}, ghost = null) {
   const theme = g.theme || THEMES[0];
+  const place = SCENERY[g.place] || SCENERY.desert;
   const y0 = H * 0.3;
   const yPlayer = H * 0.86;
   const hw0 = W * 0.03;
@@ -718,15 +738,20 @@ export function drawGame(ctx, W, H, g, me, art = {}, ghost = null) {
 
   // Sky and sand.
   const sky = ctx.createLinearGradient(0, 0, 0, y0);
-  sky.addColorStop(0, theme.sky[0]);
-  sky.addColorStop(1, theme.sky[1]);
+  sky.addColorStop(0, (place.sky || theme.sky)[0]);
+  sky.addColorStop(1, (place.sky || theme.sky)[1]);
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, W, y0);
-  ctx.fillStyle = theme.sand;
+  if (g.place === "space") {
+    // Stars.
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    for (let i = 0; i < 40; i++) ctx.fillRect((i * 97) % W, (i * 53) % y0, 1.5, 1.5);
+  }
+  ctx.fillStyle = place.ground || theme.sand;
   ctx.fillRect(0, y0, W, H - y0);
 
   // Road.
-  ctx.fillStyle = "#9CA3AF";
+  ctx.fillStyle = place.road || "#9CA3AF";
   ctx.beginPath();
   ctx.moveTo(W / 2 - hw0, y0);
   ctx.lineTo(W / 2 + hw0, y0);
@@ -758,14 +783,15 @@ export function drawGame(ctx, W, H, g, me, art = {}, ghost = null) {
     }
   }
 
-  // Cacti beside the road.
+  // Things beside the road (cacti in the desert).
   for (const s of [...g.scenery].sort((a, b) => b.z - a.z)) {
     const y = yOf(s.z);
     const size = Math.max(6, hwOf(y) * 0.28);
     ctx.font = `${size}px serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
-    ctx.fillText("🌵", W / 2 + s.side * (hwOf(y) * 1.25 + size * 0.4), y);
+    const emoji = place.side[Math.floor((s.pick || 0) * place.side.length) % place.side.length];
+    ctx.fillText(emoji, W / 2 + s.side * (hwOf(y) * 1.25 + size * 0.4), y);
   }
 
   // Traffic and pickups, far to near.
