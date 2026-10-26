@@ -10,7 +10,7 @@ import LinkupTerms from "./LinkupTerms.jsx";
 import { muted, bigButton, quietButton } from "./Sheet.jsx";
 import { useAccount } from "../lib/account.js";
 
-// Linkups: who's heading out in the next two hours, and starting your own.
+// Linkups: who's heading out today or tomorrow, and starting your own.
 export default function LinkupTab({ user, position, openId, onOpened, onNeedAccount, onToast, onOpenPerson, onShowTerms, onOpenAlerts }) {
   const [linkups, setLinkups] = useState(null);
   const [error, setError] = useState("");
@@ -69,7 +69,7 @@ export default function LinkupTab({ user, position, openId, onOpened, onNeedAcco
       <div style={{ padding: "8px 20px" }}>
         <Header />
         <div style={{ ...muted, marginTop: 12 }}>
-          Linkups are people heading out in the next couple of hours to shoot, cruise or hang — and looking for company.
+          Linkups are people heading out now, later today or tomorrow to shoot, cruise or hang — and looking for company.
           Sign in to see who's out and start your own.
         </div>
         <button onClick={onNeedAccount} style={{ ...bigButton, marginTop: 14 }}>
@@ -165,7 +165,7 @@ function Header() {
     <div>
       <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 0.5 }}>⚡ LINKUP</div>
       <div style={{ fontSize: 12.5, color: "#777", fontFamily: "'Barlow', sans-serif" }}>
-        Who's heading out in the next 2 hours — shoot, cruise or hang.
+        Who's heading out today or tomorrow — shoot, cruise or hang.
       </div>
     </div>
   );

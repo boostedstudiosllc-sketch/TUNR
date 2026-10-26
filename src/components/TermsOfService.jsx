@@ -212,7 +212,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
 
         <div style={heading}>7. LINKUPS</div>
         <div style={body}>
-          Linkups are get-togethers people post for the next couple of hours. Before you post or
+          Linkups are get-togethers people post for later today or tomorrow. Before you post or
           join one, you agree to these rules:
           {LINKUP_RULES.map(([title, text]) => (
             <span key={title} style={{ display: "block", marginTop: 8 }}>

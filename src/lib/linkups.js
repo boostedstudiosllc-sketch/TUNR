@@ -1,4 +1,4 @@
-// Linkups: spontaneous get-togethers in the next two hours. The rules (who
+// Linkups: get-togethers starting now, later today or tomorrow. The rules (who
 // sees the spot, who can join, the limits) live in the database
 // (040_linkups.sql); this is the app's side of it.
 import { supabase } from "./supabase.js";
@@ -70,10 +70,10 @@ export async function acceptLinkupTerms() {
   if (error) throw new Error(withReason("Couldn't save that you agreed.", error));
 }
 
-// draft: { kind, visibility, place, area, lat, lng, note, startsInMinutes, hours, goingAs }
+// draft: { kind, visibility, place, area, lat, lng, note, startsAt (a Date), hours, goingAs }
 export async function postLinkup(draft, userId) {
   need();
-  const start = new Date(Date.now() + Math.max(0, Number(draft.startsInMinutes) || 0) * 60000);
+  const start = new Date(Math.max(Date.now(), new Date(draft.startsAt || Date.now()).getTime()));
   const end = new Date(start.getTime() + Math.min(4, Math.max(0.5, Number(draft.hours) || 2)) * 3600000);
   // Made here rather than read back: the "can you see it" check runs on a
   // snapshot from before the insert, so returning the new row would fail.

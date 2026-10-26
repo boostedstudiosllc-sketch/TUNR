@@ -3,16 +3,16 @@ import { LINKUP_KINDS, postLinkup } from "../lib/linkups.js";
 import { currentPosition } from "../lib/alerts.js";
 import { geocodeLocation, reverseGeocode } from "../lib/geocode.js";
 import { GOING_AS } from "../lib/photographer.js";
+import { defaultPick, pickedStart, startProblem, dayWord, untilWords } from "../lib/linkupTime.js";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton, Chip } from "./Sheet.jsx";
+import TimeWheel from "./TimeWheel.jsx";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const WHEN = [
-  [0, "NOW"],
-  [30, "30 MIN"],
-  [60, "1 HR"],
-  [90, "1½ HRS"],
-  [120, "2 HRS"],
+  ["now", "NOW"],
+  ["today", "TODAY"],
+  ["tomorrow", "TOMORROW"],
 ];
 
 const LENGTH = [
@@ -21,11 +21,20 @@ const LENGTH = [
   [3, "3 HRS"],
 ];
 
+// "Starts today at 7:30 PM · in 1 hr 25 min"
+function startsLine(start) {
+  const iso = start.toISOString();
+  const soon = untilWords(iso);
+  const at = start.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return `Starts ${dayWord(iso).toLowerCase()} at ${at}${soon ? ` · ${soon.toLowerCase()}` : ""}`;
+}
+
 // Starting a linkup: what, when, where, and who can see the spot.
 export default function LinkupForm({ user, onClose, onPosted, onToast }) {
-  const [draft, setDraft] = useState({
+  const [draft, setDraft] = useState(() => ({
     kind: "photos",
-    startsInMinutes: 30,
+    when: defaultPick().day,
+    time: defaultPick(),
     hours: 2,
     place: "",
     area: "",
@@ -34,7 +43,7 @@ export default function LinkupForm({ user, onClose, onPosted, onToast }) {
     note: "",
     visibility: "public",
     goingAs: "car",
-  });
+  }));
   // Coordinates came from the phone, not from looking up the typed name.
   const [fromGps, setFromGps] = useState(false);
   const [busy, setBusy] = useState("");
@@ -62,8 +71,12 @@ export default function LinkupForm({ user, onClose, onPosted, onToast }) {
     }
   }
 
+  const start = draft.when === "now" ? new Date() : pickedStart({ ...draft.time, day: draft.when });
+  const timeProblem = draft.when === "now" ? null : startProblem(start);
+
   async function submit() {
     setError("");
+    if (timeProblem) return setError(timeProblem);
     if (draft.place.trim().length < 2) return setError("Say where — a spot name or an address.");
     setBusy("post");
     try {
@@ -81,7 +94,8 @@ export default function LinkupForm({ user, onClose, onPosted, onToast }) {
         const where = await reverseGeocode(lat, lng, { token: MAPBOX_TOKEN });
         area = where.area || area;
       }
-      const id = await postLinkup({ ...draft, lat, lng, area }, user.id);
+      const startsAt = draft.when === "now" ? new Date() : pickedStart({ ...draft.time, day: draft.when });
+      const id = await postLinkup({ ...draft, startsAt, lat, lng, area }, user.id);
       onToast("⚡ Linkup's up — people nearby are getting a heads-up");
       onPosted(id);
     } catch (e) {
@@ -93,7 +107,7 @@ export default function LinkupForm({ user, onClose, onPosted, onToast }) {
   return (
     <Sheet onClose={onClose} label="Start a linkup" zIndex={270}>
       <div style={sheetTitle}>START A LINKUP</div>
-      <div style={{ ...muted, marginTop: 2 }}>Heading out in the next 2 hours? See who wants to come.</div>
+      <div style={{ ...muted, marginTop: 2 }}>Heading out now, later today or tomorrow? See who wants to come.</div>
 
       <div style={{ ...label, marginTop: 16 }}>WHAT</div>
       <div style={{ display: "flex", gap: 6 }}>
@@ -106,12 +120,29 @@ export default function LinkupForm({ user, onClose, onPosted, onToast }) {
 
       <div style={{ ...label, marginTop: 16 }}>STARTING</div>
       <div style={{ display: "flex", gap: 6 }}>
-        {WHEN.map(([m, text]) => (
-          <Chip key={m} active={draft.startsInMinutes === m} onClick={() => set({ startsInMinutes: m })}>
+        {WHEN.map(([id, text]) => (
+          <Chip
+            key={id}
+            active={draft.when === id}
+            onClick={() => {
+              // Back to today from tomorrow with a time that's gone: start from soon.
+              const soon = defaultPick();
+              const gone = id === "today" && startProblem(pickedStart({ ...draft.time, day: "today" }));
+              set({ when: id, ...(gone && soon.day === "today" ? { time: soon } : {}) });
+            }}
+          >
             {text}
           </Chip>
         ))}
       </div>
+      {draft.when !== "now" && (
+        <div style={{ marginTop: 10 }}>
+          <TimeWheel value={draft.time} onChange={(part) => setDraft((d) => ({ ...d, time: { ...d.time, ...part } }))} />
+          <div style={{ ...muted, fontSize: 12.5, marginTop: 6, textAlign: "center", color: timeProblem ? "#EF4444" : "#9CA3AF" }}>
+            {timeProblem || startsLine(start)}
+          </div>
+        </div>
+      )}
 
       <div style={{ ...label, marginTop: 12 }}>FOR ABOUT</div>
       <div style={{ display: "flex", gap: 6 }}>

@@ -115,7 +115,7 @@ export default function AlertSettings({ user, onClose, onToast }) {
               on={settings.linkups}
               onChange={(v) => save({ linkups: v })}
               title="Tell me when a linkup starts near me"
-              sub="Someone heading out in the next 2 hours to shoot, cruise or hang."
+              sub="Someone nearby heading out today or tomorrow to shoot, cruise or hang."
             />
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>

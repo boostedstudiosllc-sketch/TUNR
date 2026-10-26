@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { linkupStatus, sortLinkups } from "../src/lib/linkupTime.js";
+import { linkupStatus, sortLinkups, pickedStart, defaultPick, startProblem } from "../src/lib/linkupTime.js";
 import { judgeReverse } from "../src/lib/geocode.js";
 import { friendlyWriteError } from "../src/lib/errors.js";
 
@@ -16,6 +16,23 @@ test("linkup timing reads naturally", () => {
   assert.deepEqual([live.live, live.text], [true, "Live · until 7:40 PM"]);
   assert.equal(linkupStatus(L({ startsAt: at(-200), endsAt: at(-10) }), NOW).text, "Ended");
   assert.equal(linkupStatus(L({ cancelled: true }), NOW).text, "Cancelled");
+  assert.equal(linkupStatus(L({ startsAt: at(150) }), NOW).text, "In 2 hr 30 min · 8:30 PM");
+  assert.equal(linkupStatus(L({ startsAt: at(240) }), NOW).text, "Today · 10:00 PM");
+  assert.equal(linkupStatus(L({ startsAt: at(15 * 60) }), NOW).text, "Tomorrow · 9:00 AM");
+});
+
+test("picking a linkup's start time on the wheel", () => {
+  const now = new Date(2026, 9, 16, 18, 2); // 6:02 PM, phone's clock
+  assert.deepEqual(defaultPick(now), { day: "today", hour: 6, minute: 35, ampm: "PM" });
+  assert.deepEqual(defaultPick(new Date(2026, 9, 16, 23, 50)), { day: "tomorrow", hour: 12, minute: 20, ampm: "AM" });
+  const tonight = pickedStart({ day: "today", hour: 9, minute: 30, ampm: "PM" }, now);
+  assert.equal(tonight.getTime(), new Date(2026, 9, 16, 21, 30).getTime());
+  const noon = pickedStart({ day: "tomorrow", hour: 12, minute: 0, ampm: "PM" }, now);
+  assert.equal(noon.getTime(), new Date(2026, 9, 17, 12, 0).getTime());
+  const midnight = pickedStart({ day: "tomorrow", hour: 12, minute: 15, ampm: "AM" }, now);
+  assert.equal(midnight.getTime(), new Date(2026, 9, 17, 0, 15).getTime());
+  assert.equal(startProblem(tonight, now), null);
+  assert.match(startProblem(pickedStart({ day: "today", hour: 9, minute: 0, ampm: "AM" }, now), now), /already passed/);
 });
 
 test("yours first, then nearest, then soonest", () => {
