@@ -1,27 +1,41 @@
-// Importing meets from TUNR's own Instagram (@tunr.app), with no hands on it.
-// Each run: keep the access token fresh, read the account's newest posts
-// through Instagram's official API, and for each post not seen before, read
-// the flyer with the same AI as "post a meet" and list the meet. Posts that
-// aren't meets are skipped; ones missing a date, time or findable place are
-// held for an admin (076_instagram_import.sql).
+// Importing meets from Instagram, with no hands on it: TUNR's own account
+// (@tunr.app) and other accounts that said yes (instagram_sources, e.g.
+// @nawfside.tm). Each run: keep the access token working, read the newest
+// posts through Instagram's official API, and for each post not seen
+// before, read the flyer with the same AI as "post a meet" and list the
+// meet. Posts that aren't meets are skipped; ones missing a date, time or
+// findable place are held for an admin (076, 077 migrations).
 //
-// Setup: INSTAGRAM_ACCESS_TOKEN in Vercel (a token for @tunr.app from Meta's
-// developer site). After the first run the token lives in instagram_link
-// and is renewed weekly, so it never lapses. Putting a new token in Vercel
-// later takes over from the stored one.
+// INSTAGRAM_ACCESS_TOKEN in Vercel can be either kind of token:
+//   * Instagram login ("IG…"): @tunr.app's own posts only. Renewed weekly.
+//   * Facebook login ("EA…", from Meta's Graph API Explorer, with
+//     FACEBOOK_APP_ID and FACEBOOK_APP_SECRET): @tunr.app's posts plus other
+//     professional accounts through Business Discovery. It's swapped once for
+//     the linked Facebook Page's token, which doesn't expire.
+// The token is kept in instagram_link after the first run; a new value in
+// Vercel takes over from the stored one.
 
 import { createHash } from "node:crypto";
 import { readFlyerWithGemini, DEFAULT_MODEL } from "./gemini.js";
 import { normalizeFlyer } from "./flyer.js";
 import { geocodeLocation } from "../../src/lib/geocode.js";
 import { parseLocal, DEFAULT_TZ } from "../../src/lib/dates.js";
+import { cleanUsername } from "../../src/lib/instagramName.js";
 
-const GRAPH = "https://graph.instagram.com";
+const IG_GRAPH = "https://graph.instagram.com";
+const FB_GRAPH = "https://graph.facebook.com";
 const REFRESH_EVERY_MS = 7 * 864e5; // tokens last 60 days; renew weekly
 const LOOKBACK_MS = 21 * 864e5; // posts older than this aren't new meets
 const PER_RUN = 4; // flyers read per run (each takes a few seconds)
 const MAX_TRIES = 3; // a post that failed (AI busy, image gone) is retried this many times
 const FIELDS = "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,children{media_type,media_url,thumbnail_url}";
+// Business Discovery (other accounts) doesn't give video covers.
+const OTHER_FIELDS = "id,caption,media_type,media_url,permalink,timestamp,children{media_type,media_url}";
+
+// Facebook-login tokens start "EA"; Instagram-login ones "IG".
+export const tokenKind = (token) => (/^EA/.test(String(token || "")) ? "facebook" : "instagram");
+
+export { cleanUsername };
 
 const sha = (text) => createHash("sha256").update(String(text)).digest("hex");
 
@@ -60,7 +74,8 @@ export function eventRow(flyer, place, post) {
   const start = parseLocal(`${flyer.date}T${flyer.startTime}`, DEFAULT_TZ);
   let end = flyer.endTime ? parseLocal(`${flyer.date}T${flyer.endTime}`, DEFAULT_TZ) : null;
   if (end && end <= start) end = new Date(end.getTime() + 864e5); // runs past midnight
-  const host = String(flyer.hosts[0] || "").replace(/^@+/, "").trim().slice(0, 40) || "tunr.app";
+  const account = post.account || "tunr.app";
+  const host = String(flyer.hosts[0] || "").replace(/^@+/, "").trim().slice(0, 40) || account;
   return {
     title: flyer.title || `${flyer.venue || "Car"} meet`,
     host,
@@ -70,7 +85,7 @@ export function eventRow(flyer, place, post) {
     end_at: end ? end.toISOString() : null,
     vibe: flyer.vibe || "JDM",
     tags: ["From Instagram"],
-    description: flyer.description || "Posted on @tunr.app.",
+    description: [flyer.description, account === "tunr.app" ? null : `Flyer from @${account} on Instagram.`].filter(Boolean).join("\n\n") || "Posted on @tunr.app.",
     source: "instagram",
     source_url: post.permalink || null,
     photo_url: post.imageUrl,
@@ -89,9 +104,9 @@ export function createInstagramImport({ service, env = process.env, fetchImpl = 
   const saveLink = (patch) =>
     service.rest("/rest/v1/instagram_link?id=eq.true", { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(patch) });
 
-  async function ig(path, token) {
+  async function ig(path, token, base = IG_GRAPH) {
     const sep = path.includes("?") ? "&" : "?";
-    const res = await fetchImpl(`${GRAPH}${path}${sep}access_token=${encodeURIComponent(token)}`);
+    const res = await fetchImpl(`${base}${path}${sep}access_token=${encodeURIComponent(token)}`);
     const body = await res.json().catch(() => ({}));
     if (!res.ok || body.error) {
       const why = body.error?.message || `HTTP ${res.status}`;
@@ -102,24 +117,56 @@ export function createInstagramImport({ service, env = process.env, fetchImpl = 
     return body;
   }
 
+  const fail = (code, message) => Object.assign(new Error(message), { code });
+
+  // A Facebook-login token from the Graph API Explorer lasts an hour. Swap it
+  // for a long one, then for the Page's token (which doesn't expire), and
+  // find the Instagram account linked to that Page.
+  async function settleFacebook(seed) {
+    if (!env.FACEBOOK_APP_ID || !env.FACEBOOK_APP_SECRET) {
+      throw fail("instagram_not_connected", "The Facebook-login token needs FACEBOOK_APP_ID and FACEBOOK_APP_SECRET in Vercel too (Meta app → Settings → Basic).");
+    }
+    const long = await ig(
+      `/oauth/access_token?grant_type=fb_exchange_token&client_id=${encodeURIComponent(env.FACEBOOK_APP_ID)}&client_secret=${encodeURIComponent(env.FACEBOOK_APP_SECRET)}&fb_exchange_token=${encodeURIComponent(seed)}`,
+      seed,
+      FB_GRAPH
+    );
+    const pages = await ig("/me/accounts?fields=name,access_token,instagram_business_account{id,username}", long.access_token || seed, FB_GRAPH);
+    const linked = (pages.data || []).filter((p) => p.instagram_business_account?.id && p.access_token);
+    const page = linked.find((p) => p.instagram_business_account.username === "tunr.app") || linked[0];
+    if (!page) {
+      throw fail(
+        "instagram_not_connected",
+        "No Facebook Page with a linked Instagram account came back. Link @tunr.app to the TUNR Facebook Page, and tick the Page when making the token."
+      );
+    }
+    return { token: page.access_token, igUserId: page.instagram_business_account.id, username: page.instagram_business_account.username || null };
+  }
+
   // The token to use: a new one put in Vercel wins; otherwise the stored
-  // one, renewed when it's a week old.
+  // one (an Instagram-login one renewed when it's a week old).
   async function token() {
-    const rows = await service.rest("/rest/v1/instagram_link?select=access_token,seed_hash,refreshed_at,username&id=eq.true");
+    const rows = await service.rest("/rest/v1/instagram_link?select=access_token,seed_hash,refreshed_at,username,token_kind,ig_user_id&id=eq.true");
     const link = (Array.isArray(rows) && rows[0]) || {};
     const seed = (env.INSTAGRAM_ACCESS_TOKEN || "").trim();
-    let current = link.access_token;
-    let refreshedAt = link.refreshed_at ? new Date(link.refreshed_at).getTime() : 0;
     if (seed && sha(seed) !== link.seed_hash) {
-      current = seed;
-      refreshedAt = 0;
-      await saveLink({ access_token: seed, seed_hash: sha(seed), refreshed_at: null, last_error: null });
+      if (tokenKind(seed) === "facebook") {
+        const fb = await settleFacebook(seed);
+        await saveLink({
+          access_token: fb.token, seed_hash: sha(seed), token_kind: "facebook", ig_user_id: fb.igUserId,
+          username: fb.username, refreshed_at: now().toISOString(), last_error: null,
+        });
+        return { kind: "facebook", token: fb.token, igUserId: fb.igUserId, username: fb.username };
+      }
+      await saveLink({ access_token: seed, seed_hash: sha(seed), token_kind: "instagram", ig_user_id: null, refreshed_at: null, last_error: null });
+      Object.assign(link, { access_token: seed, token_kind: "instagram", refreshed_at: null });
     }
-    if (!current) {
-      const err = new Error("Instagram isn't connected: INSTAGRAM_ACCESS_TOKEN is not set in Vercel.");
-      err.code = "instagram_not_connected";
-      throw err;
-    }
+    if (!link.access_token) throw fail("instagram_not_connected", "Instagram isn't connected: INSTAGRAM_ACCESS_TOKEN is not set in Vercel.");
+    const kind = link.token_kind || tokenKind(link.access_token);
+    if (kind === "facebook") return { kind, token: link.access_token, igUserId: link.ig_user_id, username: link.username };
+
+    let current = link.access_token;
+    const refreshedAt = link.refreshed_at ? new Date(link.refreshed_at).getTime() : 0;
     if (now().getTime() - refreshedAt > REFRESH_EVERY_MS) {
       try {
         const fresh = await ig(`/refresh_access_token?grant_type=ig_refresh_token`, current);
@@ -133,8 +180,33 @@ export function createInstagramImport({ service, env = process.env, fetchImpl = 
         console.warn("instagram refresh:", e.message);
       }
     }
-    return current;
+    return { kind, token: current, igUserId: null, username: link.username };
   }
+
+  // @tunr.app's own newest posts.
+  async function ownPosts(t) {
+    if (t.kind === "facebook") {
+      const list = await ig(`/${t.igUserId}/media?fields=${encodeURIComponent(FIELDS)}&limit=25`, t.token, FB_GRAPH);
+      return { username: t.username, posts: list.data || [] };
+    }
+    const me = await ig("/me?fields=username", t.token);
+    const list = await ig(`/me/media?fields=${encodeURIComponent(FIELDS)}&limit=25`, t.token);
+    return { username: me.username || t.username, posts: list.data || [] };
+  }
+
+  // Another account's newest posts (Business Discovery).
+  async function otherPosts(t, username) {
+    const fields = `business_discovery.username(${username}){username,media.limit(15){${OTHER_FIELDS}}}`;
+    const body = await ig(`/${t.igUserId}?fields=${encodeURIComponent(fields)}`, t.token, FB_GRAPH);
+    return body.business_discovery?.media?.data || [];
+  }
+
+  const saveSource = (username, patch) =>
+    service.rest(`/rest/v1/instagram_sources?username=eq.${encodeURIComponent(username)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(patch),
+    });
 
   // Keep a copy of the flyer in TUNR's storage (Instagram's image links expire).
   async function storeImage(mediaId, url) {
@@ -158,6 +230,7 @@ export function createInstagramImport({ service, env = process.env, fetchImpl = 
       media_id: media.id,
       permalink: media.permalink || null,
       posted_at: media.timestamp || null,
+      account: media.account || null,
       updated_at: now().toISOString(),
       attempts: (seen?.attempts || 0) + 1,
       ...patch,
@@ -222,7 +295,7 @@ export function createInstagramImport({ service, env = process.env, fetchImpl = 
     const made = await service.rest("/rest/v1/events", {
       method: "POST",
       headers: { Prefer: "return=representation" },
-      body: JSON.stringify(eventRow(flyer, place, { permalink: media.permalink, imageUrl })),
+      body: JSON.stringify(eventRow(flyer, place, { permalink: media.permalink, imageUrl, account: media.account })),
     });
     const event = Array.isArray(made) ? made[0] : made;
     await record(media, { status: "imported", image_url: imageUrl, event_id: event?.id || null, reason: place.status === "area" ? "Pinned to the area (no exact address)." : null }, seen);
@@ -240,9 +313,34 @@ export function createInstagramImport({ service, env = process.env, fetchImpl = 
         throw err;
       }
       const tok = await token();
-      const me = await ig("/me?fields=username", tok);
-      const list = await ig(`/me/media?fields=${encodeURIComponent(FIELDS)}&limit=25`, tok);
-      const recent = (list.data || []).filter((m) => m.timestamp && started.getTime() - new Date(m.timestamp).getTime() <= LOOKBACK_MS);
+      const own = await ownPosts(tok);
+      const all = own.posts.map((m) => ({ ...m, account: own.username || "tunr.app" }));
+
+      // Other accounts that said yes. One that fails (renamed, went private)
+      // is noted on the admin page and the rest carry on.
+      const sources = (await service.rest("/rest/v1/instagram_sources?select=username&active=eq.true")) || [];
+      result.accounts = [];
+      for (const { username } of sources) {
+        const at = started.toISOString();
+        if (tok.kind !== "facebook") {
+          await saveSource(username, { last_checked_at: at, last_count: null, last_error: "Needs the Facebook-linked connection (setup on this page)." });
+          result.accounts.push({ username, error: "needs_facebook" });
+          continue;
+        }
+        try {
+          const posts = await otherPosts(tok, username);
+          posts.forEach((m) => all.push({ ...m, account: username }));
+          await saveSource(username, { last_checked_at: at, last_count: posts.length, last_error: null });
+          result.accounts.push({ username, posts: posts.length });
+        } catch (e) {
+          if (e.code === "instagram_token_expired") throw e;
+          await saveSource(username, { last_checked_at: at, last_count: null, last_error: e.message.slice(0, 300) });
+          result.accounts.push({ username, error: e.message.slice(0, 120) });
+        }
+      }
+      const me = { username: own.username };
+
+      const recent = all.filter((m) => m.timestamp && started.getTime() - new Date(m.timestamp).getTime() <= LOOKBACK_MS);
       result.checked = recent.length;
 
       const ids = recent.map((m) => m.id);
@@ -277,7 +375,7 @@ export function createInstagramImport({ service, env = process.env, fetchImpl = 
         await rpc("notify_admins", {
           p_kind: "instagram_import",
           p_title: `📸 ${imported.length} meet${imported.length === 1 ? "" : "s"} added from Instagram`,
-          p_body: "Listed from @tunr.app's new posts. Settings → Admin → Instagram import to see them.",
+          p_body: `Listed from ${[...new Set(imported.map((m) => "@" + m.account))].join(", ")}. Settings → Admin → Instagram import to see them.`,
           p_dedupe: `ig_imported:${imported.map((m) => m.id).join(",")}`.slice(0, 200),
         });
       }

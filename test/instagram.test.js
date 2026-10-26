@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { pickImage, judgeFlyer, eventRow, createInstagramImport } from "../api/_lib/instagram.js";
+import { pickImage, judgeFlyer, eventRow, createInstagramImport, tokenKind, cleanUsername } from "../api/_lib/instagram.js";
 
 const NOW = new Date("2026-10-26T16:00:00Z"); // Monday, noon in Atlanta
 
@@ -53,7 +53,7 @@ test("the meet row: Georgia times, past-midnight end, host from the flyer", () =
 });
 
 // A fake Supabase (service) and a fake internet (Instagram, storage, Gemini, Mapbox).
-function world({ posts, ai, dup = null, stored = {}, link = { access_token: "tok", seed_hash: null, refreshed_at: NOW.toISOString() } }) {
+function world({ posts, ai, dup = null, stored = {}, sources = [], other = {}, link = { access_token: "tok", seed_hash: null, refreshed_at: NOW.toISOString() } }) {
   const calls = [];
   const rest = async (path, init = {}) => {
     const body = init.body ? JSON.parse(init.body) : null;
@@ -62,6 +62,8 @@ function world({ posts, ai, dup = null, stored = {}, link = { access_token: "tok
     if (path.startsWith("/rest/v1/instagram_link")) return null;
     if (path.startsWith("/rest/v1/instagram_posts?select")) return Object.values(stored);
     if (path.startsWith("/rest/v1/instagram_posts")) return null;
+    if (path.startsWith("/rest/v1/instagram_sources?select")) return sources.map((username) => ({ username }));
+    if (path.startsWith("/rest/v1/instagram_sources")) return null;
     if (path === "/rest/v1/rpc/instagram_duplicate") return dup;
     if (path === "/rest/v1/rpc/notify_admins") return null;
     if (path === "/rest/v1/events") return [{ id: "ev1" }];
@@ -73,6 +75,16 @@ function world({ posts, ai, dup = null, stored = {}, link = { access_token: "tok
     const u = String(url);
     const json = (b, status = 200) => ({ ok: status < 300, status, json: async () => b, text: async () => JSON.stringify(b), headers: new Map() });
     if (u.startsWith("https://graph.instagram.com/me?")) return json({ username: "tunr.app" });
+    if (u.startsWith("https://graph.facebook.com/oauth/access_token")) return json({ access_token: "EAAlong" });
+    if (u.startsWith("https://graph.facebook.com/me/accounts")) {
+      return json({ data: [{ name: "TUNR", access_token: "EAApage", instagram_business_account: { id: "1784", username: "tunr.app" } }] });
+    }
+    if (u.startsWith("https://graph.facebook.com/1784/media")) return json({ data: posts });
+    if (u.startsWith("https://graph.facebook.com/1784?fields=business_discovery")) {
+      const name = decodeURIComponent(u).match(/username\(([^)]+)\)/)[1];
+      if (!other[name]) return json({ error: { message: `Invalid user id (${name})`, code: 110 } }, 400);
+      return json({ business_discovery: { username: name, media: { data: other[name] } }, id: "1784" });
+    }
     if (u.startsWith("https://graph.instagram.com/me/media")) return json({ data: posts });
     if (u.startsWith("https://graph.instagram.com/refresh_access_token")) return json({ access_token: "tok2", expires_in: 5184000 });
     if (u.startsWith("https://cdn.ig/") || u.startsWith("https://db.test/storage/v1/object/public/")) {
@@ -174,4 +186,52 @@ test("who can start an import", async () => {
   r = res();
   await createHandler({ env: base, fetchImpl, now: () => NOW })({ method: "DELETE", headers: {} }, r);
   assert.equal(r.code, 405);
+});
+
+
+test("token kinds and account names", () => {
+  assert.equal(tokenKind("EAAGm0PX4ZCps"), "facebook");
+  assert.equal(tokenKind("IGAAJ1x"), "instagram");
+  assert.equal(cleanUsername(" @NawfSide.TM "), "nawfside.tm");
+  assert.equal(cleanUsername("https://www.instagram.com/nawfside.tm/"), "nawfside.tm");
+  assert.equal(cleanUsername("not a name!"), null);
+});
+
+test("the Facebook connection reads @tunr.app and watched accounts, crediting each", async () => {
+  const w = world({
+    posts: [post("own1", 5)],
+    ai: [aiNotMeet, { ...aiMeet, hosts: [] }],
+    sources: ["nawfside.tm", "gone.account"],
+    other: { "nawfside.tm": [post("nf1", 2)] },
+    link: { access_token: null, seed_hash: null },
+  });
+  const fbEnv = { ...env, INSTAGRAM_ACCESS_TOKEN: "EAAshort", FACEBOOK_APP_ID: "1", FACEBOOK_APP_SECRET: "s" };
+  const out = await createInstagramImport({ service: w.service, env: fbEnv, fetchImpl: w.fetchImpl, now: () => NOW }).run();
+  assert.equal(out.ok, true);
+  assert.equal(out.imported, 1);
+  const saved = w.calls.find((c) => c.path === "/rest/v1/instagram_link?id=eq.true").body;
+  assert.deepEqual([saved.access_token, saved.token_kind, saved.ig_user_id], ["EAApage", "facebook", "1784"]);
+  const event = w.calls.find((c) => c.path === "/rest/v1/events").body;
+  assert.equal(event.host, "nawfside.tm"); // no host on the flyer: the account that posted it
+  assert.match(event.description, /Flyer from @nawfside.tm/);
+  const notes = w.calls.filter((c) => (c.path || "").startsWith("/rest/v1/instagram_sources?username")).map((c) => [c.path.split("=eq.")[1], c.body.last_count, Boolean(c.body.last_error)]);
+  assert.deepEqual(notes, [["nawfside.tm", 1, false], ["gone.account", null, true]]);
+  const rec = w.calls.filter((c) => (c.path || "").startsWith("/rest/v1/instagram_posts?on_conflict")).map((c) => [c.body.media_id, c.body.account]);
+  assert.deepEqual(rec, [["own1", "tunr.app"], ["nf1", "nawfside.tm"]]);
+  assert.match(w.calls.find((c) => c.path === "/rest/v1/rpc/notify_admins").body.p_body, /@nawfside\.tm/);
+});
+
+test("watched accounts with an Instagram-login token say they need the Facebook connection", async () => {
+  const w = world({ posts: [], ai: [], sources: ["nawfside.tm"] });
+  const out = await createInstagramImport({ service: w.service, env, fetchImpl: w.fetchImpl, now: () => NOW }).run();
+  assert.equal(out.ok, true);
+  assert.deepEqual(out.accounts, [{ username: "nawfside.tm", error: "needs_facebook" }]);
+  assert.match(w.calls.find((c) => (c.path || "").startsWith("/rest/v1/instagram_sources?username")).body.last_error, /Facebook-linked/);
+});
+
+test("a Facebook token without the app id and secret says so", async () => {
+  const w = world({ posts: [], ai: [], link: { access_token: null } });
+  const out = await createInstagramImport({ service: w.service, env: { ...env, INSTAGRAM_ACCESS_TOKEN: "EAAshort" }, fetchImpl: w.fetchImpl, now: () => NOW }).run();
+  assert.equal(out.error, "instagram_not_connected");
+  assert.match(out.detail, /FACEBOOK_APP_ID and FACEBOOK_APP_SECRET/);
 });

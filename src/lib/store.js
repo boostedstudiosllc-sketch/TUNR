@@ -8,6 +8,7 @@ import { seedEvents } from "../data/events.js";
 import { supabase } from "./supabase.js";
 import { DEFAULT_TZ, parseLocal, isoInTz } from "./dates.js";
 import { friendlyWriteError, withReason, authErrorMessage } from "./errors.js";
+import { cleanUsername } from "./instagramName.js";
 import { normalizePasscode } from "./passcode.js";
 import { kickPush } from "./alerts.js";
 import { compressImage } from "./image.js";
@@ -1687,7 +1688,7 @@ export async function loadInstagramPosts() {
   if (!supabase) throw new Error("Backend not configured");
   const { data, error } = await supabase
     .from("instagram_posts")
-    .select("media_id, permalink, posted_at, status, reason, event_id, image_url, attempts, updated_at")
+    .select("media_id, account, permalink, posted_at, status, reason, event_id, image_url, attempts, updated_at")
     .order("posted_at", { ascending: false })
     .limit(60);
   if (error) throw new Error(withReason("Couldn't load the imported posts.", error));
@@ -1695,7 +1696,7 @@ export async function loadInstagramPosts() {
 }
 
 const INSTAGRAM_ERRORS = {
-  instagram_not_connected: "Instagram isn't connected yet: put INSTAGRAM_ACCESS_TOKEN in Vercel (steps above).",
+  instagram_not_connected: "Instagram isn't connected yet (steps above).",
   instagram_token_expired: "The Instagram token expired. Make a new one and put it in Vercel as INSTAGRAM_ACCESS_TOKEN.",
   not_configured: "The flyer reader isn't set up: GEMINI_API_KEY is missing in Vercel.",
   not_allowed: "Only admins can start an import.",
@@ -1712,4 +1713,33 @@ export async function runInstagramImport() {
     throw new Error(known ? `${known}${out.detail && out.error !== "not_allowed" ? ` (${out.detail})` : ""}` : `Couldn't run the import. (${out.error}${out.detail ? `: ${out.detail}` : ""})`);
   }
   return out;
+}
+
+// Other accounts to import meets from (077_instagram_sources.sql).
+export async function loadInstagramSources() {
+  if (!supabase) throw new Error("Backend not configured");
+  const { data, error } = await supabase
+    .from("instagram_sources")
+    .select("username, active, added_at, last_checked_at, last_count, last_error")
+    .order("added_at");
+  if (error) throw new Error(withReason("Couldn't load the accounts to watch.", error));
+  return data || [];
+}
+
+export async function addInstagramSource(text) {
+  if (!supabase) throw new Error("Backend not configured");
+  const username = cleanUsername(text);
+  if (!username) throw new Error("That isn't an Instagram name. Type it like @nawfside.tm.");
+  const { error } = await supabase.from("instagram_sources").insert({ username });
+  if (error) {
+    if (error.code === "23505") throw new Error(`@${username} is already on the list.`);
+    throw new Error(friendlyWriteError(error, `Couldn't add @${username}.`));
+  }
+  return username;
+}
+
+export async function removeInstagramSource(username) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { error } = await supabase.from("instagram_sources").delete().eq("username", username);
+  if (error) throw new Error(friendlyWriteError(error, `Couldn't remove @${username}.`));
 }
