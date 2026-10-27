@@ -1,6 +1,8 @@
 // Real Georgia car meets, August 2026.
 // Verified events cite the public listing they were found on; flyer-sourced
 // events cite the Instagram account the flyer was posted to.
+// Going/interested start at zero here, as in the database (079): only real
+// RSVPs count.
 
 export const VIBES = {
   JDM: "#FF4500",
@@ -28,8 +30,8 @@ export const seedEvents = [
     recurrence: "monthly:first:SUN",
     timezone: TZ,
     vibe: "Domestic",
-    going: 2500,
-    interested: 8400,
+    going: 0,
+    interested: 0,
     tags: ["All Makes", "Free", "Rain or Shine", "Monthly"],
     description:
       "America's largest monthly car show, first Sunday of every month, 9-11:30 AM. Free for spectators and to exhibit. Arrive early for the best spots.",
@@ -50,8 +52,8 @@ export const seedEvents = [
     recurrence: "monthly:first:THU",
     timezone: TZ,
     vibe: "Domestic",
-    going: 220,
-    interested: 540,
+    going: 0,
+    interested: 0,
     tags: ["Classics", "Free", "First Thursday", "Family Friendly"],
     description:
       "Classic cars and family fun, 6-8 PM on the first Thursday of the month at Cumming City Center. Free admission and parking; classic cars enter from 5 PM.",
@@ -72,8 +74,8 @@ export const seedEvents = [
     recurrence: "weekly:THU",
     timezone: TZ,
     vibe: "JDM",
-    going: 120,
-    interested: 280,
+    going: 0,
+    interested: 0,
     tags: ["Weekly", "All Makes", "Family Friendly", "No Burnouts"],
     description:
       "Every Thursday evening at Sake in Roswell. Sushi, hibachi and drinks while you walk the lot. No hooning, 5 MPH lot speed limit, front two rows left open for diners.",
@@ -95,8 +97,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Euro",
-    going: 340,
-    interested: 900,
+    going: 0,
+    interested: 0,
     tags: ["Trackside", "Race Weekend", "All Makes"],
     description:
       "Trackside car show during the race weekend at Michelin Raceway Road Atlanta. Show your car with racing as the backdrop.",
@@ -117,8 +119,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Euro",
-    going: 410,
-    interested: 1300,
+    going: 0,
+    interested: 0,
     tags: ["Porsche", "Demo Laps", "DJ", "Evening"],
     description:
       "Summer evening at the Porsche Experience Center: demonstration laps, Simulator Lab, drinks and food at the cafe and terrace with a live DJ.",
@@ -139,8 +141,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Exotic",
-    going: 260,
-    interested: 720,
+    going: 0,
+    interested: 0,
     tags: ["Park Setting", "All Makes", "Family Friendly"],
     description:
       "Auto show in Atlanta's Chastain Park. A relaxed Sunday show in one of the city's biggest greenspaces.",
@@ -161,8 +163,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Domestic",
-    going: 380,
-    interested: 860,
+    going: 0,
+    interested: 0,
     tags: ["Autocross", "Show", "Weekend"],
     description:
       "Car show plus autocross at the Cumming Fairgrounds. Watch runs or enter your own build.",
@@ -183,8 +185,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "JDM",
-    going: 300,
-    interested: 700,
+    going: 0,
+    interested: 0,
     tags: ["Cars & Bikes", "Charity", "All Makes"],
     description:
       "Car and bike show at The Outlet Shoppes at Atlanta in Woodstock supporting a good cause.",
@@ -205,8 +207,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Domestic",
-    going: 3100,
-    interested: 8800,
+    going: 0,
+    interested: 0,
     tags: ["HOT ROD", "Drags", "2 Days", "Spectators"],
     description:
       "HOT ROD's traveling festival hits EchoPark Speedway: drag racing, show field, and vendor midway.",
@@ -227,8 +229,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Exotic",
-    going: 85,
-    interested: 240,
+    going: 0,
+    interested: 0,
     tags: ["Premium Builds", "Exotics", "12PM-3PM"],
     description:
       "Experience premium cars, exotic builds and automotive excellence. Saturday, August 22, 12-3 PM at Cumming City Center. Sourced from the host's flyer via @georgia.carmeets.",
@@ -249,8 +251,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Euro",
-    going: 60,
-    interested: 150,
+    going: 0,
+    interested: 0,
     tags: ["Community Sourced", "Giveaway", "Date TBC"],
     description:
       "Community-submitted: back-to-school giveaway event at Nalley BMW of Decatur. Not yet confirmed on public listings; check the dealer's page for the exact date.",
@@ -271,8 +273,8 @@ export const seedEvents = [
     recurrence: "weekly:SAT",
     timezone: TZ,
     vibe: "Domestic",
-    going: 95,
-    interested: 210,
+    going: 0,
+    interested: 0,
     tags: ["All Makes", "Weekly", "Free", "Coffee"],
     description:
       "Weekly Saturday morning meet. Coffee at 967 Coffee Co. All enthusiasts welcome.",
@@ -294,8 +296,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "JDM",
-    going: 180,
-    interested: 430,
+    going: 0,
+    interested: 0,
     tags: ["Evening", "Food", "All Makes"],
     description:
       "Georgia CarMeets x Magic City Autoclub. Pizza and performance builds on Cheshire Bridge, 7-10 PM. Flyer via @georgia.carmeets.",
@@ -316,8 +318,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Domestic",
-    going: 120,
-    interested: 300,
+    going: 0,
+    interested: 0,
     tags: ["RSVP Only", "Indoor Parking", "Private Property"],
     description:
       "Private shop showcase, 6-10 PM: media, cars, people, food, indoor parking. Limited capacity - RSVP via the host's link; location shared after acceptance. Fully legal event on private property.",
@@ -338,8 +340,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Euro",
-    going: 140,
-    interested: 320,
+    going: 0,
+    interested: 0,
     tags: ["Tacos", "Evening", "Cool Cars"],
     description:
       "EuroFed presents Taco Tuesday at Armando's: cool cars, good food, good people. 7-10 PM in Duluth. Flyer via @georgia.carmeets.",
@@ -360,8 +362,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "JDM",
-    going: 90,
-    interested: 210,
+    going: 0,
+    interested: 0,
     tags: ["Kids Eat Free", "Food", "Chill Vibes"],
     description:
       "Car meet at Miller's Ale House Kennesaw, 7-10 PM. Cool cars, great food, chill vibes - kids eat free (restrictions apply). Flyer via @georgia.carmeets.",
@@ -382,8 +384,8 @@ export const seedEvents = [
     recurrence: "weekly:SAT",
     timezone: TZ,
     vibe: "Truck",
-    going: 110,
-    interested: 260,
+    going: 0,
+    interested: 0,
     tags: ["Weekly", "Cars & Bikes", "No Burnouts"],
     description:
       "Weekly Saturday car and bike meet in McDonough, 7-10 PM. All makes and models welcome. No burnouts, no hooning - respect the spot. Flyer via @georgia.carmeets.",
@@ -404,8 +406,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Domestic",
-    going: 180,
-    interested: 420,
+    going: 0,
+    interested: 0,
     tags: ["Sprint Cars", "Racing", "Labor Day"],
     description:
       "Labor Day weekend sprint car racing at Dixie Speedway in Woodstock. Grandstand event — come watch or bring the crew.",
@@ -426,8 +428,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "JDM",
-    going: 3100,
-    interested: 9800,
+    going: 0,
+    interested: 0,
     tags: ["NOPI", "Imports", "2 Days", "Spectators"],
     description:
       "NOPI Nationals returns to EchoPark Speedway for two full days: show field, competitions, and one of the Southeast's biggest import gatherings.",
@@ -448,8 +450,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Domestic",
-    going: 220,
-    interested: 480,
+    going: 0,
+    interested: 0,
     tags: ["Classics", "Festival", "52nd Annual", "Family Friendly"],
     description:
       "Longstanding Barnesville festival with a car show alongside the street fair. Classic American iron and a small-town weekend.",
@@ -470,8 +472,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Exotic",
-    going: 260,
-    interested: 610,
+    going: 0,
+    interested: 0,
     tags: ["Culture", "Music Fest", "Downtown ATL"],
     description:
       "Auto show inside the Sweet Auburn Music Fest downtown. Cars, music, and the city's culture scene in one weekend.",
@@ -492,8 +494,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Domestic",
-    going: 140,
-    interested: 310,
+    going: 0,
+    interested: 0,
     tags: ["Classics", "Market", "Family Friendly"],
     description:
       "Car show alongside the Southern Heirloom Market in Jefferson. Classics, vendors, and a full day out.",
@@ -514,8 +516,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Domestic",
-    going: 260,
-    interested: 540,
+    going: 0,
+    interested: 0,
     tags: ["Ford", "Mustang", "37th Annual", "Trucks & Bikes"],
     description:
       "Long-running Ford and Mustang show in Savannah, with an open class for other cars, trucks, and bikes.",
@@ -536,8 +538,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Domestic",
-    going: 180,
-    interested: 390,
+    going: 0,
+    interested: 0,
     tags: ["Riverside", "All Makes", "Fall Show"],
     description:
       "Fall edition of Ridz by the River in Euharlee. Riverside setting, all makes welcome.",
@@ -558,8 +560,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Domestic",
-    going: 240,
-    interested: 560,
+    going: 0,
+    interested: 0,
     tags: ["Halloween", "Costumes", "Free", "Family Friendly"],
     description:
       "Halloween edition of the Tin Cup Cruise-In at Cumming City Center. Costumes encouraged, free to attend.",
@@ -580,8 +582,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Domestic",
-    going: 900,
-    interested: 2100,
+    going: 0,
+    interested: 0,
     tags: ["Moonshine", "3 Days", "Classics", "59th Annual"],
     description:
       "Dawsonville's legendary moonshine festival with a full car show. Three days of classic American iron and Georgia racing history.",
@@ -602,8 +604,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Exotic",
-    going: 220,
-    interested: 470,
+    going: 0,
+    interested: 0,
     tags: ["Festival", "All Makes", "Vendors"],
     description:
       "Fall festival and car show at Tanger Outlets in Pooler. Vendors, music, and an open show field.",
@@ -624,8 +626,8 @@ export const seedEvents = [
     recurrence: null,
     timezone: TZ,
     vibe: "Domestic",
-    going: 150,
-    interested: 330,
+    going: 0,
+    interested: 0,
     tags: ["Memorial", "Charity", "All Makes"],
     description:
       "Third annual memorial car show near Savannah. All makes welcome, proceeds to the memorial fund.",
