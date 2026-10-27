@@ -3,7 +3,7 @@ import TunrRush from "./TunrRush.jsx";
 import ParkUp from "./ParkUp.jsx";
 import DriftKing from "./DriftKing.jsx";
 import { LEVELS as PARK_LEVELS, loadProgress } from "../lib/parkEngine.js";
-import { loadBest as loadDriftBest } from "../lib/driftEngine.js";
+import { loadBests as loadDriftBests } from "../lib/f1Engine.js";
 import { muted, quietButton } from "./Sheet.jsx";
 
 // Every TUNR game in one place. One game pays points each day (TUNR Rush);
@@ -39,14 +39,14 @@ const GAMES = [
   },
   {
     id: "drift",
-    icon: "🌀",
+    icon: "🏎️",
     name: (
       <>
         DRIFT <span style={{ color: "#0080F0" }}>KING</span>
       </>
     ),
     blurb:
-      "Hold left or right to drift that way. Stay on the floating road as it speeds up.",
+      "Arcade F1 on 22 real circuit layouts. Race three rivals, drift the corners. Overhead, chase or cockpit view.",
     badge: { text: "FREE PLAY", color: "#7FBFF5", border: "#003A75" },
   },
   {
@@ -68,7 +68,7 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount }) {
     if (open) return;
     const p = loadProgress();
     setParkStars(PARK_LEVELS.reduce((n, l) => n + (p[l.id] || 0), 0));
-    setDriftBest(loadDriftBest());
+    setDriftBest(Object.values(loadDriftBests()).filter((b) => b.place === 1).length);
   }, [open]);
 
   useEffect(() => {
@@ -244,7 +244,7 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount }) {
                     fontWeight: 800,
                   }}
                 >
-                  👑 Best {driftBest} m
+                  🏆 Won on {driftBest} {driftBest === 1 ? "track" : "tracks"}
                 </span>
               )}
               {g.id === "park" && (
