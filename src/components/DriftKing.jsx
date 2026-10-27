@@ -45,7 +45,7 @@ function TrackShape({ def, size = 92, color = "#E8E8E8" }) {
   );
 }
 
-// Drift King: arcade F1 on 22 real circuit layouts (made-up names). Gas,
+// Drift King: arcade open-wheel racing on 22 real circuit layouts (made-up names). Gas,
 // brake, steer; steer on the gas to drift. Race three rivals; your fastest
 // lap and best finish per track are kept on this phone. Free play.
 export default function DriftKing({ onClose }) {

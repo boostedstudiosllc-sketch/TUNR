@@ -46,7 +46,7 @@ const GAMES = [
       </>
     ),
     blurb:
-      "Arcade F1 on 22 real circuit layouts. Race three rivals, drift the corners. Overhead, chase or cockpit view.",
+      "Open-wheel racing on 22 real circuit layouts. Race three rivals, drift the corners. Overhead, chase or cockpit view.",
     badge: { text: "FREE PLAY", color: "#7FBFF5", border: "#003A75" },
   },
   {
