@@ -285,7 +285,7 @@ export const kmh = (ms) => Math.round(ms * 3.6);
 export const mph = (ms) => Math.round(ms * 2.237);
 
 // Laps: the line counts once you've been round past halfway.
-function crossLine(race, car, prevS) {
+export function crossLine(race, car, prevS) {
   const { L } = race.track;
   if (car.s > L * 0.35 && car.s < L * 0.65) car.armed = true;
   if (prevS > L * 0.75 && car.s < L * 0.25 && car.armed) {

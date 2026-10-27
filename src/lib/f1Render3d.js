@@ -13,7 +13,7 @@ import { TRACK_W, KERB_W, BRAKE } from "./f1Engine.js";
 
 const fwd = (h) => [-Math.sin(h), -Math.cos(h)];
 
-function canvasTexture(w, h, draw, repeat = null) {
+export function canvasTexture(w, h, draw, repeat = null) {
   const c = document.createElement("canvas");
   c.width = w;
   c.height = h;
@@ -28,7 +28,7 @@ function canvasTexture(w, h, draw, repeat = null) {
   return tex;
 }
 
-function speckle(ctx, w, h, base, spread, count, size = 1) {
+export function speckle(ctx, w, h, base, spread, count, size = 1) {
   ctx.fillStyle = base;
   ctx.fillRect(0, 0, w, h);
   for (let i = 0; i < count; i++) {
@@ -39,12 +39,13 @@ function speckle(ctx, w, h, base, spread, count, size = 1) {
 }
 
 // What the place around each circuit looks like (by track id).
-const LOOKS = {
+export const LOOKS = {
   day: { sky: ["#3f86c9", "#cfe4f5"], ground: "#4f7f35", night: false, scenery: "trees" },
   desert: { sky: ["#3b7cc4", "#f3dfbf"], ground: "#c9a46b", night: false, scenery: "none" },
   desertNight: { sky: ["#05081a", "#2a2050"], ground: "#6f5a3c", night: true, scenery: "none" },
   cityNight: { sky: ["#03040f", "#1c1240"], ground: "#2c2f36", night: true, scenery: "city" },
   city: { sky: ["#4a8fd0", "#dceaf5"], ground: "#5b6b4a", night: false, scenery: "city" },
+  sunset: { sky: ["#40306e", "#ff9d5c"], ground: "#5a7a38", night: false, scenery: "trees" },
 };
 const TRACK_LOOK = {
   bh02: "desertNight",
@@ -60,7 +61,7 @@ const TRACK_LOOK = {
 
 // ---------- the cars ----------
 
-const box = (w, h, d, mat, x, y, z) => {
+export const box = (w, h, d, mat, x, y, z) => {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
   m.position.set(x, y, z);
   m.castShadow = true;
@@ -298,12 +299,12 @@ function ribbon(left, right, vScale, uv = [0, 1]) {
 }
 
 // Points `off` meters left of the middle (negative = right), at height y.
-function edge(track, i, off, y) {
+export function edge(track, i, off, y) {
   const [fx, fz] = fwd(track.heading[i]);
   return [track.x[i] + fz * off, y, track.z[i] - fx * off];
 }
 
-function buildCircuit(scene, track, look) {
+export function buildCircuit(scene, track, look) {
   const { n } = track;
   const loop = [...Array(n).keys(), 0];
 
@@ -465,7 +466,7 @@ function buildCircuit(scene, track, look) {
 }
 
 // Trees or city blocks around the circuit, kept clear of the track.
-function buildSurroundings(scene, track, look) {
+export function buildSurroundings(scene, track, look) {
   if (look.scenery === "none") return;
   let minX = Infinity;
   let maxX = -Infinity;

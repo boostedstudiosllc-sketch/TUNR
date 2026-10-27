@@ -43,10 +43,10 @@ function savePrefs(p) {
   }
 }
 
-const ordinal = (n) => `${n}${n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"}`;
+export const ordinal = (n) => `${n}${n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"}`;
 
 // A track's outline as an SVG path.
-function TrackShape({ def, size = 92, color = "#E8E8E8" }) {
+export function TrackShape({ def, size = 92, color = "#E8E8E8" }) {
   const { pts } = useMemo(() => outline(def, size, size, 6), [def, size]);
   const d = `M${pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join("L")}Z`;
   return (
@@ -607,7 +607,7 @@ function RaceScreen({ def, laps, difficulty, car, view, onView, guide, onGuide, 
   );
 }
 
-const chip = {
+export const chip = {
   flex: 1,
   padding: "9px 4px",
   borderRadius: 18,
@@ -620,4 +620,4 @@ const chip = {
   border: "1px solid #2A2A2A",
   fontFamily: "'Barlow Condensed', sans-serif",
 };
-const chipOn = { background: "rgba(0,128,240,0.16)", color: "#3CABFD", border: "1px solid #0080F0" };
+export const chipOn = { background: "rgba(0,128,240,0.16)", color: "#3CABFD", border: "1px solid #0080F0" };

@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import TunrRush from "./TunrRush.jsx";
 import ParkUp from "./ParkUp.jsx";
 import DriftKing from "./DriftKing.jsx";
+import KartGame from "./KartGame.jsx";
 import { LEVELS as PARK_LEVELS, loadProgress } from "../lib/parkEngine.js";
 import { loadBests as loadDriftBests } from "../lib/f1Engine.js";
+import { loadKartBests } from "../lib/kartEngine.js";
 import { muted, quietButton } from "./Sheet.jsx";
 
 // Every TUNR game in one place. One game pays points each day (TUNR Rush);
@@ -50,6 +52,18 @@ const GAMES = [
     badge: { text: "FREE PLAY", color: "#7FBFF5", border: "#003A75" },
   },
   {
+    id: "karts",
+    icon: "🛞",
+    name: (
+      <>
+        BOOSTED <span style={{ color: "#0080F0" }}>KARTS</span>
+      </>
+    ),
+    blurb:
+      "Go-kart racing against five rivals. Drift for mini-turbos, stack Boosted tokens for nitro, hit the boost pads, dodge the junk.",
+    badge: { text: "NEW · FREE PLAY", color: "#7FBFF5", border: "#003A75" },
+  },
+  {
     id: "egg",
     icon: "🥚",
     name: "EGG HAUL",
@@ -62,6 +76,7 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount }) {
   const [open, setOpen] = useState(null);
   const [parkStars, setParkStars] = useState(0);
   const [driftBest, setDriftBest] = useState(0);
+  const [kartWins, setKartWins] = useState(0);
 
   // Stars come back up to date after a round of Park Up.
   useEffect(() => {
@@ -69,6 +84,7 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount }) {
     const p = loadProgress();
     setParkStars(PARK_LEVELS.reduce((n, l) => n + (p[l.id] || 0), 0));
     setDriftBest(Object.values(loadDriftBests()).filter((b) => b.place === 1).length);
+    setKartWins(Object.values(loadKartBests()).filter((b) => b.place === 1).length);
   }, [open]);
 
   useEffect(() => {
@@ -90,6 +106,7 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount }) {
   }
   if (open === "park") return <ParkUp onClose={() => setOpen(null)} />;
   if (open === "drift") return <DriftKing onClose={() => setOpen(null)} />;
+  if (open === "karts") return <KartGame onClose={() => setOpen(null)} />;
 
   return (
     <div
@@ -245,6 +262,19 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount }) {
                   }}
                 >
                   🏆 Won on {driftBest} {driftBest === 1 ? "track" : "tracks"}
+                </span>
+              )}
+              {g.id === "karts" && kartWins > 0 && (
+                <span
+                  style={{
+                    display: "block",
+                    fontSize: 12.5,
+                    color: "#FACC15",
+                    marginTop: 4,
+                    fontWeight: 800,
+                  }}
+                >
+                  🏆 Won on {kartWins} {kartWins === 1 ? "track" : "tracks"}
                 </span>
               )}
               {g.id === "park" && (
