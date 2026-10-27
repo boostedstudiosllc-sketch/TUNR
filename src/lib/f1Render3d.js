@@ -153,6 +153,123 @@ export function buildF1Car(color, accent = "#F5F5F5") {
   return g;
 }
 
+// A closed sports car, nose toward -z: "gt" (low mid-engine supercar),
+// "tuner" (JDM coupe with a big wing) or "muscle" (long hood, stripes).
+// Same parts as the open-wheel car: the cabin goes in `driver`, so the
+// cockpit view looks out over the hood.
+function wedge(w, h, d, mat, x, y, z, tilt) {
+  const m = box(w, h, d, mat, x, y, z);
+  m.rotation.x = tilt;
+  return m;
+}
+
+export function buildSportsCar(type, color, accent = "#F5F5F5") {
+  const g = new THREE.Group();
+  const paint = new THREE.MeshStandardMaterial({ color, metalness: 0.6, roughness: 0.28 });
+  const trim = new THREE.MeshStandardMaterial({ color: accent, metalness: 0.4, roughness: 0.35 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x141414, metalness: 0.3, roughness: 0.6 });
+  const glass = new THREE.MeshStandardMaterial({ color: 0x0d1a26, metalness: 0.9, roughness: 0.08 });
+  const chrome = new THREE.MeshStandardMaterial({ color: 0xd8dde3, metalness: 1, roughness: 0.15 });
+  const tyre = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+  const rim = new THREE.MeshStandardMaterial({ color: type === "tuner" ? 0x2b2b2b : 0xb9bec4, metalness: 0.85, roughness: 0.25 });
+  const head = new THREE.MeshStandardMaterial({ color: 0xf4f7ff, emissive: 0xdde8ff, emissiveIntensity: 0.9 });
+  const tail = new THREE.MeshStandardMaterial({ color: 0xff2a2a, emissive: 0xff0000, emissiveIntensity: 0.9 });
+  const driver = new THREE.Group();
+  let wheelX = 0.86;
+  let wheelZ = [-1.55, 1.5];
+  let r = 0.34;
+
+  if (type === "gt") {
+    g.add(box(1.96, 0.42, 4.5, paint, 0, 0.42, 0)); // body
+    g.add(wedge(1.9, 0.12, 1.3, paint, 0, 0.62, -1.55, -0.12)); // sloping nose
+    g.add(box(1.7, 0.08, 1.6, paint, 0, 0.68, 1.25)); // engine deck
+    g.add(box(1.98, 0.08, 0.4, dark, 0, 0.24, -2.2)); // splitter
+    g.add(box(1.7, 0.18, 0.3, dark, 0, 0.32, 2.2)); // diffuser
+    for (const sx of [-1, 1]) g.add(box(0.06, 0.24, 0.9, dark, sx * 0.99, 0.5, 0.55)); // side intakes
+    g.add(box(1.6, 0.05, 0.28, paint, 0, 0.78, 2.15)); // ducktail
+    const cabin = wedge(1.36, 0.4, 1.7, glass, 0, 0.82, -0.05, 0);
+    driver.add(cabin, box(1.3, 0.05, 1.1, paint, 0, 1.04, 0.05));
+    for (const sx of [-1, 1]) {
+      g.add(box(0.42, 0.06, 0.12, head, sx * 0.62, 0.6, -2.22));
+      g.add(box(0.5, 0.07, 0.06, tail, sx * 0.6, 0.6, 2.26));
+    }
+    g.add(box(0.3, 0.02, 4.2, trim, 0, 0.67, -0.1)); // centre stripe
+  } else if (type === "tuner") {
+    wheelX = 0.82;
+    wheelZ = [-1.45, 1.4];
+    r = 0.33;
+    g.add(box(1.84, 0.5, 4.3, paint, 0, 0.5, 0));
+    g.add(wedge(1.78, 0.1, 1.2, paint, 0, 0.76, -1.5, -0.08)); // hood
+    g.add(box(1.86, 0.1, 0.35, dark, 0, 0.27, -2.12)); // front lip
+    g.add(box(1.4, 0.16, 0.08, dark, 0, 0.5, -2.16)); // grille
+    driver.add(box(1.5, 0.48, 2.0, glass, 0, 0.99, 0.2), box(1.44, 0.05, 1.5, paint, 0, 1.25, 0.25));
+    // Big wing on stands.
+    g.add(box(1.8, 0.06, 0.42, trim, 0, 1.18, 1.95));
+    for (const sx of [-1, 1]) {
+      g.add(box(0.06, 0.4, 0.2, dark, sx * 0.6, 0.95, 1.95));
+      g.add(box(0.04, 0.22, 0.46, trim, sx * 0.9, 1.18, 1.95));
+      g.add(box(0.06, 0.2, 3.6, trim, sx * 0.93, 0.45, 0)); // side stripe
+      g.add(box(0.4, 0.07, 0.1, head, sx * 0.6, 0.62, -2.16));
+      g.add(box(0.36, 0.1, 0.06, tail, sx * 0.62, 0.66, 2.16));
+    }
+  } else {
+    // Muscle.
+    wheelX = 0.88;
+    wheelZ = [-1.7, 1.55];
+    r = 0.36;
+    g.add(box(1.98, 0.56, 4.9, paint, 0, 0.54, 0));
+    g.add(box(1.9, 0.08, 2.0, paint, 0, 0.86, -1.35)); // long hood
+    g.add(box(0.6, 0.14, 0.9, dark, 0, 0.96, -1.1)); // scoop
+    g.add(box(2.0, 0.14, 0.14, chrome, 0, 0.36, -2.48)); // bumpers
+    g.add(box(2.0, 0.14, 0.14, chrome, 0, 0.36, 2.48));
+    g.add(box(1.6, 0.22, 0.06, dark, 0, 0.6, -2.46)); // grille
+    driver.add(box(1.62, 0.46, 1.75, glass, 0, 1.05, 0.55), box(1.56, 0.05, 1.3, paint, 0, 1.29, 0.6));
+    g.add(box(1.7, 0.05, 0.3, paint, 0, 0.92, 2.3)); // spoiler lip
+    for (const sx of [-1, 1]) {
+      g.add(box(0.22, 0.02, 4.92, trim, sx * 0.24, 0.83, 0)); // twin stripes
+      const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.06, 16).rotateX(Math.PI / 2), head);
+      lamp.position.set(sx * 0.68, 0.6, -2.47);
+      g.add(lamp);
+      g.add(box(0.6, 0.1, 0.06, tail, sx * 0.55, 0.68, 2.46));
+    }
+  }
+  // A helmeted driver behind the glass, so the cabin doesn't read as empty.
+  const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 10), new THREE.MeshStandardMaterial({ color: accent, roughness: 0.35 }));
+  helmet.position.set(-0.36, type === "gt" ? 0.92 : 1.08, type === "muscle" ? 0.6 : 0.15);
+  driver.add(helmet);
+  g.add(driver);
+
+  const wheels = [];
+  const front = [];
+  for (const wz of wheelZ) {
+    for (const sx of [-1, 1]) {
+      const holder = new THREE.Group();
+      holder.position.set(sx * wheelX, r, wz);
+      const w = new THREE.Group();
+      const tr = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.3, 24).rotateZ(Math.PI / 2), tyre);
+      tr.castShadow = true;
+      const rm = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.66, r * 0.66, 0.31, 16).rotateZ(Math.PI / 2), rim);
+      w.add(tr, rm);
+      holder.add(w);
+      g.add(holder);
+      wheels.push(w);
+      if (wz < 0) front.push(holder);
+    }
+  }
+  // Steering wheel for the cockpit view, as on the open-wheel car.
+  const wheel = new THREE.Group();
+  const rimW = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.02, 8, 24), dark);
+  wheel.add(rimW);
+  wheel.position.set(-0.36, 0.78, -0.75);
+  wheel.rotation.x = -0.3;
+  wheel.visible = false;
+  g.add(wheel);
+  g.userData = { wheels, front, driver, steeringWheel: wheel };
+  return g;
+}
+
+export const buildCar = (type, color, accent) => (type === "formula" ? buildF1Car(color, accent) : buildSportsCar(type, color, accent));
+
 // ---------- the circuit ----------
 
 // A strip of triangles between two edges (arrays of [x, y, z]).
@@ -497,7 +614,7 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false, 
 
   // The cars.
   const meshes = race.cars.map((c) => {
-    const m = c.ai ? buildF1Car(c.color, c.accent) : buildF1Car("#0080F0", "#F5F5F5");
+    const m = c.ai ? buildCar(race.car, c.color, c.accent) : buildCar(race.car, "#0080F0", "#F5F5F5");
     scene.add(m);
     return m;
   });
@@ -519,6 +636,21 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false, 
     puffs.push({ sp, life: 0, max: 1 });
   }
   let nextPuff = 0;
+
+  // Boosted Studios coins, spinning above the track.
+  const coinTex = new THREE.TextureLoader().load("/game/boost.webp");
+  coinTex.colorSpace = THREE.SRGBColorSpace;
+  const coinFace = new THREE.MeshBasicMaterial({ map: coinTex, transparent: true });
+  const coinEdge = new THREE.MeshStandardMaterial({ color: 0x0080f0, emissive: 0x38bdf8, emissiveIntensity: 1.4, metalness: 0.6, roughness: 0.2 });
+  const coinGeo = new THREE.CylinderGeometry(1.15, 1.15, 0.16, 40).rotateX(Math.PI / 2);
+  const coins = race.coins.map((c) => {
+    const m = new THREE.Mesh(coinGeo, [coinEdge, coinFace, coinFace]);
+    m.position.set(c.x, 1.35, c.z);
+    scene.add(m);
+    return m;
+  });
+  let spin = 0;
+  let fovNow = 60;
 
   const guideMesh = buildGuide(scene);
   const guideOff = guideOffsets(track);
@@ -635,6 +767,13 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false, 
     }
 
     if (guideMesh.visible) updateGuide(race);
+    spin += dt * 3;
+    coins.forEach((m, k) => {
+      m.visible = race.coins[k].takenLap !== p.lap;
+      m.rotation.y = spin;
+      m.position.y = 1.5 + Math.sin(spin * 0.8 + k) * 0.15;
+    });
+    const boosting = p.boost > 0;
 
     // Camera.
     const [fx, fz] = fwd(p.heading);
@@ -647,7 +786,7 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false, 
     } else if (mode === "top") {
       // High and behind, tipped forward: you see well down the road, the
       // way arcade taxi games do. Pulls back a little with speed.
-      camera.fov = 58;
+      camera.fov = boosting ? 66 : 58;
       camera.up.set(0, 1, 0);
       cam.h += Math.atan2(Math.sin(p.heading - cam.h), Math.cos(p.heading - cam.h)) * Math.min(1, dt * 3.5);
       const [cx, cz] = fwd(cam.h);
@@ -656,14 +795,19 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false, 
       camera.position.set(p.x - cx * back, cam.y, p.z - cz * back);
       camera.lookAt(p.x + cx * 10, 0, p.z + cz * 10);
     } else {
-      camera.fov = 62 + Math.min(12, Math.abs(p.speed) * 0.12);
+      camera.fov = 62 + Math.min(12, Math.abs(p.speed) * 0.12) + (boosting ? 8 : 0);
       camera.up.set(0, 1, 0);
       // Trails the car's heading a little, so drifts show.
       cam.h += Math.atan2(Math.sin(p.heading - cam.h), Math.cos(p.heading - cam.h)) * Math.min(1, dt * 5);
       const [cx, cz] = fwd(cam.h);
-      camera.position.set(p.x - cx * 8.5, 3.1, p.z - cz * 8.5);
+      // The closed cars are bigger: sit a little further back and up.
+      const back = race.car === "formula" ? 8.5 : 10;
+      camera.position.set(p.x - cx * back, race.car === "formula" ? 3.1 : 3.6, p.z - cz * back);
       camera.lookAt(p.x + cx * 6, 1.0, p.z + cz * 6);
     }
+    // Ease the zoom (a boost widens it), rather than jumping.
+    fovNow += (camera.fov - fovNow) * Math.min(1, dt * 5 || 1);
+    camera.fov = fovNow;
     camera.updateProjectionMatrix();
     sun.target.position.set(p.x, 0, p.z);
     sun.position.set(p.x + 40, 80, p.z + 25);

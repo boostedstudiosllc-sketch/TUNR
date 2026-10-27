@@ -1,8 +1,10 @@
 // Drift King: arcade F1 racing on real circuit layouts (f1Tracks.js). Gas,
 // brake, and steer left or right; steering while on the gas at speed
 // throws the car into a drift (the tail slides, it turns tighter and scrubs
-// a little speed). Race three rivals over a few laps. Pure logic, no
-// imports, so the game and the tests share it.
+// a little speed). Race three rivals over a few laps, everyone in the same
+// type of car. Two Boosted Studios coins a lap on the long straights give
+// you a short burst of speed. Pure logic, no imports, so the game and the
+// tests share it.
 //
 // Meters and seconds. The ground is x (east) and z (south); heading 0 faces
 // -z (north) and grows turning left, like three.js's rotation.y.
@@ -12,21 +14,29 @@ export const TRACK_W = 12;
 export const KERB_W = 1.3;
 export const CAR = { length: 5.4, width: 1.9 };
 
-const VMAX = 80; // m/s (~180 MPH)
-const ACCEL = 15;
 export const BRAKE = 32;
 const REVERSE_MAX = 10;
 const DRAG = 0.9;
-const STEER_RATE = 2.3; // rad/s at most
-const GRIP_ACCEL = 34; // sideways m/s² the tyres hold when gripping
-const DRIFT_TURN = 1.35; // a drift turns this much tighter
-const DRIFT_SCRUB = 0.08; // and loses this share of speed a second
+const DRIFT_SCRUB = 0.08; // a drift loses this share of speed a second
 const GRIP = 9; // how fast sideways sliding dies away (gripping)
-const DRIFT_GRIP = 1.4; // … and while drifting
 const GRASS_MAX = 26; // top speed on the grass
 const RUNOFF_MAX = 14;
 const RUNOFF_MIN = 1.2; // street circuits: walls right by the kerbs
 
+// The cars. Everyone in a race drives the same type, so it's always fair.
+//   vmax: top speed (m/s; 80 is ~180 MPH)  accel: how hard it pulls
+//   grip: sideways m/s² the tyres hold  steer: turn rate (rad/s) at most
+//   driftTurn: how much tighter a drift turns  driftGrip: how slowly the
+//   slide straightens out in a drift (lower = longer, looser slides)
+export const CARS = {
+  formula: { name: "Formula", blurb: "Open-wheel. The fastest, and it grips the hardest.", vmax: 80, accel: 15, grip: 34, steer: 2.3, driftTurn: 1.35, driftGrip: 1.4 },
+  gt: { name: "GT", blurb: "Mid-engine supercar. Quick and steady.", vmax: 75, accel: 14.5, grip: 31, steer: 2.25, driftTurn: 1.35, driftGrip: 1.5 },
+  tuner: { name: "Tuner", blurb: "Light and loose. Built to drift.", vmax: 68, accel: 14, grip: 28, steer: 2.5, driftTurn: 1.5, driftGrip: 0.95 },
+  muscle: { name: "Muscle", blurb: "Huge launch, big top end, a handful in the bends.", vmax: 77, accel: 17, grip: 25, steer: 2.05, driftTurn: 1.45, driftGrip: 1.1 },
+};
+
+// Boosted Studios coins: two a lap, yours only, back again next lap.
+export const COIN = { perLap: 2, reach: 2.4, seconds: 2.5, topSpeed: 10, accel: 1.8 };
 const fwd = (h) => [-Math.sin(h), -Math.cos(h)];
 const wrap = (i, n) => ((i % n) + n) % n;
 const angleDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
@@ -154,7 +164,7 @@ export function pointAt(track, s, side = 0) {
 
 // The fastest each point can be taken (gripping), with braking for the
 // bends ahead. a: sideways grip in m/s²; brake: m/s².
-export function speedProfile(track, a = GRIP_ACCEL * 0.92, brake = BRAKE * 0.8, top = VMAX) {
+export function speedProfile(track, a = CARS.formula.grip * 0.92, brake = BRAKE * 0.8, top = CARS.formula.vmax) {
   const { n, k, s, L } = track;
   const v = new Float32Array(n);
   for (let i = 0; i < n; i++) v[i] = Math.min(top, Math.sqrt(a / Math.max(Math.abs(k[i]), 1e-4)));
@@ -179,11 +189,42 @@ const RIVALS = [
 // How hard the rivals push: their skill is scaled by this.
 export const DIFFICULTY = { easy: 0.88, medium: 1, hard: 1.1 };
 
-export function newRace(track, { laps = 3, rivals = 3, seed = 1, difficulty = "medium" } = {}) {
+// Where the coins go: early on the longest straights, off to one side so
+// you have to steer for them.
+export function coinSpots(track, count = COIN.perLap) {
+  const { n, k } = track;
+  // Find the stretches with no real bend in them.
+  const start = Array.from({ length: n }, (_, i) => i).find((i) => Math.abs(k[i]) > 0.004) ?? 0;
+  const runs = [];
+  let run = null;
+  for (let j = 1; j <= n; j++) {
+    const i = (start + j) % n;
+    if (Math.abs(k[i]) <= 0.004) {
+      if (!run) run = { from: i, len: 0 };
+      run.len++;
+    } else if (run) {
+      runs.push(run);
+      run = null;
+    }
+  }
+  if (run) runs.push(run);
+  return runs
+    .sort((a, b) => b.len - a.len)
+    .slice(0, count)
+    .filter((r) => r.len >= 20)
+    .map((r, j) => ({ i: (r.from + 8) % n, side: j % 2 ? -2.6 : 2.6 }))
+    .map((c) => {
+      const at = pointAt(track, track.s[c.i], c.side);
+      return { ...c, s: track.s[c.i], x: at.x, z: at.z, takenLap: null };
+    });
+}
+
+export function newRace(track, { laps = 3, rivals = 3, seed = 1, difficulty = "medium", car = "formula" } = {}) {
   const pace = DIFFICULTY[difficulty] || 1;
+  const spec = CARS[car] || CARS.formula;
   let r = seed % 2147483647 || 1;
   const rand = () => (r = (r * 16807) % 2147483647) / 2147483647;
-  const profile = speedProfile(track);
+  const profile = speedProfile(track, spec.grip * 0.92, BRAKE * 0.8, spec.vmax);
   // The grid: two by two behind the line, you at the back.
   const slots = [];
   for (let i = 0; i <= rivals; i++) slots.push({ back: 8 + i * 9, side: i % 2 ? -2.4 : 2.4 });
@@ -230,13 +271,14 @@ export function newRace(track, { laps = 3, rivals = 3, seed = 1, difficulty = "m
     lapStart: 0,
     lapTimes: [],
     finished: null,
+    boost: 0,
     drifting: false,
     surface: "track",
     bump: 0,
     wrongWay: 0,
   };
   cars.push(player);
-  return { track, laps, difficulty, profile, cars, player, time: -3, state: "countdown", events: [] };
+  return { track, laps, difficulty, car: CARS[car] ? car : "formula", spec, profile, cars, player, coins: coinSpots(track), time: -3, state: "countdown", events: [] };
 }
 
 export const kmh = (ms) => Math.round(ms * 3.6);
@@ -274,12 +316,15 @@ function tickPlayer(race, c, input, dt) {
 
   // Speed along the way you're going (negative = reversing).
   let v = c.speed;
-  const top = c.surface === "grass" ? GRASS_MAX : VMAX;
+  const spec = race.spec;
+  c.boost = Math.max(0, c.boost - dt);
+  const boosted = c.boost > 0 && c.surface !== "grass";
+  const top = c.surface === "grass" ? GRASS_MAX : spec.vmax + (boosted ? COIN.topSpeed : 0);
   if (c.finished) {
     v -= Math.sign(v) * Math.min(Math.abs(v), 8 * dt);
   } else if (input.gas) {
     if (v < -0.5) v = Math.min(0, v + BRAKE * dt);
-    else v += ACCEL * (1 - Math.max(0, v) / top) * dt * (v < 20 ? 1.4 : 1);
+    else v += spec.accel * (boosted ? COIN.accel : 1) * (1 - Math.max(0, v) / top) * dt * (v < 20 ? 1.4 : 1);
   } else if (input.brake) {
     v = v > 0.5 ? Math.max(0, v - BRAKE * dt) : Math.max(-REVERSE_MAX, v - 6 * dt);
   } else {
@@ -291,14 +336,14 @@ function tickPlayer(race, c, input, dt) {
   // A drift: steering on the gas at speed.
   c.drifting = Boolean(input.gas && want !== 0 && v > 18 && c.surface !== "grass" && !c.finished);
   const speed = Math.abs(v);
-  let yaw = Math.min(STEER_RATE, GRIP_ACCEL / Math.max(speed, 1)) * Math.min(1, speed / 6) * c.steer * Math.sign(v || 1);
-  if (c.drifting) yaw *= DRIFT_TURN;
+  let yaw = Math.min(spec.steer, spec.grip / Math.max(speed, 1)) * Math.min(1, speed / 6) * c.steer * Math.sign(v || 1);
+  if (c.drifting) yaw *= spec.driftTurn;
   c.heading += yaw * dt;
 
   // The way the car's actually moving trails the way it points: almost at
   // once when gripping, slowly in a drift (that's the tail sliding out).
   const aim = v >= 0 ? c.heading : c.heading + Math.PI;
-  const rate = c.drifting ? DRIFT_GRIP : c.surface === "grass" ? 5 : GRIP;
+  const rate = c.drifting ? spec.driftGrip : c.surface === "grass" ? 5 : GRIP;
   const slip = angleDiff(aim, c.slide);
   c.slide += slip * Math.min(1, rate * dt);
   c.slip = Math.abs(angleDiff(aim, c.slide));
@@ -338,6 +383,17 @@ function tickPlayer(race, c, input, dt) {
   const backwards = Math.abs(angleDiff(c.heading, t.heading[now.i])) > 2.2 && Math.abs(c.speed) > 3;
   c.wrongWay = backwards ? c.wrongWay + dt : 0;
   crossLine(race, c, prevS);
+  // Coins: drive through one for a boost. Each comes back next lap.
+  if (!c.finished) {
+    for (const coin of race.coins) {
+      if (coin.takenLap === c.lap) continue;
+      if (Math.hypot(coin.x - c.x, coin.z - c.z) < COIN.reach) {
+        coin.takenLap = c.lap;
+        c.boost = COIN.seconds;
+        race.events.push({ kind: "coin" });
+      }
+    }
+  }
 }
 
 // Someone just ahead in your lane: { car, gap } (meters along the track).
@@ -368,7 +424,7 @@ function tickRival(race, c, dt) {
     if (front.gap < 9) vt = Math.min(vt, theirs + 0.5);
   }
   if (c.finished) c.v = Math.max(0, c.v - 8 * dt);
-  else c.v = c.v < vt ? Math.min(vt, c.v + ACCEL * 1.05 * dt * (c.v < 20 ? 1.4 : 1)) : Math.max(vt, c.v - BRAKE * 0.85 * dt);
+  else c.v = c.v < vt ? Math.min(vt, c.v + race.spec.accel * 1.05 * dt * (c.v < 20 ? 1.4 : 1)) : Math.max(vt, c.v - BRAKE * 0.85 * dt);
   // Wander to a new line now and then; tuck in for bends unless passing.
   if (!front && Math.abs(c.lane - c.laneGoal) < 0.1 && Math.random() < dt * 0.15) c.laneGoal = (Math.random() - 0.5) * 6;
   const goal = Math.abs(t.k[c.idx]) > 0.02 && !front ? c.laneGoal * 0.3 : c.laneGoal;

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildTrack, newRace, tickRace, pointAt, locate, speedProfile, placeOf, standings, lapClock, TRACK_W, DIFFICULTY } from "../src/lib/f1Engine.js";
+import { buildTrack, newRace, tickRace, pointAt, locate, speedProfile, placeOf, standings, lapClock, TRACK_W, DIFFICULTY, CARS, COIN } from "../src/lib/f1Engine.js";
 import { TRACKS } from "../src/lib/f1Tracks.js";
 
 const angleDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
@@ -100,4 +100,47 @@ test("harder difficulty means faster rivals", () => {
   const medium = ran("medium");
   const hard = ran("hard");
   assert.ok(easy < medium && medium < hard, `easy ${easy} medium ${medium} hard ${hard}`);
+});
+
+test("every car type finishes a race, and the rivals drive the same type", { timeout: 120000 }, () => {
+  const def = TRACKS[6];
+  const t = buildTrack(def);
+  const times = {};
+  for (const car of Object.keys(CARS)) {
+    const race = newRace(t, { laps: 1, seed: 4, car });
+    assert.equal(race.car, car);
+    for (let i = 0; i < 120 * 200 && race.state !== "finished"; i++) tickRace(race, drive(race, race.profile));
+    assert.equal(race.state, "finished", `${car} finished`);
+    times[car] = race.player.finished;
+    // Rivals aren't miles ahead or behind in any car.
+    const lead = standings(race).find((c) => c.ai);
+    assert.ok(lead.lap * t.L + lead.s > t.L * 0.85, `${car}: lead rival at ${lead.s}`);
+  }
+  // The formula car is the quickest round a lap.
+  assert.ok(Object.values(times).every((x) => x >= times.formula - 0.5), JSON.stringify(times));
+});
+
+test("two Boosted coins a lap; driving through one boosts you, once a lap", () => {
+  for (const def of TRACKS) {
+    const race = newRace(buildTrack(def), { laps: 2 });
+    assert.equal(race.coins.length, COIN.perLap, `${def.name} coins`);
+  }
+  // The same run up to the first coin, once through it and once with it gone.
+  const runUp = (taken) => {
+    const race = newRace(buildTrack(TRACKS[0]), { laps: 2, rivals: 0 });
+    const coin = race.coins[0];
+    for (let i = 0; i < 120 * 3.2; i++) tickRace(race, {});
+    const p = race.player;
+    const at = pointAt(race.track, coin.s - 6, coin.side);
+    Object.assign(p, { x: at.x, z: at.z, heading: at.heading, slide: at.heading, speed: 40, idx: at.i, s: coin.s - 6, lap: 0 });
+    if (taken) coin.takenLap = 0;
+    for (let i = 0; i < 120 * 1.5; i++) tickRace(race, { gas: true });
+    return { race, coin, p };
+  };
+  const boosted = runUp(false);
+  const plain = runUp(true);
+  assert.equal(boosted.race.events.filter((e) => e.kind === "coin").length, 1, "picked up once");
+  assert.equal(boosted.coin.takenLap, 0);
+  assert.equal(plain.race.events.filter((e) => e.kind === "coin").length, 0, "gone for the rest of the lap");
+  assert.ok(boosted.p.speed > plain.p.speed + 3, `boosted ${boosted.p.speed} vs ${plain.p.speed}`);
 });

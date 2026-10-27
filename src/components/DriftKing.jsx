@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { buildTrack, newRace, tickRace, STEP, standings, placeOf, lapClock, mph, outline, loadBests, saveBest } from "../lib/f1Engine.js";
+import { buildTrack, newRace, tickRace, STEP, standings, placeOf, lapClock, mph, outline, loadBests, saveBest, CARS } from "../lib/f1Engine.js";
 import { TRACKS } from "../lib/f1Tracks.js";
 import { RushAudio } from "../lib/rushAudio.js";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
@@ -15,6 +15,7 @@ const LEVELS = [
   ["hard", "Hard"],
 ];
 const LAPS = [1, 2, 3];
+const CAR_ICONS = { formula: "🏎️", gt: "🚀", tuner: "🌀", muscle: "💪" };
 const PREFS_KEY = "tunr.f1.prefs";
 const LOW_POWER = typeof navigator !== "undefined" && (navigator.hardwareConcurrency || 8) <= 4;
 
@@ -26,10 +27,11 @@ function loadPrefs() {
       laps: LAPS.includes(p.laps) ? p.laps : 2,
       difficulty: LEVELS.some(([d]) => d === p.difficulty) ? p.difficulty : "medium",
       guide: p.guide !== false,
+      car: CARS[p.car] ? p.car : "formula",
     };
   } catch (e) {
     console.warn("Couldn't read Drift King settings:", e.message);
-    return { view: "chase", laps: 2, difficulty: "medium", guide: true };
+    return { view: "chase", laps: 2, difficulty: "medium", guide: true, car: "formula" };
   }
 }
 
@@ -55,9 +57,11 @@ function TrackShape({ def, size = 92, color = "#E8E8E8" }) {
   );
 }
 
-// Drift King: arcade open-wheel racing on 22 real circuit layouts (made-up names). Gas,
-// brake, steer; steer on the gas to drift. Race three rivals; your fastest
-// lap and best finish per track are kept on this phone. Free play.
+// Drift King: arcade racing on 22 real circuit layouts (made-up names), in an
+// open-wheel car, a GT, a tuner or a muscle car. Gas, brake, steer; steer on
+// the gas to drift; grab the Boosted Studios coins for a burst of speed. Race
+// three rivals; your fastest lap and best finish per track are kept on this
+// phone. Free play.
 export default function DriftKing({ onClose }) {
   const [prefs, setPrefs] = useState(loadPrefs);
   const [bests, setBests] = useState(loadBests);
@@ -139,10 +143,24 @@ export default function DriftKing({ onClose }) {
               <div style={{ ...muted, fontSize: 13.5 }}>
                 Race three rivals on real circuit layouts. Gas and brake on the right, steer on the left. Steer while you're on the gas
                 to drift: the tail slides and you turn tighter. Follow the guide line: green is fine, yellow ease off, red brake.
-                Change the camera any time from pause.
+                Drive through a Boosted Studios coin for a burst of speed (two a lap). Change the camera any time from pause.
               </div>
               {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
-              <div style={{ ...label, marginTop: 14 }}>DIFFICULTY</div>
+              <div style={{ ...label, marginTop: 14 }}>CAR</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                {Object.entries(CARS).map(([id, c]) => (
+                  <button key={id} onClick={() => setPref({ car: id })} aria-pressed={prefs.car === id} style={{ ...chip, padding: "8px 2px", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 1, ...(prefs.car === id ? chipOn : {}) }}>
+                    <span aria-hidden="true" style={{ fontSize: 20 }}>
+                      {CAR_ICONS[id]}
+                    </span>
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+              <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>
+                {CARS[prefs.car].blurb} Your rivals drive the same kind of car.
+              </div>
+              <div style={{ ...label, marginTop: 12 }}>DIFFICULTY</div>
               <div style={{ display: "flex", gap: 6 }}>
                 {LEVELS.map(([id, name]) => (
                   <button key={id} onClick={() => setPref({ difficulty: id })} style={{ ...chip, ...(prefs.difficulty === id ? chipOn : {}) }}>
@@ -196,6 +214,7 @@ export default function DriftKing({ onClose }) {
           def={def}
           laps={prefs.laps}
           difficulty={prefs.difficulty}
+          car={prefs.car}
           view={prefs.view}
           onView={(v) => setPref({ view: v })}
           guide={prefs.guide}
@@ -220,7 +239,7 @@ export default function DriftKing({ onClose }) {
             </div>
             <div style={{ fontSize: 52, fontWeight: 900, lineHeight: 1.05 }}>{ordinal(result.place)}</div>
             <div style={{ ...muted, fontSize: 13 }}>
-              {def.name} · {LEVELS.find(([d]) => d === result.difficulty)?.[1]} · {result.laps} {result.laps === 1 ? "lap" : "laps"} ·{" "}
+              {def.name} · {CARS[result.car]?.name} · {LEVELS.find(([d]) => d === result.difficulty)?.[1]} · {result.laps} {result.laps === 1 ? "lap" : "laps"} ·{" "}
               {lapClock(result.total)}
             </div>
             <div style={{ fontSize: 15, fontWeight: 800, marginTop: 6, color: result.newBest ? "#FACC15" : "#E8E8E8" }}>
@@ -253,7 +272,7 @@ export default function DriftKing({ onClose }) {
 }
 
 // The race: the 3D view, the numbers on top, and the controls.
-function RaceScreen({ def, laps, difficulty, view, onView, guide, onGuide, audio, sound, onToggle, onFinish, onQuit, onFail }) {
+function RaceScreen({ def, laps, difficulty, car, view, onView, guide, onGuide, audio, sound, onToggle, onFinish, onQuit, onFail }) {
   const wrap = useRef(null);
   const canvas = useRef(null);
   const mapRef = useRef(null);
@@ -281,7 +300,7 @@ function RaceScreen({ def, laps, difficulty, view, onView, guide, onGuide, audio
     let gone = false;
     let ro = null;
     const track = buildTrack(def);
-    const race = newRace(track, { laps, difficulty, seed: Date.now() % 100000 });
+    const race = newRace(track, { laps, difficulty, car, seed: Date.now() % 100000 });
     // For the browser checks: lets a test jump to the end of the race.
     if (import.meta.env.DEV) window.__driftRace = race;
     const mctx = mapRef.current.getContext("2d");
@@ -326,6 +345,7 @@ function RaceScreen({ def, laps, difficulty, view, onView, guide, onGuide, audio
         let acc = 0;
         let told = false;
         let frame = 0;
+        let wasBoosting = false;
         const loop = (now) => {
           raf = requestAnimationFrame(loop);
           const dt = Math.min(0.05, last ? (now - last) / 1000 : 0);
@@ -340,10 +360,17 @@ function RaceScreen({ def, laps, difficulty, view, onView, guide, onGuide, audio
           for (const e of race.events.splice(0)) {
             if (e.kind === "wall") a?.crash();
             else if (e.kind === "lap") a?.pickup();
+            else if (e.kind === "coin") a?.boost();
           }
           const p = race.player;
+          const boosting = p.boost > 0;
+          if (boosting !== wasBoosting) {
+            if (!boosting) a?.boostEnd();
+            if (hud.current.boost) hud.current.boost.style.display = boosting ? "flex" : "none";
+            wasBoosting = boosting;
+          }
           if (a) {
-            a.engine(Math.abs(p.speed) * 1.25, false);
+            a.engine(Math.abs(p.speed) * 1.25, boosting);
             a.squeal(p.drifting || p.slip > 0.2 ? Math.min(1, p.slip * 3) : 0);
           }
           scene.current.render(race, live.current.paused ? 0 : dt);
@@ -373,6 +400,12 @@ function RaceScreen({ def, laps, difficulty, view, onView, guide, onGuide, audio
             shape.pts.forEach(([x, y], k) => (k ? mctx.lineTo(x, y) : mctx.moveTo(x, y)));
             mctx.closePath();
             mctx.stroke();
+            for (const coin of race.coins) {
+              if (coin.takenLap === p.lap) continue;
+              const [x, y] = shape.map(coin.x, coin.z);
+              mctx.fillStyle = "#38BDF8";
+              mctx.fillRect(x - 2.5, y - 2.5, 5, 5);
+            }
             for (const c of race.cars) {
               const [x, y] = shape.map(c.x, c.z);
               mctx.fillStyle = c.ai ? c.color : "#0080F0";
@@ -390,7 +423,7 @@ function RaceScreen({ def, laps, difficulty, view, onView, guide, onGuide, audio
             const order = standings(race).map((c) => ({ name: c.name, color: c.ai ? c.color : "#0080F0", me: !c.ai }));
             const bestLap = Math.min(...p.lapTimes);
             const before = loadBests()[def.id]?.lap;
-            cb.current.onFinish({ trackId: def.id, place: placeOf(race), total: p.finished, bestLap, laps: race.laps, difficulty, order, newBest: !before || bestLap < before });
+            cb.current.onFinish({ trackId: def.id, place: placeOf(race), total: p.finished, bestLap, laps: race.laps, difficulty, car: race.car, order, newBest: !before || bestLap < before });
           }
         };
         raf = requestAnimationFrame(loop);
@@ -408,7 +441,7 @@ function RaceScreen({ def, laps, difficulty, view, onView, guide, onGuide, audio
       scene.current?.dispose();
       scene.current = null;
     };
-  }, [def, laps, difficulty]);
+  }, [def, laps, difficulty, car]);
 
   // A held control: on while a finger is on it.
   const hold = (key) => ({
@@ -496,6 +529,10 @@ function RaceScreen({ def, laps, difficulty, view, onView, guide, onGuide, audio
       </div>
       <div ref={(el) => (hud.current.wrong = el)} style={{ display: "none", position: "absolute", top: "42%", left: 0, right: 0, textAlign: "center", fontSize: 30, fontWeight: 900, color: "#F87171", textShadow: "0 2px 6px #000", pointerEvents: "none", zIndex: 2 }}>
         ⚠ WRONG WAY
+      </div>
+      <div ref={(el) => (hud.current.boost = el)} style={{ display: "none", position: "absolute", top: "17%", left: 0, right: 0, justifyContent: "center", alignItems: "center", gap: 8, pointerEvents: "none", zIndex: 2 }}>
+        <img src="/game/boosted-logo.webp" alt="" style={{ height: 30, filter: "drop-shadow(0 2px 6px #000)" }} />
+        <span style={{ fontSize: 22, fontWeight: 900, letterSpacing: 3, color: "#38BDF8", textShadow: "0 2px 6px #000" }}>BOOST</span>
       </div>
       <div ref={(el) => (hud.current.drift = el)} style={{ opacity: 0, transition: "opacity 0.15s", position: "absolute", top: "24%", left: 0, right: 0, textAlign: "center", fontSize: 22, fontWeight: 900, letterSpacing: 3, color: "#3CABFD", textShadow: "0 2px 6px #000", pointerEvents: "none", zIndex: 2 }}>
         DRIFT

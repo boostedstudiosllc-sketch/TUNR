@@ -46,7 +46,7 @@ const GAMES = [
       </>
     ),
     blurb:
-      "Open-wheel racing on 22 real circuit layouts. Race three rivals on Easy, Medium or Hard, drift the corners and follow the guide line.",
+      "Race a Formula car, GT, tuner or muscle car on 22 real circuit layouts. Three rivals, drift the corners, grab Boosted coins for a burst of speed.",
     badge: { text: "FREE PLAY", color: "#7FBFF5", border: "#003A75" },
   },
   {
