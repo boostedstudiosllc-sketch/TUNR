@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildTrack, newRace, tickRace, pointAt, locate, speedProfile, placeOf, standings, lapClock, TRACK_W } from "../src/lib/f1Engine.js";
+import { buildTrack, newRace, tickRace, pointAt, locate, speedProfile, placeOf, standings, lapClock, TRACK_W, DIFFICULTY } from "../src/lib/f1Engine.js";
 import { TRACKS } from "../src/lib/f1Tracks.js";
 
 const angleDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
@@ -86,4 +86,18 @@ test("a race on three circuits: laps count, places add up", { timeout: 120000 },
     assert.equal(standings(race).length, 4);
   }
   assert.equal(lapClock(83.4567), "1:23.457");
+});
+
+test("harder difficulty means faster rivals", () => {
+  const ran = (difficulty) => {
+    const race = newRace(buildTrack(TRACKS[0]), { laps: 3, seed: 7, difficulty });
+    for (let i = 0; i < 120 * 40; i++) tickRace(race, {});
+    const lead = standings(race)[0];
+    return lead.lap * race.track.L + lead.s;
+  };
+  assert.ok(DIFFICULTY.easy < DIFFICULTY.medium && DIFFICULTY.medium < DIFFICULTY.hard);
+  const easy = ran("easy");
+  const medium = ran("medium");
+  const hard = ran("hard");
+  assert.ok(easy < medium && medium < hard, `easy ${easy} medium ${medium} hard ${hard}`);
 });

@@ -14,7 +14,7 @@ export const CAR = { length: 5.4, width: 1.9 };
 
 const VMAX = 80; // m/s (~180 MPH)
 const ACCEL = 15;
-const BRAKE = 32;
+export const BRAKE = 32;
 const REVERSE_MAX = 10;
 const DRAG = 0.9;
 const STEER_RATE = 2.3; // rad/s at most
@@ -176,7 +176,11 @@ const RIVALS = [
   { name: "STORM", color: "#10B981", accent: "#F5F5F5", skill: 0.74 },
 ];
 
-export function newRace(track, { laps = 3, rivals = 3, seed = 1 } = {}) {
+// How hard the rivals push: their skill is scaled by this.
+export const DIFFICULTY = { easy: 0.88, medium: 1, hard: 1.1 };
+
+export function newRace(track, { laps = 3, rivals = 3, seed = 1, difficulty = "medium" } = {}) {
+  const pace = DIFFICULTY[difficulty] || 1;
   let r = seed % 2147483647 || 1;
   const rand = () => (r = (r * 16807) % 2147483647) / 2147483647;
   const profile = speedProfile(track);
@@ -190,7 +194,7 @@ export function newRace(track, { laps = 3, rivals = 3, seed = 1 } = {}) {
     cars.push({
       ai: true,
       ...rv,
-      skill: rv.skill - rand() * 0.02,
+      skill: (rv.skill - rand() * 0.02) * pace,
       s: track.L - slot.back,
       lane: slot.side,
       laneGoal: (rand() - 0.5) * 3,
@@ -232,7 +236,7 @@ export function newRace(track, { laps = 3, rivals = 3, seed = 1 } = {}) {
     wrongWay: 0,
   };
   cars.push(player);
-  return { track, laps, profile, cars, player, time: -3, state: "countdown", events: [] };
+  return { track, laps, difficulty, profile, cars, player, time: -3, state: "countdown", events: [] };
 }
 
 export const kmh = (ms) => Math.round(ms * 3.6);

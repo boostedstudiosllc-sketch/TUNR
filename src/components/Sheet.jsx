@@ -1,6 +1,11 @@
+import { createPortal } from "react-dom";
+
 // A panel that slides up from the bottom, like the meet and profile sheets.
-export default function Sheet({ onClose, children, zIndex = 260, label }) {
-  return (
+// portal: draw it at the top level of the page instead of where it's opened,
+// for panels opened from the sticky header (the alerts bell), which would
+// otherwise sit under the tab bar.
+export default function Sheet({ onClose, children, zIndex = 260, label, portal = false }) {
+  const panel = (
     <div
       onClick={onClose}
       style={{
@@ -15,6 +20,8 @@ export default function Sheet({ onClose, children, zIndex = 260, label }) {
         zIndex,
         display: "flex",
         alignItems: "flex-end",
+        fontFamily: "'Barlow Condensed', sans-serif",
+        color: "#F0F0F0",
       }}
     >
       <div
@@ -42,6 +49,7 @@ export default function Sheet({ onClose, children, zIndex = 260, label }) {
       </div>
     </div>
   );
+  return portal ? createPortal(panel, document.body) : panel;
 }
 
 const closeButton = {

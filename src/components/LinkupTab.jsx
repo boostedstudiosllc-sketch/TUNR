@@ -185,7 +185,7 @@ function LinkupCard({ linkup, miles, onOpen }) {
         alignItems: "center",
         textAlign: "left",
         background: "#111",
-        border: `1px solid ${mine ? "#3A1E0E" : "#222"}`,
+        border: `1px solid ${mine ? "#003A75" : "#222"}`,
         borderLeft: `3px solid ${status.live ? "#10B981" : "#0080F0"}`,
         borderRadius: 10,
         padding: "12px 12px",

@@ -56,7 +56,7 @@ export function PostCard({ post, onOpen, showForum, user, onNeedAccount, onToast
         width: "100%",
         textAlign: "left",
         background: "#111",
-        border: `1px solid ${post.pinned ? "#3A1E0E" : "#222"}`,
+        border: `1px solid ${post.pinned ? "#003A75" : "#222"}`,
         borderRadius: 10,
         padding: "11px 12px",
         color: "#E6E6E6",

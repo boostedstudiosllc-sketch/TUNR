@@ -103,8 +103,13 @@ export class RushAudio {
     if (this.ctx) this.sfx.gain.setTargetAtTime(on ? 0.55 : 0, this.ctx.currentTime, 0.05);
   }
 
+  // Closing the sound also switches off the engine and squeal, so a game
+  // screen that stops them after this (on its way out) doesn't crash.
   dispose() {
     clearInterval(this.timer);
+    this.timer = null;
+    this.engineOn = false;
+    this.squealOn = false;
     document.removeEventListener("visibilitychange", this.onVisibility);
     if (this.ctx) this.ctx.close();
     this.ctx = null;

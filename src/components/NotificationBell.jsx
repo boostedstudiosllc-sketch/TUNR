@@ -96,7 +96,7 @@ export default function NotificationBell({ user, onOpenLink, onToast, onOpenSett
       </button>
 
       {open && (
-        <Sheet onClose={() => setOpen(false)} label="Alerts">
+        <Sheet onClose={() => setOpen(false)} label="Alerts" zIndex={320} portal>
           <div style={sheetTitle}>ALERTS</div>
           {error && <div style={{ ...muted, color: "#EF4444", marginTop: 8 }}>{error}</div>}
           {items.length === 0 && !error ? (
@@ -115,8 +115,8 @@ export default function NotificationBell({ user, onOpenLink, onToast, onOpenSett
                   }}
                   style={{
                     textAlign: "left",
-                    background: n.read_at ? "#121212" : "#1A0F08",
-                    border: `1px solid ${n.read_at ? "#1F1F1F" : "#3A1E0E"}`,
+                    background: n.read_at ? "#121212" : "#001830",
+                    border: `1px solid ${n.read_at ? "#1F1F1F" : "#003A75"}`,
                     borderRadius: 10,
                     padding: "10px 12px",
                     color: "#E6E6E6",

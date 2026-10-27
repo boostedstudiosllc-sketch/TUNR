@@ -9,6 +9,11 @@ const VIEWS = [
   ["chase", "Chase"],
   ["cockpit", "Cockpit"],
 ];
+const LEVELS = [
+  ["easy", "Easy"],
+  ["medium", "Medium"],
+  ["hard", "Hard"],
+];
 const LAPS = [1, 2, 3];
 const PREFS_KEY = "tunr.f1.prefs";
 const LOW_POWER = typeof navigator !== "undefined" && (navigator.hardwareConcurrency || 8) <= 4;
@@ -16,10 +21,15 @@ const LOW_POWER = typeof navigator !== "undefined" && (navigator.hardwareConcurr
 function loadPrefs() {
   try {
     const p = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
-    return { view: VIEWS.some(([v]) => v === p.view) ? p.view : "chase", laps: LAPS.includes(p.laps) ? p.laps : 2 };
+    return {
+      view: VIEWS.some(([v]) => v === p.view) ? p.view : "chase",
+      laps: LAPS.includes(p.laps) ? p.laps : 2,
+      difficulty: LEVELS.some(([d]) => d === p.difficulty) ? p.difficulty : "medium",
+      guide: p.guide !== false,
+    };
   } catch (e) {
     console.warn("Couldn't read Drift King settings:", e.message);
-    return { view: "chase", laps: 2 };
+    return { view: "chase", laps: 2, difficulty: "medium", guide: true };
   }
 }
 
@@ -128,13 +138,14 @@ export default function DriftKing({ onClose }) {
             <div style={{ maxWidth: 560, margin: "0 auto", padding: "0 16px calc(28px + env(safe-area-inset-bottom))", boxSizing: "border-box" }}>
               <div style={{ ...muted, fontSize: 13.5 }}>
                 Race three rivals on real circuit layouts. Gas and brake on the right, steer on the left. Steer while you're on the gas
-                to drift: the tail slides and you turn tighter. Run wide and the grass slows you down.
+                to drift: the tail slides and you turn tighter. Follow the guide line: green is fine, yellow ease off, red brake.
+                Change the camera any time from pause.
               </div>
               {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
-              <div style={{ ...label, marginTop: 14 }}>VIEW</div>
+              <div style={{ ...label, marginTop: 14 }}>DIFFICULTY</div>
               <div style={{ display: "flex", gap: 6 }}>
-                {VIEWS.map(([id, name]) => (
-                  <button key={id} onClick={() => setPref({ view: id })} style={{ ...chip, ...(prefs.view === id ? chipOn : {}) }}>
+                {LEVELS.map(([id, name]) => (
+                  <button key={id} onClick={() => setPref({ difficulty: id })} style={{ ...chip, ...(prefs.difficulty === id ? chipOn : {}) }}>
                     {name}
                   </button>
                 ))}
@@ -184,8 +195,11 @@ export default function DriftKing({ onClose }) {
           key={`${def.id}:${round}`}
           def={def}
           laps={prefs.laps}
+          difficulty={prefs.difficulty}
           view={prefs.view}
           onView={(v) => setPref({ view: v })}
+          guide={prefs.guide}
+          onGuide={(on) => setPref({ guide: on })}
           audio={audio}
           sound={sound}
           onToggle={toggle}
@@ -199,14 +213,15 @@ export default function DriftKing({ onClose }) {
       )}
 
       {def && result && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 5, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ width: "100%", maxWidth: 360, background: "#0D1226", border: "1px solid #1E2A4A", borderRadius: 16, padding: 20, textAlign: "center" }}>
+        <div style={{ position: "absolute", inset: 0, zIndex: 5, background: "rgba(0,0,0,0.6)", display: "flex", overflowY: "auto", padding: "calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom))", boxSizing: "border-box" }}>
+          <div style={{ width: "100%", maxWidth: 360, margin: "auto", background: "#0D1226", border: "1px solid #1E2A4A", borderRadius: 16, padding: 20, textAlign: "center" }}>
             <div style={{ fontSize: 14, letterSpacing: 2, fontWeight: 900, color: result.place === 1 ? "#FACC15" : "#7FBFF5" }}>
               {result.place === 1 ? "🏆 YOU WIN" : "🏁 CHEQUERED FLAG"}
             </div>
             <div style={{ fontSize: 52, fontWeight: 900, lineHeight: 1.05 }}>{ordinal(result.place)}</div>
             <div style={{ ...muted, fontSize: 13 }}>
-              {def.name} · {result.laps} {result.laps === 1 ? "lap" : "laps"} · {lapClock(result.total)}
+              {def.name} · {LEVELS.find(([d]) => d === result.difficulty)?.[1]} · {result.laps} {result.laps === 1 ? "lap" : "laps"} ·{" "}
+              {lapClock(result.total)}
             </div>
             <div style={{ fontSize: 15, fontWeight: 800, marginTop: 6, color: result.newBest ? "#FACC15" : "#E8E8E8" }}>
               Fastest lap {lapClock(result.bestLap)}
@@ -238,7 +253,7 @@ export default function DriftKing({ onClose }) {
 }
 
 // The race: the 3D view, the numbers on top, and the controls.
-function RaceScreen({ def, laps, view, onView, audio, sound, onToggle, onFinish, onQuit, onFail }) {
+function RaceScreen({ def, laps, difficulty, view, onView, guide, onGuide, audio, sound, onToggle, onFinish, onQuit, onFail }) {
   const wrap = useRef(null);
   const canvas = useRef(null);
   const mapRef = useRef(null);
@@ -246,7 +261,7 @@ function RaceScreen({ def, laps, view, onView, audio, sound, onToggle, onFinish,
   const input = useRef({ gas: false, brake: false, left: false, right: false });
   const scene = useRef(null);
   const [paused, setPaused] = useState(false);
-  const live = useRef({ paused: false, view });
+  const live = useRef({ paused: false, view, guide });
   live.current.paused = paused;
   const cb = useRef({ onFinish, onFail });
   cb.current = { onFinish, onFail };
@@ -257,11 +272,18 @@ function RaceScreen({ def, laps, view, onView, audio, sound, onToggle, onFinish,
   }, [view]);
 
   useEffect(() => {
+    live.current.guide = guide;
+    scene.current?.setGuide(guide);
+  }, [guide]);
+
+  useEffect(() => {
     let raf = 0;
     let gone = false;
     let ro = null;
     const track = buildTrack(def);
-    const race = newRace(track, { laps, seed: Date.now() % 100000 });
+    const race = newRace(track, { laps, difficulty, seed: Date.now() % 100000 });
+    // For the browser checks: lets a test jump to the end of the race.
+    if (import.meta.env.DEV) window.__driftRace = race;
     const mctx = mapRef.current.getContext("2d");
     const MAP = 112;
     const shape = outline(def, MAP, MAP, 8);
@@ -284,7 +306,7 @@ function RaceScreen({ def, laps, view, onView, audio, sound, onToggle, onFinish,
       .then((mod) => {
         if (gone) return;
         try {
-          scene.current = mod.createF1Scene(canvas.current, race, { view: live.current.view, lowPower: LOW_POWER });
+          scene.current = mod.createF1Scene(canvas.current, race, { view: live.current.view, guide: live.current.guide, lowPower: LOW_POWER });
         } catch (e) {
           cb.current.onFail(`Couldn't start the 3D view on this phone. (${e.message})`);
           return;
@@ -368,7 +390,7 @@ function RaceScreen({ def, laps, view, onView, audio, sound, onToggle, onFinish,
             const order = standings(race).map((c) => ({ name: c.name, color: c.ai ? c.color : "#0080F0", me: !c.ai }));
             const bestLap = Math.min(...p.lapTimes);
             const before = loadBests()[def.id]?.lap;
-            cb.current.onFinish({ trackId: def.id, place: placeOf(race), total: p.finished, bestLap, laps: race.laps, order, newBest: !before || bestLap < before });
+            cb.current.onFinish({ trackId: def.id, place: placeOf(race), total: p.finished, bestLap, laps: race.laps, difficulty, order, newBest: !before || bestLap < before });
           }
         };
         raf = requestAnimationFrame(loop);
@@ -386,7 +408,7 @@ function RaceScreen({ def, laps, view, onView, audio, sound, onToggle, onFinish,
       scene.current?.dispose();
       scene.current = null;
     };
-  }, [def, laps]);
+  }, [def, laps, difficulty]);
 
   // A held control: on while a finger is on it.
   const hold = (key) => ({
@@ -510,7 +532,7 @@ function RaceScreen({ def, laps, view, onView, audio, sound, onToggle, onFinish,
           <div style={{ width: "100%", maxWidth: 320, background: "#0D1226", border: "1px solid #1E2A4A", borderRadius: 16, padding: 20, textAlign: "center" }}>
             <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 1 }}>PAUSED</div>
             <div style={{ ...muted, fontSize: 13 }}>{def.name}</div>
-            <div style={{ ...label, marginTop: 12 }}>VIEW</div>
+            <div style={{ ...label, marginTop: 12 }}>CAMERA</div>
             <div style={{ display: "flex", gap: 6 }}>
               {VIEWS.map(([id, name]) => (
                 <button key={id} onClick={() => onView(id)} style={{ ...chip, ...(view === id ? chipOn : {}) }}>
@@ -518,7 +540,16 @@ function RaceScreen({ def, laps, view, onView, audio, sound, onToggle, onFinish,
                 </button>
               ))}
             </div>
-            <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+            <div style={{ ...label, marginTop: 12 }}>GUIDE LINE</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={() => onGuide(true)} style={{ ...chip, ...(guide ? chipOn : {}) }}>
+                On
+              </button>
+              <button onClick={() => onGuide(false)} style={{ ...chip, ...(!guide ? chipOn : {}) }}>
+                Off
+              </button>
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
               <button onClick={() => onToggle("music")} style={{ ...chip, opacity: sound.music ? 1 : 0.45 }}>
                 🎵 MUSIC
               </button>

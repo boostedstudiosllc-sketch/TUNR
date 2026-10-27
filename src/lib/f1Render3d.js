@@ -2,11 +2,14 @@
 // circuit, the cars and three views. Everything is built in code; no
 // downloaded models or images.
 //
-// Views: "top" (overhead, your car pointing up the screen), "chase" (third
-// person, behind the car), "cockpit" (first person).
+// Views: "top" (high up behind the car, looking well down the road),
+// "chase" (third person, close behind the car), "cockpit" (first person).
+//
+// The guide line: the way through the next corners, drawn on the track ahead
+// of you. Green: you're fine at this speed. Yellow: ease off. Red: brake.
 
 import * as THREE from "three";
-import { TRACK_W, KERB_W } from "./f1Engine.js";
+import { TRACK_W, KERB_W, BRAKE } from "./f1Engine.js";
 
 const fwd = (h) => [-Math.sin(h), -Math.cos(h)];
 
@@ -408,7 +411,48 @@ function buildSurroundings(scene, track, look) {
 
 // ---------- the scene ----------
 
-export function createF1Scene(canvas, race, { view = "chase", lowPower = false } = {}) {
+// Where the guide line runs: toward the inside of each corner, more so the
+// tighter it is. Left of centre (side > 0) for a left turn.
+function guideOffsets(track) {
+  const { n, k } = track;
+  const out = new Float32Array(n);
+  const W = 10;
+  for (let i = 0; i < n; i++) {
+    let sum = 0;
+    for (let j = -W; j <= W; j++) sum += k[(i + j + n) % n];
+    out[i] = Math.max(-3.6, Math.min(3.6, (sum / (2 * W + 1)) * 110));
+  }
+  return out;
+}
+
+const GUIDE_PTS = 60;
+const GREEN = [0.13, 0.77, 0.37];
+const YELLOW = [0.98, 0.8, 0.08];
+const RED = [0.94, 0.27, 0.27];
+
+function buildGuide(scene) {
+  const pos = new Float32Array(GUIDE_PTS * 2 * 3);
+  const col = new Float32Array(GUIDE_PTS * 2 * 4);
+  const index = [];
+  for (let i = 0; i < GUIDE_PTS - 1; i++) {
+    const a = i * 2;
+    index.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+  geo.setAttribute("color", new THREE.BufferAttribute(col, 4).setUsage(THREE.DynamicDrawUsage));
+  geo.setIndex(index);
+  const mesh = new THREE.Mesh(
+    geo,
+    new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, fog: false, toneMapped: false })
+  );
+  mesh.frustumCulled = false;
+  mesh.renderOrder = 1;
+  scene.add(mesh);
+  return mesh;
+}
+
+export function createF1Scene(canvas, race, { view = "chase", lowPower = false, guide = true } = {}) {
   const track = race.track;
   const look = LOOKS[TRACK_LOOK[track.id] || "day"];
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: !lowPower, powerPreference: "high-performance" });
@@ -476,6 +520,51 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false }
   }
   let nextPuff = 0;
 
+  const guideMesh = buildGuide(scene);
+  const guideOff = guideOffsets(track);
+  guideMesh.visible = guide;
+
+  // Redraw the guide line from just ahead of the car, coloured for your speed.
+  function updateGuide(race) {
+    const p = race.player;
+    const { n, x, z, heading, s: dist, L } = track;
+    const pos = guideMesh.geometry.attributes.position.array;
+    const col = guideMesh.geometry.attributes.color.array;
+    const v = Math.abs(p.speed);
+    const start = (p.idx + 2) % n;
+    for (let k = 0; k < GUIDE_PTS; k++) {
+      const i = (start + k) % n;
+      const [fx, fz] = fwd(heading[i]);
+      const o = guideOff[i];
+      const half = 0.5;
+      for (const [m, w] of [
+        [0, o + half],
+        [1, o - half],
+      ]) {
+        const at = (k * 2 + m) * 3;
+        pos[at] = x[i] + fz * w;
+        pos[at + 1] = 0.04;
+        pos[at + 2] = z[i] - fx * w;
+      }
+      // How hard you'd have to brake from here to take this point.
+      let d = dist[i] - dist[p.idx];
+      if (d < 0) d += L;
+      const target = race.profile[i];
+      const need = v > target ? (v * v - target * target) / (2 * Math.max(d, 1)) : 0;
+      const c = need === 0 ? GREEN : need > BRAKE * 0.45 ? RED : YELLOW;
+      const alpha = 0.85 * Math.min(1, k / 4) * Math.min(1, (GUIDE_PTS - 1 - k) / 14);
+      for (let m = 0; m < 2; m++) {
+        const at = (k * 2 + m) * 4;
+        col[at] = c[0];
+        col[at + 1] = c[1];
+        col[at + 2] = c[2];
+        col[at + 3] = alpha;
+      }
+    }
+    guideMesh.geometry.attributes.position.needsUpdate = true;
+    guideMesh.geometry.attributes.color.needsUpdate = true;
+  }
+
   const camera = new THREE.PerspectiveCamera(60, 1, 0.12, 3000);
   let mode = view;
   const cam = { x: race.player.x, y: 5, z: race.player.z, h: race.player.heading };
@@ -486,6 +575,10 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false }
     me.userData.steeringWheel.visible = v === "cockpit";
   }
   setView(view);
+
+  function setGuide(on) {
+    guideMesh.visible = on;
+  }
 
   function resize(w, h) {
     renderer.setSize(w, h, false);
@@ -541,6 +634,8 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false }
       puff.sp.position.y += dt * 0.8;
     }
 
+    if (guideMesh.visible) updateGuide(race);
+
     // Camera.
     const [fx, fz] = fwd(p.heading);
     if (mode === "cockpit") {
@@ -550,16 +645,16 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false }
       camera.position.set(p.x + fx * 0.45, 1.1, p.z + fz * 0.45);
       camera.lookAt(p.x + fx * 22, 0.55, p.z + fz * 22);
     } else if (mode === "top") {
-      camera.fov = 50;
-      const height = 55 + Math.abs(p.speed) * 0.35;
-      cam.x += (p.x + fx * 12 - cam.x) * Math.min(1, dt * 6);
-      cam.z += (p.z + fz * 12 - cam.z) * Math.min(1, dt * 6);
-      cam.y += (height - cam.y) * Math.min(1, dt * 2);
-      cam.h += Math.atan2(Math.sin(p.heading - cam.h), Math.cos(p.heading - cam.h)) * Math.min(1, dt * 4);
-      const [ux, uz] = fwd(cam.h);
-      camera.up.set(ux, 0, uz);
-      camera.position.set(cam.x, cam.y, cam.z);
-      camera.lookAt(cam.x, 0, cam.z);
+      // High and behind, tipped forward: you see well down the road, the
+      // way arcade taxi games do. Pulls back a little with speed.
+      camera.fov = 58;
+      camera.up.set(0, 1, 0);
+      cam.h += Math.atan2(Math.sin(p.heading - cam.h), Math.cos(p.heading - cam.h)) * Math.min(1, dt * 3.5);
+      const [cx, cz] = fwd(cam.h);
+      const back = 14 + Math.abs(p.speed) * 0.05;
+      cam.y += (13 + Math.abs(p.speed) * 0.04 - cam.y) * Math.min(1, dt * 2);
+      camera.position.set(p.x - cx * back, cam.y, p.z - cz * back);
+      camera.lookAt(p.x + cx * 10, 0, p.z + cz * 10);
     } else {
       camera.fov = 62 + Math.min(12, Math.abs(p.speed) * 0.12);
       camera.up.set(0, 1, 0);
@@ -589,6 +684,6 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false }
     });
   }
 
-  return { render, setView, resize, dispose };
+  return { render, setView, setGuide, resize, dispose };
 }
 
