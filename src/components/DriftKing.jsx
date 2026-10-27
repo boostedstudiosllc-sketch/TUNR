@@ -395,7 +395,7 @@ function RaceScreen({ def, laps, difficulty, view, onView, guide, onGuide, audio
         };
         raf = requestAnimationFrame(loop);
       })
-      .catch((e) => cb.current.onFail(`Couldn't load the 3D view. (${e.message})`));
+      .catch((e) => cb.current.onFail(`Couldn't load the 3D view. (${e.message}) If the app was just updated, close it fully and open it again.`));
 
     return () => {
       gone = true;
