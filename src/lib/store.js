@@ -25,7 +25,9 @@ const HOST_INVITE_KEY = "tunr.host_invite.v1";
 // re-prompts accounts that accepted an earlier version.
 // 3: 18+, verification and badges, perks, membership, warranties,
 // indemnity, termination, governing law (October 2026).
-export const TOS_VERSION = 3;
+// 4: sticker orders, spending points, games, meets imported from
+// Instagram (late October 2026).
+export const TOS_VERSION = 4;
 
 function read(key, fallback) {
   try {

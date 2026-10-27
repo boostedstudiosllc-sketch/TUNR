@@ -144,9 +144,11 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
 
         <div style={heading}>3. EVENT LISTINGS & ACCURACY</div>
         <div style={body}>
-          Listings may be sourced from public event pages, community submissions, or hosts. Details
-          can change or be inaccurate — always confirm with the host before traveling. Listings
-          marked "Community Sourced" have not been verified.
+          Listings may be sourced from public event pages, community submissions, or hosts. Some
+          are imported automatically from Instagram posts by TUNR's own account and by meet pages
+          that have given us permission; the flyer and its details belong to the page that posted
+          them. Details can change or be inaccurate — always confirm with the host before traveling.
+          Listings marked "Community Sourced" have not been verified.
           <br />
           <br />
           If we listed your meet and you'd like it removed, corrected or handed over to you, use
@@ -220,7 +222,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
             </span>
           ))}
           <span style={{ display: "block", marginTop: 8 }}>
-            Sections 13 and 14 (release, limit of liability and indemnity) apply to linkups exactly
+            Sections 15 and 16 (release, limit of liability and indemnity) apply to linkups exactly
             as they do to meets.
           </span>
         </div>
@@ -280,6 +282,12 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           there, extra accounts, or any other trick to earn points breaks
           these terms: we can remove those points, cancel rewards claimed with them, and suspend
           the account. Rewards from a business are provided by that business on its own terms.
+          <br />
+          <br />
+          <strong>Spending points.</strong> Besides rewards, you can spend points on TUNR Rush
+          scenery (looks only: it never changes a run's score or points) and, when we offer it, a
+          mailed sticker. Spent points aren't given back, except when we cancel a sticker order
+          paid with points. What you unlock is for your account only.
           We can change point values, rewards and the rules, or end the program, at any time;
           points never become something you own.
         </div>
@@ -294,7 +302,28 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           renewal.
         </div>
 
-        <div style={heading}>12. THE APP IS PROVIDED "AS IS"</div>
+        <div style={heading}>12. STICKER ORDERS</div>
+        <div style={body}>
+          You can order a printed copy of your car's QR sticker, mailed to an address in the US.
+          The price, in dollars or points, is shown before you order. Card payments are taken on
+          our payment processor's checkout page, and we make the sticker once the payment has
+          come through. You can cancel an order until it's paid. Delivery times we show are
+          estimates, not promises. Check your address: we mail to the one you give us. If a
+          sticker arrives damaged or hasn't arrived 30 days after we mark it sent, email us and
+          we'll send another one or refund you. Otherwise card payments aren't refundable, except
+          where the law requires it.
+        </div>
+
+        <div style={heading}>13. GAMES</div>
+        <div style={body}>
+          The games in the TUNR Arcade are free to play. Only TUNR Rush earns points, as described
+          in section 10; the other games are just for fun and have no prizes. Don't cheat or tamper
+          with a game, its scores or leaderboards: we can remove scores and points that don't come
+          from fair play. Drift King's tracks are based on the layouts of real circuits, under
+          names we made up; TUNR isn't connected with Formula 1, any racing series, or any circuit.
+        </div>
+
+        <div style={heading}>14. THE APP IS PROVIDED "AS IS"</div>
         <div style={body}>
           TUNR is provided "as is" and "as available". To the extent the law allows, we make no
           promise that it will be accurate, uninterrupted, or error-free, or that any event,
@@ -302,7 +331,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           including merchantability, fitness for a particular purpose, and non-infringement.
         </div>
 
-        <div style={heading}>13. RELEASE &amp; LIMIT OF LIABILITY</div>
+        <div style={heading}>15. RELEASE &amp; LIMIT OF LIABILITY</div>
         <div style={body}>
           TO THE MAXIMUM EXTENT PERMITTED BY LAW, {LEGAL_ENTITY.toUpperCase()}, ITS OWNERS,
           EMPLOYEES AND AGENTS ARE NOT LIABLE FOR ANY INJURY, DEATH, PROPERTY DAMAGE, OR OTHER HARM
@@ -315,7 +344,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           GREATER OF $50 OR WHAT YOU PAID US IN THE 12 MONTHS BEFORE THE CLAIM.
         </div>
 
-        <div style={heading}>14. INDEMNITY</div>
+        <div style={heading}>16. INDEMNITY</div>
         <div style={body}>
           If someone brings a claim against us because of a meet you hosted, a linkup you posted or
           went to, content you posted, or
@@ -323,7 +352,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           with it, including legal fees.
         </div>
 
-        <div style={heading}>15. REPORTING</div>
+        <div style={heading}>17. REPORTING</div>
         <div style={body}>
           If you witness illegal activity at a TUNR-listed meet, report it to local law enforcement
           immediately. TUNR will cooperate fully with law enforcement investigations.
@@ -334,14 +363,14 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           breaks these terms.
         </div>
 
-        <div style={heading}>16. CHANGES TO THESE TERMS</div>
+        <div style={heading}>18. CHANGES TO THESE TERMS</div>
         <div style={body}>
           If we change these terms in a way that matters, we'll ask you to agree to the new version
           in the app before you carry on. If you don't agree, you can stop using TUNR and delete your
           account.
         </div>
 
-        <div style={heading}>17. GOVERNING LAW</div>
+        <div style={heading}>19. GOVERNING LAW</div>
         <div style={body}>
           These terms are governed by the laws of the State of Georgia, USA. Any dispute about TUNR
           will be handled in the state or federal courts located in Georgia, and you and we agree to
@@ -350,7 +379,7 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           applies.
         </div>
 
-        <div style={heading}>18. CONTACT</div>
+        <div style={heading}>20. CONTACT</div>
         <div style={body}>
           TUNR is operated by {LEGAL_ENTITY}. Questions, complaints, or anything that needs a
           human:{" "}

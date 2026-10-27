@@ -139,9 +139,19 @@ export default function PrivacyPolicy({ onClose }) {
           ended, the level, the distance and score, which of your cars you drove, and the moments
           you changed lanes, which our server uses to replay the run and check it, and which
           become your ghost on later tries that day), the level you
-          pick each day and how many tries you've used, plus the color and
-          body style you pick for each car. Your best run this week and of all time can appear on the
+          pick each day and how many tries you've used, the color and
+          body style you pick for each car, and the scenery you unlock with points. Your best run this week and of all time can appear on the
           game leaderboards with your username and car, unless you turn off “Show me on leaderboards”.
+          <br />
+          <br />
+          <strong>Other arcade games:</strong> Park Up and Drift King save your stars, best laps,
+          finishes and settings on your device only. Nothing about those games is sent to us.
+          <br />
+          <br />
+          <strong>Sticker orders:</strong> if you order a printed QR sticker, the car it's for,
+          the name and mailing address you give, how you paid (card or points) and the price, the
+          order's status, and the tracking number once it's mailed. We use these only to make,
+          mail and help with your order.
           <br />
           <br />
           <strong>Location:</strong> only at the moment you tap something that needs it, and only
@@ -218,14 +228,28 @@ export default function PrivacyPolicy({ onClose }) {
           we use, Google may use what's sent to improve its products, so only use it for flyers that
           are public anyway. <strong>Apple, Google and Mozilla</strong> carry alerts to your device
           if you turn them on — their push services receive the alert (encrypted) and deliver it.
-          When paid
-          membership launches, payments are handled by a payment processor; we never see or store
-          your full card number. Each is a processor acting on our behalf, and each has its own
-          privacy policy.
+          <br />
+          <br />
+          <strong>Payments:</strong> paying by card for a sticker (and paid membership, when it
+          launches) happens on a payment processor's checkout page, such as Stripe's. The
+          processor collects your card details; we never see or store your full card number.{" "}
+          <strong>Printing and mailing:</strong> to make a sticker we send its design to a print
+          shop, and your name and mailing address go to whoever mails it (the print shop or the
+          postal carrier), only to deliver it.
+          <br />
+          <br />
+          Each is a processor acting on our behalf, and each has its own privacy policy.
           <br />
           <br />
           <strong>Instagram:</strong> if you ask to be verified as a host, we may contact the
           Instagram account you named through Instagram direct messages, from our own account.
+          <br />
+          <br />
+          <strong>Meets imported from Instagram:</strong> we automatically list meets from new
+          posts on TUNR's own Instagram account and on meet pages that have given us permission.
+          We read those posts through Instagram's official tools (run by Meta), and their flyers
+          and captions go through the same Google Gemini reading as posting a meet. This uses only
+          those pages' posts, never your Instagram account or anything about you.
         </div>
 
         <div style={heading}>HOW LONG WE KEEP IT</div>
@@ -236,7 +260,9 @@ export default function PrivacyPolicy({ onClose }) {
           meet views, so hosts' numbers survive people changing their answer or leaving; it can't
           be traced back to you. If you don't confirm your email within 7 days of signing up, your
           account and everything saved to it are deleted automatically (after a reminder email); we
-          keep only a daily count of how many accounts were removed. Alerts are deleted after 60 days. Linkups and their chats are kept
+          keep only a daily count of how many accounts were removed. Alerts are deleted after 60 days.
+          Sticker orders, with their mailing address, are kept so we can help with an order and
+          are removed with your account. Linkups and their chats are kept
           after they end so problems can be looked into, and are removed with your account.
           The record of which terms you agreed to, and when, is kept for as long as your account
           exists.
