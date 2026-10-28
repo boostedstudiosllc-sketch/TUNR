@@ -1302,7 +1302,7 @@ export default function App() {
             <span
               style={{
                 fontSize: 20,
-                color: tab === t.id ? "#0080F0" : "#333",
+                color: tab === t.id ? "#0080F0" : "#8C96A5",
                 position: "relative",
               }}
             >
@@ -1332,10 +1332,10 @@ export default function App() {
             </span>
             <span
               style={{
-                fontSize: 9,
-                letterSpacing: 1.5,
-                fontWeight: 700,
-                color: tab === t.id ? "#0080F0" : "#333",
+                fontSize: 10,
+                letterSpacing: 1.3,
+                fontWeight: 800,
+                color: tab === t.id ? "#0080F0" : "#8C96A5",
                 fontFamily: "'Barlow Condensed', sans-serif",
               }}
             >
