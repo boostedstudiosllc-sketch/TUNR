@@ -27,7 +27,9 @@ const warn = {
   lineHeight: 1.6,
 };
 
-export default function TermsOfService({ onAccept, onClose, readOnly = false }) {
+// onDecline (for a signed-in account that hasn't agreed): a way out that
+// signs them out instead.
+export default function TermsOfService({ onAccept, onClose, onDecline = null, readOnly = false }) {
   // The agree button is always on screen but stays disabled until the reader
   // has scrolled to the end: agreeing has to come after the text, not
   // instead of it.
@@ -439,6 +441,15 @@ export default function TermsOfService({ onAccept, onClose, readOnly = false }) 
           >
             I AGREE — LET'S GO 🔥
           </button>
+          {onDecline && (
+            <button
+              type="button"
+              onClick={onDecline}
+              style={{ display: "block", margin: "10px auto 0", background: "none", border: "none", color: "#777", fontSize: 12, cursor: "pointer", fontFamily: "'Barlow', sans-serif", textDecoration: "underline" }}
+            >
+              Don't agree? Sign out and browse as a guest
+            </button>
+          )}
         </div>
       )}
     </div>

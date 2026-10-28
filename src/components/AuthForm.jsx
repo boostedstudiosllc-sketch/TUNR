@@ -7,7 +7,6 @@ import {
   sendPasswordReset,
   signInWithGoogle,
   googleEnabled,
-  noteTosAcceptedAtAccountForm,
 } from "../lib/store.js";
 import { checkEmail, domainExists } from "../lib/emailCheck.js";
 import { requestConfirmationEmail, CLEANUP_WHY } from "../lib/account.js";
@@ -36,8 +35,11 @@ const label = {
   fontFamily: "'Barlow Condensed', sans-serif",
 };
 
-export default function AuthForm({ onDone, initialUsername = "" }) {
-  const [mode, setMode] = useState("signup"); // signup | login | reset
+// Sign up or log in with email (and Google, unless hideGoogle). The terms
+// aren't agreed to here: a new account reads and agrees to them on the next
+// screen.
+export default function AuthForm({ onDone, initialUsername = "", initialMode = "signup", hideGoogle = false }) {
+  const [mode, setMode] = useState(initialMode); // signup | login | reset
   const [username, setUsername] = useState(initialUsername);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -78,8 +80,6 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
     setError("");
     setNotice("");
     try {
-      // The line under the button says continuing is agreeing.
-      if (mode !== "reset") noteTosAcceptedAtAccountForm();
       if (mode === "signup") {
         // Typos and throwaway addresses never get an account: it could
         // never be confirmed, and would be removed a week later.
@@ -122,14 +122,13 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
 
   return (
     <div>
-      {showGoogle && mode !== "reset" && (
+      {showGoogle && !hideGoogle && mode !== "reset" && (
         <>
           <button
             className="action-btn"
             onClick={async () => {
               setError("");
               try {
-                noteTosAcceptedAtAccountForm();
                 await signInWithGoogle();
               } catch (e) {
                 setError(e.message);
@@ -402,8 +401,7 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
             fontFamily: "'Barlow', sans-serif",
           }}
         >
-          By continuing{showGoogle ? ", with email or Google," : ""} you confirm you're 18 or older and
-          agree to the{" "}
+          {mode === "signup" ? "New here? Next you'll read and agree to the " : "Read the "}
           <button type="button" onClick={() => setShowTerms(true)} style={legalLink}>
             Terms of Service
           </button>{" "}
@@ -411,7 +409,7 @@ export default function AuthForm({ onDone, initialUsername = "" }) {
           <button type="button" onClick={() => setShowPrivacy(true)} style={legalLink}>
             Privacy Policy
           </button>
-          .
+          {mode === "signup" ? ". You must be 18 or older." : "."}
         </div>
       )}
 

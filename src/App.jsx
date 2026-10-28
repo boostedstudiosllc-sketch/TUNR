@@ -22,6 +22,8 @@ import {
   hasAcceptedCurrentTos,
   saveTosAccepted,
   syncTosToAccount,
+  loadTosAccepted,
+  signOut,
   onAuthChange,
   hasBackend,
   completeSignInFromUrl,
@@ -39,6 +41,7 @@ import ProfileTab from "./components/ProfileTab.jsx";
 import TermsOfService from "./components/TermsOfService.jsx";
 import PrivacyPolicy from "./components/PrivacyPolicy.jsx";
 import AuthForm from "./components/AuthForm.jsx";
+import Welcome from "./components/Welcome.jsx";
 import EditMeet from "./components/EditMeet.jsx";
 import HostProfile from "./components/HostProfile.jsx";
 import CalendarView from "./components/CalendarView.jsx";
@@ -88,7 +91,12 @@ export default function App() {
   const [selected, setSelected] = useState(null);
   const [showSubmit, setShowSubmit] = useState(false);
   const [toast, setToast] = useState(null);
-  const [tosAccepted, setTosAccepted] = useState(hasAcceptedCurrentTos);
+  // First open: the welcome page (sign in, sign up, or browse as a guest).
+  // A guest agrees to the terms there; an account reads and agrees to them on
+  // their own screen after signing up (and again only when they change).
+  const [welcomed, setWelcomed] = useState(() => Boolean(loadTosAccepted()));
+  const [guestTos, setGuestTos] = useState(() => hasAcceptedCurrentTos());
+  const [accountTos, setAccountTos] = useState(null); // signed in: agreed to these terms? null while checking
   // /hosts is the pitch page sent to prospective hosts, /join the link in the
   // bio. Kept as plain path matching rather than a router.
   const [showHostPitch, setShowHostPitch] = useState(
@@ -215,12 +223,25 @@ export default function App() {
       if (u && event === "SIGNED_IN") recordSignIn();
       if (u) {
         ensureProfile(u);
-        // Agreed on another device: don't ask again here.
-        syncTosToAccount(u).then((ok) => ok && setTosAccepted(true));
       }
     });
     return unsubscribe;
   }, []);
+
+  // Has this account agreed to the current terms (here or on another device)?
+  useEffect(() => {
+    if (!user) {
+      setAccountTos(null);
+      return undefined;
+    }
+    const here = hasAcceptedCurrentTos(user.id);
+    setAccountTos(here ? true : null);
+    let alive = true;
+    syncTosToAccount(user).then((ok) => alive && setAccountTos(ok || here));
+    return () => {
+      alive = false;
+    };
+  }, [user?.id]);
 
   // Confirmed yet? Arriving from the emailed link confirms it right here.
   useEffect(() => {
@@ -577,7 +598,10 @@ export default function App() {
 
   // Someone new who scanned a car's sticker sees the build first; the terms
   // come when they go on into the app.
-  if (!tosAccepted && carView) {
+  const needsWelcome = !user && !welcomed;
+  const needsTerms = user ? accountTos === false : welcomed && !guestTos;
+
+  if (needsWelcome && carView) {
     return (
       <div style={{ fontFamily: "'Barlow Condensed', sans-serif", color: "#F0F0F0", background: "#0A0A0A", minHeight: "100vh" }}>
         <GlobalStyles />
@@ -599,15 +623,44 @@ export default function App() {
     );
   }
 
-  if (!tosAccepted) {
+  if (needsWelcome) {
+    return (
+      <>
+        <GlobalStyles />
+        <Welcome
+          onGuest={() => {
+            saveTosAccepted(null, "guest_welcome");
+            setWelcomed(true);
+            setGuestTos(true);
+          }}
+        />
+      </>
+    );
+  }
+
+  // A new account (or anyone, when the terms change) reads and agrees.
+  if (needsTerms) {
     return (
       <>
         <GlobalStyles />
         <TermsOfService
           onAccept={() => {
-            saveTosAccepted(user?.id || null);
-            setTosAccepted(true);
+            if (user) {
+              saveTosAccepted(user.id).catch((e) => showToast(e.message));
+              setAccountTos(true);
+            } else {
+              saveTosAccepted(null, "guest_terms");
+              setGuestTos(true);
+            }
           }}
+          onDecline={
+            user
+              ? () =>
+                  signOut()
+                    .then(() => setTab("discover"))
+                    .catch((e) => showToast(e.message))
+              : null
+          }
         />
       </>
     );

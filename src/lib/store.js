@@ -567,26 +567,24 @@ export function loadTosAccepted() {
 }
 
 // Accepting an older version doesn't count once the terms have materially
-// changed — otherwise bumping TOS_VERSION would be decorative.
-export function hasAcceptedCurrentTos() {
+// changed — otherwise bumping TOS_VERSION would be decorative. With a userId,
+// only that account's agreement counts (a guest's doesn't carry over to an
+// account: new accounts read and agree to the terms themselves).
+export function hasAcceptedCurrentTos(userId = null) {
   const record = loadTosAccepted();
-  return Boolean(record && Number(record.version) >= TOS_VERSION);
+  if (!record || Number(record.version) < TOS_VERSION) return false;
+  return userId ? record.userId === userId : true;
 }
 
-// method: "terms_screen" (the full terms, agreed to) or "account_form" (the
-// "By continuing you agree…" line beside the sign-up and log-in buttons).
+// method: "terms_screen" (the full terms, agreed to, for an account),
+// "guest_welcome" (Continue as guest on the welcome page, beside a line
+// saying that's agreeing) or "guest_terms" (a guest agreeing to changed
+// terms). Guests' agreements stay on this device only.
 export async function saveTosAccepted(userId = null, method = "terms_screen") {
-  const record = { acceptedAt: new Date().toISOString(), version: TOS_VERSION, method };
+  const record = { acceptedAt: new Date().toISOString(), version: TOS_VERSION, method, userId: userId || null };
   write(TOS_KEY, record);
   if (supabase && userId) await recordTermsAcceptance(userId, record);
   return record;
-}
-
-// The account form counts as agreeing, but a full read of the terms on this
-// device is the better record, so it isn't overwritten.
-export function noteTosAcceptedAtAccountForm() {
-  if (hasAcceptedCurrentTos()) return;
-  write(TOS_KEY, { acceptedAt: new Date().toISOString(), version: TOS_VERSION, method: "account_form" });
 }
 
 async function recordTermsAcceptance(userId, record) {
@@ -632,7 +630,10 @@ async function doSyncTos(user) {
   const fromSignup = meta.tos_version
     ? { version: meta.tos_version, acceptedAt: meta.tos_accepted_at, method: "account_form" }
     : null;
-  const onDevice = loadTosAccepted();
+  // An agreement on this device counts for this account if it was this
+  // account's (or from before agreements were tied to one), never a guest's.
+  const saved = loadTosAccepted();
+  const onDevice = saved && !String(saved.method || "").startsWith("guest") && (!saved.userId || saved.userId === user.id) ? saved : null;
   const local =
     onDevice && Number(onDevice.version) >= Number(fromSignup?.version || 0) ? onDevice : fromSignup;
 
@@ -641,8 +642,8 @@ async function doSyncTos(user) {
   }
 
   if (accountVersion >= TOS_VERSION) {
-    if (!hasAcceptedCurrentTos()) {
-      write(TOS_KEY, { acceptedAt: data?.accepted_at || new Date().toISOString(), version: accountVersion });
+    if (!hasAcceptedCurrentTos(user.id)) {
+      write(TOS_KEY, { acceptedAt: data?.accepted_at || new Date().toISOString(), version: accountVersion, method: "terms_screen", userId: user.id });
     }
     return true;
   }
@@ -768,10 +769,7 @@ export async function signUpWithPassword(email, password, username) {
       data: {
         username,
         ...(source && { signup_source: source }),
-        // Agreed to beside the button; recorded once the account is signed in,
-        // which may be in whatever browser opens the confirmation email.
-        tos_version: TOS_VERSION,
-        tos_accepted_at: new Date().toISOString(),
+        // The terms come next, on their own screen, once signed in.
       },
       emailRedirectTo: returnUrl(),
     },

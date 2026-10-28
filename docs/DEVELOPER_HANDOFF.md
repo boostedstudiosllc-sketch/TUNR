@@ -440,3 +440,7 @@ The 3D garage's DRIVE IN TUNR RUSH and "Or play it in" buttons open a game with 
 - **Brand**: `brandOf(make)` picks a front end in `rush3d.js` `buildFront`: simple shapes that read as the brand (BMW twin grille and ring lights, Audi rings, Mercedes star, Subaru hood scoop, Jeep slots, MINI round lights, Genesis crest and so on), not copies of any real car. Every 3D car now has headlights, a grille and amber side markers. Car cards show the front three-quarters.
 - 082 adds 27 more makes (Jeep, Ram, GMC, Cadillac, Volvo, Land Rover, MINI and others).
 
+## First open: welcome page, then terms for new accounts
+
+Someone new (not signed in, nothing agreed on this device) sees `Welcome.jsx`: Continue with Google (when Google is on), Sign up with email, Log in, or Continue as guest. A guest agrees with the line by the guest button (`saveTosAccepted(null, "guest_welcome")`, kept on the device only). Accounts agree on the full terms screen: right after signing up, and again only when `TOS_VERSION` changes; it has a "Don't agree? Sign out" way out. The device's record of agreement now notes which account agreed (`userId`), so a guest's agreement never counts for a new account (`hasAcceptedCurrentTos(userId)`, `syncTosToAccount`). The sign-up form no longer counts as agreeing. Phone sign-in isn't offered: it needs a paid SMS provider in Supabase, and accounts depend on a confirmed email (unconfirmed ones are removed after 7 days), so phone-only accounts would need those rules changed first.
+
