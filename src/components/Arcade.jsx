@@ -4,10 +4,12 @@ import ParkUp from "./ParkUp.jsx";
 import DriftKing from "./DriftKing.jsx";
 import KartGame from "./KartGame.jsx";
 import CarSoccer from "./CarSoccer.jsx";
+import EggHaul from "./EggHaul.jsx";
 import { LEVELS as PARK_LEVELS, loadProgress } from "../lib/parkEngine.js";
 import { loadBests as loadDriftBests } from "../lib/f1Engine.js";
 import { loadKartBests } from "../lib/kartEngine.js";
 import { loadRecord as loadBallRecord } from "../lib/soccerEngine.js";
+import { loadEggBest } from "../lib/eggEngine.js";
 import { loadAllAccess } from "../lib/store.js";
 import { muted, quietButton } from "./Sheet.jsx";
 
@@ -80,9 +82,13 @@ const GAMES = [
   {
     id: "egg",
     icon: "🥚",
-    name: "EGG HAUL",
-    blurb: "Hills, bumps and an egg on your roof. Don't drop it.",
-    soon: true,
+    name: (
+      <>
+        EGG <span style={{ color: "#0080F0" }}>HAUL</span>
+      </>
+    ),
+    blurb: "Hills, bumps and an egg on your roof. Drive as far as you can without dropping it.",
+    badge: { text: "NEW · FREE PLAY", color: "#7FBFF5", border: "#003A75" },
   },
 ];
 
@@ -103,6 +109,7 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
   const [driftBest, setDriftBest] = useState(0);
   const [kartWins, setKartWins] = useState(0);
   const [ballRecord, setBallRecord] = useState(null);
+  const [eggBest, setEggBest] = useState(0);
   // All access (the operator's account): every level open.
   const [allAccess, setAllAccess] = useState(false);
   useEffect(() => {
@@ -117,6 +124,7 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
     setDriftBest(Object.values(loadDriftBests()).filter((b) => b.place === 1).length);
     setKartWins(Object.values(loadKartBests()).filter((b) => b.place === 1).length);
     setBallRecord(loadBallRecord());
+    setEggBest(loadEggBest());
   }, [open]);
 
   useEffect(() => {
@@ -141,6 +149,7 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
   if (open === "drift") return <DriftKing user={user} onClose={() => setOpen(null)} />;
   if (open === "karts") return <KartGame user={user} onClose={() => setOpen(null)} />;
   if (open === "ball") return <CarSoccer user={user} onClose={() => setOpen(null)} />;
+  if (open === "egg") return <EggHaul user={user} onClose={() => setOpen(null)} />;
 
   return (
     <div
@@ -323,6 +332,9 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
                 >
                   🏆 {ballRecord.wins}–{ballRecord.losses} · {ballRecord.goals} {ballRecord.goals === 1 ? "goal" : "goals"}
                 </span>
+              )}
+              {g.id === "egg" && eggBest > 0 && (
+                <span style={{ display: "block", fontSize: 12.5, color: "#FACC15", marginTop: 4, fontWeight: 800 }}>🏆 Best: {eggBest} m</span>
               )}
               {g.id === "park" && (
                 <span
