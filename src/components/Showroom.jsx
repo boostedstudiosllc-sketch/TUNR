@@ -335,6 +335,7 @@ export function Tuner({ look, onChange, priceOf = () => 0 }) {
   const at = list.indexOf(look[key]);
   const step = (dir) => onChange({ [key]: list[(((at < 0 ? 0 : at + dir) % list.length) + list.length) % list.length] });
   const value = noWing ? "Not on trucks" : names[look[key]] || (key === "color" ? "Custom" : look[key]);
+  const price = priceOf(key, look[key]);
   const round = { width: 44, height: 44, flexShrink: 0, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.08)", color: "#fff", fontSize: 15, cursor: "pointer", padding: 0 };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -383,7 +384,7 @@ export function Tuner({ look, onChange, priceOf = () => 0 }) {
           <div style={{ flex: 1, textAlign: "center" }}>
             <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 0.5, lineHeight: 1.1 }}>
               {value}
-              {!noWing && priceOf(key, look[key]) > 0 && <span style={{ marginLeft: 8, fontSize: 13, color: "#FACC15", verticalAlign: "middle" }}>🔒 ⭐ {priceOf(key, look[key])}</span>}
+              {!noWing && price > 0 && <span style={{ marginLeft: 8, fontSize: 13, color: "#FACC15", verticalAlign: "middle" }}>🔒 ⭐ {price}</span>}
             </div>
             {!noWing && (
               <div aria-hidden="true" style={{ display: "flex", justifyContent: "center", gap: 5, marginTop: 6 }}>
@@ -439,13 +440,19 @@ export function GarageShowroom({ title, cars, startId, plate = "", editable = fa
     return id && parts.prices[id] && !parts.owned.has(id) ? parts.prices[id].price : 0;
   };
   const look = { ...saved, ...preview };
-  const locked = Object.entries(preview).filter(([k, v]) => priceOf(k, v) > 0);
+  const dropPreview = (key) =>
+    setPreview((pv) => {
+      const { [key]: _gone, ...rest } = pv;
+      return rest;
+    });
+  const locked = Object.entries(preview)
+    .filter(([k, v]) => priceOf(k, v) > 0)
+    .map(([key, value]) => ({ key, value, id: partId(key, value), ...parts.prices[partId(key, value)] }));
 
   function tune(patch) {
     setNote("");
-    const lockedNow = Object.entries(patch).filter(([k, v]) => priceOf(k, v) > 0);
     const keep = Object.fromEntries(Object.entries(preview).filter(([k]) => !(k in patch)));
-    if (lockedNow.length) return setPreview({ ...keep, ...patch });
+    if (Object.entries(patch).some(([k, v]) => priceOf(k, v) > 0)) return setPreview({ ...keep, ...patch });
     setPreview(keep);
     onLook(car, { ...saved, ...patch });
   }
@@ -457,7 +464,7 @@ export function GarageShowroom({ title, cars, startId, plate = "", editable = fa
     try {
       const r = await unlockGaragePart(id);
       setParts((p) => ({ ...p, owned: new Set([...p.owned, id]) }));
-      setPreview((pv) => Object.fromEntries(Object.entries(pv).filter(([k]) => k !== key)));
+      dropPreview(key);
       onLook(car, { ...saved, [key]: value });
       setNote(`✓ ${parts.prices[id]?.name || "Part"} unlocked${r.balance != null ? ` · ⭐ ${r.balance} left` : ""}. It's yours on every car.`);
     } catch (e) {
@@ -661,23 +668,20 @@ export function GarageShowroom({ title, cars, startId, plate = "", editable = fa
             ) : tab === "style" && editable ? (
               <>
                 <Tuner look={look} onChange={tune} priceOf={priceOf} />
-                {locked.map(([k, v]) => {
-                  const id = partId(k, v);
-                  return (
-                    <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 12, background: "rgba(250,204,21,0.1)", border: "1px solid rgba(250,204,21,0.35)" }}>
+                {locked.map(({ key, value, id, name, price }) => (
+                    <div key={key} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 12, background: "rgba(250,204,21,0.1)", border: "1px solid rgba(250,204,21,0.35)" }}>
                       <span style={{ flex: 1, fontSize: 14, fontWeight: 900 }}>
-                        🔒 {parts.prices[id]?.name}
+                        🔒 {name}
                         <span style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#B9C2CF", fontFamily: "'Barlow', sans-serif" }}>Previewing. Unlock it once, use it on every car.</span>
                       </span>
-                      <button className="action-btn" disabled={buying === id} onClick={() => unlock(k, v)} style={{ padding: "9px 12px", borderRadius: 10, border: "none", background: "#FACC15", color: "#111", fontSize: 14, fontWeight: 900, letterSpacing: 0.8, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", whiteSpace: "nowrap" }}>
-                        {buying === id ? "…" : `UNLOCK ⭐ ${parts.prices[id]?.price}`}
+                      <button className="action-btn" disabled={buying === id} onClick={() => unlock(key, value)} style={{ padding: "9px 12px", borderRadius: 10, border: "none", background: "#FACC15", color: "#111", fontSize: 14, fontWeight: 900, letterSpacing: 0.8, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", whiteSpace: "nowrap" }}>
+                        {buying === id ? "…" : `UNLOCK ⭐ ${price}`}
                       </button>
-                      <button onClick={() => setPreview((pv) => Object.fromEntries(Object.entries(pv).filter(([kk]) => kk !== k)))} aria-label="Stop previewing" style={{ background: "none", border: "none", color: "#9AA4B2", fontSize: 18, cursor: "pointer" }}>
+                      <button onClick={() => dropPreview(key)} aria-label="Stop previewing" style={{ background: "none", border: "none", color: "#9AA4B2", fontSize: 18, cursor: "pointer" }}>
                         ✕
                       </button>
                     </div>
-                  );
-                })}
+                ))}
                 {note && (
                   <div role="status" style={{ fontSize: 12.5, color: note.startsWith("✓") ? "#86EFAC" : "#FCA5A5", fontFamily: "'Barlow', sans-serif" }}>
                     {note}

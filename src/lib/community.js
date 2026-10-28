@@ -2,7 +2,7 @@
 import { supabase } from "./supabase.js";
 import { friendlyWriteError, withReason } from "./errors.js";
 import { kickPush } from "./alerts.js";
-import { cleanForSending, assertClean } from "./clean.js";
+import { cleanForSending, cleanOrNull, assertClean } from "./clean.js";
 
 export const POST_TAGS = [
   { id: "question", label: "❓ Question" },
@@ -53,7 +53,7 @@ export async function createForum({ name, description, icon }, userId) {
     id,
     slug: slugify(name),
     name: name.trim(),
-    description: cleanForSending((description || "").trim()) || null,
+    description: cleanOrNull(description),
     icon: icon || "💬",
     created_by: userId,
   });
@@ -213,7 +213,7 @@ export async function createClub(draft, userId) {
     name: draft.name.trim(),
     kind: draft.kind,
     city: (draft.city || "").trim() || null,
-    description: cleanForSending((draft.description || "").trim()) || null,
+    description: cleanOrNull(draft.description),
     logo_url: draft.logoUrl || null,
     visibility: draft.visibility === "private" ? "private" : "public",
     created_by: userId,

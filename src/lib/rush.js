@@ -137,17 +137,17 @@ export async function loadScenery(userId) {
   return { list: (data || []).filter((r) => SCENERY[r.id]), owned };
 }
 
-const UNLOCK_COPY = {
-  not_signed_in: "Sign in to unlock scenery.",
-  unconfirmed: "Confirm your email first. Tap the link we emailed you.",
-  not_found: "That scenery isn't available right now.",
-  owned: "You already have that one.",
-};
-
-export function unlockMessage(result) {
+// Why an unlock didn't go through (scenery, garage parts: `thing`).
+export function unlockMessage(result, thing = "scenery") {
   const status = result?.status || "unknown";
-  if (status === "not_enough") return `You need ${result.cost} points and have ${result.balance}.`;
-  return UNLOCK_COPY[status] || `Couldn't unlock that. (${status})`;
+  if (status === "not_enough") return `You need ⭐ ${result.cost} and have ${result.balance}. Earn more in your 📋 checklist.`;
+  const copy = {
+    not_signed_in: `Sign in to unlock ${thing}.`,
+    unconfirmed: "Confirm your email first. Tap the link we emailed you.",
+    not_found: "That isn't for sale right now.",
+    owned: "You already have that one.",
+  };
+  return copy[status] || `Couldn't unlock that. (${status})`;
 }
 
 // Spend points on a place. Returns { status: "ok", balance } or why not.

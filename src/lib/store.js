@@ -4,7 +4,7 @@
 // and keep device-local RSVPs). Without Supabase env vars everything falls
 // back to seed data + localStorage so the app still runs.
 
-import { cleanForSending, assertClean } from "./clean.js";
+import { cleanForSending, cleanOrNull, assertClean } from "./clean.js";
 import { seedEvents } from "../data/events.js";
 import { supabase } from "./supabase.js";
 import { DEFAULT_TZ, parseLocal, isoInTz } from "./dates.js";
@@ -368,7 +368,7 @@ export async function saveVehicle(vehicle, ownerId) {
     year: vehicle.year ? Number(vehicle.year) : null,
     make: vehicle.make,
     model: cleanForSending((vehicle.model || "").trim()),
-    build_notes: cleanForSending((vehicle.buildNotes || "").trim()) || null,
+    build_notes: cleanOrNull(vehicle.buildNotes),
     photo_url: vehicle.photoUrl || null,
   };
   // Its paint for the 3D garage and the games (the body is worked out from
@@ -503,7 +503,7 @@ export async function saveProfile(profile, userId = null) {
         ...(profile.isPhotographer !== undefined ? { is_photographer: Boolean(profile.isPhotographer) } : {}),
         ...(profile.photoPage !== undefined ? { photo_page: profile.photoPage.trim() || null } : {}),
         ...(profile.avatarUrl !== undefined ? { avatar_url: String(profile.avatarUrl ?? "").trim() || null } : {}),
-        ...(profile.bio !== undefined ? { bio: cleanForSending(String(profile.bio ?? "").trim()) || null } : {}),
+        ...(profile.bio !== undefined ? { bio: cleanOrNull(profile.bio) } : {}),
         ...(profile.profileColor !== undefined ? { profile_color: profile.profileColor || null } : {}),
       });
     if (error) {
@@ -1075,7 +1075,7 @@ export async function fileListingRequest({ eventId, kind, name, contact, details
     kind,
     requester_name: (name || "").trim() || null,
     contact: (contact || "").trim(),
-    details: cleanForSending((details || "").trim()) || null,
+    details: cleanOrNull(details),
   });
   if (error) throw new Error(friendlyWriteError(error, "Couldn't send that. Try again, or email us."));
 }
@@ -1595,7 +1595,7 @@ export async function addMeetPhoto(eventId, photoUrl, caption, userId) {
     event_id: eventId,
     user_id: userId,
     photo_url: photoUrl,
-    caption: cleanForSending((caption || "").trim()) || null,
+    caption: cleanOrNull(caption),
   });
   if (error) throw new Error(friendlyWriteError(error, "Couldn't add that photo."));
 }
@@ -1688,7 +1688,7 @@ export async function submitReport(eventId, reason, note, userId, suggested = ""
     event_id: eventId,
     reporter_id: userId,
     reason,
-    note: cleanForSending(note?.trim() || "") || null,
+    note: cleanOrNull(note),
     suggested: suggested?.trim() || null,
   });
   if (error) {

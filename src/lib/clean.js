@@ -14,6 +14,9 @@ export function cleanText(text) {
   return { text: out, changed: out !== String(text ?? "") };
 }
 
+// Trimmed, cleaned, or null if empty: for optional text fields.
+export const cleanOrNull = (text) => cleanForSending(String(text ?? "").trim()) || null;
+
 // Names (usernames, club and forum names) can't just be starred out:
 // they're refused instead.
 export function assertClean(text, what) {

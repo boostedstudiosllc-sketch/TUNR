@@ -146,8 +146,15 @@ export default function RushAdmin({ onToast }) {
         </div>
       )}
 
-      <SceneryPrices onToast={onToast} />
-      <SceneryPrices
+      <PriceEditor
+        onToast={onToast}
+        title="SCENERY PRICES (POINTS)"
+        help="Players unlock these once with reward points (10 points = $1 of value). Looks only; the desert is always free. Taking one off sale hides it from new buyers; people who own it keep it."
+        load={() => loadScenery(null).then((r) => r.list.filter((x) => x.id !== "desert"))}
+        saveOne={saveSceneryPrice}
+        icon={(x) => SCENERY[x.id]?.emoji}
+      />
+      <PriceEditor
         onToast={onToast}
         title="GARAGE PART PRICES (POINTS)"
         help="The paid add-ons in the 3D garage. Bought once, then on every car the player owns. Everything else in the garage is free. Off sale makes a part free for everyone; people who bought it keep it."
@@ -159,9 +166,9 @@ export default function RushAdmin({ onToast }) {
   );
 }
 
-// What each place costs in points, and whether it's on sale. Anyone who
-// already unlocked a place keeps it.
-function SceneryPrices({ onToast, title = "SCENERY PRICES (POINTS)", help = null, load = () => loadScenery(null).then((r) => r.list.filter((x) => x.id !== "desert")), saveOne = saveSceneryPrice, icon = (x) => SCENERY[x.id]?.emoji }) {
+// What each item (a scenery place, a garage part) costs in points, and
+// whether it's on sale. Anyone who already unlocked one keeps it.
+function PriceEditor({ onToast, title, help, load, saveOne, icon }) {
   const [list, setList] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
@@ -190,8 +197,7 @@ function SceneryPrices({ onToast, title = "SCENERY PRICES (POINTS)", help = null
     <div style={{ marginTop: 26 }}>
       <div style={label}>{title}</div>
       <div style={{ ...muted, fontSize: 12.5 }}>
-        {help ||
-          "Players unlock these once with reward points (10 points = $1 of value). Looks only; the desert is always free. Taking one off sale hides it from new buyers; people who own it keep it."}
+        {help}
       </div>
       {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
       {list === null && !error && <div style={{ ...muted, marginTop: 8 }}>Loading…</div>}
