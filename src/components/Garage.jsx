@@ -408,6 +408,7 @@ export default function Garage({ user, onToast }) {
                   key={c}
                   type="button"
                   aria-label={`Paint ${COLOR_NAMES[c]}`}
+                  title={COLOR_NAMES[c]}
                   aria-pressed={editing.paint === c}
                   onClick={() => setEditing((d) => ({ ...d, paint: c }))}
                   style={{ width: 30, height: 30, borderRadius: "50%", background: c, border: editing.paint === c ? "3px solid #fff" : "1px solid #333", cursor: "pointer" }}

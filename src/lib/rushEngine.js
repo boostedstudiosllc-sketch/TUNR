@@ -46,10 +46,33 @@ export const BOOST_SPEED = DEFAULT_RULES.boostSpeed;
 export const BOOST_TIME = DEFAULT_RULES.boostSeconds;
 export const SPOILERS = ["none", "lip", "wing"];
 export const BODIES = ["coupe", "sedan", "hatch", "suv", "truck"];
-export const GAME_COLORS = ["#E11D2E", "#FF7A00", "#FACC15", "#10B981", "#1D4ED8", "#A855F7", "#F5F5F5", "#9CA3AF", "#111827"];
+// Paint: the basics, plus famous factory colors (close matches, not the
+// makers' official codes), grouped by shade.
+const PAINTS = [
+  ["#E11D2E", "Red"],
+  ["#C8102E", "Torch Red"],
+  ["#FF7A00", "Orange"],
+  ["#FACC15", "Yellow"],
+  ["#FFD500", "Racing Yellow"],
+  ["#10B981", "Green"],
+  ["#0B6B4E", "Isle of Man Green"],
+  ["#0F3D2E", "British Racing Green"],
+  ["#1D4ED8", "Blue"],
+  ["#0A74D1", "Rapid Blue"],
+  ["#00A3D9", "Miami Blue"],
+  ["#A855F7", "Violet"],
+  ["#5B2A86", "Plum Crazy"],
+  ["#7A1F4D", "Wildberry"],
+  ["#F5F5F5", "White"],
+  ["#D8D4C8", "Chalk"],
+  ["#9CA3AF", "Silver"],
+  ["#6E7276", "Nardo Grey"],
+  ["#111827", "Black"],
+];
+export const GAME_COLORS = PAINTS.map(([c]) => c);
 // What each car can look like (vehicles.game_*): names for the garage's
 // style rows.
-export const COLOR_NAMES = { "#E11D2E": "Red", "#FF7A00": "Orange", "#FACC15": "Yellow", "#10B981": "Green", "#1D4ED8": "Blue", "#A855F7": "Violet", "#F5F5F5": "White", "#9CA3AF": "Silver", "#111827": "Black" };
+export const COLOR_NAMES = Object.fromEntries(PAINTS);
 export const BODY_NAMES = { coupe: "Coupe", sedan: "Sedan", hatch: "Hatch", suv: "SUV", truck: "Truck" };
 export const SPOILER_NAMES = { none: "None", lip: "Lip", wing: "Wing" };
 export const RIMS = ["silver", "black", "gold", "bronze", "chrome"];
