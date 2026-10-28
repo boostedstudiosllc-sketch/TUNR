@@ -38,6 +38,7 @@ import {
   loadPurchaseQueue,
   recordPurchase,
   findUserId,
+  CLAIM_HINT,
 } from "../lib/points.js";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
 import Leaderboard from "./Leaderboard.jsx";
@@ -98,7 +99,7 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
       .then((s) => {
         if (!alive) return;
         setStarter(s);
-        if (s.added > 0) onToast(`⭐ +${s.added} getting-started points. Claim them in your 📋 checklist.`);
+        if (s.added > 0) onToast(`⭐ +${s.added} getting-started points. ${CLAIM_HINT}`);
       })
       .catch((e) => alive && setError(e.message))
       .finally(() => alive && refresh());
@@ -677,7 +678,7 @@ function CardForm({ initialCode, onAdded, onToast }) {
     try {
       const r = await redeemPointCard(value);
       setAdded(r);
-      onToast(`⭐ +${r.points} points from your ${r.label} card. Claim them in your 📋 checklist.`);
+      onToast(`⭐ +${r.points} points from your ${r.label} card. ${CLAIM_HINT}`);
       setCode("");
       onAdded();
     } catch (e) {

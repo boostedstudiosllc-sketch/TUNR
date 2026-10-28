@@ -8,6 +8,7 @@ import {
   myCheckin,
   stayCheckIn,
   stayMessage,
+  CLAIM_HINT,
 } from "../lib/points.js";
 import { loadProfile } from "../lib/store.js";
 import { askForLocation } from "../lib/location.js";
@@ -96,7 +97,7 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
       const result = await stayCheckIn(event.id, await preciseLocation());
       if (result.status === "ok") {
         setStayed(true);
-        onToast("🏁 +1 for staying the whole meet. Respect! Claim it in your 📋 checklist.");
+        onToast(`🏁 +1 for staying the whole meet. Respect! ${CLAIM_HINT}`);
       } else {
         setMessage(stayMessage(result));
       }
@@ -116,7 +117,7 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
       const result = await checkIn(event.id, null, pos);
       if (result.status === "ok") {
         setCheckedIn(true);
-        onToast(`⭐ Checked in: +${result.points} point${result.points === 1 ? "" : "s"}${result.rsvp_bonus ? " (RSVP bonus)" : ""}. Claim it in your 📋 checklist.`);
+        onToast(`⭐ Checked in: +${result.points} point${result.points === 1 ? "" : "s"}${result.rsvp_bonus ? " (RSVP bonus)" : ""}. ${CLAIM_HINT}`);
       } else {
         setMessage(checkinMessage(result));
       }

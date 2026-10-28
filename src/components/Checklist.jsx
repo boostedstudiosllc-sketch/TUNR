@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { claimStarterPoints, claimPoints, loadMyStreak, loadPointsSettings, loadPointsSince, loadMyPoints, loadUnclaimed, POINTS, STREAK_MILESTONES } from "../lib/points.js";
+import { useEffect, useRef, useState } from "react";
+import { claimStarterPoints, claimPoints, loadMyStreak, loadPointsSettings, loadPointsSince, loadMyPoints, loadUnclaimed, POINTS, STREAK_MILESTONES, CLAIM_HINT } from "../lib/points.js";
 import { loadMyGame } from "../lib/rush.js";
 import { loadProfile } from "../lib/store.js";
 import { openInvites } from "../lib/invites.js";
@@ -101,15 +101,30 @@ export default function Checklist({ user, onToast }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   const [claiming, setClaiming] = useState(false);
+  const latest = useRef(0);
 
+  // Only the newest load lands (an older, slower one never undoes a claim).
   function refresh() {
+    const ticket = ++latest.current;
     loadTasks(user)
       .then((d) => {
+        if (ticket !== latest.current) return;
         setData(d);
         setError("");
-        if (d.added > 0) onToast(`⭐ +${d.added} getting-started points. Claim them in your 📋 checklist.`);
+        if (d.added > 0) onToast(`⭐ +${d.added} getting-started points. ${CLAIM_HINT}`);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => ticket === latest.current && setError(e.message));
+  }
+
+  // Just the points waiting to claim (for the badge): one small request.
+  function refreshWaiting() {
+    const ticket = ++latest.current;
+    loadUnclaimed(user.id)
+      .then((unclaimed) => {
+        if (ticket !== latest.current) return;
+        setData((d) => d && { ...d, unclaimed, tasks: d.tasks.map((t) => ({ ...t, claim: unclaimed.filter((u) => (TASK_REASONS[t.id] || []).includes(u.reason)) })) });
+      })
+      .catch((e) => console.warn(e.message));
   }
 
   useEffect(() => {
@@ -119,8 +134,8 @@ export default function Checklist({ user, onToast }) {
     }
     refresh();
     // New points anywhere in the app (or coming back to it) update the badge.
-    const again = () => refresh();
-    const onShow = () => document.visibilityState === "visible" && refresh();
+    const again = () => refreshWaiting();
+    const onShow = () => document.visibilityState === "visible" && refreshWaiting();
     window.addEventListener("tunr:points", again);
     document.addEventListener("visibilitychange", onShow);
     return () => {
@@ -307,8 +322,11 @@ function Task({ task, onGo, onClaim }) {
           <button className="action-btn" onClick={onClaim} style={claimBtn(false)}>
             CLAIM +{sum(task.claim)}
           </button>
-        ) : task.done ? (
-          <span style={{ fontSize: 12, fontWeight: 900, color: "#10B981", letterSpacing: 1 }}>✓ DONE</span>
+        ) : null}
+        {task.done ? (
+          task.claim?.length ? null : (
+            <span style={{ fontSize: 12, fontWeight: 900, color: "#10B981", letterSpacing: 1 }}>✓ DONE</span>
+          )
         ) : task.go ? (
           <button
             className="action-btn"

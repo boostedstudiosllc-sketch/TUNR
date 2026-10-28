@@ -240,7 +240,7 @@ export async function loadPointHistory(userId) {
 
 // Points you've earned that wait in the checklist until you tap CLAIM.
 // Anything that earns points calls pointsEarned() so the 📋 badge updates.
-export const CLAIM_HINT = "Claim it in your 📋 checklist.";
+export const CLAIM_HINT = "Claim in your 📋 checklist.";
 export function pointsEarned() {
   window.dispatchEvent(new CustomEvent("tunr:points"));
 }

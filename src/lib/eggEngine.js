@@ -321,12 +321,16 @@ function breakEgg(run, why) {
 
 // One frame. input: { gas, brake }. Returns the run.
 export function tickRun(run, input, dt) {
-  const steps = Math.max(1, Math.round(Math.min(dt, 0.05) / STEP));
-  for (let i = 0; i < steps; i++) {
+  // Fixed steps, the leftover carried to the next frame, so the game runs
+  // at the same speed on any screen.
+  run.acc = (run.acc || 0) + Math.min(dt, 0.05);
+  while (run.acc >= STEP) {
+    run.acc -= STEP;
     step(run, run.state === "driving" ? input : {}, STEP);
     run.time += STEP;
+    // The score stops when the egg breaks, not where the car rolls to.
+    if (run.state === "driving") run.best = Math.max(run.best, run.car.x);
   }
-  run.best = Math.max(run.best, run.car.x);
   return run;
 }
 

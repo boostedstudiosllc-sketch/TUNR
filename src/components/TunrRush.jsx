@@ -28,7 +28,7 @@ import {
   loadPickedScenery,
   savePickedScenery,
 } from "../lib/rush.js";
-import { loadMyPoints, pointsEarned } from "../lib/points.js";
+import { loadMyPoints, pointsEarned, CLAIM_HINT } from "../lib/points.js";
 import { RushAudio, loadSoundPrefs } from "../lib/rushAudio.js";
 import { loadVehicles, loadProfile } from "../lib/store.js";
 import { Avatar } from "./EditProfile.jsx";
@@ -665,7 +665,7 @@ function ResultLine({ result, triesLimit, today }) {
   if (result.serverError) return result.serverError;
   if (!server) return dist >= goal ? "Goal hit! Sign in to earn points for it." : short;
   if (!server.counts) return `Practice run: no points.${dist >= goal ? " You'd have cleared it!" : ""}`;
-  if (server.earned) return `⭐ +${server.earned} point${server.earned === 1 ? "" : "s"}! ${LEVELS[result.level].name} cleared for today. Claim it in your 📋 checklist.`;
+  if (server.earned) return `⭐ +${server.earned} point${server.earned === 1 ? "" : "s"}! ${LEVELS[result.level].name} cleared for today. ${CLAIM_HINT}`;
   if (dist >= goal) return "✓ Goal hit, but points need a confirmed email. Check Settings → Account.";
   const left = triesLimit > 0 && today ? triesLimit - today.tries : null;
   if (left === 0) return `${short} No tries left today. Practice, and come back tomorrow!`;

@@ -634,9 +634,12 @@ export function GarageShowroom({ title, cars, startId, plate = "", editable = fa
 // Which of your cars you're driving in a game, remembered per game on this
 // phone ("game" = the game's own car). With nothing picked yet, your main car.
 // restyle(car, look): shown at once, saved to the car once you stop tapping.
-export function useGarageCar(user, game, onError = (msg) => console.warn(msg)) {
+// error: why loading or saving failed (GarageRow shows it).
+export function useGarageCar(user, game) {
   const key = `tunr.${game}.car`;
   const [cars, setCars] = useState([]);
+  const [error, setError] = useState("");
+  const onError = (msg) => setError(msg);
   const timers = useRef({});
   const [picked, setPicked] = useState(() => {
     try {
@@ -673,9 +676,15 @@ export function useGarageCar(user, game, onError = (msg) => console.warn(msg)) {
       list.map((v) => (v.id === vehicle.id ? { ...v, game_color: look.color, game_body: look.body, game_spoiler: look.spoiler, game_rims: look.rims, game_height: look.height } : v))
     );
     clearTimeout(timers.current[vehicle.id]);
-    timers.current[vehicle.id] = setTimeout(() => saveGameLook(vehicle.id, look).catch((e) => onError(e.message)), 600);
+    timers.current[vehicle.id] = setTimeout(
+      () =>
+        saveGameLook(vehicle.id, look)
+          .then(() => setError(""))
+          .catch((e) => onError(e.message)),
+      600
+    );
   };
-  return { cars, car, pick, restyle };
+  return { cars, car, pick, restyle, error };
 }
 
 // "Your ride" in a game's menu: a picture of the car you're driving and a
@@ -722,6 +731,11 @@ export function GarageRow({ user, garage, first = null, game = "this game", hint
     <>
       <div style={{ ...label, marginTop: 14 }}>YOUR RIDE</div>
       <RideCard name={mine ? `${mine.make} ${mine.model}` : first?.name || "TUNR loaner"} look={mine ? lookOf(mine) : first?.look || null} icon={first?.icon} onOpen={() => setOpen(true)} />
+      {garage.error && (
+        <div role="alert" style={{ ...muted, fontSize: 12.5, marginTop: 5, color: "#F87171" }}>
+          {garage.error}
+        </div>
+      )}
       {!garage.cars.length && <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>{hint}</div>}
       {open && (
         <GarageShowroom
