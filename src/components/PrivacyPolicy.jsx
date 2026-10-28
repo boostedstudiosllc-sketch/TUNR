@@ -139,8 +139,9 @@ export default function PrivacyPolicy({ onClose }) {
           ended, the level, the distance and score, which of your cars you drove, and the moments
           you changed lanes, which our server uses to replay the run and check it, and which
           become your ghost on later tries that day), the level you
-          pick each day and how many tries you've used, the color and
-          body style you pick for each car, and the scenery you unlock with points. Your best run this week and of all time can appear on the
+          pick each day and how many tries you've used, the paint, body,
+          wing, wheels and ride height you pick for each car (they show on that car in your 3D
+          garage, which anyone viewing your profile can see), and the scenery you unlock with points. Your best run this week and of all time can appear on the
           game leaderboards with your username and car, unless you turn off “Show me on leaderboards”.
           <br />
           <br />
