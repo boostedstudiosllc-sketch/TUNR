@@ -21,7 +21,7 @@ export const MEMBERSHIP_PRICE = "$3.99";
 // Everyone sees every offer — seeing what you'd get is the whole argument for
 // joining. The code and booking link come back null from the database for
 // non-members, so this component never has to be trusted with the paywall.
-export default function PerksTab({ user, onNeedAccount, onToast }) {
+export default function PerksTab({ user, onNeedAccount, onToast, launch = null, onLaunched }) {
   const [perks, setPerks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState({});
@@ -30,6 +30,14 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
   const [showRewards, setShowRewards] = useState(false);
   const [scannedCard, setScannedCard] = useState("");
   const [playing, setPlaying] = useState(false);
+  // Opened from elsewhere straight into a game (the garage's DRIVE button).
+  const [start, setStart] = useState(null);
+  useEffect(() => {
+    if (!launch) return;
+    setStart(launch);
+    setPlaying(true);
+    onLaunched?.();
+  }, [launch]);
   const [requesting, setRequesting] = useState(false);
 
   // Arrived by scanning a points card: open straight to it.
@@ -168,7 +176,9 @@ export default function PerksTab({ user, onNeedAccount, onToast }) {
         {playing && (
           <Arcade
             user={user}
-            onClose={() => setPlaying(false)}
+            startGame={start?.game}
+            startVehicle={start?.vehicle}
+            onClose={() => (setPlaying(false), setStart(null))}
             onToast={onToast}
             onNeedAccount={() => {
               setPlaying(false);

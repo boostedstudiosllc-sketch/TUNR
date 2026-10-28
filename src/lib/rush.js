@@ -104,11 +104,11 @@ export async function loadGameLeaderboard(period = "week", difficulty = "medium"
   return data || [];
 }
 
-export async function saveGameLook(vehicleId, { color, body, spoiler }) {
+export async function saveGameLook(vehicleId, { color, body, spoiler, rims, height }) {
   if (!supabase || !vehicleId) return;
   const { error } = await supabase
     .from("vehicles")
-    .update({ game_color: color, game_body: body, game_spoiler: spoiler })
+    .update({ game_color: color, game_body: body, game_spoiler: spoiler, game_rims: rims, game_height: height })
     .eq("id", vehicleId);
   if (error) throw new Error(withReason("Couldn't save your car's look.", error));
 }

@@ -47,6 +47,25 @@ export const BOOST_TIME = DEFAULT_RULES.boostSeconds;
 export const SPOILERS = ["none", "lip", "wing"];
 export const BODIES = ["coupe", "sedan", "hatch", "suv", "truck"];
 export const GAME_COLORS = ["#E11D2E", "#FF7A00", "#FACC15", "#10B981", "#1D4ED8", "#A855F7", "#F5F5F5", "#9CA3AF", "#111827"];
+// What each car can look like (vehicles.game_*): names for the garage's
+// style rows.
+export const COLOR_NAMES = { "#E11D2E": "Red", "#FF7A00": "Orange", "#FACC15": "Yellow", "#10B981": "Green", "#1D4ED8": "Blue", "#A855F7": "Violet", "#F5F5F5": "White", "#9CA3AF": "Silver", "#111827": "Black" };
+export const BODY_NAMES = { coupe: "Coupe", sedan: "Sedan", hatch: "Hatch", suv: "SUV", truck: "Truck" };
+export const SPOILER_NAMES = { none: "None", lip: "Lip", wing: "Wing" };
+export const RIMS = ["silver", "black", "gold", "bronze", "chrome"];
+export const RIM_NAMES = { silver: "Silver", black: "Black", gold: "Gold", bronze: "Bronze", chrome: "Chrome" };
+export const HEIGHTS = ["stock", "lowered", "slammed", "lifted"];
+export const HEIGHT_NAMES = { stock: "Stock", lowered: "Lowered", slammed: "Slammed", lifted: "Lifted" };
+export const DEFAULT_LOOK = { color: "#1D4ED8", body: "coupe", spoiler: "lip", rims: "silver", height: "stock" };
+
+// A saved car's look, with the defaults filled in.
+export const lookOf = (v) => ({
+  color: v?.game_color || DEFAULT_LOOK.color,
+  body: v?.game_body || DEFAULT_LOOK.body,
+  spoiler: v?.game_spoiler || DEFAULT_LOOK.spoiler,
+  rims: v?.game_rims || DEFAULT_LOOK.rims,
+  height: v?.game_height || DEFAULT_LOOK.height,
+});
 const TRAFFIC_COLORS = ["#F59E0B", "#2563EB", "#7C3AED", "#16A34A", "#DC2626", "#0EA5E9", "#9333EA"];
 const ROAD_DEPTH = 190; // meters of road on screen
 export const STEP = 1 / 60; // seconds per game step

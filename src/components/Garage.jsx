@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   loadCarMakes,
   loadVehicles,
@@ -11,6 +11,9 @@ import {
 import { compressImage } from "../lib/image.js";
 import { loadMyInvites, openInvites } from "../lib/invites.js";
 import StickerSheet from "./StickerSheet.jsx";
+import { ShowroomStage, GarageShowroom } from "./Showroom.jsx";
+import { saveGameLook } from "../lib/rush.js";
+import { lookOf } from "../lib/rushEngine.js";
 
 const inputStyle = {
   background: "#0F0F0F",
@@ -47,6 +50,11 @@ export default function Garage({ user, onToast }) {
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  // The full-screen 3D garage (the car it opens on), and style saves waiting
+  // for the taps to settle.
+  const [showroom, setShowroom] = useState(null);
+  const saveTimers = useRef({});
+  const saving = useRef({});
 
   async function refresh() {
     setVehicles(await loadVehicles(user.id));
@@ -120,6 +128,33 @@ export default function Garage({ user, onToast }) {
     onToast("Car removed");
   }
 
+  // Restyling in the 3D garage: shown at once, saved once you stop tapping.
+  function restyle(vehicle, look) {
+    setVehicles((list) =>
+      list.map((v) =>
+        v.id === vehicle.id ? { ...v, game_color: look.color, game_body: look.body, game_spoiler: look.spoiler, game_rims: look.rims, game_height: look.height } : v
+      )
+    );
+    clearTimeout(saveTimers.current[vehicle.id]);
+    saveTimers.current[vehicle.id] = setTimeout(() => {
+      // One save at a time per car, in order, so an older one never lands last.
+      saving.current[vehicle.id] = (saving.current[vehicle.id] || Promise.resolve())
+        .then(() => saveGameLook(vehicle.id, look))
+        .catch((e) => onToast(e.message));
+    }, 600);
+  }
+
+  function editDetails(v) {
+    setEditing({
+      id: v.id,
+      year: v.year || "",
+      make: v.make,
+      model: v.model,
+      buildNotes: v.build_notes || "",
+      photoUrl: v.photo_url || "",
+    });
+  }
+
   async function makePrimary(vehicle) {
     try {
       await setPrimaryVehicle(vehicle.id);
@@ -167,6 +202,44 @@ export default function Garage({ user, onToast }) {
           </button>
         )}
       </div>
+
+      {showroom && (
+        <GarageShowroom
+          title="YOUR GARAGE"
+          cars={vehicles}
+          startId={showroom}
+          plate="TUNR"
+          editable
+          onClose={() => setShowroom(null)}
+          onLook={restyle}
+          onEdit={(v) => (setShowroom(null), editDetails(v))}
+          onSticker={(v) => (setShowroom(null), setSticker(v))}
+          onMakeMain={makePrimary}
+          onAdd={() => (setShowroom(null), startAdding())}
+          onDrive={(v) => {
+            setShowroom(null);
+            window.dispatchEvent(new CustomEvent("tunr:open", { detail: { link: `play:rush:${v.id}` } }));
+          }}
+        />
+      )}
+
+      {/* Your main car in the 3D garage; tap to open the whole garage. */}
+      {vehicles.length > 0 && !editing && (
+        <button
+          className="action-btn"
+          onClick={() => setShowroom((vehicles.find((v) => v.is_primary) || vehicles[0]).id)}
+          aria-label="Open your garage in 3D"
+          style={{ position: "relative", display: "block", width: "100%", height: 190, marginTop: 12, padding: 0, border: "1px solid #242424", borderRadius: 10, overflow: "hidden", cursor: "pointer", background: "#0c0e12" }}
+        >
+          <ShowroomStage look={lookOf(vehicles.find((v) => v.is_primary) || vehicles[0])} plate="TUNR" interactive={false} style={{ position: "absolute", inset: 0 }} />
+          <span style={{ position: "absolute", left: 10, bottom: 8, right: 10, display: "flex", justifyContent: "space-between", alignItems: "flex-end", fontFamily: "'Barlow Condensed', sans-serif", color: "#fff", textShadow: "0 2px 6px #000", pointerEvents: "none" }}>
+            <span style={{ fontSize: 17, fontWeight: 900, textAlign: "left", textTransform: "uppercase" }}>
+              {(vehicles.find((v) => v.is_primary) || vehicles[0]).make} {(vehicles.find((v) => v.is_primary) || vehicles[0]).model}
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1, background: "#FACC15", color: "#111", borderRadius: 6, padding: "5px 10px", textShadow: "none" }}>OPEN GARAGE ›</span>
+          </span>
+        </button>
+      )}
 
       {vehicles.length === 0 && !editing && (
         <div
@@ -253,20 +326,10 @@ export default function Garage({ user, onToast }) {
                       make main
                     </button>
                   )}
-                  <button
-                    className="action-btn"
-                    onClick={() =>
-                      setEditing({
-                        id: v.id,
-                        year: v.year || "",
-                        make: v.make,
-                        model: v.model,
-                        buildNotes: v.build_notes || "",
-                        photoUrl: v.photo_url || "",
-                      })
-                    }
-                    style={linkStyle}
-                  >
+                  <button className="action-btn" onClick={() => setShowroom(v.id)} style={{ ...linkStyle, color: "#FACC15" }}>
+                    style in 3D
+                  </button>
+                  <button className="action-btn" onClick={() => editDetails(v)} style={linkStyle}>
                     edit
                   </button>
                   <button className="action-btn" onClick={() => remove(v)} style={linkStyle}>

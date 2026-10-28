@@ -85,8 +85,8 @@ const GAMES = [
   },
 ];
 
-export default function Arcade({ user, onClose, onToast, onNeedAccount }) {
-  const [open, setOpen] = useState(null);
+export default function Arcade({ user, onClose, onToast, onNeedAccount, startGame = null, startVehicle = null }) {
+  const [open, setOpen] = useState(GAMES.some((g) => g.id === startGame && !g.soon) ? startGame : null);
   const [parkStars, setParkStars] = useState(0);
   const [driftBest, setDriftBest] = useState(0);
   const [kartWins, setKartWins] = useState(0);
@@ -113,6 +113,7 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount }) {
     return (
       <TunrRush
         user={user}
+        startVehicle={startVehicle}
         onClose={() => setOpen(null)}
         onToast={onToast}
         onNeedAccount={onNeedAccount}

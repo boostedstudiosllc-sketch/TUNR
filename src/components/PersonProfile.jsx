@@ -15,6 +15,7 @@ import { photoPageLink } from "../lib/photographer.js";
 import { loadPersonClubs, kindLabel } from "../lib/community.js";
 import { Logo, ReportSheet } from "./CommunityBits.jsx";
 import { Avatar } from "./EditProfile.jsx";
+import { GarageShowroom } from "./Showroom.jsx";
 
 // Someone's profile, opened from their name in a meet chat: follow them,
 // see their cars, or block or restrict them.
@@ -27,6 +28,8 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
   const [viewerIsAdmin, setViewerIsAdmin] = useState(false);
   const [clubs, setClubs] = useState([]);
   const [reporting, setReporting] = useState(false);
+  // Their garage in 3D, open on this car.
+  const [showroom, setShowroom] = useState(null);
 
   async function refresh() {
     const p = await getPerson(personId);
@@ -281,22 +284,37 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
 
             {cars.length > 0 && (
               <div style={{ marginTop: 20 }}>
-                <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, marginBottom: 8 }}>GARAGE</div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, color: "#555", letterSpacing: 2 }}>GARAGE</div>
+                  <button
+                    className="action-btn"
+                    onClick={() => setShowroom((cars.find((v) => v.is_primary) || cars[0]).id)}
+                    style={{ background: "none", border: "none", color: "#FACC15", fontSize: 12, fontWeight: 900, letterSpacing: 1, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" }}
+                  >
+                    VIEW IN 3D ›
+                  </button>
+                </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {cars.map((v) => (
-                    <div
+                    <button
                       key={v.id}
-                      style={{ display: "flex", gap: 10, alignItems: "center", background: "#141414", border: "1px solid #222", borderRadius: 8, padding: 8 }}
+                      className="action-btn"
+                      onClick={() => setShowroom(v.id)}
+                      aria-label={`See ${[v.year, v.make, v.model].filter(Boolean).join(" ")} in 3D`}
+                      style={{ display: "flex", gap: 10, alignItems: "center", background: "#141414", border: "1px solid #222", borderRadius: 8, padding: 8, cursor: "pointer", color: "#F0F0F0", textAlign: "left", width: "100%", fontFamily: "'Barlow Condensed', sans-serif" }}
                     >
                       {v.photo_url ? (
                         <img src={v.photo_url} alt="" style={{ width: 56, height: 42, objectFit: "cover", borderRadius: 6 }} />
                       ) : (
                         <div style={{ width: 56, height: 42, borderRadius: 6, background: "#1C1C1C", display: "flex", alignItems: "center", justifyContent: "center" }}>🚗</div>
                       )}
-                      <div style={{ fontSize: 13.5, fontWeight: 700 }}>
+                      <div style={{ flex: 1, fontSize: 13.5, fontWeight: 700 }}>
                         {[v.year, v.make, v.model].filter(Boolean).join(" ")}
                       </div>
-                    </div>
+                      <span aria-hidden="true" style={{ color: "#555", fontSize: 18 }}>
+                        ›
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -305,6 +323,15 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
         )}
       </div>
       {reporting && <ReportSheet type="profile" id={personId} onClose={() => setReporting(false)} onToast={onToast} />}
+      {showroom && (
+        <GarageShowroom
+          title={person?.username ? `@${person.username.toUpperCase()}'S GARAGE` : "GARAGE"}
+          cars={cars}
+          startId={showroom}
+          plate={person?.username || "TUNR"}
+          onClose={() => setShowroom(null)}
+        />
+      )}
     </div>
   );
 }

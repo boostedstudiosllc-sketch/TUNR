@@ -4,9 +4,8 @@ import {
   LEVEL_IDS,
   START_COPY,
   levelRules,
-  BODIES,
-  SPOILERS,
-  GAME_COLORS,
+  DEFAULT_LOOK,
+  lookOf,
   newGame,
   tick,
   seededRand,
@@ -15,7 +14,6 @@ import {
   STEP,
   scoreOf,
   drawGame,
-  drawCar,
   startRun,
   finishRun,
   loadMyGame,
@@ -35,6 +33,7 @@ import { RushAudio, loadSoundPrefs } from "../lib/rushAudio.js";
 import { loadVehicles, loadProfile } from "../lib/store.js";
 import { Avatar } from "./EditProfile.jsx";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
+import { ShowroomStage, CarCards, StyleRows, carName as nameOf } from "./Showroom.jsx";
 
 // The Boosted Studios badge (the boost pickup) and the full logo (shown
 // while boosting). Loaded once; the game draws them when ready.
@@ -44,8 +43,6 @@ if (ART.boost) {
   ART.logo.src = "/game/boosted-logo.webp";
 }
 
-const BODY_LABELS = { coupe: "Coupe", sedan: "Sedan", hatch: "Hatch", suv: "SUV", truck: "Truck" };
-const SPOILER_LABELS = { none: "None", lip: "Lip", wing: "Wing" };
 const GFX_KEY = "tunr.rush.graphics";
 // Phones with few cores get 3D without shadows, to stay smooth.
 const LOW_POWER = typeof navigator !== "undefined" && (navigator.hardwareConcurrency || 8) <= 4;
@@ -68,7 +65,6 @@ function saveGfx(v) {
     console.warn("Couldn't save the graphics setting:", e.message);
   }
 }
-const DEFAULT_LOOK = { color: "#1D4ED8", body: "coupe", spoiler: "lip" };
 export const LEVELS = {
   easy: { name: "Easy", color: "#10B981" },
   medium: { name: "Medium", color: "#FACC15" },
@@ -80,7 +76,7 @@ export const LEVELS = {
 // get a few tries to reach its goal (checked by the server). Other runs are
 // practice. Leaderboards per level. Admins set the rules (Settings → Admin
 // → TUNR Rush).
-export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
+export default function TunrRush({ user, onClose, onToast, onNeedAccount, startVehicle = null }) {
   const [screen, setScreen] = useState("garage"); // garage | play | result | board
   const [cars, setCars] = useState([]);
   const [carId, setCarId] = useState(null);
@@ -123,7 +119,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
   const [error, setError] = useState("");
 
   const car = cars.find((c) => c.id === carId) || null;
-  const carName = car ? [car.year, car.make, car.model].filter(Boolean).join(" ") : "TUNR loaner";
+  const carName = nameOf(car);
 
   useEffect(() => {
     loadGameSettings()
@@ -180,7 +176,8 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
     loadVehicles(user.id)
       .then((list) => {
         setCars(list);
-        const first = list.find((c) => c.is_primary) || list[0];
+        // The car you came to drive (the garage's DRIVE button), else your main car.
+        const first = list.find((c) => c.id === startVehicle) || list.find((c) => c.is_primary) || list[0];
         if (first) pick(first);
       })
       .catch((e) => setError(e.message));
@@ -221,7 +218,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
 
   function pick(c) {
     setCarId(c.id);
-    setLook({ color: c.game_color || DEFAULT_LOOK.color, body: c.game_body || DEFAULT_LOOK.body, spoiler: c.game_spoiler || DEFAULT_LOOK.spoiler });
+    setLook(lookOf(c));
   }
 
   function changeLook(patch) {
@@ -232,7 +229,9 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
       clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => saveGameLook(car.id, next).catch((e) => onToast(e.message)), 500);
       setCars((list) =>
-        list.map((c) => (c.id === car.id ? { ...c, game_color: next.color, game_body: next.body, game_spoiler: next.spoiler } : c))
+        list.map((c) =>
+          c.id === car.id ? { ...c, game_color: next.color, game_body: next.body, game_spoiler: next.spoiler, game_rims: next.rims, game_height: next.height } : c
+        )
       );
     }
   }
@@ -378,56 +377,23 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount }) {
                 👻 Your ghost drives your best today ({Number(ghost.distance).toLocaleString()} m). Beat it!
               </div>
             )}
-            <CarPreview look={look} plate={plate} gfx={gfx} />
-            <div style={{ textAlign: "center", fontSize: 17, fontWeight: 900 }}>{carName}</div>
+            <div style={{ position: "relative", margin: "14px -16px 8px" }}>
+              <ShowroomStage look={look} plate={plate} flat={gfx === "classic"} style={{ height: 230 }} />
+              <div style={{ position: "absolute", top: 10, left: 14, right: 14, pointerEvents: "none", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>
+                <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#FACC15" }}>YOUR RIDE</div>
+                <div style={{ fontSize: 24, fontWeight: 900, lineHeight: 1.05, textTransform: "uppercase" }}>{carName}</div>
+              </div>
+            </div>
 
-            {user && cars.length > 1 && (
-              <>
-                <div style={{ ...label, marginTop: 12 }}>YOUR CAR</div>
-                <div style={{ display: "flex", gap: 6, overflowX: "auto" }}>
-                  {cars.map((c) => (
-                    <button key={c.id} onClick={() => pick(c)} style={{ ...chip, ...(c.id === carId ? chipOn : {}) }}>
-                      {[c.year, c.make, c.model].filter(Boolean).join(" ")}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+            {user && cars.length > 0 && <CarCards cars={cars} selectedId={carId} onPick={pick} />}
             {user && cars.length === 0 && (
-              <div style={{ ...muted, fontSize: 12.5, marginTop: 10 }}>
+              <div style={{ ...muted, fontSize: 12.5, marginTop: 4 }}>
                 Add your car in your garage (Profile → Garage) to drive it here. For now you're in the TUNR loaner.
               </div>
             )}
 
-            <div style={{ ...label, marginTop: 12 }}>COLOR · TAP + FOR ANY COLOR</div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {GAME_COLORS.map((c) => (
-                <button
-                  key={c}
-                  aria-label={`Color ${c}`}
-                  aria-pressed={look.color === c}
-                  onClick={() => changeLook({ color: c })}
-                  style={{ width: 30, height: 30, borderRadius: "50%", background: c, border: look.color === c ? "3px solid #fff" : "1px solid #333", cursor: "pointer" }}
-                />
-              ))}
-              <OtherColor color={look.color} onChange={(c) => changeLook({ color: c })} />
-            </div>
-            <div style={{ ...label, marginTop: 12 }}>BODY</div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {BODIES.map((b) => (
-                <button key={b} onClick={() => changeLook({ body: b })} style={{ ...chip, ...(look.body === b ? chipOn : {}) }}>
-                  {BODY_LABELS[b]}
-                </button>
-              ))}
-            </div>
-            <div style={{ ...label, marginTop: 12 }}>SPOILER</div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {SPOILERS.map((sp) => (
-                <button key={sp} onClick={() => changeLook({ spoiler: sp })} style={{ ...chip, ...(look.spoiler === sp ? chipOn : {}) }}>
-                  {SPOILER_LABELS[sp]}
-                </button>
-              ))}
-            </div>
+            <div style={{ ...label, marginTop: 12 }}>STYLE{car ? " · SAVED TO YOUR CAR" : ""}</div>
+            <StyleRows look={look} onChange={changeLook} />
 
             <div style={{ ...label, marginTop: 12 }}>GRAPHICS</div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -764,95 +730,6 @@ function BoardList({ rows, top = null }) {
       </div>
     </div>
   ));
-}
-
-// "Other": a rainbow swatch that opens the phone's color wheel.
-function OtherColor({ color, onChange }) {
-  const custom = !GAME_COLORS.includes(color);
-  return (
-    <label
-      title="Any color"
-      style={{
-        position: "relative",
-        width: 30,
-        height: 30,
-        borderRadius: "50%",
-        cursor: "pointer",
-        background: custom ? color : "conic-gradient(#ef4444, #f59e0b, #facc15, #22c55e, #06b6d4, #3b82f6, #a855f7, #ef4444)",
-        border: custom ? "3px solid #fff" : "1px solid #333",
-        boxShadow: custom ? "0 0 0 2px #a855f7" : "none",
-        boxSizing: "border-box",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 15,
-        fontWeight: 900,
-        color: "#fff",
-        textShadow: "0 1px 2px #000",
-      }}
-    >
-      {custom ? "" : "+"}
-      <input
-        type="color"
-        aria-label="Pick any color"
-        value={/^#[0-9a-f]{6}$/i.test(color) ? color : "#0080F0"}
-        onChange={(e) => onChange(e.target.value.toUpperCase())}
-        style={{ position: "absolute", inset: 0, opacity: 0, width: "100%", height: "100%", cursor: "pointer", border: 0, padding: 0 }}
-      />
-    </label>
-  );
-}
-
-// Your car on the start screen, in 3D or classic to match the game.
-function CarPreview({ look, plate, gfx }) {
-  const ref = useRef(null);
-  const view = useRef(null);
-  const [mode, setMode] = useState(gfx);
-  useEffect(() => setMode(gfx), [gfx]);
-
-  useEffect(() => {
-    if (mode !== "3d") return;
-    let gone = false;
-    import("../lib/rush3d.js")
-      .then((m) => {
-        if (gone || !ref.current) return;
-        view.current = m.createCarPreview(ref.current, 300, 170);
-        view.current.show({ ...look, plate });
-      })
-      .catch((e) => {
-        console.warn("3D preview didn't load:", e.message);
-        setMode("classic");
-      });
-    return () => {
-      gone = true;
-      view.current?.dispose();
-      view.current = null;
-    };
-  }, [mode]);
-
-  useEffect(() => {
-    if (mode === "3d") {
-      view.current?.show({ ...look, plate });
-      return;
-    }
-    const c = ref.current;
-    if (!c) return;
-    const dpr = window.devicePixelRatio || 1;
-    c.width = 300 * dpr;
-    c.height = 170 * dpr;
-    const ctx = c.getContext("2d");
-    ctx.scale(dpr, dpr);
-    const g = ctx.createLinearGradient(0, 0, 0, 170);
-    g.addColorStop(0, "#1A1A1A");
-    g.addColorStop(1, "#0A0A0A");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 300, 170);
-    ctx.fillStyle = "#222";
-    ctx.fillRect(0, 140, 300, 30);
-    drawCar(ctx, 150, 156, 170, { color: look.color, body: look.body, spoiler: look.spoiler, plate, sport: true });
-  }, [mode, look.color, look.body, look.spoiler, plate]);
-  // A canvas can't switch between 3D and 2D drawing, so each mode gets its own.
-  return <canvas key={mode} ref={ref} style={{ width: "100%", maxWidth: 300, height: "auto", aspectRatio: "300 / 170", display: "block", margin: "14px auto 6px", borderRadius: 12 }} />;
 }
 
 // The running game. Registers the run with the server (which hands back

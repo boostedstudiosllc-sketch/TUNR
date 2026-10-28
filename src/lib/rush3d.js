@@ -275,9 +275,24 @@ function box(w, h, d, mat, x, y, z) {
   return m;
 }
 
+// Wheel finishes, and how far each ride height drops the body (m; a
+// negative drop lifts it).
+const RIM_COLORS = { silver: 0xb8bcc4, black: 0x1c1d21, gold: 0xc9a227, bronze: 0x8a5a2b, chrome: 0xf1f3f6 };
+const rimCache = new Map();
+function rimMat(rims) {
+  if (!rimCache.has(rims)) {
+    const color = RIM_COLORS[rims] ?? RIM_COLORS.silver;
+    rimCache.set(rims, new THREE.MeshStandardMaterial({ color, roughness: rims === "black" ? 0.4 : rims === "chrome" ? 0.04 : 0.18, metalness: rims === "black" ? 0.5 : 1 }));
+  }
+  return rimCache.get(rims);
+}
+export const RIDE_DROP = { stock: 0, lowered: 0.06, slammed: 0.11, lifted: -0.14 };
+
 // A whole car: body, glass, roof, wheels, lights, plate, bumper. `sport`
-// is your car (diffuser, quad exhaust, spoiler); traffic stays plain.
-export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport = false, spoiler = "lip" }) {
+// is your car (diffuser, quad exhaust, spoiler, spoked wheels); traffic
+// stays plain. rims: wheel finish (RIM_COLORS); height: ride height
+// (RIDE_DROP).
+export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport = false, spoiler = "lip", rims = "silver", height = "stock" }) {
   const g = bodyGeometries(body);
   const s = g.s;
   const half = s.L / 2;
@@ -292,16 +307,42 @@ export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport 
     car.add(m);
   }
 
-  // Wheels.
+  // Wheels. Your car's have five spokes round a dark hub.
+  const wheelParts = [];
+  const rimM = sport ? rimMat(rims) : MAT.rim;
   for (const z of [-g.axle, g.axle]) {
     for (const side of [-1, 1]) {
       const tire = new THREE.Mesh(g.tire, MAT.tire);
       tire.position.set(side * (s.W / 2 - 0.16), g.wheelR, z);
       tire.castShadow = true;
       car.add(tire);
-      const rim = new THREE.Mesh(g.rim, MAT.rim);
-      rim.position.set(side * (s.W / 2 - 0.02), g.wheelR, z);
-      car.add(rim);
+      wheelParts.push(tire);
+      const x = side * (s.W / 2 - 0.02);
+      if (sport) {
+        const face = new THREE.Mesh(g.rim, MAT.hole);
+        face.position.set(x - side * 0.005, g.wheelR, z);
+        car.add(face);
+        wheelParts.push(face);
+        for (let k = 0; k < 5; k++) {
+          const spoke = box(0.03, g.wheelR * 0.62, 0.075, rimM, 0, 0, 0);
+          const a = (k / 5) * Math.PI * 2;
+          spoke.position.set(x + side * 0.005, g.wheelR + Math.cos(a) * g.wheelR * 0.33, z + Math.sin(a) * g.wheelR * 0.33);
+          spoke.rotation.x = a;
+          car.add(spoke);
+          wheelParts.push(spoke);
+        }
+        const lip = new THREE.Mesh(new THREE.TorusGeometry(g.wheelR * 0.66, 0.025, 6, 24).rotateY(Math.PI / 2), rimM);
+        lip.position.set(x + side * 0.006, g.wheelR, z);
+        const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.03, 12).rotateZ(Math.PI / 2), rimM);
+        hub.position.set(x + side * 0.01, g.wheelR, z);
+        car.add(lip, hub);
+        wheelParts.push(lip, hub);
+      } else {
+        const rim = new THREE.Mesh(g.rim, MAT.rim);
+        rim.position.set(x, g.wheelR, z);
+        car.add(rim);
+        wheelParts.push(rim);
+      }
     }
   }
 
@@ -463,12 +504,16 @@ export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport 
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(s.W * 1.35, s.L * 1.15), MAT.shadow);
   shadow.rotation.x = -Math.PI / 2;
   shadow.position.y = 0.06;
+
+  // Ride height: everything but the wheels (and the shadow) moves.
+  const drop = sport ? RIDE_DROP[height] || 0 : 0;
+  if (drop) for (const part of car.children) if (!wheelParts.includes(part)) part.position.y -= drop;
   car.add(shadow);
 
   car.userData.rear = rearFace;
   car.userData.exhaustX = body === "truck" ? 0.72 : body === "suv" ? 0.62 : 0.55;
   car.userData.camLift = body === "truck" ? 0.75 : body === "suv" ? 0.45 : 0; // see over tall vehicles
-  car.userData.exhaustY = exhaustY;
+  car.userData.exhaustY = exhaustY - drop;
   return car;
 }
 
@@ -951,7 +996,7 @@ function buildBackdrop(scene, kind, rand, kit) {
 // ---------- the scene ----------
 
 // Lighting for each day's look (rushEngine.js THEMES).
-const LIGHT = {
+export const LIGHT = {
   noon: { turbidity: 3.5, rayleigh: 2.6, env: ["#3d78c2", "#a9c8e6", "#f1dcc0"], fog: 0xd9c7a8, sun: 0xfff1d6, sunPower: 2.6, sky: 0.7, exposure: 0.9 },
   golden: { turbidity: 6, rayleigh: 2, env: ["#5a7fb8", "#f6c38a", "#ffd39a"], fog: 0xe6b98d, sun: 0xffbe7a, sunPower: 2.5, sky: 0.6, exposure: 0.85 },
   dusk: { turbidity: 9, rayleigh: 3.5, env: ["#2b2d6b", "#a46a9c", "#f3a6a0"], fog: 0x8f6f8c, sun: 0xff9476, sunPower: 1.7, sky: 0.55, exposure: 0.95 },
@@ -960,7 +1005,7 @@ const LIGHT = {
 // Reflections come from a simple painted sky (blue overhead, warm haze at
 // the horizon, sand below, a bright sun) rather than the sky shader, whose
 // very bright values can break the lighting on some phones.
-function paintedSky(renderer, L, sun, on = true, envGround = ["#b8946a", "#6e5338"]) {
+export function paintedSky(renderer, L, sun, on = true, envGround = ["#b8946a", "#6e5338"]) {
   const pmrem = new THREE.PMREMGenerator(renderer);
   if (!on) return { pmrem, envMap: null };
   const envScene = new THREE.Scene();

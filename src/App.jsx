@@ -131,6 +131,8 @@ export default function App() {
     () => (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("open")) || null
   );
   const [locating, setLocating] = useState(false);
+  // A game to start ("play:rush:<car id>" from the garage's DRIVE button).
+  const [launch, setLaunch] = useState(null);
 
   // Ticks so the "starts in" countdowns stay honest while the app is open.
   const [now, setNow] = useState(() => new Date());
@@ -468,6 +470,12 @@ export default function App() {
       // "tab:perks" and the like, from pages inside Settings.
       setSelected(null);
       setTab(id);
+    } else if (type === "play") {
+      // Straight into an Arcade game, in a particular car.
+      setSelected(null);
+      setPersonView(null);
+      setTab("perks");
+      setLaunch({ game: id, vehicle: String(link).split(":")[2] || null });
     } else if (type === "meet") {
       const found = events.find((e) => e.id === id);
       if (found) {
@@ -1163,6 +1171,8 @@ export default function App() {
       {tab === "perks" && (
         <PerksTab
           user={user}
+          launch={launch}
+          onLaunched={() => setLaunch(null)}
           onNeedAccount={() => {
             setTab("profile");
             showToast("Create a free account first");
