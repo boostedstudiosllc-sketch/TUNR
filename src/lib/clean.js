@@ -14,6 +14,12 @@ export function cleanText(text) {
   return { text: out, changed: out !== String(text ?? "") };
 }
 
+// Names (usernames, club and forum names) can't just be starred out:
+// they're refused instead.
+export function assertClean(text, what) {
+  if (cleanText(text).changed) throw new Error(`Keep it clean: no swear words in ${what}.`);
+}
+
 // Clean a message about to be sent; if anything changed, the app shows the
 // warning (App listens for tunr:notice).
 export function cleanForSending(text) {

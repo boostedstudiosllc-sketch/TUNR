@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { GAME_COLORS, BODIES, SPOILERS, RIMS, HEIGHTS, COLOR_NAMES, BODY_NAMES, SPOILER_NAMES, RIM_NAMES, HEIGHT_NAMES, DEFAULT_LOOK, lookOf, drawCar } from "../lib/rushEngine.js";
 import { saveGameLook } from "../lib/rush.js";
+import { loadGarageParts, unlockGaragePart, partId } from "../lib/garageParts.js";
 import { quietButton, label, muted } from "./Sheet.jsx";
 import { loadVehicles } from "../lib/store.js";
 
@@ -326,7 +327,8 @@ const PARTS = [
   ["rims", "Wheels", RIMS, RIM_NAMES],
   ["height", "Stance", HEIGHTS, HEIGHT_NAMES],
 ];
-export function Tuner({ look, onChange }) {
+// priceOf(key, value): points to unlock that choice (0 = free or yours).
+export function Tuner({ look, onChange, priceOf = () => 0 }) {
   const [part, setPart] = useState("color");
   const [key, name, list, names] = PARTS.find((p) => p[0] === part);
   const noWing = key === "spoiler" && look.body === "truck";
@@ -379,7 +381,10 @@ export function Tuner({ look, onChange }) {
             ◀
           </button>
           <div style={{ flex: 1, textAlign: "center" }}>
-            <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 0.5, lineHeight: 1.1 }}>{value}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 0.5, lineHeight: 1.1 }}>
+              {value}
+              {!noWing && priceOf(key, look[key]) > 0 && <span style={{ marginLeft: 8, fontSize: 13, color: "#FACC15", verticalAlign: "middle" }}>🔒 ⭐ {priceOf(key, look[key])}</span>}
+            </div>
             {!noWing && (
               <div aria-hidden="true" style={{ display: "flex", justifyContent: "center", gap: 5, marginTop: 6 }}>
                 {list.map((v) => (
@@ -415,7 +420,52 @@ export function GarageShowroom({ title, cars, startId, plate = "", editable = fa
   const head = useRef(null);
   const gameCar = Boolean(first) && (selectedId === "game" || !cars.length);
   const car = gameCar ? null : cars.find((c) => c.id === selectedId) || cars[0] || null;
-  const look = gameCar ? { ...DEFAULT_LOOK, ...first.look } : lookOf(car);
+  const saved = gameCar ? { ...DEFAULT_LOOK, ...first.look } : lookOf(car);
+  // Parts that cost points: picking one you haven't got shows it on the car
+  // (a preview, not saved) with an UNLOCK button.
+  const [parts, setParts] = useState({ prices: {}, owned: new Set() });
+  const [preview, setPreview] = useState({});
+  const [note, setNote] = useState("");
+  const [buying, setBuying] = useState(null);
+  useEffect(() => {
+    if (!editable) return;
+    loadGarageParts()
+      .then(setParts)
+      .catch((e) => setNote(e.message));
+  }, [editable]);
+  useEffect(() => setPreview({}), [selectedId]);
+  const priceOf = (key, value) => {
+    const id = partId(key, value);
+    return id && parts.prices[id] && !parts.owned.has(id) ? parts.prices[id].price : 0;
+  };
+  const look = { ...saved, ...preview };
+  const locked = Object.entries(preview).filter(([k, v]) => priceOf(k, v) > 0);
+
+  function tune(patch) {
+    setNote("");
+    const lockedNow = Object.entries(patch).filter(([k, v]) => priceOf(k, v) > 0);
+    const keep = Object.fromEntries(Object.entries(preview).filter(([k]) => !(k in patch)));
+    if (lockedNow.length) return setPreview({ ...keep, ...patch });
+    setPreview(keep);
+    onLook(car, { ...saved, ...patch });
+  }
+
+  async function unlock(key, value) {
+    const id = partId(key, value);
+    setBuying(id);
+    setNote("");
+    try {
+      const r = await unlockGaragePart(id);
+      setParts((p) => ({ ...p, owned: new Set([...p.owned, id]) }));
+      setPreview((pv) => Object.fromEntries(Object.entries(pv).filter(([k]) => k !== key)));
+      onLook(car, { ...saved, [key]: value });
+      setNote(`✓ ${parts.prices[id]?.name || "Part"} unlocked${r.balance != null ? ` · ⭐ ${r.balance} left` : ""}. It's yours on every car.`);
+    } catch (e) {
+      setNote(e.message);
+    } finally {
+      setBuying(null);
+    }
+  }
   const shown = Boolean(car || gameCar);
 
   useEffect(() => {
@@ -609,7 +659,31 @@ export function GarageShowroom({ title, cars, startId, plate = "", editable = fa
             {gameCar ? (
               <div style={{ fontSize: 13, color: "#9AA4B2", fontFamily: "'Barlow', sans-serif" }}>The game's own car. Pick one of yours to drive and tune it here.</div>
             ) : tab === "style" && editable ? (
-              <Tuner look={look} onChange={(patch) => onLook(car, { ...look, ...patch })} />
+              <>
+                <Tuner look={look} onChange={tune} priceOf={priceOf} />
+                {locked.map(([k, v]) => {
+                  const id = partId(k, v);
+                  return (
+                    <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 12, background: "rgba(250,204,21,0.1)", border: "1px solid rgba(250,204,21,0.35)" }}>
+                      <span style={{ flex: 1, fontSize: 14, fontWeight: 900 }}>
+                        🔒 {parts.prices[id]?.name}
+                        <span style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#B9C2CF", fontFamily: "'Barlow', sans-serif" }}>Previewing. Unlock it once, use it on every car.</span>
+                      </span>
+                      <button className="action-btn" disabled={buying === id} onClick={() => unlock(k, v)} style={{ padding: "9px 12px", borderRadius: 10, border: "none", background: "#FACC15", color: "#111", fontSize: 14, fontWeight: 900, letterSpacing: 0.8, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", whiteSpace: "nowrap" }}>
+                        {buying === id ? "…" : `UNLOCK ⭐ ${parts.prices[id]?.price}`}
+                      </button>
+                      <button onClick={() => setPreview((pv) => Object.fromEntries(Object.entries(pv).filter(([kk]) => kk !== k)))} aria-label="Stop previewing" style={{ background: "none", border: "none", color: "#9AA4B2", fontSize: 18, cursor: "pointer" }}>
+                        ✕
+                      </button>
+                    </div>
+                  );
+                })}
+                {note && (
+                  <div role="status" style={{ fontSize: 12.5, color: note.startsWith("✓") ? "#86EFAC" : "#FCA5A5", fontFamily: "'Barlow', sans-serif" }}>
+                    {note}
+                  </div>
+                )}
+              </>
             ) : (
               infoPanel
             )}

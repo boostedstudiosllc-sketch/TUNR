@@ -16,3 +16,9 @@ test("everyday words that contain them are left alone", () => {
     assert.equal(r.changed, false);
   }
 });
+
+test("names with swear words are refused, clean ones pass", async () => {
+  const { assertClean } = await import("../src/lib/clean.js");
+  assert.throws(() => assertClean("shithead99", "usernames"), /Keep it clean: no swear words in usernames/);
+  assert.doesNotThrow(() => assertClean("classic_cars", "usernames"));
+});

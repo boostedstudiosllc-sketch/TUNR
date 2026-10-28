@@ -2,7 +2,7 @@
 import { supabase } from "./supabase.js";
 import { friendlyWriteError, withReason } from "./errors.js";
 import { kickPush } from "./alerts.js";
-import { cleanForSending } from "./clean.js";
+import { cleanForSending, assertClean } from "./clean.js";
 
 export const POST_TAGS = [
   { id: "question", label: "❓ Question" },
@@ -48,11 +48,12 @@ export async function loadForums() {
 export async function createForum({ name, description, icon }, userId) {
   need();
   const id = crypto.randomUUID();
+  assertClean(name, "forum names");
   const { error } = await supabase.from("forums").insert({
     id,
     slug: slugify(name),
     name: name.trim(),
-    description: (description || "").trim() || null,
+    description: cleanForSending((description || "").trim()) || null,
     icon: icon || "💬",
     created_by: userId,
   });
@@ -204,6 +205,7 @@ export async function loadClubs() {
 
 export async function createClub(draft, userId) {
   need();
+  assertClean(draft.name, "club names");
   const id = crypto.randomUUID();
   const { error } = await supabase.from("clubs").insert({
     id,
@@ -211,7 +213,7 @@ export async function createClub(draft, userId) {
     name: draft.name.trim(),
     kind: draft.kind,
     city: (draft.city || "").trim() || null,
-    description: (draft.description || "").trim() || null,
+    description: cleanForSending((draft.description || "").trim()) || null,
     logo_url: draft.logoUrl || null,
     visibility: draft.visibility === "private" ? "private" : "public",
     created_by: userId,
@@ -222,6 +224,7 @@ export async function createClub(draft, userId) {
 
 export async function updateClub(clubId, patch) {
   need();
+  if (patch.description) patch = { ...patch, description: cleanForSending(patch.description) };
   const { error } = await supabase.from("clubs").update(patch).eq("id", clubId);
   if (error) throw new Error(friendlyWriteError(error, "Couldn't update the club."));
 }

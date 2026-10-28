@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { DEFAULT_LEVELS, LEVEL_IDS, loadGameSettings, saveGameSettings, SCENERY, loadScenery, saveSceneryPrice } from "../lib/rush.js";
+import { loadGaragePartsAdmin, saveGaragePartPrice } from "../lib/garageParts.js";
 import { LEVELS } from "./TunrRush.jsx";
 import { muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
 
@@ -146,20 +147,28 @@ export default function RushAdmin({ onToast }) {
       )}
 
       <SceneryPrices onToast={onToast} />
+      <SceneryPrices
+        onToast={onToast}
+        title="GARAGE PART PRICES (POINTS)"
+        help="The paid add-ons in the 3D garage. Bought once, then on every car the player owns. Everything else in the garage is free. Off sale makes a part free for everyone; people who bought it keep it."
+        load={loadGaragePartsAdmin}
+        saveOne={saveGaragePartPrice}
+        icon={(x) => ({ spoiler: "🪽", rims: "🛞", height: "↕️" })[x.id.split(":")[0]]}
+      />
     </div>
   );
 }
 
 // What each place costs in points, and whether it's on sale. Anyone who
 // already unlocked a place keeps it.
-function SceneryPrices({ onToast }) {
+function SceneryPrices({ onToast, title = "SCENERY PRICES (POINTS)", help = null, load = () => loadScenery(null).then((r) => r.list.filter((x) => x.id !== "desert")), saveOne = saveSceneryPrice, icon = (x) => SCENERY[x.id]?.emoji }) {
   const [list, setList] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
 
   useEffect(() => {
-    loadScenery(null)
-      .then((r) => setList(r.list.map((x) => ({ ...x, draft: String(x.price) }))))
+    load()
+      .then((items) => setList(items.map((x) => ({ ...x, draft: String(x.price) }))))
       .catch((e) => setError(e.message));
   }, []);
 
@@ -167,7 +176,7 @@ function SceneryPrices({ onToast }) {
     setBusy(item.id);
     setError("");
     try {
-      await saveSceneryPrice(item.id, patch);
+      await saveOne(item.id, patch);
       setList((l) => l.map((x) => (x.id === item.id ? { ...x, ...patch, draft: String(patch.price ?? x.price) } : x)));
       onToast(`${item.name} saved`);
     } catch (e) {
@@ -179,21 +188,19 @@ function SceneryPrices({ onToast }) {
 
   return (
     <div style={{ marginTop: 26 }}>
-      <div style={label}>SCENERY PRICES (POINTS)</div>
+      <div style={label}>{title}</div>
       <div style={{ ...muted, fontSize: 12.5 }}>
-        Players unlock these once with reward points (10 points = $1 of value). Looks only; the desert is always free. Taking one off
-        sale hides it from new buyers; people who own it keep it.
+        {help ||
+          "Players unlock these once with reward points (10 points = $1 of value). Looks only; the desert is always free. Taking one off sale hides it from new buyers; people who own it keep it."}
       </div>
       {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
       {list === null && !error && <div style={{ ...muted, marginTop: 8 }}>Loading…</div>}
-      {(list || [])
-        .filter((x) => x.id !== "desert")
-        .map((x) => {
+      {(list || []).map((x) => {
           const n = Number(x.draft);
           const valid = x.draft !== "" && Number.isInteger(n) && n >= 1 && n <= 100000;
           return (
             <div key={x.id} style={{ ...row, opacity: x.active ? 1 : 0.6 }}>
-              <span aria-hidden="true" style={{ fontSize: 22 }}>{SCENERY[x.id]?.emoji}</span>
+              <span aria-hidden="true" style={{ fontSize: 22 }}>{icon(x)}</span>
               <span style={{ flex: 1, fontSize: 16, fontWeight: 900 }}>{x.name}</span>
               <input
                 aria-label={`${x.name} price in points`}

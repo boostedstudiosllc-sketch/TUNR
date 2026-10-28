@@ -4,7 +4,7 @@
 // and keep device-local RSVPs). Without Supabase env vars everything falls
 // back to seed data + localStorage so the app still runs.
 
-import { cleanForSending } from "./clean.js";
+import { cleanForSending, assertClean } from "./clean.js";
 import { seedEvents } from "../data/events.js";
 import { supabase } from "./supabase.js";
 import { DEFAULT_TZ, parseLocal, isoInTz } from "./dates.js";
@@ -180,16 +180,16 @@ export async function submitEvent(draft, userId = null) {
     const { data, error } = await supabase
       .from("events")
       .insert({
-        title: draft.title || "Untitled Meet",
+        title: cleanForSending(draft.title || "Untitled Meet"),
         host,
         location: draft.location || "TBA",
         city: draft.city || "Atlanta, GA",
         start_at: draft.start ? parseLocal(draft.start, DEFAULT_TZ).toISOString() : null,
         vibe: draft.vibe || "JDM",
         meet_style: draft.meetStyle === "showcase" ? "showcase" : "open",
-        showcase_note: draft.meetStyle === "showcase" ? (draft.showcaseNote || "").trim().slice(0, 200) || null : null,
+        showcase_note: draft.meetStyle === "showcase" ? cleanForSending((draft.showcaseNote || "").trim().slice(0, 200)) || null : null,
         tags: ["Just Posted"],
-        description: draft.description || "No description yet.",
+        description: cleanForSending(draft.description || "No description yet."),
         source: draft.igLink ? "instagram" : null,
         source_url: draft.igLink || null,
         photo_url: draft.photoUrl || null,
@@ -367,8 +367,8 @@ export async function saveVehicle(vehicle, ownerId) {
     owner_id: ownerId,
     year: vehicle.year ? Number(vehicle.year) : null,
     make: vehicle.make,
-    model: (vehicle.model || "").trim(),
-    build_notes: (vehicle.buildNotes || "").trim() || null,
+    model: cleanForSending((vehicle.model || "").trim()),
+    build_notes: cleanForSending((vehicle.buildNotes || "").trim()) || null,
     photo_url: vehicle.photoUrl || null,
   };
   // Its paint for the 3D garage and the games (the body is worked out from
@@ -493,6 +493,7 @@ export async function loadProfile(userId = null) {
 
 export async function saveProfile(profile, userId = null) {
   if (supabase && userId) {
+    if (profile.username) assertClean(profile.username, "usernames");
     const { error } = await supabase
       .from("profiles")
       .upsert({
@@ -502,7 +503,7 @@ export async function saveProfile(profile, userId = null) {
         ...(profile.isPhotographer !== undefined ? { is_photographer: Boolean(profile.isPhotographer) } : {}),
         ...(profile.photoPage !== undefined ? { photo_page: profile.photoPage.trim() || null } : {}),
         ...(profile.avatarUrl !== undefined ? { avatar_url: String(profile.avatarUrl ?? "").trim() || null } : {}),
-        ...(profile.bio !== undefined ? { bio: String(profile.bio ?? "").trim() || null } : {}),
+        ...(profile.bio !== undefined ? { bio: cleanForSending(String(profile.bio ?? "").trim()) || null } : {}),
         ...(profile.profileColor !== undefined ? { profile_color: profile.profileColor || null } : {}),
       });
     if (error) {
@@ -978,10 +979,10 @@ export async function completeSignInFromUrl() {
 export async function updateEvent(eventId, fields) {
   if (!supabase) throw new Error("Backend not configured");
   const payload = {};
-  if (fields.title !== undefined) payload.title = fields.title;
+  if (fields.title !== undefined) payload.title = cleanForSending(fields.title);
   if (fields.location !== undefined) payload.location = fields.location;
   if (fields.city !== undefined) payload.city = fields.city;
-  if (fields.description !== undefined) payload.description = fields.description;
+  if (fields.description !== undefined) payload.description = cleanForSending(fields.description);
   if (fields.vibe !== undefined) payload.vibe = fields.vibe;
   if (fields.meetStyle !== undefined) {
     payload.meet_style = fields.meetStyle === "showcase" ? "showcase" : "open";
@@ -1074,7 +1075,7 @@ export async function fileListingRequest({ eventId, kind, name, contact, details
     kind,
     requester_name: (name || "").trim() || null,
     contact: (contact || "").trim(),
-    details: (details || "").trim() || null,
+    details: cleanForSending((details || "").trim()) || null,
   });
   if (error) throw new Error(friendlyWriteError(error, "Couldn't send that. Try again, or email us."));
 }
@@ -1594,7 +1595,7 @@ export async function addMeetPhoto(eventId, photoUrl, caption, userId) {
     event_id: eventId,
     user_id: userId,
     photo_url: photoUrl,
-    caption: (caption || "").trim() || null,
+    caption: cleanForSending((caption || "").trim()) || null,
   });
   if (error) throw new Error(friendlyWriteError(error, "Couldn't add that photo."));
 }
@@ -1687,7 +1688,7 @@ export async function submitReport(eventId, reason, note, userId, suggested = ""
     event_id: eventId,
     reporter_id: userId,
     reason,
-    note: note?.trim() || null,
+    note: cleanForSending(note?.trim() || "") || null,
     suggested: suggested?.trim() || null,
   });
   if (error) {

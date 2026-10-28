@@ -90,7 +90,7 @@ export async function postLinkup(draft, userId) {
       area: (draft.area || "").trim().slice(0, 80) || null,
       lat: draft.lat,
       lng: draft.lng,
-      note: (draft.note || "").trim().slice(0, 280) || null,
+      note: cleanForSending((draft.note || "").trim().slice(0, 280)) || null,
       going_as: draft.goingAs || "car",
       starts_at: start.toISOString(),
       ends_at: end.toISOString(),
@@ -145,7 +145,7 @@ export async function cancelLinkup(linkupId) {
 
 export async function updateLinkupNote(linkupId, note) {
   need();
-  const { error } = await supabase.from("linkups").update({ note: note.trim().slice(0, 280) || null }).eq("id", linkupId);
+  const { error } = await supabase.from("linkups").update({ note: cleanForSending(note.trim().slice(0, 280)) || null }).eq("id", linkupId);
   if (error) throw new Error(withReason("Couldn't save the note.", error));
 }
 
