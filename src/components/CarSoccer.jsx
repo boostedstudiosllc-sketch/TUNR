@@ -24,10 +24,11 @@ function loadPrefs() {
       length: MATCH_LENGTHS.includes(p.length) ? p.length : 180,
       difficulty: LEVELS.some(([d]) => d === p.difficulty) ? p.difficulty : "medium",
       ballCam: p.ballCam !== false,
+      gas: p.gas === "pedal" ? "pedal" : "auto",
     };
   } catch (e) {
     console.warn("Couldn't read Turbo Ball settings:", e.message);
-    return { size: 1, length: 180, difficulty: "medium", ballCam: true };
+    return { size: 1, length: 180, difficulty: "medium", ballCam: true, gas: "auto" };
   }
 }
 
@@ -156,6 +157,20 @@ export default function CarSoccer({ onClose }) {
                   </button>
                 ))}
               </div>
+              <div style={{ ...label, marginTop: 12 }}>GAS</div>
+              <div style={{ display: "flex", gap: 6 }}>
+                {[
+                  ["auto", "Automatic"],
+                  ["pedal", "Gas pedal"],
+                ].map(([id, name]) => (
+                  <button key={id} onClick={() => setPref({ gas: id })} style={{ ...chip, ...(prefs.gas === id ? chipOn : {}) }}>
+                    {name}
+                  </button>
+                ))}
+              </div>
+              <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>
+                {prefs.gas === "pedal" ? "Hold GAS to drive. BOOST still works on its own." : "Your car drives itself; brake to stop or back up."}
+              </div>
               <button className="action-btn" onClick={start} style={{ ...bigButton, marginTop: 18, padding: "16px 0", fontSize: 18 }}>
                 ⚽ PLAY
               </button>
@@ -179,6 +194,7 @@ export default function CarSoccer({ onClose }) {
           length={prefs.length}
           difficulty={prefs.difficulty}
           ballCam={prefs.ballCam}
+          pedal={prefs.gas === "pedal"}
           onBallCam={(on) => setPref({ ballCam: on })}
           audio={audio}
           sound={sound}
@@ -223,11 +239,13 @@ export default function CarSoccer({ onClose }) {
 }
 
 // The match: the 3D view, the scoreboard, and the controls.
-function Match({ size, length, difficulty, ballCam, onBallCam, audio, sound, onToggle, onFinish, onQuit, onFail }) {
+function Match({ size, length, difficulty, ballCam, pedal = false, onBallCam, audio, sound, onToggle, onFinish, onQuit, onFail }) {
   const wrap = useRef(null);
   const canvas = useRef(null);
   const hud = useRef({});
-  const input = useRef({ left: false, right: false, brake: false, boost: false, jump: false });
+  const input = useRef({ left: false, right: false, brake: false, boost: false, jump: false, gas: false });
+  const pedalRef = useRef(pedal);
+  pedalRef.current = pedal;
   const scene = useRef(null);
   const [paused, setPaused] = useState(false);
   const live = useRef({ paused: false });
@@ -246,7 +264,7 @@ function Match({ size, length, difficulty, ballCam, onBallCam, audio, sound, onT
     const match = newMatch({ size, length, difficulty, seed: Date.now() % 100000 });
     // For the browser checks: lets a test reach into the match.
     if (import.meta.env.DEV) window.__ballMatch = match;
-    const keys = { ArrowLeft: "left", a: "left", ArrowRight: "right", d: "right", ArrowDown: "brake", s: "brake", Shift: "boost", ArrowUp: "boost", w: "boost", " ": "jump" };
+    const keys = { ArrowLeft: "left", a: "left", ArrowRight: "right", d: "right", ArrowDown: "brake", s: "brake", Shift: "boost", ArrowUp: "boost", w: "boost", " ": "jump", g: "gas" };
     const keyDown = (e) => {
       const k = keys[e.key];
       if (k) {
@@ -292,7 +310,7 @@ function Match({ size, length, difficulty, ballCam, onBallCam, audio, sound, onT
           const dt = Math.min(0.05, last ? (now - last) / 1000 : 0);
           last = now;
           const i = input.current;
-          const ctl = { steer: (i.left ? 1 : 0) - (i.right ? 1 : 0), throttle: i.brake ? -1 : 1, boost: i.boost, jump: i.jump };
+          const ctl = { steer: (i.left ? 1 : 0) - (i.right ? 1 : 0), throttle: i.brake ? -1 : pedalRef.current ? (i.gas ? 1 : 0) : 1, boost: i.boost, jump: i.jump };
           if (!live.current.paused) {
             acc += dt;
             while (acc >= STEP) {
@@ -447,6 +465,15 @@ function Match({ size, length, difficulty, ballCam, onBallCam, audio, sound, onT
             BRAKE
           </button>
         </div>
+        {pedal && (
+          <button
+            aria-label="Gas (hold to drive)"
+            style={round(60, { width: 60, height: 104, borderRadius: 12, fontSize: 12, display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 8, background: "repeating-linear-gradient(180deg, #2b2b2b 0 10px, #1a1a1a 10px 16px)" })}
+            {...hold("gas")}
+          >
+            GAS
+          </button>
+        )}
         <button ref={(el) => (hud.current.boostBtn = el)} aria-label="Boost (hold)" style={round(92, { fontSize: 15, padding: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "2px solid #FFB020" })} {...hold("boost")}>
           <span style={{ background: "rgba(10,14,30,0.85)", borderRadius: "50%", width: 72, height: 72, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
             <span ref={(el) => (hud.current.boostAmt = el)} style={{ fontSize: 24, lineHeight: 1 }}>

@@ -46,7 +46,7 @@ const clock = (s) =>
 // and gas on the right, like the real thing. Stop inside the yellow spot
 // without touching anything; faster parks earn more stars. Free play, no
 // points; stars are kept on this phone.
-export default function ParkUp({ onClose }) {
+export default function ParkUp({ onClose, allAccess = false }) {
   const [screen, setScreen] = useState("levels"); // levels | play
   const [progress, setProgress] = useState(loadProgress);
   const [index, setIndex] = useState(0);
@@ -281,7 +281,7 @@ export default function ParkUp({ onClose }) {
               }}
             >
               {LEVELS.map((l, i) => {
-                const open = unlocked(progress, i);
+                const open = allAccess || unlocked(progress, i);
                 return (
                   <button
                     key={l.id}

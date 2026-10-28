@@ -233,10 +233,13 @@ function tickPlayer(race, c, input, dt) {
   }
   c.nitroHeld = Boolean(input.nitro);
 
-  // The kart goes by itself; the brake slows it, then reverses.
+  // The kart goes by itself, unless you've picked the gas pedal (then
+  // input.gas says whether it's down; off the gas it coasts). The brake
+  // slows it, then reverses.
   let v = c.speed;
   if (c.finished) v -= Math.sign(v) * Math.min(Math.abs(v), 6 * dt);
   else if (input.brake) v = v > 0.5 ? Math.max(0, v - KART.brake * dt) : Math.max(-KART.reverse, v - 5 * dt);
+  else if (input.gas === false) v -= Math.sign(v) * Math.min(Math.abs(v), (3 + 0.015 * v * v) * dt);
   else if (v < -0.5) v = Math.min(0, v + KART.brake * dt);
   else v += KART.accel * (boosted ? c.boostAccel : 1) * (1 - Math.max(0, v) / top) * dt * (v < 10 ? 1.5 : 1);
   if (v > top) v -= Math.min(v - top, (c.surface === "grass" ? 20 : 5) * dt);
@@ -462,7 +465,8 @@ function contact(race) {
   }
 }
 
-// One step. input: { left, right, brake, drift, nitro }.
+// One step. input: { left, right, brake, drift, nitro, nitroTap, gas }
+// (gas: leave it out for the kart to drive itself).
 export function tickKartRace(race, input, dt = STEP) {
   race.time += dt;
   if (race.state === "countdown") {

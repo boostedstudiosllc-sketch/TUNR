@@ -253,7 +253,7 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
       ) : (
         rewards.map((r) => {
           const soldOut = r.stock !== null && r.stock <= 0;
-          const needSpend = Math.max(0, Number(r.min_spend_cents || 0) - spent);
+          const needSpend = points?.all_access ? 0 : Math.max(0, Number(r.min_spend_cents || 0) - spent);
           const short = balance < r.cost;
           const blocked = soldOut || short || needSpend > 0 || !points?.can_redeem;
           return (

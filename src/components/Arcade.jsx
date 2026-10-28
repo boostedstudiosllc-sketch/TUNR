@@ -8,6 +8,7 @@ import { LEVELS as PARK_LEVELS, loadProgress } from "../lib/parkEngine.js";
 import { loadBests as loadDriftBests } from "../lib/f1Engine.js";
 import { loadKartBests } from "../lib/kartEngine.js";
 import { loadRecord as loadBallRecord } from "../lib/soccerEngine.js";
+import { loadAllAccess } from "../lib/store.js";
 import { muted, quietButton } from "./Sheet.jsx";
 
 // Every TUNR game in one place. One game pays points each day (TUNR Rush);
@@ -91,6 +92,11 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
   const [driftBest, setDriftBest] = useState(0);
   const [kartWins, setKartWins] = useState(0);
   const [ballRecord, setBallRecord] = useState(null);
+  // All access (the operator's account): every level open.
+  const [allAccess, setAllAccess] = useState(false);
+  useEffect(() => {
+    loadAllAccess(user?.id).then(setAllAccess);
+  }, [user?.id]);
 
   // Stars come back up to date after a round of Park Up.
   useEffect(() => {
@@ -120,7 +126,7 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
       />
     );
   }
-  if (open === "park") return <ParkUp onClose={() => setOpen(null)} />;
+  if (open === "park") return <ParkUp onClose={() => setOpen(null)} allAccess={allAccess} />;
   if (open === "drift") return <DriftKing onClose={() => setOpen(null)} />;
   if (open === "karts") return <KartGame onClose={() => setOpen(null)} />;
   if (open === "ball") return <CarSoccer onClose={() => setOpen(null)} />;

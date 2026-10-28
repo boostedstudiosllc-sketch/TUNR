@@ -4,6 +4,7 @@ import { KART_TRACKS } from "../lib/kartTracks.js";
 import { RushAudio } from "../lib/rushAudio.js";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import { TrackShape, ordinal, chip, chipOn } from "./DriftKing.jsx";
+import { usePortrait, useLandscapeLock, TurnSideways } from "./Sideways.jsx";
 
 const LEVELS = [
   ["easy", "Easy"],
@@ -22,10 +23,11 @@ function loadPrefs() {
       laps: LAPS.includes(p.laps) ? p.laps : 3,
       difficulty: LEVELS.some(([d]) => d === p.difficulty) ? p.difficulty : "medium",
       color: COLORS.includes(p.color) ? p.color : COLORS[0],
+      gas: p.gas === "pedal" ? "pedal" : "auto",
     };
   } catch (e) {
     console.warn("Couldn't read Boosted Karts settings:", e.message);
-    return { laps: 3, difficulty: "medium", color: COLORS[0] };
+    return { laps: 3, difficulty: "medium", color: COLORS[0], gas: "auto" };
   }
 }
 
@@ -158,6 +160,20 @@ export default function KartGame({ onClose }) {
                   </button>
                 ))}
               </div>
+              <div style={{ ...label, marginTop: 12 }}>GAS</div>
+              <div style={{ display: "flex", gap: 6 }}>
+                {[
+                  ["auto", "Automatic"],
+                  ["pedal", "Gas pedal"],
+                ].map(([id, name]) => (
+                  <button key={id} onClick={() => setPref({ gas: id })} style={{ ...chip, ...(prefs.gas === id ? chipOn : {}) }}>
+                    {name}
+                  </button>
+                ))}
+              </div>
+              <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>
+                {prefs.gas === "pedal" ? "Hold GAS to go. Off the gas, the kart rolls to a stop." : "The kart goes by itself, so one thumb can steer and the other can drift."} Races are played with your phone sideways.
+              </div>
               <div style={{ ...label, marginTop: 14 }}>PICK A TRACK</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 8 }}>
                 {KART_TRACKS.map((t) => {
@@ -194,6 +210,7 @@ export default function KartGame({ onClose }) {
           laps={prefs.laps}
           difficulty={prefs.difficulty}
           color={prefs.color}
+          pedal={prefs.gas === "pedal"}
           audio={audio}
           sound={sound}
           onToggle={toggle}
@@ -244,16 +261,20 @@ export default function KartGame({ onClose }) {
 }
 
 // The race: the 3D view, the numbers on top, and the controls.
-function KartRace({ def, laps, difficulty, color, audio, sound, onToggle, onFinish, onQuit, onFail }) {
+function KartRace({ def, laps, difficulty, color, pedal = false, audio, sound, onToggle, onFinish, onQuit, onFail }) {
   const wrap = useRef(null);
   const canvas = useRef(null);
   const mapRef = useRef(null);
   const hud = useRef({});
-  const input = useRef({ left: false, right: false, brake: false, drift: false, nitro: false });
+  const input = useRef({ left: false, right: false, brake: false, drift: false, nitro: false, gas: false });
   const scene = useRef(null);
   const [paused, setPaused] = useState(false);
+  // Raced sideways: held upright, it waits behind a "turn your phone" screen.
+  const portrait = usePortrait();
+  useLandscapeLock();
   const live = useRef({ paused: false });
-  live.current.paused = paused;
+  live.current.paused = paused || portrait;
+  live.current.pedal = pedal;
   const cb = useRef({ onFinish, onFail });
   cb.current = { onFinish, onFail };
 
@@ -268,7 +289,7 @@ function KartRace({ def, laps, difficulty, color, audio, sound, onToggle, onFini
     const mctx = mapRef.current.getContext("2d");
     const MAP = 112;
     const shape = outline(def, MAP, MAP, 8);
-    const keys = { ArrowLeft: "left", a: "left", ArrowRight: "right", d: "right", ArrowDown: "brake", s: "brake", Shift: "drift", " ": "drift", ArrowUp: "nitro", n: "nitro", w: "nitro" };
+    const keys = { ArrowLeft: "left", a: "left", ArrowRight: "right", d: "right", ArrowDown: "brake", s: "brake", Shift: "drift", " ": "drift", ArrowUp: "nitro", n: "nitro", w: "nitro", g: "gas" };
     const keyDown = (e) => {
       const k = keys[e.key];
       if (k) {
@@ -318,7 +339,7 @@ function KartRace({ def, laps, difficulty, color, audio, sound, onToggle, onFini
             while (acc >= STEP) {
               // A tap quicker than a frame still counts.
               const i = input.current;
-              tickKartRace(race, i);
+              tickKartRace(race, live.current.pedal ? i : { ...i, gas: undefined });
               i.nitroTap = false;
               acc -= STEP;
             }
@@ -450,7 +471,7 @@ function KartRace({ def, laps, difficulty, color, audio, sound, onToggle, onFini
       <canvas ref={canvas} aria-label={`${def.name}: the race`} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }} />
 
       {/* Top: place, lap, times; the map; pause. */}
-      <div style={{ position: "absolute", top: "calc(8px + env(safe-area-inset-top))", left: 10, right: 10, display: "flex", gap: 8, alignItems: "flex-start", pointerEvents: "none", zIndex: 2 }}>
+      <div style={{ position: "absolute", top: "calc(8px + env(safe-area-inset-top))", left: "calc(10px + env(safe-area-inset-left))", right: "calc(10px + env(safe-area-inset-right))", display: "flex", gap: 8, alignItems: "flex-start", pointerEvents: "none", zIndex: 2 }}>
         <div style={{ background: "rgba(5,8,20,0.65)", borderRadius: 10, padding: "6px 10px", textShadow: "0 1px 3px #000" }}>
           <div ref={(el) => (hud.current.pos = el)} style={{ fontSize: 30, fontWeight: 900, lineHeight: 1 }}>
             P6/6
@@ -466,7 +487,7 @@ function KartRace({ def, laps, difficulty, color, audio, sound, onToggle, onFini
         <div style={{ flex: 1 }} />
         <canvas ref={mapRef} width={112} height={112} aria-hidden="true" style={{ background: "rgba(5,8,20,0.55)", borderRadius: 10 }} />
       </div>
-      <div style={{ position: "absolute", top: "calc(132px + env(safe-area-inset-top))", right: 10, zIndex: 3 }}>
+      <div style={{ position: "absolute", top: "calc(132px + env(safe-area-inset-top))", right: "calc(10px + env(safe-area-inset-right))", zIndex: 3 }}>
         <button onClick={() => setPaused(true)} aria-label="Pause" style={small}>
           ⏸
         </button>
@@ -523,7 +544,18 @@ function KartRace({ def, laps, difficulty, color, audio, sound, onToggle, onFini
         <button aria-label="Drift (hold while you turn)" style={round(96, { fontSize: 17, background: "rgba(0,128,240,0.35)", border: "2px solid #3CABFD" })} {...hold("drift")}>
           DRIFT
         </button>
+        {pedal && (
+          <button
+            aria-label="Gas (hold to go)"
+            style={round(64, { width: 64, height: 112, borderRadius: 12, fontSize: 12, alignItems: "flex-end", display: "flex", justifyContent: "center", paddingBottom: 8, background: "repeating-linear-gradient(180deg, #2b2b2b 0 10px, #1a1a1a 10px 16px)" })}
+            {...hold("gas")}
+          >
+            GAS
+          </button>
+        )}
       </div>
+
+      {portrait && <TurnSideways />}
 
       {paused && (
         <div style={{ position: "absolute", inset: 0, zIndex: 4, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>

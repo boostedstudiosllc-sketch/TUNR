@@ -324,7 +324,9 @@ export function createKartScene(canvas, race, { lowPower = false } = {}) {
     camera.lookAt(p.x + cx * 7, 0.7, p.z + cz * 7);
     const want = 68 + Math.min(8, Math.abs(p.speed) * 0.25) + (p.boost > 0 ? (p.boostKind === "nitro" ? 14 : 8) : 0);
     cam.fov += (want - cam.fov) * Math.min(1, dt * 5 || 1);
-    camera.fov = cam.fov;
+    // Sideways the screen is wide: a narrower vertical angle keeps the
+    // same sweep across, without a fish-eye look.
+    camera.fov = cam.fov * (camera.aspect > 1.2 ? 0.7 : 1);
     camera.updateProjectionMatrix();
     sun.target.position.set(p.x, 0, p.z);
     sun.position.set(p.x + 30, 60, p.z + 20);

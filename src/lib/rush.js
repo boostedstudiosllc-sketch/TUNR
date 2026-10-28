@@ -3,6 +3,7 @@
 import { supabase } from "./supabase.js";
 import { friendlyWriteError, withReason } from "./errors.js";
 import { DEFAULT_RULES, DEFAULT_LEVELS, LEVEL_IDS, SCENERY, SCENERY_IDS } from "./rushEngine.js";
+import { loadAllAccess } from "./store.js";
 
 export * from "./rushEngine.js";
 
@@ -125,9 +126,11 @@ export async function loadScenery(userId) {
   if (error) throw new Error(withReason("Couldn't load the scenery.", error));
   const owned = new Set(["desert"]);
   if (userId) {
-    const mine = await supabase.from("rush_scenery_owned").select("scenery").eq("user_id", userId);
+    const [mine, all] = await Promise.all([supabase.from("rush_scenery_owned").select("scenery").eq("user_id", userId), loadAllAccess(userId)]);
     if (mine.error) throw new Error(withReason("Couldn't load your scenery.", mine.error));
     for (const r of mine.data || []) owned.add(r.scenery);
+    // All access: every place, no points needed.
+    if (all) for (const r of data || []) owned.add(r.id);
   }
   for (const r of data || []) if (r.price === 0) owned.add(r.id);
   // Only places the game knows how to draw.

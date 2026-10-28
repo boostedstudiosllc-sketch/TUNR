@@ -186,3 +186,15 @@ test("a nitro tap counts even while the button reads as held", () => {
   run(race, { nitro: true, nitroTap: true }, 1 / 120);
   assert.equal(race.player.boostKind, "nitro");
 });
+
+test("with the gas pedal, the kart only goes while it's down", () => {
+  const race = newKartRace(buildKartTrack(KART_TRACKS[0]), { rivals: 0 });
+  race.obstacles = [];
+  run(race, { gas: false }, 3.5);
+  assert.ok(race.player.speed < 0.5, `still: ${race.player.speed}`);
+  run(race, { gas: true }, 1.5);
+  const going = race.player.speed;
+  assert.ok(going > 10, `going: ${going}`);
+  run(race, { gas: false }, 1);
+  assert.ok(race.player.speed < going - 2, `coasting: ${race.player.speed}`);
+});

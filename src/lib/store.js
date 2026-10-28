@@ -428,6 +428,32 @@ export function loadLocalProfile() {
   return read(PROFILE_KEY, { username: "", city: "Atlanta, GA" });
 }
 
+// Whether this account has all access (081): every paid and locked
+// feature, without paying, inviting or earning it. Asked once per account.
+const allAccessCache = new Map();
+export async function loadAllAccess(userId) {
+  if (!supabase || !userId) return false;
+  if (!allAccessCache.has(userId)) {
+    allAccessCache.set(
+      userId,
+      supabase
+        .from("profiles")
+        .select("all_access")
+        .eq("id", userId)
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (error) {
+            allAccessCache.delete(userId);
+            console.warn("Couldn't check all access:", error.message);
+            return false;
+          }
+          return Boolean(data?.all_access);
+        })
+    );
+  }
+  return allAccessCache.get(userId);
+}
+
 export async function loadProfile(userId = null) {
   if (supabase && userId) {
     const [{ data }, { data: hostRows }] = await Promise.all([
@@ -440,7 +466,9 @@ export async function loadProfile(userId = null) {
         username: data.username || "",
         city: data.city || "Atlanta, GA",
         isAdmin: Boolean(data.is_admin),
-        isMember: Boolean(data.is_member),
+        // All access (081): the operator's account gets every paid and locked feature.
+        isMember: Boolean(data.is_member || data.all_access),
+        allAccess: Boolean(data.all_access),
         memberSince: data.member_since || null,
         dayOne: Boolean(data.day_one),
         dayOneNumber: data.day_one_number ?? null,

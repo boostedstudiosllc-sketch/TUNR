@@ -50,6 +50,7 @@ import PerksTab from "./components/PerksTab.jsx";
 import JoinPage from "./components/JoinPage.jsx";
 import CommunityTab from "./components/CommunityTab.jsx";
 import NotificationBell from "./components/NotificationBell.jsx";
+import Checklist from "./components/Checklist.jsx";
 import AlertSettings from "./components/AlertSettings.jsx";
 import HomeScreenPrompt from "./components/HomeScreenPrompt.jsx";
 import ConfirmEmailBanner from "./components/ConfirmEmail.jsx";
@@ -651,6 +652,7 @@ export default function App() {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <Checklist user={user} onToast={showToast} />
         <NotificationBell user={user} onOpenLink={openLink} onToast={showToast} onOpenSettings={() => setShowAlerts(true)} />
         <button
           className="action-btn"

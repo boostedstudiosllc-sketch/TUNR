@@ -236,6 +236,22 @@ export async function loadPointHistory(userId) {
   }));
 }
 
+// Which kinds of points you've had since a moment (for the checklist):
+// [{ reason, at }], newest first.
+export async function loadPointsSince(userId, sinceIso) {
+  need();
+  const { data, error } = await supabase
+    .from("point_ledger")
+    .select("reason, created_at")
+    .eq("user_id", userId)
+    .gt("delta", 0)
+    .gte("created_at", sinceIso)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) throw new Error(withReason("Couldn't load your recent points.", error));
+  return (data || []).map((r) => ({ reason: r.reason, at: r.created_at }));
+}
+
 export async function loadRewards() {
   if (!supabase) return [];
   const { data, error } = await supabase
