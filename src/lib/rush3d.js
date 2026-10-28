@@ -147,6 +147,9 @@ function plateTexture(text) {
 // Size and shape per body, in meters. u runs along the car (front +),
 // v is height. glass*/roof* mark the greenhouse.
 const SHAPES = {
+  // Lamborghini / Ferrari / McLaren: low, wide wedge, cab pushed forward,
+  // long raked windshield, engine cover sloping to a high flat tail.
+  exotic: { L: 4.6, W: 2.04, clear: 0.12, belt: 0.74, deck: 0.86, roof: 1.13, glassRear: -1.85, roofRear: -0.55, roofFront: 0.05, glassFront: 1.4, cabinW: 0.72 },
   coupe: { L: 4.45, W: 1.9, clear: 0.16, belt: 0.86, deck: 0.9, roof: 1.27, glassRear: -1.45, roofRear: -0.45, roofFront: 0.25, glassFront: 1.05, cabinW: 0.78 },
   sedan: { L: 4.7, W: 1.86, clear: 0.17, belt: 0.92, deck: 0.98, roof: 1.42, glassRear: -1.35, roofRear: -0.6, roofFront: 0.35, glassFront: 1.15, cabinW: 0.8 },
   hatch: { L: 4.2, W: 1.82, clear: 0.17, belt: 0.95, deck: 1.0, roof: 1.48, glassRear: -1.95, roofRear: -1.7, roofFront: 0.3, glassFront: 1.0, cabinW: 0.8 },
@@ -170,11 +173,13 @@ const smooth = (a, b, x) => {
 function bodyFit(body, s) {
   const half = s.L / 2;
   const tall = body === "truck" || body === "suv";
+  const exotic = body === "exotic";
   const shoulder = body === "truck" ? 0.03 : tall ? 0.05 : 0.07;
-  const glassLean = body === "truck" ? 0.08 : tall ? 0.1 : 0.15;
+  const glassLean = body === "truck" ? 0.08 : tall ? 0.1 : exotic ? 0.22 : 0.15;
   return (u, y) => {
-    const end = smooth(0.72, 1.02, Math.abs(u) / half);
-    let k = 1 - (u > 0 ? (tall ? 0.06 : 0.1) : tall ? 0.04 : 0.06) * end * end;
+    // A supercar's nose narrows to a point from well back.
+    const end = smooth(exotic && u > 0 ? 0.5 : 0.72, 1.02, Math.abs(u) / half);
+    let k = 1 - (u > 0 ? (tall ? 0.06 : exotic ? 0.24 : 0.1) : tall ? 0.04 : 0.06) * end * end;
     if (y <= s.belt + 0.02) k *= 1 - shoulder * smooth(s.belt - 0.35, s.belt + 0.02, y);
     else k *= (1 - shoulder) * (1 - glassLean * smooth(s.belt, s.roof, y));
     k *= 1 - 0.05 * (1 - smooth(s.clear + 0.08, s.clear + 0.35, y));
@@ -284,7 +289,7 @@ function bodyGeometries(body, fine = false) {
   if (geoCache.has(cacheKey)) return geoCache.get(cacheKey);
   const s = SHAPES[body] || SHAPES.coupe;
   const half = s.L / 2;
-  const wheelR = body === "truck" ? 0.44 : body === "suv" ? 0.41 : 0.34;
+  const wheelR = body === "truck" ? 0.44 : body === "suv" ? 0.41 : body === "exotic" ? 0.36 : 0.34;
   const axle = half - (body === "truck" ? 1.05 : 0.88);
 
   // Lower body, with wheel arches cut out of the bottom edge.
@@ -303,8 +308,9 @@ function bodyGeometries(body, fine = false) {
   }
   lower.lineTo(s.glassFront + 0.1, s.belt + 0.02);
   // The hood runs down to a low nose (less so on trucks and SUVs).
-  const low = body === "truck" || body === "suv" ? 0.2 : 0.27;
-  lower.quadraticCurveTo(half - 0.15, s.belt - 0.08, half, s.belt - low);
+  const low = body === "truck" || body === "suv" ? 0.2 : body === "exotic" ? 0.36 : 0.27;
+  if (body === "exotic") lower.lineTo(half - 0.05, s.belt - low + 0.02); // straight wedge
+  else lower.quadraticCurveTo(half - 0.15, s.belt - 0.08, half, s.belt - low);
   lower.lineTo(half + 0.03, bottom + 0.15);
   lower.lineTo(half - 0.1, bottom);
   // The arches are cut wide: the body's rounded edge rolls them back in
@@ -426,6 +432,7 @@ function rimMat(rims) {
   }
   return rimCache.get(rims);
 }
+const EXOTIC = new Set(["lamborghini", "ferrari", "mclaren"]);
 export const RIDE_DROP = { stock: 0, lowered: 0.06, slammed: 0.11, lifted: -0.14 };
 
 // A whole car: body, glass, roof, wheels, lights, plate, bumper. `sport`
@@ -433,6 +440,8 @@ export const RIDE_DROP = { stock: 0, lowered: 0.06, slammed: 0.11, lifted: -0.14
 // stays plain. rims: wheel finish (RIM_COLORS); height: ride height
 // (RIDE_DROP).
 export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport = false, spoiler = "lip", rims = "silver", height = "stock", brand = "generic" }) {
+  // Exotic brands get the supercar wedge instead of the plain coupe.
+  if (body === "coupe" && EXOTIC.has(brand)) body = "exotic";
   const g = bodyGeometries(body, sport);
   const s = g.s;
   const half = s.L / 2;
@@ -619,6 +628,15 @@ export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport 
   }
 
   if (sport) buildSides(car, s, g, body);
+  if (sport && body === "exotic") {
+    // Big air intakes in the sides, ahead of the rear wheels.
+    const archR = g.wheelR + ARCH_GAP;
+    for (const side of [-1, 1]) {
+      const scoop = box(0.06, 0.17, 0.7, MAT.hole, side * (s.W / 2 + 0.01), s.belt - 0.2, g.axle - archR - 0.32);
+      scoop.rotation.x = -0.12;
+      car.add(scoop);
+    }
+  }
 
   // The front end: lights, grille and intake, in the brand's style.
   if (sport) buildFront(car, s, half, body, brand, paintMat, g.wheelR);
@@ -708,6 +726,7 @@ function buildSides(car, s, g, body) {
   const fourDoor = body === "sedan" || body === "suv" || body === "truck";
   const doors = {
     coupe: [s.glassFront - 0.05, s.roofRear + 0.05],
+    exotic: [s.glassFront - 0.1, s.roofRear + 0.35],
     hatch: [s.glassFront - 0.05, s.roofFront - 0.85],
     sedan: [s.glassFront - 0.05, (s.roofFront + s.roofRear) / 2, s.roofRear - 0.25],
     suv: [s.glassFront - 0.05, (s.roofFront + s.roofRear) / 2 + 0.2, s.roofRear + 1.25],
@@ -761,7 +780,13 @@ function buildFront(car, s, half, body, brand, paintMat, wheelR) {
   const z = -(half + 0.16); // the nose
   const zl = -(half + 0.18); // the bumper, a touch further out
   const W = s.W;
-  const lightY = s.belt - (tall === 1 ? 0.28 : 0.2 * tall);
+  const exotic = body === "exotic";
+  // On a supercar the lights sit up on the sloping hood.
+  const lightY = exotic ? s.belt - 0.16 : s.belt - (tall === 1 ? 0.28 : 0.2 * tall);
+  const onHood = (m) => {
+    if (exotic) m.rotation.x = 1.1;
+    return m;
+  };
   const grilleY = s.clear + 0.42 * tall;
   const add = (w, h, d, mat, x, y, zz = z, rz = 0) => {
     const m = box(w, h, d, mat, x, y, zz);
@@ -838,11 +863,17 @@ function buildFront(car, s, half, body, brand, paintMat, wheelR) {
     case "porsche":
     case "lamborghini":
     case "ferrari":
+    case "mclaren":
       // No grille: big intakes low down, lights high on the wings.
       for (const side of [-1, 1]) {
-        add(0.42, 0.16, 0.05, MAT.hole, side * (W / 2 - 0.38), s.clear + 0.28, zl, brand === "lamborghini" ? side * 0.25 : 0);
+        add(exotic ? 0.34 : 0.42, exotic ? 0.11 : 0.16, 0.05, MAT.hole, side * (W / 2 - 0.38), s.clear + (exotic ? 0.24 : 0.28), exotic ? z + 0.04 : zl, brand === "lamborghini" ? side * 0.25 : 0);
         if (brand === "porsche") disc(0.11, FRONT.light, side * lx, lightY + 0.03);
-        else add(0.4, 0.06, 0.05, FRONT.light, side * lx, lightY + 0.02, z, side * -0.15);
+        else if (brand === "lamborghini") {
+          // Y-shaped lights in a slim dark slot.
+          onHood(add(0.46, 0.14, 0.03, FRONT.lens, side * lx, lightY, z + 0.012, side * -0.12));
+          onHood(add(0.3, 0.03, 0.04, FRONT.light, side * (lx - 0.06), lightY + 0.01, z, side * -0.12));
+          onHood(add(0.16, 0.03, 0.04, FRONT.light, side * (lx + 0.12), lightY - 0.01, z, side * 0.5));
+        } else onHood(add(0.4, 0.06, 0.05, FRONT.light, side * lx, lightY + 0.02, z, side * -0.15));
       }
       add(0.5, 0.1, 0.05, MAT.hole, 0, s.clear + 0.24, zl);
       if (brand === "ferrari") add(0.1, 0.12, 0.05, FRONT.gold, 0, grilleY + 0.12, z - 0.02);

@@ -426,7 +426,7 @@ The 📋 button in the header (`Checklist.jsx`) lists every way to earn points a
 
 ## Your garage in every game
 
-**Car models** (`buildCar` in `src/lib/rush3d.js`): each body is a side profile extruded across the car, then bent into shape (`bodyFit`: nose and tail round in, sides lean in toward the roof, the bottom tucks under, hood and roof crown) and smooth-shaded. Your own car (`sport`) gets a finer mesh (`refine`, crack-free edge splitting), flush wheels with tire sidewalls, brake discs and calipers, side skirts, door seams and handles, window trim and headlight housings; lights, grilles and trim are ray-cast onto the curved surface. Traffic stays on the lighter mesh so the games stay fast.
+**Car models** (`buildCar` in `src/lib/rush3d.js`; Lamborghini/Ferrari/McLaren coupes use the low `exotic` wedge shape): each body is a side profile extruded across the car, then bent into shape (`bodyFit`: nose and tail round in, sides lean in toward the roof, the bottom tucks under, hood and roof crown) and smooth-shaded. Your own car (`sport`) gets a finer mesh (`refine`, crack-free edge splitting), flush wheels with tire sidewalls, brake discs and calipers, side skirts, door seams and handles, window trim and headlight housings; lights, grilles and trim are ray-cast onto the curved surface. Traffic stays on the lighter mesh so the games stay fast.
 
 Each Arcade game has a "Your garage" row (`GarageRow` / `useGarageCar` in `Showroom.jsx`; the pick is kept per game in localStorage as `tunr.<game>.car`, "game" for the game's own car, default your main car):
 - **TUNR Rush**: drives your car with its full style (paint, body, wing, wheels, ride height).

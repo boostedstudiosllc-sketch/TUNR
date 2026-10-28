@@ -106,7 +106,7 @@ export function guessBody(make = "", model = "") {
 }
 
 // The brand's front-end look (grille, lights) for the 3D cars.
-const BRANDS = ["bmw", "mercedes", "audi", "volkswagen", "porsche", "toyota", "lexus", "honda", "acura", "nissan", "infiniti", "mazda", "subaru", "mitsubishi", "ford", "chevrolet", "dodge", "tesla", "hyundai", "kia", "genesis", "jeep", "ram", "gmc", "cadillac", "volvo", "land rover", "mini", "lamborghini", "ferrari"];
+const BRANDS = ["bmw", "mercedes", "audi", "volkswagen", "porsche", "toyota", "lexus", "honda", "acura", "nissan", "infiniti", "mazda", "subaru", "mitsubishi", "ford", "chevrolet", "dodge", "tesla", "hyundai", "kia", "genesis", "jeep", "ram", "gmc", "cadillac", "volvo", "land rover", "mini", "lamborghini", "ferrari", "mclaren"];
 export function brandOf(make = "") {
   const mk = String(make).toLowerCase().replace("-benz", "");
   return BRANDS.find((b) => mk.startsWith(b)) || "generic";
