@@ -379,9 +379,9 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount, startV
             )}
             <div style={{ position: "relative", margin: "14px -16px 8px" }}>
               <ShowroomStage look={look} plate={plate} flat={gfx === "classic"} style={{ height: 230 }} />
-              <div style={{ position: "absolute", top: 10, left: 14, right: 14, pointerEvents: "none", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>
-                <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#FACC15" }}>YOUR RIDE</div>
-                <div style={{ fontSize: 24, fontWeight: 900, lineHeight: 1.05, textTransform: "uppercase" }}>{carName}</div>
+              <div style={{ position: "absolute", top: 10, left: 14, right: 14, pointerEvents: "none" }}>
+                <div style={{ display: "inline-block", fontSize: 10.5, fontWeight: 900, letterSpacing: 1.5, color: "#111", background: "#FACC15", borderRadius: 4, padding: "2px 7px" }}>YOUR RIDE</div>
+                <div style={{ fontSize: 24, fontWeight: 900, lineHeight: 1.05, marginTop: 4, color: "#0b0d11", textTransform: "uppercase" }}>{carName}</div>
               </div>
             </div>
 

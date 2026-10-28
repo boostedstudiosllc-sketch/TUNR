@@ -233,7 +233,7 @@ export default function Garage({ user, onToast }) {
           style={{ position: "relative", display: "block", width: "100%", height: 190, marginTop: 12, padding: 0, border: "1px solid #242424", borderRadius: 10, overflow: "hidden", cursor: "pointer", background: "#0c0e12" }}
         >
           <ShowroomStage look={lookOf(vehicles.find((v) => v.is_primary) || vehicles[0])} plate="TUNR" interactive={false} style={{ position: "absolute", inset: 0 }} />
-          <span style={{ position: "absolute", left: 10, bottom: 8, right: 10, display: "flex", justifyContent: "space-between", alignItems: "flex-end", fontFamily: "'Barlow Condensed', sans-serif", color: "#fff", textShadow: "0 2px 6px #000", pointerEvents: "none" }}>
+          <span style={{ position: "absolute", left: 0, bottom: 0, right: 0, padding: "26px 10px 8px", display: "flex", justifyContent: "space-between", alignItems: "flex-end", fontFamily: "'Barlow Condensed', sans-serif", color: "#fff", background: "linear-gradient(180deg, rgba(10,12,16,0), rgba(10,12,16,0.78))", pointerEvents: "none" }}>
             <span style={{ fontSize: 17, fontWeight: 900, textAlign: "left", textTransform: "uppercase" }}>
               {(vehicles.find((v) => v.is_primary) || vehicles[0]).make} {(vehicles.find((v) => v.is_primary) || vehicles[0]).model}
             </span>

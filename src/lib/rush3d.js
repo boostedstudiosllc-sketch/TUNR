@@ -3,6 +3,7 @@
 // highway. Every model here is built in code (no downloaded models), so
 // there's nothing to license. Loaded only when 3D graphics are on.
 import * as THREE from "three";
+import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
 import { Sky } from "three/examples/jsm/objects/Sky.js";
 import { drawHud } from "./rushEngine.js";
 
@@ -156,8 +157,99 @@ const SHAPES = {
 };
 
 const geoCache = new Map();
-function extrude(shape, depth, bevel) {
-  const geo = new THREE.ExtrudeGeometry(shape, {
+const ARCH_GAP = 0.13;
+const smooth = (a, b, x) => {
+  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+
+// How much narrower the body is at a point than its full width: the corners
+// of the nose and tail round in, the sides lean in toward the top (and the
+// glass leans in more), and the bottom tucks under. u runs along the car
+// (front +), y is height. A real car's shape instead of a slab.
+function bodyFit(body, s) {
+  const half = s.L / 2;
+  const tall = body === "truck" || body === "suv";
+  const shoulder = body === "truck" ? 0.03 : tall ? 0.05 : 0.07;
+  const glassLean = body === "truck" ? 0.08 : tall ? 0.1 : 0.15;
+  return (u, y) => {
+    const end = smooth(0.72, 1.02, Math.abs(u) / half);
+    let k = 1 - (u > 0 ? (tall ? 0.06 : 0.1) : tall ? 0.04 : 0.06) * end * end;
+    if (y <= s.belt + 0.02) k *= 1 - shoulder * smooth(s.belt - 0.35, s.belt + 0.02, y);
+    else k *= (1 - shoulder) * (1 - glassLean * smooth(s.belt, s.roof, y));
+    k *= 1 - 0.05 * (1 - smooth(s.clear + 0.08, s.clear + 0.35, y));
+    return k;
+  };
+}
+
+// A side profile, sampled densely so the shape can be bent smoothly (a
+// straight line would otherwise be just its two ends).
+function densify(shape) {
+  const pts = [];
+  for (const c of shape.curves) {
+    const n = c.isLineCurve ? Math.max(1, Math.ceil(c.getLength() / 0.1)) : 16;
+    const p = c.getPoints(n);
+    pts.push(...(pts.length ? p.slice(1) : p));
+  }
+  return new THREE.Shape(pts.slice(0, -1));
+}
+
+// Split every edge longer than `max` (an indexed mesh), the same way on both
+// triangles that share it, so the surface stays closed with no hairline
+// cracks once it's bent.
+function refine(geo, max) {
+  const pos = Array.from(geo.getAttribute("position").array);
+  let idx = Array.from(geo.index.array);
+  const max2 = max * max;
+  const long = (a, b) => (pos[a * 3] - pos[b * 3]) ** 2 + (pos[a * 3 + 1] - pos[b * 3 + 1]) ** 2 + (pos[a * 3 + 2] - pos[b * 3 + 2]) ** 2 > max2;
+  for (let pass = 0; pass < 8; pass++) {
+    const mids = new Map();
+    const key = (a, b) => (a < b ? a * 1e7 + b : b * 1e7 + a);
+    for (let i = 0; i < idx.length; i += 3) {
+      for (let e = 0; e < 3; e++) {
+        const a = idx[i + e];
+        const b = idx[i + ((e + 1) % 3)];
+        const k = key(a, b);
+        if (!mids.has(k) && long(a, b)) {
+          mids.set(k, pos.length / 3);
+          pos.push((pos[a * 3] + pos[b * 3]) / 2, (pos[a * 3 + 1] + pos[b * 3 + 1]) / 2, (pos[a * 3 + 2] + pos[b * 3 + 2]) / 2);
+        }
+      }
+    }
+    if (!mids.size) break;
+    const out = [];
+    for (let i = 0; i < idx.length; i += 3) {
+      const t = [idx[i], idx[i + 1], idx[i + 2]];
+      const m = [0, 1, 2].map((e) => mids.get(key(t[e], t[(e + 1) % 3])));
+      const n = m.filter((x) => x !== undefined).length;
+      if (n === 0) out.push(...t);
+      else if (n === 3) out.push(t[0], m[0], m[2], m[0], t[1], m[1], m[2], m[1], t[2], m[0], m[1], m[2]);
+      else {
+        // Turn the triangle so its first edge is split (and, with two, the
+        // second one too), then cut it the one way that fits.
+        let r = 0;
+        if (n === 1) r = m.findIndex((x) => x !== undefined);
+        else r = m[0] !== undefined && m[1] !== undefined ? 0 : m[1] !== undefined && m[2] !== undefined ? 1 : 2;
+        const [a, b, c] = [t[r], t[(r + 1) % 3], t[(r + 2) % 3]];
+        const ab = m[r];
+        if (n === 1) out.push(a, ab, c, ab, b, c);
+        else {
+          const bc = m[(r + 1) % 3];
+          out.push(ab, b, bc, a, ab, bc, a, bc, c);
+        }
+      }
+    }
+    idx = out;
+  }
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+}
+
+// sculpt(pos): bends the extruded slab (x across the car, y up, z = -u).
+// fine: cut the big flat faces into small pieces first, so they bend
+// smoothly too (more triangles: only for your own car).
+function extrude(shape, depth, bevel, sculpt = null, fine = false) {
+  let geo = new THREE.ExtrudeGeometry(sculpt ? densify(shape) : shape, {
     depth: Math.max(0.01, depth - bevel * 2),
     bevelEnabled: true,
     bevelThickness: bevel,
@@ -169,12 +261,27 @@ function extrude(shape, depth, bevel) {
   // car points down -z (away from the camera).
   geo.translate(0, 0, -(depth - bevel * 2) / 2);
   geo.rotateY(Math.PI / 2);
+  if (sculpt) {
+    // Shared corners, so the surface shades smooth instead of faceted.
+    geo.deleteAttribute("normal");
+    geo.deleteAttribute("uv");
+    geo = mergeVertices(geo, 1e-4);
+    if (fine) refine(geo, 0.14);
+    const pos = geo.getAttribute("position");
+    const v = new THREE.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i);
+      sculpt(v);
+      pos.setXYZ(i, v.x, v.y, v.z);
+    }
+  }
   geo.computeVertexNormals();
   return geo;
 }
 
-function bodyGeometries(body) {
-  if (geoCache.has(body)) return geoCache.get(body);
+function bodyGeometries(body, fine = false) {
+  const cacheKey = `${body}:${fine}`;
+  if (geoCache.has(cacheKey)) return geoCache.get(cacheKey);
   const s = SHAPES[body] || SHAPES.coupe;
   const half = s.L / 2;
   const wheelR = body === "truck" ? 0.44 : body === "suv" ? 0.41 : 0.34;
@@ -195,13 +302,18 @@ function bodyGeometries(body) {
     lower.lineTo(s.glassRear - 0.05, s.deck + 0.02);
   }
   lower.lineTo(s.glassFront + 0.1, s.belt + 0.02);
-  lower.quadraticCurveTo(half - 0.1, s.belt - 0.08, half, s.belt - 0.2);
+  // The hood runs down to a low nose (less so on trucks and SUVs).
+  const low = body === "truck" || body === "suv" ? 0.2 : 0.27;
+  lower.quadraticCurveTo(half - 0.15, s.belt - 0.08, half, s.belt - low);
   lower.lineTo(half + 0.03, bottom + 0.15);
   lower.lineTo(half - 0.1, bottom);
-  lower.lineTo(axle + wheelR + 0.08, bottom);
-  lower.absarc(axle, wheelR, wheelR + 0.08, 0, Math.PI, false);
-  lower.lineTo(-axle + wheelR + 0.08, bottom);
-  lower.absarc(-axle, wheelR, wheelR + 0.08, 0, Math.PI, false);
+  // The arches are cut wide: the body's rounded edge rolls them back in
+  // over the tire, like a real fender lip.
+  const archR = wheelR + ARCH_GAP;
+  lower.lineTo(axle + archR, bottom);
+  lower.absarc(axle, wheelR, archR, 0, Math.PI, false);
+  lower.lineTo(-axle + archR, bottom);
+  lower.absarc(-axle, wheelR, archR, 0, Math.PI, false);
   lower.lineTo(-half + 0.05, bottom);
 
   // Greenhouse (glass) and the painted roof on top of it.
@@ -226,22 +338,47 @@ function bodyGeometries(body) {
   roof.quadraticCurveTo(s.roofFront, s.roof + 0.03, s.roofFront + 0.08, s.roof - 0.05);
   roof.lineTo(s.roofRear - 0.02, s.roof - 0.05);
 
+  const fit = bodyFit(body, s);
+  const hood = (v, hw) => {
+    // The hood, deck and roof crown a little in the middle.
+    const top = smooth(s.belt - 0.12, s.belt, v.y);
+    v.y += 0.025 * top * (1 - Math.min(1, (v.x / hw) ** 2));
+  };
   const geos = {
     s,
     wheelR,
     axle,
-    lower: extrude(lower, s.W, 0.14),
-    cabin: extrude(cabin, s.W * s.cabinW, 0.1),
-    roof: extrude(roof, s.W * s.cabinW - 0.04, 0.05),
+    fit,
+    lower: extrude(
+      lower,
+      s.W,
+      0.14,
+      (v) => {
+        hood(v, s.W / 2);
+        v.x *= fit(-v.z, v.y);
+      },
+      fine
+    ),
+    cabin: extrude(cabin, s.W * s.cabinW, 0.1, (v) => {
+      v.x *= fit(-v.z, v.y);
+    }, fine),
+    roof: extrude(roof, s.W * s.cabinW - 0.04, 0.05, (v) => {
+      const hw = (s.W * s.cabinW) / 2;
+      v.x *= fit(-v.z, Math.min(v.y, s.roof));
+      v.y += 0.035 * (1 - Math.min(1, (v.x / hw) ** 2));
+    }, fine),
     tire: new THREE.CylinderGeometry(wheelR, wheelR, 0.26, 28).rotateZ(Math.PI / 2),
-    rim: new THREE.CylinderGeometry(wheelR * 0.68, wheelR * 0.68, 0.02, 24).rotateZ(Math.PI / 2),
+    // Rounded sidewall where the tire meets the rim.
+    sidewall: new THREE.TorusGeometry(wheelR * 0.86, wheelR * 0.13, 10, 32).rotateY(Math.PI / 2),
+    rim: new THREE.CylinderGeometry(wheelR * 0.72, wheelR * 0.72, 0.02, 24).rotateZ(Math.PI / 2),
+    disc: new THREE.CylinderGeometry(wheelR * 0.56, wheelR * 0.56, 0.025, 24).rotateZ(Math.PI / 2),
   };
   // Truck: the open bed between the back of the cab and the tailgate.
   if (body === "truck") {
     geos.bedLen = half + s.cabBack - 0.05;
     geos.bedZ = half - geos.bedLen / 2 + 0.05;
   }
-  geoCache.set(body, geos);
+  geoCache.set(cacheKey, geos);
   return geos;
 }
 
@@ -253,6 +390,9 @@ const MAT = {
   rim: new THREE.MeshStandardMaterial({ color: 0xb8bcc4, roughness: 0.18, metalness: 1 }),
   chrome: new THREE.MeshStandardMaterial({ color: 0xe5e7eb, roughness: 0.08, metalness: 1 }),
   hole: new THREE.MeshBasicMaterial({ color: 0x050505 }),
+  disc: new THREE.MeshStandardMaterial({ color: 0x6b6f76, roughness: 0.35, metalness: 0.9 }),
+  caliper: new THREE.MeshStandardMaterial({ color: 0xc81e1e, roughness: 0.35, metalness: 0.2 }),
+  seam: new THREE.MeshBasicMaterial({ color: 0x0b0b0c }),
   tail: new THREE.MeshStandardMaterial({ color: 0x400000, emissive: 0xff1a1a, emissiveIntensity: 2.2, roughness: 0.3 }),
   tailDim: new THREE.MeshStandardMaterial({ color: 0x5a0a0a, emissive: 0xff2020, emissiveIntensity: 0.6, roughness: 0.2 }),
   shadow: null,
@@ -293,7 +433,7 @@ export const RIDE_DROP = { stock: 0, lowered: 0.06, slammed: 0.11, lifted: -0.14
 // stays plain. rims: wheel finish (RIM_COLORS); height: ride height
 // (RIDE_DROP).
 export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport = false, spoiler = "lip", rims = "silver", height = "stock", brand = "generic" }) {
-  const g = bodyGeometries(body);
+  const g = bodyGeometries(body, sport);
   const s = g.s;
   const half = s.L / 2;
   const car = new THREE.Group();
@@ -307,34 +447,42 @@ export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport 
     car.add(m);
   }
 
-  // Wheels. Your car's have five spokes round a dark hub.
+  // Wheels, out flush with the body. Your car's have five spokes round a
+  // hub, with the brake disc and caliper showing through.
   const wheelParts = [];
   const rimM = sport ? rimMat(rims) : MAT.rim;
   for (const z of [-g.axle, g.axle]) {
     for (const side of [-1, 1]) {
       const tire = new THREE.Mesh(g.tire, MAT.tire);
-      tire.position.set(side * (s.W / 2 - 0.16), g.wheelR, z);
+      tire.position.set(side * (s.W / 2 - 0.13), g.wheelR, z);
       tire.castShadow = true;
       car.add(tire);
       wheelParts.push(tire);
-      const x = side * (s.W / 2 - 0.02);
+      const x = side * (s.W / 2 - 0.005);
       if (sport) {
+        const wall = new THREE.Mesh(g.sidewall, MAT.tire);
+        wall.position.set(x - side * 0.03, g.wheelR, z);
         const face = new THREE.Mesh(g.rim, MAT.hole);
-        face.position.set(x - side * 0.005, g.wheelR, z);
-        car.add(face);
-        wheelParts.push(face);
+        face.position.set(x - side * 0.1, g.wheelR, z);
+        const disc = new THREE.Mesh(g.disc, MAT.disc);
+        disc.position.set(x - side * 0.07, g.wheelR, z);
+        // The caliper grips the disc at the top, toward the middle of the car.
+        const caliper = box(0.07, g.wheelR * 0.42, g.wheelR * 0.26, MAT.caliper, x - side * 0.05, g.wheelR + g.wheelR * 0.36, z + Math.sign(z) * g.wheelR * 0.12);
+        caliper.rotation.x = Math.sign(z) * 0.5;
+        car.add(wall, face, disc, caliper);
+        wheelParts.push(wall, face, disc, caliper);
         for (let k = 0; k < 5; k++) {
-          const spoke = box(0.03, g.wheelR * 0.62, 0.075, rimM, 0, 0, 0);
+          const spoke = box(0.035, g.wheelR * 0.68, 0.07, rimM, 0, 0, 0);
           const a = (k / 5) * Math.PI * 2;
-          spoke.position.set(x + side * 0.005, g.wheelR + Math.cos(a) * g.wheelR * 0.33, z + Math.sin(a) * g.wheelR * 0.33);
+          spoke.position.set(x - side * 0.01, g.wheelR + Math.cos(a) * g.wheelR * 0.36, z + Math.sin(a) * g.wheelR * 0.36);
           spoke.rotation.x = a;
           car.add(spoke);
           wheelParts.push(spoke);
         }
-        const lip = new THREE.Mesh(new THREE.TorusGeometry(g.wheelR * 0.66, 0.025, 6, 24).rotateY(Math.PI / 2), rimM);
-        lip.position.set(x + side * 0.006, g.wheelR, z);
+        const lip = new THREE.Mesh(new THREE.TorusGeometry(g.wheelR * 0.72, 0.022, 6, 28).rotateY(Math.PI / 2), rimM);
+        lip.position.set(x, g.wheelR, z);
         const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.03, 12).rotateZ(Math.PI / 2), rimM);
-        hub.position.set(x + side * 0.01, g.wheelR, z);
+        hub.position.set(x, g.wheelR, z);
         car.add(lip, hub);
         wheelParts.push(lip, hub);
       } else {
@@ -420,8 +568,7 @@ export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport 
     car.add(box(roofW + 0.04, 0.06, 0.32, sport && spoiler === "wing" ? MAT.carbon : paintMat, 0, s.roof + 0.02, -s.roofRear + 0.06));
     const railLen = s.roofFront - s.roofRear - 0.3;
     for (const side of [-1, 1]) car.add(box(0.05, 0.05, railLen, MAT.rim, side * (roofW / 2 - 0.1), s.roof + 0.08, -(s.roofRear + s.roofFront) / 2));
-    // Black arch trim, a dark lower bumper and a silver skid plate.
-    for (const side of [-1, 1]) car.add(box(0.1, 0.42, 1.05, MAT.trim, side * (s.W / 2 + 0.02), g.wheelR + 0.12, g.axle));
+    // A dark lower bumper and a silver skid plate.
     const by = s.clear + 0.22;
     car.add(box(s.W - 0.2, 0.28, 0.16, MAT.trim, 0, by, rear - 0.05));
     car.add(box(0.95, 0.1, 0.06, MAT.chrome, 0, by - 0.08, rear + 0.04));
@@ -471,6 +618,8 @@ export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport 
     }
   }
 
+  if (sport) buildSides(car, s, g, body);
+
   // The front end: lights, grille and intake, in the brand's style.
   if (sport) buildFront(car, s, half, body, brand, paintMat, g.wheelR);
 
@@ -508,6 +657,38 @@ export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport 
   shadow.rotation.x = -Math.PI / 2;
   shadow.position.y = 0.06;
 
+  // Bolt-on parts follow the body's curves: pulled in where the nose, tail
+  // and glass narrow, then the lights, grilles, seams and trim on the
+  // nose, tail and sides set onto the painted surface itself.
+  lower.updateMatrixWorld();
+  const ray = new THREE.Raycaster();
+  const hit = (from, dir) => {
+    ray.set(from, dir);
+    return ray.intersectObject(lower, false)[0]?.point || null;
+  };
+  const from = new THREE.Vector3();
+  const dir = new THREE.Vector3();
+  for (const part of car.children) {
+    if (part === lower || part === cabin || part === roof || wheelParts.includes(part)) continue;
+    const p = part.position;
+    const k = g.fit(-p.z, p.y);
+    p.x *= k;
+    part.scale.x *= k;
+    if (!sport || p.y > s.belt + 0.02) continue;
+    if (Math.abs(p.z) >= half - 0.12) {
+      // Nose or tail: designed against a flat face at `ref`.
+      const sign = Math.sign(p.z);
+      const ref = sign < 0 ? -(half + 0.16) : rear;
+      const at = hit(from.set(p.x, p.y, sign * 20), dir.set(0, 0, -sign));
+      if (at) p.z = at.z + (p.z - ref);
+    } else if (Math.abs(p.x) >= (s.W / 2) * k - 0.1) {
+      // Sides: designed against a flat side at W/2.
+      const sign = Math.sign(p.x);
+      const at = hit(from.set(sign * 20, p.y, p.z), dir.set(-sign, 0, 0));
+      if (at) p.x = at.x + (p.x / k - (sign * s.W) / 2);
+    }
+  }
+
   // Ride height: everything but the wheels (and the shadow) moves.
   const drop = sport ? RIDE_DROP[height] || 0 : 0;
   if (drop) for (const part of car.children) if (!wheelParts.includes(part)) part.position.y -= drop;
@@ -520,6 +701,48 @@ export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport 
   return car;
 }
 
+// Side skirts, the window line, door seams and handles: the small things
+// that make it read as a real car instead of a toy.
+function buildSides(car, s, g, body) {
+  const archR = g.wheelR + ARCH_GAP;
+  const fourDoor = body === "sedan" || body === "suv" || body === "truck";
+  const doors = {
+    coupe: [s.glassFront - 0.05, s.roofRear + 0.05],
+    hatch: [s.glassFront - 0.05, s.roofFront - 0.85],
+    sedan: [s.glassFront - 0.05, (s.roofFront + s.roofRear) / 2, s.roofRear - 0.25],
+    suv: [s.glassFront - 0.05, (s.roofFront + s.roofRear) / 2 + 0.2, s.roofRear + 1.25],
+    truck: [s.glassFront - 0.05, 0.65, s.cabBack + 0.07],
+  }[body] || [];
+  // Where the arch is under a point along the car, so seams stop above it.
+  const archTop = (u) => {
+    let y = s.clear + 0.24;
+    for (const a of [g.axle, -g.axle]) if (Math.abs(u - a) < archR) y = Math.max(y, g.wheelR + Math.sqrt(archR * archR - (u - a) ** 2) + 0.04);
+    return y;
+  };
+  const top = s.belt - 0.05;
+  const skirt = 2 * (g.axle - archR) - 0.06;
+  const trimMat = fourDoor ? MAT.chrome : MAT.trim;
+  for (const side of [-1, 1]) {
+    const edge = side * (s.W / 2 + 0.004);
+    // Black skirt along the bottom between the wheels.
+    car.add(box(0.07, 0.09, skirt, MAT.trim, side * (s.W / 2 - 0.01), s.clear + 0.14, 0));
+    // Shut lines, drawn in short pieces so they follow the curved side.
+    for (const u of doors) {
+      const y0 = archTop(u);
+      if (y0 > top - 0.12) continue;
+      const n = 8;
+      const h = (top - y0) / n;
+      for (let k = 0; k < n; k++) car.add(box(0.012, h + 0.005, 0.012, MAT.seam, edge, y0 + h * (k + 0.5), -u));
+    }
+    // A handle at the back of each door.
+    for (let i = 1; i < doors.length; i++) car.add(box(0.03, 0.035, 0.16, trimMat, side * (s.W / 2 + 0.012), s.belt - 0.13, -(doors[i] + 0.18)));
+    // The window line: a strip along the bottom of the side glass.
+    const front = body === "truck" ? s.glassFront - 0.1 : s.glassFront - 0.15;
+    const back = body === "truck" ? s.cabBack + 0.05 : s.glassRear + 0.35;
+    car.add(box(0.03, 0.035, front - back, trimMat, side * ((s.W * s.cabinW) / 2 + 0.012), s.belt + 0.05, -(front + back) / 2));
+  }
+}
+
 // ---------- the front end, by brand ----------
 
 const FRONT = {
@@ -528,6 +751,7 @@ const FRONT = {
   gold: new THREE.MeshStandardMaterial({ color: 0xd4a72c, metalness: 1, roughness: 0.25 }),
   red: new THREE.MeshStandardMaterial({ color: 0xc81e1e, roughness: 0.4 }),
   blue: new THREE.MeshStandardMaterial({ color: 0x1d4ed8, emissive: 0x1d4ed8, emissiveIntensity: 0.4 }),
+  lens: new THREE.MeshPhysicalMaterial({ color: 0x1a1d22, roughness: 0.08, metalness: 0.3, clearcoat: 1, clearcoatRoughness: 0.02 }),
 };
 
 // Grilles, lights and badges on the nose (the car faces -z). Simple shapes
@@ -537,7 +761,7 @@ function buildFront(car, s, half, body, brand, paintMat, wheelR) {
   const z = -(half + 0.16); // the nose
   const zl = -(half + 0.18); // the bumper, a touch further out
   const W = s.W;
-  const lightY = s.belt - 0.2 * tall;
+  const lightY = s.belt - (tall === 1 ? 0.28 : 0.2 * tall);
   const grilleY = s.clear + 0.42 * tall;
   const add = (w, h, d, mat, x, y, zz = z, rz = 0) => {
     const m = box(w, h, d, mat, x, y, zz);
@@ -552,16 +776,27 @@ function buildFront(car, s, half, body, brand, paintMat, wheelR) {
     return m;
   };
   const disc = (r, mat, x, y) => {
+    if (mat === FRONT.light) {
+      // A round light: dark lens round a bright center.
+      const lens = new THREE.Mesh(new THREE.CylinderGeometry(r * 1.15, r * 1.15, 0.04, 28).rotateX(Math.PI / 2), FRONT.lens);
+      lens.position.set(x, y, z + 0.005);
+      car.add(lens);
+      r *= 0.7;
+    }
     const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.05, 24).rotateX(Math.PI / 2), mat);
     m.position.set(x, y, z - 0.01);
     car.add(m);
     return m;
   };
   const lx = W / 2 - 0.34;
+  // Headlights: a dark glass housing with the bright light inside.
   const lights = (w = 0.42, h = 0.09) => {
-    for (const side of [-1, 1]) add(w, h, 0.05, FRONT.light, side * lx, lightY);
+    for (const side of [-1, 1]) {
+      add(w + 0.07, h + 0.07, 0.04, FRONT.lens, side * lx, lightY, z + 0.012);
+      add(w, h * 0.6, 0.05, FRONT.light, side * lx, lightY);
+    }
   };
-  const intake = (w = W - 0.6, h = 0.14) => add(w, h * tall, 0.05, MAT.hole, 0, s.clear + 0.2 * tall, zl);
+  const intake = (w = W - 0.6, h = 0.14) => add(w, h * tall, 0.05, MAT.trim, 0, s.clear + 0.2 * tall, zl);
   // A grille: a dark panel in a chrome (or dark) frame.
   const grille = (w, h, y = grilleY, frame = MAT.chrome) => {
     add(w + 0.05, h + 0.05, 0.04, frame, 0, y, z + 0.01);

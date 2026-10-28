@@ -14,12 +14,12 @@ export const carName = (v) => (v ? [v.year, v.make, v.model].filter(Boolean).joi
 
 // The stage. 3D unless `flat` (or the phone can't do 3D): then a drawing of
 // the car from behind, the way TUNR Rush's classic graphics show it.
-export function ShowroomStage({ look, plate = "", flat = false, interactive = true, style }) {
+export function ShowroomStage({ look, plate = "", flat = false, interactive = true, insets = null, style }) {
   const wrap = useRef(null);
   const canvas = useRef(null);
   const view = useRef(null);
-  const latest = useRef({ look, plate });
-  latest.current = { look, plate };
+  const latest = useRef({ look, plate, insets });
+  latest.current = { look, plate, insets };
   const [mode, setMode] = useState(flat ? "2d" : "3d");
   const [why, setWhy] = useState("");
   useEffect(() => setMode(flat ? "2d" : "3d"), [flat]);
@@ -45,6 +45,7 @@ export function ShowroomStage({ look, plate = "", flat = false, interactive = tr
         fit();
         ro = new ResizeObserver(fit);
         ro.observe(wrap.current);
+        if (latest.current.insets) view.current.setInsets(latest.current.insets);
         view.current.show({ ...latest.current.look, plate: latest.current.plate });
       })
       .catch((e) => {
@@ -59,6 +60,11 @@ export function ShowroomStage({ look, plate = "", flat = false, interactive = tr
     };
   }, [mode, interactive]);
 
+  const insetKey = insets ? `${insets.top || 0},${insets.bottom || 0},${insets.right || 0}` : "";
+  useEffect(() => {
+    if (insets) view.current?.setInsets(insets);
+  }, [insetKey]);
+
   useEffect(() => {
     if (mode === "3d") {
       view.current?.show({ ...look, plate });
@@ -72,28 +78,33 @@ export function ShowroomStage({ look, plate = "", flat = false, interactive = tr
     c.height = r.height * dpr;
     const ctx = c.getContext("2d");
     ctx.scale(dpr, dpr);
+    // The same bright garage, flat: wall, floor, turntable, the car.
+    const top = insets?.top || 0;
+    const vw = r.width - (insets?.right || 0);
+    const vh = r.height - top - (insets?.bottom || 0);
+    const base = top + vh * 0.84;
     const g = ctx.createLinearGradient(0, 0, 0, r.height);
-    g.addColorStop(0, "#1b1e24");
-    g.addColorStop(0.62, "#0f1115");
-    g.addColorStop(0.62, "#202329");
-    g.addColorStop(1, "#121418");
+    g.addColorStop(0, "#f1f3f6");
+    g.addColorStop(base / r.height - 0.12, "#e3e6ea");
+    g.addColorStop(base / r.height - 0.12, "#cfd3d9");
+    g.addColorStop(1, "#b9bec6");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, r.width, r.height);
-    ctx.strokeStyle = "#0080F0";
+    ctx.strokeStyle = "#3aa0ff";
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.ellipse(r.width / 2, r.height * 0.86, r.width * 0.34, r.height * 0.07, 0, 0, Math.PI * 2);
+    ctx.ellipse(vw / 2, base, vw * 0.34, vh * 0.07, 0, 0, Math.PI * 2);
     ctx.stroke();
-    const w = Math.min(r.width * 0.55, 240);
-    drawCar(ctx, r.width / 2, r.height * 0.86, w, { ...look, plate, sport: true });
-  }, [mode, look.color, look.body, look.spoiler, look.rims, look.height, plate]);
+    const w = Math.min(vw * 0.55, 240);
+    drawCar(ctx, vw / 2, base, w, { ...look, plate, sport: true });
+  }, [mode, look.color, look.body, look.spoiler, look.rims, look.height, plate, insetKey]);
 
   return (
-    <div ref={wrap} style={{ position: "relative", overflow: "hidden", background: "#0c0e12", ...style }}>
+    <div ref={wrap} style={{ position: "relative", overflow: "hidden", background: "#e9ecf0", ...style }}>
       {/* A canvas can't switch between 3D and 2D drawing, so each mode gets its own. */}
       <canvas key={mode} ref={canvas} aria-label="Your car in the garage" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }} />
       {why && (
-        <div style={{ position: "absolute", left: 8, right: 8, bottom: 6, fontSize: 11, color: "#9AA4B2", fontFamily: "'Barlow', sans-serif", textAlign: "center" }}>
+        <div style={{ position: "absolute", left: 8, right: 8, top: (insets?.top || 0) + 6, fontSize: 11, color: "#5b6370", fontFamily: "'Barlow', sans-serif", textAlign: "center" }}>
           {why}
         </div>
       )}
@@ -288,14 +299,108 @@ function useWide() {
   return wide;
 }
 
-const tag = (color) => ({ fontSize: 10.5, fontWeight: 900, letterSpacing: 1, padding: "2px 7px", borderRadius: 4, background: color, color: "#fff" });
+const tag = (color) => ({ fontSize: 10.5, fontWeight: 900, letterSpacing: 1, padding: "3px 8px", borderRadius: 5, background: color, color: "#fff" });
 
-// The full-screen garage. editable: it's your garage (restyle, edit, sticker,
-// main car, drive); otherwise you're looking at someone else's.
+const GAMES = [
+  ["drift", "🏎️", "Drift King"],
+  ["ball", "⚽", "Turbo Ball"],
+  ["park", "🅿️", "Park Up"],
+  ["karts", "🛞", "Boosted Karts"],
+];
+
+// The game-style tuner: pick a part (Paint, Body, Wing, Wheels, Stance),
+// then flip through it with ◀ ▶ — or tap a swatch for paint.
+const PARTS = [
+  ["color", "Paint", GAME_COLORS, COLOR_NAMES],
+  ["body", "Body", BODIES, BODY_NAMES],
+  ["spoiler", "Wing", SPOILERS, SPOILER_NAMES],
+  ["rims", "Wheels", RIMS, RIM_NAMES],
+  ["height", "Stance", HEIGHTS, HEIGHT_NAMES],
+];
+export function Tuner({ look, onChange }) {
+  const [part, setPart] = useState("color");
+  const [key, name, list, names] = PARTS.find((p) => p[0] === part);
+  const noWing = key === "spoiler" && look.body === "truck";
+  const at = list.indexOf(look[key]);
+  const step = (dir) => onChange({ [key]: list[(((at < 0 ? 0 : at + dir) % list.length) + list.length) % list.length] });
+  const value = noWing ? "Not on trucks" : names[look[key]] || (key === "color" ? "Custom" : look[key]);
+  const round = { width: 44, height: 44, flexShrink: 0, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.08)", color: "#fff", fontSize: 15, cursor: "pointer", padding: 0 };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div role="tablist" aria-label="Parts" style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.06)", borderRadius: 999, padding: 3 }}>
+        {PARTS.map(([k, n]) => (
+          <button
+            key={k}
+            role="tab"
+            aria-selected={part === k}
+            onClick={() => setPart(k)}
+            style={{ flex: 1, padding: "7px 0", borderRadius: 999, border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase", background: part === k ? "#fff" : "transparent", color: part === k ? "#0b0d11" : "#9AA4B2", fontFamily: "'Barlow Condensed', sans-serif" }}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+      {key === "color" ? (
+        <div>
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "4px 2px", scrollbarWidth: "none", alignItems: "center" }}>
+            {GAME_COLORS.map((c) => (
+              <button
+                key={c}
+                aria-label={`${COLOR_NAMES[c]} paint`}
+                aria-pressed={look.color === c}
+                onClick={() => onChange({ color: c })}
+                style={{ width: 34, height: 34, flexShrink: 0, borderRadius: "50%", cursor: "pointer", padding: 0, background: `radial-gradient(circle at 35% 30%, rgba(255,255,255,0.55), transparent 45%), ${c}`, border: look.color === c ? "3px solid #fff" : "1px solid rgba(255,255,255,0.25)", boxShadow: look.color === c ? "0 0 0 2px #0080F0" : "none", boxSizing: "border-box" }}
+              />
+            ))}
+            <OtherColor color={look.color} onChange={(c) => onChange({ color: c })} size={34} />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+            <button aria-label="Previous paint" onClick={() => step(-1)} style={{ ...round, width: 34, height: 34, fontSize: 12 }}>
+              ◀
+            </button>
+            <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: 0.5 }}>{value}</span>
+            <button aria-label="Next paint" onClick={() => step(1)} style={{ ...round, width: 34, height: 34, fontSize: 12 }}>
+              ▶
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button aria-label={`Previous ${name.toLowerCase()}`} disabled={noWing} onClick={() => step(-1)} style={{ ...round, opacity: noWing ? 0.3 : 1 }}>
+            ◀
+          </button>
+          <div style={{ flex: 1, textAlign: "center" }}>
+            <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 0.5, lineHeight: 1.1 }}>{value}</div>
+            {!noWing && (
+              <div aria-hidden="true" style={{ display: "flex", justifyContent: "center", gap: 5, marginTop: 6 }}>
+                {list.map((v) => (
+                  <span key={v} style={{ width: v === look[key] ? 18 : 6, height: 6, borderRadius: 3, background: v === look[key] ? "#FACC15" : "rgba(255,255,255,0.25)", transition: "width 0.15s" }} />
+                ))}
+              </div>
+            )}
+          </div>
+          <button aria-label={`Next ${name.toLowerCase()}`} disabled={noWing} onClick={() => step(1)} style={{ ...round, opacity: noWing ? 0.3 : 1 }}>
+            ▶
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// The full-screen garage, styled like a racing game's: your car fills the
+// screen in a bright studio, the name and stats over it, and one dark glass
+// panel at the bottom (on wide screens, the right) with the tuner, DRIVE
+// and your cars. editable: it's your garage (restyle, edit, sticker, main
+// car, drive); otherwise you're looking at someone else's.
 export function GarageShowroom({ title, cars, startId, plate = "", editable = false, onClose, onLook, onEdit, onSticker, onMakeMain, onAdd, onDrive }) {
   const [selectedId, setSelectedId] = useState(startId || cars.find((c) => c.is_primary)?.id || cars[0]?.id || null);
   const [tab, setTab] = useState(editable ? "style" : "info");
+  const [games, setGames] = useState(false);
+  const [insets, setInsets] = useState({ top: 150, bottom: 0, right: 0 });
   const wide = useWide();
+  const sheet = useRef(null);
+  const head = useRef(null);
   const car = cars.find((c) => c.id === selectedId) || cars[0] || null;
   const look = lookOf(car);
 
@@ -305,96 +410,115 @@ export function GarageShowroom({ title, cars, startId, plate = "", editable = fa
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  // Keep the car in the part of the screen the menus leave open.
+  useEffect(() => {
+    const measure = () => {
+      const s = sheet.current?.getBoundingClientRect();
+      const t = head.current?.getBoundingClientRect();
+      if (!s) return;
+      const next = wide ? { top: t ? t.bottom : 0, bottom: 0, right: window.innerWidth - s.left } : { top: t ? t.bottom : 0, bottom: window.innerHeight - s.top, right: 0 };
+      setInsets((old) => (old.top === next.top && old.bottom === next.bottom && old.right === next.right ? old : next));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (sheet.current) ro.observe(sheet.current);
+    if (head.current) ro.observe(head.current);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [wide, !!car]);
+
+  const glassBtn = { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "#F0F0F0", borderRadius: 12, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, letterSpacing: 0.8 };
   const tabBtn = (id, name) => (
     <button
       key={id}
+      role="tab"
+      aria-selected={tab === id}
       onClick={() => setTab(id)}
-      aria-pressed={tab === id}
-      style={{ padding: "7px 14px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 900, letterSpacing: 1, background: tab === id ? "#F0F0F0" : "#1b1f26", color: tab === id ? "#0A0A0A" : "#B9C2CF", fontFamily: "'Barlow Condensed', sans-serif" }}
+      style={{ background: "none", border: "none", padding: "2px 0 6px", cursor: "pointer", fontSize: 15, fontWeight: 900, letterSpacing: 1.5, color: tab === id ? "#fff" : "#6B7480", borderBottom: tab === id ? "3px solid #FACC15" : "3px solid transparent", fontFamily: "'Barlow Condensed', sans-serif" }}
     >
       {name}
     </button>
   );
 
-  const panel = car && (
+  const infoPanel = car && (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {editable && <div style={{ display: "flex", gap: 6 }}>{[tabBtn("style", "STYLE"), tabBtn("info", "INFO")]}</div>}
-      {tab === "style" && editable ? (
-        <>
-          <StyleRows look={look} onChange={(patch) => onLook(car, { ...look, ...patch })} />
-          <div style={{ fontSize: 11.5, color: "#7D8796", fontFamily: "'Barlow', sans-serif" }}>Your style shows here, on your profile, and on your car in TUNR Rush.</div>
-        </>
+      {car.build_notes ? (
+        <div style={{ fontSize: 13.5, color: "#C9D1DC", fontFamily: "'Barlow', sans-serif", lineHeight: 1.5 }}>{car.build_notes}</div>
       ) : (
-        <>
-          {car.build_notes ? (
-            <div style={{ fontSize: 13.5, color: "#C9D1DC", fontFamily: "'Barlow', sans-serif", lineHeight: 1.5 }}>{car.build_notes}</div>
-          ) : (
-            <div style={{ fontSize: 13, color: "#7D8796", fontFamily: "'Barlow', sans-serif" }}>No build notes yet.</div>
-          )}
-          {car.photo_url && <img src={car.photo_url} alt={`${carName(car)}, the real thing`} style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 10, border: "1px solid #2A2E36" }} />}
-          {editable && (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              <button className="action-btn" onClick={() => onEdit(car)} style={{ ...quietButton, flex: 1, padding: "10px 0", fontSize: 13 }}>
-                ✏️ EDIT DETAILS
-              </button>
-              <button className="action-btn" onClick={() => onSticker(car)} style={{ ...quietButton, flex: 1, padding: "10px 0", fontSize: 13, color: "#3CABFD" }}>
-                🔳 QR STICKER
-              </button>
-              {!car.is_primary && (
-                <button className="action-btn" onClick={() => onMakeMain(car)} style={{ ...quietButton, flex: 1, padding: "10px 0", fontSize: 13 }}>
-                  ★ MAKE MAIN
-                </button>
-              )}
-            </div>
-          )}
-        </>
+        <div style={{ fontSize: 13, color: "#7D8796", fontFamily: "'Barlow', sans-serif" }}>No build notes yet.</div>
       )}
-      {editable && onDrive && (
-        <>
-          <button
-            className="action-btn"
-            onClick={() => onDrive(car, "rush")}
-            style={{ padding: "13px 0", borderRadius: 10, border: "none", cursor: "pointer", background: "#FACC15", color: "#111", fontSize: 18, fontWeight: 900, letterSpacing: 1.5, fontFamily: "'Barlow Condensed', sans-serif" }}
-          >
-            🏁 DRIVE IN TUNR RUSH
+      {car.photo_url && <img src={car.photo_url} alt={`${carName(car)}, the real thing`} style={{ width: "100%", maxHeight: 160, objectFit: "cover", borderRadius: 12 }} />}
+      {editable && (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <button className="action-btn" onClick={() => onEdit(car)} style={{ ...glassBtn, flex: 1, padding: "10px 0", fontSize: 13 }}>
+            ✏️ EDIT DETAILS
           </button>
-          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#8A94A3" }}>OR PLAY IT IN</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 6 }}>
-            {[
-              ["drift", "🏎️ Drift King"],
-              ["ball", "⚽ Turbo Ball"],
-              ["park", "🅿️ Park Up"],
-              ["karts", "🛞 Boosted Karts"],
-            ].map(([game, name]) => (
-              <button key={game} className="action-btn" onClick={() => onDrive(car, game)} style={{ ...quietButton, padding: "10px 0", fontSize: 13.5 }}>
-                {name}
-              </button>
-            ))}
-          </div>
-        </>
+          <button className="action-btn" onClick={() => onSticker(car)} style={{ ...glassBtn, flex: 1, padding: "10px 0", fontSize: 13, color: "#7FC4FF" }}>
+            🔳 QR STICKER
+          </button>
+          {!car.is_primary && (
+            <button className="action-btn" onClick={() => onMakeMain(car)} style={{ ...glassBtn, flex: 1, padding: "10px 0", fontSize: 13 }}>
+              ★ MAKE MAIN
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
 
-  const info = car && (
-    <div style={{ position: "absolute", top: 10, left: 12, right: 12, pointerEvents: "none", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>
-      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+  const drive = editable && onDrive && car && (
+    <div style={{ position: "relative" }}>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          className="action-btn"
+          onClick={() => onDrive(car, "rush")}
+          aria-label="Drive in TUNR Rush"
+          style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: "none", cursor: "pointer", background: "linear-gradient(180deg, #FFDD3C, #F5B800)", color: "#111", boxShadow: "0 6px 20px rgba(250,204,21,0.25)", fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}
+        >
+          <span style={{ display: "block", fontSize: 21, fontWeight: 900, letterSpacing: 2 }}>DRIVE ›</span>
+          <span style={{ display: "block", fontSize: 11, fontWeight: 800, letterSpacing: 1.5, opacity: 0.7, marginTop: 2 }}>IN TUNR RUSH</span>
+        </button>
+        <button className="action-btn" onClick={() => setGames((g) => !g)} aria-expanded={games} aria-label="Play it in another game" style={{ ...glassBtn, width: 92, fontSize: 12.5, lineHeight: 1.15 }}>
+          🎮
+          <br />
+          MORE GAMES
+        </button>
+      </div>
+      {games && (
+        <div style={{ position: "absolute", right: 0, bottom: "calc(100% + 8px)", width: 210, background: "rgba(16,18,24,0.97)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, padding: 6, boxShadow: "0 12px 30px rgba(0,0,0,0.45)", zIndex: 2 }}>
+          {GAMES.map(([game, icon, name]) => (
+            <button key={game} className="action-btn" onClick={() => onDrive(car, game)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 10px", background: "none", border: "none", color: "#F0F0F0", fontSize: 16, fontWeight: 900, letterSpacing: 0.5, cursor: "pointer", borderRadius: 10, fontFamily: "'Barlow Condensed', sans-serif", textAlign: "left" }}>
+              <span style={{ fontSize: 20 }}>{icon}</span>
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // Name and stats, big and dark over the bright garage.
+  const hero = car && (
+    <div style={{ padding: "4px 18px 0", pointerEvents: "none" }}>
+      <div style={{ display: "flex", gap: 6, alignItems: "center", minHeight: 20 }}>
         {car.is_primary && <span style={tag("#0080F0")}>MAIN CAR</span>}
         {car.public_page && <span style={tag("#10B981")}>BUILD PAGE ON</span>}
       </div>
-      <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.05, marginTop: 4, textTransform: "uppercase" }}>
-        {car.make} {car.model}
-      </div>
-      <div style={{ display: "flex", gap: 14, marginTop: 6 }}>
+      <div style={{ fontSize: car.year ? 14 : 0, fontWeight: 800, color: "#5b6370", letterSpacing: 1.5, marginTop: 6 }}>{car.year} {String(car.make || "").toUpperCase()}</div>
+      <div style={{ fontSize: 34, fontWeight: 900, lineHeight: 0.95, color: "#0b0d11", textTransform: "uppercase", letterSpacing: -0.3 }}>{car.model || car.make}</div>
+      <div style={{ display: "flex", gap: 18, marginTop: 10 }}>
         {[
-          [car.year || "—", "Year"],
           [BODY_NAMES[look.body], "Body"],
           [COLOR_NAMES[look.color] || "Custom", "Paint"],
           [HEIGHT_NAMES[look.height], "Stance"],
+          [RIM_NAMES[look.rims], "Wheels"],
         ].map(([v, k]) => (
-          <div key={k}>
-            <div style={{ fontSize: 17, fontWeight: 900 }}>{v}</div>
-            <div style={{ fontSize: 10, color: "#9AA4B2", letterSpacing: 1, textTransform: "uppercase" }}>{k}</div>
+          <div key={k} style={{ borderLeft: "3px solid #FACC15", paddingLeft: 7 }}>
+            <div style={{ fontSize: 10, fontWeight: 800, color: "#6b7380", letterSpacing: 1.2, textTransform: "uppercase" }}>{k}</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: "#14171c", whiteSpace: "nowrap" }}>{v}</div>
           </div>
         ))}
       </div>
@@ -402,18 +526,22 @@ export function GarageShowroom({ title, cars, startId, plate = "", editable = fa
   );
 
   return (
-    <div role="dialog" aria-label={title} style={{ position: "fixed", inset: 0, zIndex: 420, background: "#0A0A0A", color: "#F0F0F0", display: "flex", flexDirection: "column", fontFamily: "'Barlow Condensed', sans-serif" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "calc(8px + env(safe-area-inset-top)) 12px 8px" }}>
-        <button onClick={onClose} aria-label="Close the garage" style={{ ...quietButton, width: 44, height: 44, padding: 0, fontSize: 18 }}>
-          ←
-        </button>
-        <div style={{ flex: 1, fontSize: 24, fontWeight: 900, letterSpacing: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</div>
-        <div style={{ fontSize: 13, fontWeight: 800, color: "#7D8796" }}>
-          {cars.length} {cars.length === 1 ? "CAR" : "CARS"}
+    <div role="dialog" aria-label={title} style={{ position: "fixed", inset: 0, zIndex: 420, background: "#e9ecf0", color: "#F0F0F0", fontFamily: "'Barlow Condensed', sans-serif", overflow: "hidden" }}>
+      {car && <ShowroomStage look={look} plate={plate} insets={insets} style={{ position: "absolute", inset: 0 }} />}
+      <div ref={head} style={{ position: "absolute", top: 0, left: 0, right: wide ? insets.right : 0, paddingTop: "calc(10px + env(safe-area-inset-top))", paddingBottom: 6, pointerEvents: "none" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 14px", pointerEvents: "auto" }}>
+          <button onClick={onClose} aria-label="Close the garage" style={{ width: 42, height: 42, borderRadius: "50%", border: "none", background: "#fff", color: "#0b0d11", fontSize: 18, fontWeight: 900, cursor: "pointer", boxShadow: "0 3px 12px rgba(0,0,0,0.18)" }}>
+            ←
+          </button>
+          <div style={{ flex: 1, fontSize: 15, fontWeight: 900, letterSpacing: 3, color: "#0b0d11", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textTransform: "uppercase" }}>{title}</div>
+          <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, color: "#0b0d11", background: "rgba(255,255,255,0.75)", borderRadius: 999, padding: "5px 11px" }}>
+            {cars.length} {cars.length === 1 ? "CAR" : "CARS"}
+          </div>
         </div>
+        {hero}
       </div>
       {!car ? (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, color: "#7D8796", fontFamily: "'Barlow', sans-serif" }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, color: "#5b6370", fontFamily: "'Barlow', sans-serif" }}>
           No cars here yet.
           {editable && onAdd && (
             <button className="action-btn" onClick={onAdd} style={{ ...quietButton, width: "auto", padding: "10px 18px", color: "#3CABFD" }}>
@@ -422,19 +550,39 @@ export function GarageShowroom({ title, cars, startId, plate = "", editable = fa
           )}
         </div>
       ) : (
-        <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: wide ? "row" : "column", overflowY: wide ? "hidden" : "auto" }}>
-          <div style={{ position: "relative", flex: wide ? 1 : "0 0 auto", height: wide ? "auto" : "min(46vh, 380px)", minHeight: 240 }}>
-            <ShowroomStage look={look} plate={plate} style={{ position: "absolute", inset: 0 }} />
-            {info}
-            <div style={{ position: "absolute", bottom: 8, left: 0, right: 0, textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "'Barlow', sans-serif", pointerEvents: "none" }}>Drag to spin</div>
+        <>
+          <div style={{ position: "absolute", left: 0, right: wide ? insets.right : 0, bottom: wide ? 14 : insets.bottom + 8, textAlign: "center", fontSize: 11.5, fontWeight: 800, letterSpacing: 1.5, color: "rgba(20,23,28,0.45)", pointerEvents: "none" }}>⟲ DRAG TO SPIN</div>
+          <div
+            ref={sheet}
+            style={{
+              position: "absolute",
+              ...(wide ? { top: 12, right: 12, bottom: 12, width: 380, borderRadius: 20 } : { left: 0, right: 0, bottom: 0, borderRadius: "22px 22px 0 0", maxHeight: "62vh" }),
+              background: "rgba(12,14,19,0.9)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              boxShadow: "0 -10px 40px rgba(0,0,0,0.22)",
+              padding: `14px 14px calc(${wide ? 14 : 10}px + env(safe-area-inset-bottom))`,
+              boxSizing: "border-box",
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+              overflowY: "auto",
+            }}
+          >
+            {editable && (
+              <div role="tablist" style={{ display: "flex", gap: 18 }}>
+                {tabBtn("style", "TUNE")}
+                {tabBtn("info", "INFO")}
+              </div>
+            )}
+            {tab === "style" && editable ? <Tuner look={look} onChange={(patch) => onLook(car, { ...look, ...patch })} /> : infoPanel}
+            {drive}
+            <div style={{ marginTop: wide ? "auto" : 0 }}>
+              <CarCards cars={cars} selectedId={car?.id} onPick={(v) => setSelectedId(v.id)} onAdd={editable ? onAdd : null} />
+            </div>
           </div>
-          <div style={{ width: wide ? 360 : "auto", padding: "12px 12px 8px", boxSizing: "border-box", overflowY: wide ? "auto" : "visible" }}>{panel}</div>
-        </div>
-      )}
-      {cars.length > 0 && (
-        <div style={{ padding: "8px 12px calc(10px + env(safe-area-inset-bottom))", borderTop: "1px solid #1b1f26", background: "#0d0f13" }}>
-          <CarCards cars={cars} selectedId={car?.id} onPick={(v) => setSelectedId(v.id)} onAdd={editable ? onAdd : null} />
-        </div>
+        </>
       )}
     </div>
   );

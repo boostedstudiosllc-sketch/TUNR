@@ -1,11 +1,12 @@
-// The garage showroom in 3D (three.js, loaded only when it's shown): a dark
-// garage with light strips on the ceiling, a lit turntable, and your car
+// The garage showroom in 3D (three.js, loaded only when it's shown): a
+// bright studio garage with a glossy floor, a turntable, and your car
 // slowly turning on it. Drag to spin it yourself. show(look) swaps the car
 // with a little drop onto the turntable. Uses TUNR Rush's car model
 // (rush3d.js), so the car looks the same here and in the game.
 
 import * as THREE from "three";
-import { buildCar, paintedSky, LIGHT } from "./rush3d.js";
+import { Reflector } from "three/addons/objects/Reflector.js";
+import { buildCar } from "./rush3d.js";
 
 function canvasTexture(w, h, draw, repeat = null) {
   const c = document.createElement("canvas");
@@ -21,35 +22,83 @@ function canvasTexture(w, h, draw, repeat = null) {
   return tex;
 }
 
-function buildGarage(scene) {
-  // Polished concrete.
-  const concrete = canvasTexture(256, 256, (ctx, w, h) => {
-    ctx.fillStyle = "#24262b";
-    ctx.fillRect(0, 0, w, h);
-    for (let i = 0; i < 9000; i++) {
-      const v = Math.random() * 30 - 15;
-      ctx.fillStyle = v > 0 ? `rgba(255,255,255,${v / 255})` : `rgba(0,0,0,${-v / 255})`;
-      ctx.fillRect(Math.random() * w, Math.random() * h, 2, 2);
-    }
-    ctx.strokeStyle = "rgba(0,0,0,0.35)";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(0, 0, w, h);
-  }, [10, 10]);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ map: concrete, roughness: 0.45, metalness: 0.2 }));
+// What the car's paint and glass reflect: a big studio with soft light
+// boxes overhead and tall strips down the sides, so the bodywork picks up
+// long clean highlights like a real car under showroom lights.
+function studioEnv(renderer) {
+  const env = new THREE.Scene();
+  const room = new THREE.Mesh(new THREE.BoxGeometry(30, 14, 30), new THREE.MeshBasicMaterial({ color: 0x9aa0a8, side: THREE.BackSide }));
+  room.position.y = 6;
+  env.add(room);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshBasicMaterial({ color: 0x80858d }));
   floor.rotation.x = -Math.PI / 2;
+  floor.position.y = -0.9;
+  env.add(floor);
+  const light = (w, h, strength, x, y, z, rx = 0, ry = 0) => {
+    const m = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+    m.color.setScalar(strength);
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
+    p.position.set(x, y, z);
+    p.rotation.set(rx, ry, 0);
+    env.add(p);
+  };
+  for (const x of [-4, 0, 4]) light(2.2, 18, 9, x, 12.5, 0, Math.PI / 2);
+  for (const side of [-1, 1]) {
+    light(18, 1.4, 6, side * 14.5, 6, 0, 0, Math.PI / 2);
+    light(18, 0.5, 4, side * 14.5, 2.5, 0, 0, Math.PI / 2);
+  }
+  light(16, 1.2, 5, 0, 7, -14.5);
+  light(16, 1.2, 4, 0, 7, 14.5);
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envMap = pmrem.fromScene(env, 0.03).texture;
+  env.traverse((o) => {
+    o.geometry?.dispose();
+    o.material?.dispose();
+  });
+  return { pmrem, envMap };
+}
+
+// A bright, clean garage: white panelled walls, light strips, a glossy
+// floor that mirrors the car (reflect: a real reflection; off on slow
+// phones), and a low turntable with a glowing edge.
+function buildGarage(scene, { reflect = true, w = 512, h = 512 } = {}) {
+  let mirror = null;
+  if (reflect) {
+    mirror = new Reflector(new THREE.PlaneGeometry(60, 60), { textureWidth: w, textureHeight: h, color: 0x9a9da3, clipBias: 0.003 });
+    mirror.rotation.x = -Math.PI / 2;
+    scene.add(mirror);
+  }
+  // Polished floor tiles, see-through enough to show the reflection under it.
+  const tiles = canvasTexture(256, 256, (ctx, tw, th) => {
+    ctx.fillStyle = "#b4b9c1";
+    ctx.fillRect(0, 0, tw, th);
+    for (let i = 0; i < 4000; i++) {
+      const v = Math.random() * 14 - 7;
+      ctx.fillStyle = v > 0 ? `rgba(255,255,255,${v / 255})` : `rgba(0,0,0,${-v / 255})`;
+      ctx.fillRect(Math.random() * tw, Math.random() * th, 2, 2);
+    }
+    ctx.strokeStyle = "rgba(90,96,106,0.45)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, tw, th);
+  }, [12, 12]);
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(60, 60),
+    new THREE.MeshStandardMaterial({ map: tiles, roughness: 0.32, metalness: 0.05, transparent: reflect, opacity: reflect ? 0.72 : 1 })
+  );
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = 0.003;
   floor.receiveShadow = true;
   scene.add(floor);
 
-  // Walls: pale panels behind and to the sides, with a roller door and the
-  // TUNR mark on the back wall.
-  const panels = canvasTexture(256, 256, (ctx, w, h) => {
-    ctx.fillStyle = "#c9ccd2";
-    ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = "#b3b7bf";
-    ctx.fillRect(0, h - 6, w, 6);
-    ctx.fillRect(w - 4, 0, 4, h);
-  }, [6, 2]);
-  const wallMat = new THREE.MeshStandardMaterial({ map: panels, roughness: 0.8 });
+  // White panelled walls with a long light strip across the back.
+  const panels = canvasTexture(256, 512, (ctx, tw, th) => {
+    ctx.fillStyle = "#e4e7eb";
+    ctx.fillRect(0, 0, tw, th);
+    ctx.fillStyle = "#cdd1d7";
+    ctx.fillRect(tw - 3, 0, 3, th);
+    ctx.fillRect(0, th - 40, tw, 40);
+  }, [10, 1]);
+  const wallMat = new THREE.MeshStandardMaterial({ map: panels, roughness: 0.75 });
   const back = new THREE.Mesh(new THREE.PlaneGeometry(40, 9), wallMat);
   back.position.set(0, 4.5, -11);
   const left = new THREE.Mesh(new THREE.PlaneGeometry(30, 9), wallMat);
@@ -59,65 +108,60 @@ function buildGarage(scene) {
   right.rotation.y = -Math.PI / 2;
   right.position.x = 12;
   scene.add(back, left, right);
-  const door = canvasTexture(256, 256, (ctx, w, h) => {
-    ctx.fillStyle = "#8d9199";
-    ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = "#7a7e86";
-    for (let y = 0; y < h; y += 16) ctx.fillRect(0, y, w, 3);
-  });
-  const roller = new THREE.Mesh(new THREE.PlaneGeometry(9, 5.2), new THREE.MeshStandardMaterial({ map: door, roughness: 0.6, metalness: 0.4 }));
-  roller.position.set(-5, 2.6, -10.98);
-  scene.add(roller);
-  const mark = canvasTexture(512, 128, (ctx, w, h) => {
-    ctx.clearRect(0, 0, w, h);
+  const glowMat = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
+  const band = new THREE.Mesh(new THREE.PlaneGeometry(36, 0.22), glowMat);
+  band.position.set(0, 3.2, -10.98);
+  scene.add(band);
+  for (const side of [-1, 1]) {
+    const sideBand = new THREE.Mesh(new THREE.PlaneGeometry(28, 0.22), glowMat);
+    sideBand.rotation.y = -side * (Math.PI / 2);
+    sideBand.position.set(side * 11.98, 3.2, 2);
+    scene.add(sideBand);
+  }
+  const mark = canvasTexture(512, 128, (ctx, tw, th) => {
+    ctx.clearRect(0, 0, tw, th);
     ctx.font = "900 110px 'Barlow Condensed', Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = "#16181d";
-    ctx.fillText("TUN", w / 2 - 28, h / 2 + 6);
+    ctx.fillStyle = "#1b1e24";
+    ctx.fillText("TUN", tw / 2 - 28, th / 2 + 6);
     ctx.fillStyle = "#0080F0";
-    ctx.fillText("R", w / 2 + 92, h / 2 + 6);
+    ctx.fillText("R", tw / 2 + 92, th / 2 + 6);
   });
-  const logo = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.5), new THREE.MeshBasicMaterial({ map: mark, transparent: true }));
-  logo.position.set(4.5, 5.2, -10.97);
+  const logo = new THREE.Mesh(new THREE.PlaneGeometry(5, 1.25), new THREE.MeshBasicMaterial({ map: mark, transparent: true }));
+  logo.position.set(0, 5.2, -10.97);
   scene.add(logo);
 
-  // Ceiling light strips.
-  const strip = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  for (const x of [-6, -2, 2, 6]) {
-    const s = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.08, 16), strip);
+  // Ceiling light panels.
+  for (const x of [-5, 0, 5]) {
+    const s = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.06, 14), glowMat);
     s.position.set(x, 8.6, 0);
     scene.add(s);
   }
 
-  // The turntable, ringed with TUNR blue.
-  const table = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 3.7, 0.14, 64), new THREE.MeshStandardMaterial({ color: 0x15181e, roughness: 0.22, metalness: 0.7 }));
-  table.position.y = 0.07;
+  // The turntable: a low glossy disc with a glowing TUNR-blue edge.
+  const table = new THREE.Mesh(
+    new THREE.CylinderGeometry(3.4, 3.45, 0.06, 72),
+    new THREE.MeshPhysicalMaterial({ color: 0xe4e7eb, roughness: 0.18, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.08, transparent: reflect, opacity: reflect ? 0.72 : 1 })
+  );
+  table.position.y = 0.03;
   table.receiveShadow = true;
   scene.add(table);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(3.66, 0.035, 8, 96), new THREE.MeshBasicMaterial({ color: 0x0080f0, toneMapped: false }));
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(3.43, 0.022, 8, 120), new THREE.MeshBasicMaterial({ color: 0x3aa0ff, toneMapped: false }));
   ring.rotation.x = Math.PI / 2;
-  ring.position.y = 0.14;
+  ring.position.y = 0.045;
   scene.add(ring);
-  // A soft pool of light on the floor round it.
-  const glow = new THREE.Mesh(
-    new THREE.CircleGeometry(6, 48),
-    new THREE.MeshBasicMaterial({
-      map: canvasTexture(128, 128, (ctx, w, h) => {
-        const g = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
-        g.addColorStop(0, "rgba(255,255,255,0.22)");
-        g.addColorStop(1, "rgba(255,255,255,0)");
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, w, h);
-      }),
-      transparent: true,
-      depthWrite: false,
-    })
-  );
-  glow.rotation.x = -Math.PI / 2;
-  glow.position.y = 0.01;
-  scene.add(glow);
-  return table;
+  if (mirror) {
+    // The floor and turntable sit just above the mirror: hide them while it
+    // draws the reflection, or they'd cover it.
+    const draw = mirror.onBeforeRender;
+    mirror.onBeforeRender = (...args) => {
+      floor.visible = table.visible = false;
+      draw(...args);
+      floor.visible = table.visible = true;
+    };
+  }
+  return { table, mirror };
 }
 
 // opts.interactive: drag to spin (and it turns by itself when left alone).
@@ -131,26 +175,24 @@ export function createShowroom(canvas, { lowPower = false, interactive = true } 
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0c0e12);
-  scene.fog = new THREE.Fog(0x0c0e12, 18, 40);
-  const sun = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(35), THREE.MathUtils.degToRad(140));
-  const { pmrem, envMap } = paintedSky(renderer, LIGHT.noon, sun);
+  scene.background = new THREE.Color(0xe9ecf0);
+  scene.fog = new THREE.Fog(0xe9ecf0, 20, 42);
+  const { pmrem, envMap } = studioEnv(renderer);
   scene.environment = envMap;
-  scene.environmentIntensity = 0.55;
-  scene.add(new THREE.HemisphereLight(0xe6ecff, 0x1a1a1a, 0.5));
-  const spot = new THREE.SpotLight(0xffffff, 140, 30, Math.PI / 5, 0.5, 1.6);
+  scene.environmentIntensity = 1;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f98, 0.6));
+  const spot = new THREE.SpotLight(0xffffff, 90, 30, Math.PI / 5, 0.6, 1.6);
   spot.position.set(1.5, 9, 3);
   spot.target.position.set(0, 0, 0);
   spot.castShadow = !lowPower;
   spot.shadow.mapSize.set(1024, 1024);
+  spot.shadow.radius = 6;
   scene.add(spot, spot.target);
-  const fill = new THREE.DirectionalLight(0xbfd4ff, 0.6);
-  fill.position.set(-6, 4, 6);
-  scene.add(fill);
-  const table = buildGarage(scene);
+  const reflectSize = lowPower ? 0 : Math.min(1024, Math.round(Math.max(canvas.clientWidth, 320) * Math.min(window.devicePixelRatio || 1, 2) * 0.6));
+  const { table, mirror } = buildGarage(scene, { reflect: !lowPower, w: reflectSize, h: reflectSize });
 
   const holder = new THREE.Group();
-  holder.position.y = 0.14;
+  holder.position.y = 0.06;
   scene.add(holder);
   const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
   let car = null;
@@ -163,15 +205,32 @@ export function createShowroom(canvas, { lowPower = false, interactive = true } 
   let last = 0;
   let w = 1;
   let h = 1;
+  let inset = { top: 0, bottom: 0, right: 0 };
+  const REACH = { coupe: 2.6, sedan: 2.7, hatch: 2.45, suv: 2.8, truck: 3.2 };
 
   function frame() {
-    // Wide stage: from the front three-quarters. Tall: further back.
-    const aspect = w / h;
-    const far = (look?.body === "truck" ? 1.15 : look?.body === "suv" ? 1.08 : 1) * (aspect < 1.3 ? 1.35 : 1);
-    camera.aspect = aspect;
-    camera.position.set(4.6 * far, 2.3 * far, 6.4 * far);
-    camera.lookAt(0, look?.body === "truck" || look?.body === "suv" ? 0.85 : 0.65, 0);
+    // From the front three-quarters, far enough back that the whole car
+    // fits in the part of the screen the menus don't cover, and centered
+    // in it.
+    const vw = Math.max(160, w - inset.right);
+    const vh = Math.max(140, h - inset.top - inset.bottom);
+    camera.aspect = w / h;
+    // A tall phone gets a wider lens, so the car isn't miles away.
+    camera.fov = Math.max(30, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(13)) * (h / vw))));
+    const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const r = REACH[look?.body] || REACH.coupe;
+    const d = Math.max(r / (t * (vw / h)), (0.75 * r) / (t * (vh / h))) * 1.2;
+    const dir = new THREE.Vector3(4.7, 1.55, 6.5).normalize();
+    camera.position.copy(dir.multiplyScalar(d));
+    camera.lookAt(0, look?.body === "truck" || look?.body === "suv" ? 0.8 : 0.6, 0);
+    camera.setViewOffset(w, h, inset.right / 2, (inset.bottom - inset.top) / 2, w, h);
     camera.updateProjectionMatrix();
+  }
+
+  // How much of the stage the menus cover (px), so the car sits in the rest.
+  function setInsets(next) {
+    inset = { top: 0, bottom: 0, right: 0, ...next };
+    frame();
   }
 
   function show(next) {
@@ -203,7 +262,7 @@ export function createShowroom(canvas, { lowPower = false, interactive = true } 
     holder.rotation.y = angle;
     table.rotation.y = angle;
     drop = Math.max(0, drop - dt);
-    holder.position.y = 0.14 + Math.sin((drop / 0.35) * Math.PI) * 0.25 * (drop > 0 ? 1 : 0);
+    holder.position.y = 0.06 + Math.sin((drop / 0.35) * Math.PI) * 0.25 * (drop > 0 ? 1 : 0);
     renderer.render(scene, camera);
   }
   raf = requestAnimationFrame(loop);
@@ -240,16 +299,17 @@ export function createShowroom(canvas, { lowPower = false, interactive = true } 
     canvas.removeEventListener("pointermove", move);
     canvas.removeEventListener("pointerup", up);
     canvas.removeEventListener("pointercancel", up);
+    mirror?.dispose();
     renderer.dispose();
     pmrem.dispose();
     envMap?.dispose();
   }
 
-  return { show, resize, dispose };
+  return { show, resize, setInsets, dispose };
 }
 
 // Small pictures of cars for the cards under the showroom: each look drawn
-// once, from the front three-quarters (angle: the car's turn), on a dark floor. Returns data URLs
+// once, from the front three-quarters (angle: the car's turn), in the studio. Returns data URLs
 // in the same order. One short-lived renderer for all of them.
 const thumbCache = new Map();
 export function carThumbs(looks, W = 240, H = 140, angle = Math.PI + 0.25) {
@@ -263,15 +323,13 @@ export function carThumbs(looks, W = 240, H = 140, angle = Math.PI + 0.25) {
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1a1d23);
-    const sun = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(35), THREE.MathUtils.degToRad(140));
-    const { pmrem, envMap } = paintedSky(renderer, LIGHT.noon, sun);
+    scene.background = new THREE.Color(0xdfe3e8);
+    const { pmrem, envMap } = studioEnv(renderer);
     scene.environment = envMap;
-    scene.environmentIntensity = 0.7;
-    const key1 = new THREE.DirectionalLight(0xffffff, 2);
+    const key1 = new THREE.DirectionalLight(0xffffff, 1.2);
     key1.position.set(3, 6, 4);
-    scene.add(key1, new THREE.HemisphereLight(0xe6ecff, 0x222222, 0.6));
-    const floor = new THREE.Mesh(new THREE.CircleGeometry(4, 40), new THREE.MeshStandardMaterial({ color: 0x2a2e36, roughness: 0.6 }));
+    scene.add(key1, new THREE.HemisphereLight(0xffffff, 0x8a8f98, 0.5));
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(9, 48), new THREE.MeshStandardMaterial({ color: 0xc9cdd3, roughness: 0.4 }));
     floor.rotation.x = -Math.PI / 2;
     scene.add(floor);
     const camera = new THREE.PerspectiveCamera(30, W / H, 0.1, 50);
@@ -280,7 +338,7 @@ export function carThumbs(looks, W = 240, H = 140, angle = Math.PI + 0.25) {
       car.rotation.y = angle; // nose toward the camera, three-quarters on
       scene.add(car);
       const far = l.body === "truck" ? 1.15 : l.body === "suv" ? 1.08 : 1;
-      camera.position.set(4.4 * far, 1.9 * far, 6 * far);
+      camera.position.set(4.4 * far, 1.6 * far, 6 * far);
       camera.lookAt(0, 0.6, 0);
       renderer.render(scene, camera);
       thumbCache.set(key(l), canvas.toDataURL("image/jpeg", 0.85));
