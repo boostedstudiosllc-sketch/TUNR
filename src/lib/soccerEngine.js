@@ -495,7 +495,10 @@ function aiInput(match, c, dt) {
     ai.reverseT = 0.8;
   }
 
-  if (Math.abs(err) > 1.9 && dist < 14 && c.speed > 8) input.throttle = -0.6; // slow for a tight turn
+  // Slow down for a target inside the circle the car can turn at this speed;
+  // flat out, it would just circle round it.
+  const turnCircle = (c.speed * c.speed) / CAR.grip;
+  if (Math.abs(err) > 0.35 && dist < turnCircle * 2.2 && c.speed > 6) input.throttle = Math.abs(err) > 1.2 ? -0.5 : 0.1;
   if (t.mode === "back" && dist < 4) input.throttle = 0.15;
   if (Math.abs(err) < 0.25 && dist > 10 && c.boost > 8 && (match.seed + Math.floor(match.time * 2)) % 10 < lv.boost * 10) input.boost = true;
   if (t.mode === "hit") {

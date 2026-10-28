@@ -111,7 +111,10 @@ test("every car type finishes a race, and the rivals drive the same type", { tim
     assert.equal(race.car, car);
     for (let i = 0; i < 120 * 200 && race.state !== "finished"; i++) tickRace(race, drive(race, race.profile));
     assert.equal(race.state, "finished", `${car} finished`);
-    times[car] = race.player.finished;
+    // Timed alone, so traffic doesn't decide which car is quickest.
+    const solo = newRace(t, { laps: 1, seed: 4, car, rivals: 0 });
+    for (let i = 0; i < 120 * 200 && solo.state !== "finished"; i++) tickRace(solo, drive(solo, solo.profile));
+    times[car] = solo.player.finished;
     // Rivals aren't miles ahead or behind in any car.
     const lead = standings(race).find((c) => c.ai);
     assert.ok(lead.lap * t.L + lead.s > t.L * 0.85, `${car}: lead rival at ${lead.s}`);
