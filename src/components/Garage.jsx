@@ -11,9 +11,9 @@ import {
 import { compressImage } from "../lib/image.js";
 import { loadMyInvites, openInvites } from "../lib/invites.js";
 import StickerSheet from "./StickerSheet.jsx";
-import { ShowroomStage, GarageShowroom } from "./Showroom.jsx";
+import { ShowroomStage, GarageShowroom, OtherColor } from "./Showroom.jsx";
 import { saveGameLook } from "../lib/rush.js";
-import { lookOf } from "../lib/rushEngine.js";
+import { lookOf, GAME_COLORS, COLOR_NAMES, guessBody, BODY_NAMES } from "../lib/rushEngine.js";
 
 const inputStyle = {
   background: "#0F0F0F",
@@ -37,7 +37,7 @@ const labelStyle = {
   fontFamily: "'Barlow Condensed', sans-serif",
 };
 
-const EMPTY = { id: null, year: "", make: "", model: "", buildNotes: "", photoUrl: "" };
+const EMPTY = { id: null, year: "", make: "", model: "", buildNotes: "", photoUrl: "", paint: "" };
 
 // Your cars. The first one you add becomes your main car automatically; that's
 // the one attached when you RSVP.
@@ -152,6 +152,7 @@ export default function Garage({ user, onToast }) {
       model: v.model,
       buildNotes: v.build_notes || "",
       photoUrl: v.photo_url || "",
+      paint: v.game_color || "",
     });
   }
 
@@ -391,6 +392,29 @@ export default function Garage({ user, onToast }) {
               value={editing.model}
               onChange={(e) => setEditing((d) => ({ ...d, model: e.target.value }))}
             />
+          </div>
+
+          {editing.make && editing.model.trim() && (
+            <div style={{ fontSize: 11.5, color: "#7D8796", marginTop: -4, fontFamily: "'Barlow', sans-serif" }}>
+              In 3D it's a {BODY_NAMES[guessBody(editing.make, editing.model)].toLowerCase()}. Add the chassis code, like 540i (G30), to help. Change it any time in Style.
+            </div>
+          )}
+
+          <div>
+            <div style={labelStyle}>PAINT {editing.paint ? `· ${COLOR_NAMES[editing.paint] || "CUSTOM"}` : ""}</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {GAME_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  aria-label={`Paint ${COLOR_NAMES[c]}`}
+                  aria-pressed={editing.paint === c}
+                  onClick={() => setEditing((d) => ({ ...d, paint: c }))}
+                  style={{ width: 30, height: 30, borderRadius: "50%", background: c, border: editing.paint === c ? "3px solid #fff" : "1px solid #333", cursor: "pointer" }}
+                />
+              ))}
+              <OtherColor color={editing.paint || GAME_COLORS[0]} onChange={(c) => setEditing((d) => ({ ...d, paint: c }))} />
+            </div>
           </div>
 
           <div>

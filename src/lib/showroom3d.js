@@ -156,7 +156,7 @@ export function createShowroom(canvas, { lowPower = false, interactive = true } 
   let car = null;
   let look = null;
   let drop = 0;
-  let angle = Math.PI - 0.6; // nose toward the camera, three-quarters on
+  let angle = Math.PI + 0.25; // nose toward the camera, three-quarters on
   let spin = 0.25; // rad/s
   let dragging = null;
   let raf = 0;
@@ -249,11 +249,11 @@ export function createShowroom(canvas, { lowPower = false, interactive = true } 
 }
 
 // Small pictures of cars for the cards under the showroom: each look drawn
-// once, from the front three-quarters, on a dark floor. Returns data URLs
+// once, from the front three-quarters (angle: the car's turn), on a dark floor. Returns data URLs
 // in the same order. One short-lived renderer for all of them.
 const thumbCache = new Map();
-export function carThumbs(looks, W = 240, H = 140) {
-  const key = (l) => JSON.stringify([l.color, l.body, l.spoiler, l.rims, l.height]);
+export function carThumbs(looks, W = 240, H = 140, angle = Math.PI + 0.25) {
+  const key = (l) => JSON.stringify([l.color, l.body, l.spoiler, l.rims, l.height, l.brand, angle, W, H]);
   const missing = looks.filter((l) => !thumbCache.has(key(l)));
   if (missing.length) {
     const canvas = document.createElement("canvas");
@@ -277,7 +277,7 @@ export function carThumbs(looks, W = 240, H = 140) {
     const camera = new THREE.PerspectiveCamera(30, W / H, 0.1, 50);
     for (const l of missing) {
       const car = buildCar({ ...l, sport: true });
-      car.rotation.y = Math.PI - 0.6;
+      car.rotation.y = angle; // nose toward the camera, three-quarters on
       scene.add(car);
       const far = l.body === "truck" ? 1.15 : l.body === "suv" ? 1.08 : 1;
       camera.position.set(4.4 * far, 1.9 * far, 6 * far);

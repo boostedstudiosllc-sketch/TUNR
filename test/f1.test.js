@@ -144,3 +144,23 @@ test("two Boosted coins a lap; driving through one boosts you, once a lap", () =
   assert.equal(plain.race.events.filter((e) => e.kind === "coin").length, 0, "gone for the rest of the lap");
   assert.ok(boosted.p.speed > plain.p.speed + 3, `boosted ${boosted.p.speed} vs ${plain.p.speed}`);
 });
+
+test("a real car's body style comes from its make and model", async () => {
+  const { guessBody, brandOf, lookOf } = await import("../src/lib/rushEngine.js");
+  const cases = [
+    ["BMW", "540i (G30)", "sedan"], ["BMW", "G30", "sedan"], ["BMW", "M4 (F82)", "coupe"], ["BMW", "X5", "suv"], ["BMW", "330i", "sedan"], ["BMW", "Z4", "coupe"],
+    ["Ford", "F-150", "truck"], ["Ford", "Mustang GT", "coupe"], ["Ford", "Bronco", "suv"], ["Subaru", "WRX STI", "sedan"], ["Subaru", "BRZ", "coupe"],
+    ["Subaru", "Outback", "suv"], ["Acura", "Integra Type R", "coupe"], ["Honda", "Civic Type R", "hatch"], ["Honda", "Civic Si", "sedan"],
+    ["Volkswagen", "Golf GTI", "hatch"], ["Jeep", "Wrangler", "suv"], ["Jeep", "Gladiator", "truck"], ["Toyota", "Supra", "coupe"], ["Toyota", "GR86", "coupe"],
+    ["Toyota", "Camry", "sedan"], ["Toyota", "Tacoma", "truck"], ["Chevrolet", "Silverado 1500", "truck"], ["Chevrolet", "Corvette C8", "coupe"],
+    ["Dodge", "Charger Scat Pack", "sedan"], ["Dodge", "Challenger", "coupe"], ["Tesla", "Model 3", "sedan"], ["Tesla", "Model Y", "suv"],
+    ["Lamborghini", "Urus", "suv"], ["Nissan", "350Z", "coupe"], ["Nissan", "GT-R", "coupe"], ["Mazda", "RX-7", "coupe"], ["Mazda", "CX-5", "suv"],
+    ["Lexus", "RX 350", "suv"], ["Mercedes-Benz", "G63", "suv"], ["Audi", "RS3", "hatch"], ["Porsche", "Macan", "suv"], ["Honda", "CR-V", "suv"],
+  ];
+  for (const [make, model, want] of cases) assert.equal(guessBody(make, model), want, `${make} ${model}`);
+  assert.equal(brandOf("Mercedes-Benz"), "mercedes");
+  assert.equal(brandOf("Other"), "generic");
+  // A saved body wins over the guess.
+  assert.equal(lookOf({ make: "BMW", model: "G30", game_body: "coupe" }).body, "coupe");
+  assert.equal(lookOf({ make: "BMW", model: "G30" }).body, "sedan");
+});

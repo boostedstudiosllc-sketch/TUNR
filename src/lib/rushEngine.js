@@ -58,10 +58,43 @@ export const HEIGHTS = ["stock", "lowered", "slammed", "lifted"];
 export const HEIGHT_NAMES = { stock: "Stock", lowered: "Lowered", slammed: "Slammed", lifted: "Lifted" };
 export const DEFAULT_LOOK = { color: "#1D4ED8", body: "coupe", spoiler: "lip", rims: "silver", height: "stock" };
 
-// A saved car's look, with the defaults filled in.
+// The body style a real car is closest to, from its make and model (and
+// chassis codes like G30 or F82), so a new car looks right before anyone
+// restyles it. Checked in order: truck, SUV, hatch, coupe; otherwise sedan.
+const BODY_WORDS = {
+  truck: ["f-?150", "f-?250", "f-?350", "raptor", "silverado", "sierra", "ram", "1500", "2500", "tacoma", "tundra", "ranger", "colorado", "canyon", "frontier", "titan", "gladiator", "ridgeline", "maverick", "cybertruck", "santa cruz", "truck", "pickup", "r1t", "lightning"],
+  suv: ["x[1-7]", "ix", "q[3-8]", "sq[5-8]", "e-?tron", "gl[abces]", "gle", "glc", "gls", "g-?class", "g ?wagon", "g ?63", "ml", "rav-?4", "highlander", "4runner", "land cruiser", "sequoia", "venza", "cr-?v", "hr-?v", "pilot", "passport", "mdx", "rdx", "zdx", "cx-?\\d+", "explorer", "expedition", "bronco", "escape", "edge", "tahoe", "suburban", "yukon", "escalade", "traverse", "equinox", "blazer", "trailblazer", "wrangler", "cherokee", "compass", "renegade", "wagoneer", "durango", "telluride", "sorento", "sportage", "seltos", "palisade", "santa fe", "tucson", "kona", "rogue", "pathfinder", "murano", "armada", "kicks", "qx\\d+", "outback", "forester", "ascent", "crosstrek", "model [xy]", "cayenne", "macan", "urus", "range rover", "defender", "discovery", "tiguan", "atlas", "touareg", "id\\.?4", "[rngl]x ?\\d+", "xc\\d+", "gv\\d+", "outlander", "eclipse cross", "suv", "r1s"],
+  hatch: ["golf", "gti", "golf r", "civic type r", "fit", "cooper", "mini", "fiesta", "focus", "veloster", "yaris", "elantra n", "i30", "500", "polo", "sportback", "1 series", "impreza", "prius", "leaf", "bolt", "gr ?corolla", "corolla hatch", "mazda ?3 hatch", "hatch", "rs ?3", "a3", "ioniq 5"],
+  coupe: ["mustang", "camaro", "challenger", "corvette", "86", "gr ?86", "z4", "brz", "supra", "\\d{3}z", "z", "miata", "mx-?5", "m2", "m4", "m6", "m8", "[248] series", "e(36|46|82|92)", "f(22|32|82|87)", "g(42|82)", "rc ?f?", "lc ?\\d*", "nsx", "gt-?r", "911", "cayman", "boxster", "718", "tt", "r8", "amg gt", "s2000", "integra", "prelude", "crx", "240sx", "silvia", "s1[345]", "180sx", "rx-?[78]", "celica", "eclipse", "3000gt", "genesis coupe", "huracan", "aventador", "f8", "488", "458", "720s", "coupe", "q60", "g37", "g35"],
+};
+const MAKE_BODY = { jeep: "suv", "land rover": "suv", ram: "truck", ferrari: "coupe", lamborghini: "coupe", mclaren: "coupe", mini: "hatch" };
+const bodyRules = Object.entries(BODY_WORDS).map(([body, words]) => [body, new RegExp(`(^|[^a-z0-9])(${words.join("|")})($|[^a-z0-9])`, "i")]);
+
+export function guessBody(make = "", model = "") {
+  const m = String(model).toLowerCase();
+  const mk = String(make).toLowerCase();
+  // A word in the model wins; then what the brand mostly makes.
+  if (mk === "jeep" && /gladiator/.test(m)) return "truck";
+  if (mk === "lamborghini" && /urus/.test(m)) return "suv";
+  if (mk === "porsche" && /cayenne|macan/.test(m)) return "suv";
+  if (mk === "porsche" && /panamera|taycan/.test(m)) return "sedan";
+  for (const [body, re] of bodyRules) if (re.test(m)) return body;
+  return MAKE_BODY[mk] || "sedan";
+}
+
+// The brand's front-end look (grille, lights) for the 3D cars.
+const BRANDS = ["bmw", "mercedes", "audi", "volkswagen", "porsche", "toyota", "lexus", "honda", "acura", "nissan", "infiniti", "mazda", "subaru", "mitsubishi", "ford", "chevrolet", "dodge", "tesla", "hyundai", "kia", "genesis", "jeep", "ram", "gmc", "cadillac", "volvo", "land rover", "mini", "lamborghini", "ferrari"];
+export function brandOf(make = "") {
+  const mk = String(make).toLowerCase().replace("-benz", "");
+  return BRANDS.find((b) => mk.startsWith(b)) || "generic";
+}
+
+// A saved car's look, with the defaults filled in. Its body, if never
+// picked, comes from the make and model; its brand gives the front end.
 export const lookOf = (v) => ({
   color: v?.game_color || DEFAULT_LOOK.color,
-  body: v?.game_body || DEFAULT_LOOK.body,
+  body: v?.game_body || (v?.model ? guessBody(v.make, v.model) : DEFAULT_LOOK.body),
+  brand: brandOf(v?.make),
   spoiler: v?.game_spoiler || DEFAULT_LOOK.spoiler,
   rims: v?.game_rims || DEFAULT_LOOK.rims,
   height: v?.game_height || DEFAULT_LOOK.height,

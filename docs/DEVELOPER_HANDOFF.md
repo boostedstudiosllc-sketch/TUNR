@@ -434,3 +434,9 @@ Each Arcade game has a "Your garage" row (`GarageRow` / `useGarageCar` in `Showr
 - **Boosted Karts**: your kart wears your car's paint.
 The 3D garage's DRIVE IN TUNR RUSH and "Or play it in" buttons open a game with that car picked (`play:<game>:<car id>`).
 
+## Real cars in 3D: body and brand
+
+- **Body**: until someone picks one in Style, a car's body (coupe, sedan, hatch, SUV, truck) comes from its make and model, chassis codes included (`guessBody` in `rushEngine.js`; "540i (G30)" → sedan, "M4 (F82)" → coupe, "F-150" → truck). `test/f1.test.js` checks 38 real cars. The add-a-car form says which body it will be and has a paint picker (saved to `game_color`).
+- **Brand**: `brandOf(make)` picks a front end in `rush3d.js` `buildFront`: simple shapes that read as the brand (BMW twin grille and ring lights, Audi rings, Mercedes star, Subaru hood scoop, Jeep slots, MINI round lights, Genesis crest and so on), not copies of any real car. Every 3D car now has headlights, a grille and amber side markers. Car cards show the front three-quarters.
+- 082 adds 27 more makes (Jeep, Ram, GMC, Cadillac, Volvo, Land Rover, MINI and others).
+

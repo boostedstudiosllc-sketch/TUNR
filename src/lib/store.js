@@ -368,6 +368,9 @@ export async function saveVehicle(vehicle, ownerId) {
     build_notes: (vehicle.buildNotes || "").trim() || null,
     photo_url: vehicle.photoUrl || null,
   };
+  // Its paint for the 3D garage and the games (the body is worked out from
+  // the make and model until someone picks one).
+  if (vehicle.paint) payload.game_color = vehicle.paint;
   if (!payload.make) throw new Error("Pick a make.");
   if (!payload.model) throw new Error("Add the model.");
 

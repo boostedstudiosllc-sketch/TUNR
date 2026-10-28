@@ -292,7 +292,7 @@ export const RIDE_DROP = { stock: 0, lowered: 0.06, slammed: 0.11, lifted: -0.14
 // is your car (diffuser, quad exhaust, spoiler, spoked wheels); traffic
 // stays plain. rims: wheel finish (RIM_COLORS); height: ride height
 // (RIDE_DROP).
-export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport = false, spoiler = "lip", rims = "silver", height = "stock" }) {
+export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport = false, spoiler = "lip", rims = "silver", height = "stock", brand = "generic" }) {
   const g = bodyGeometries(body);
   const s = g.s;
   const half = s.L / 2;
@@ -471,6 +471,9 @@ export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport 
     }
   }
 
+  // The front end: lights, grille and intake, in the brand's style.
+  if (sport) buildFront(car, s, half, body, brand, paintMat, g.wheelR);
+
   // Spoiler, on sporty cars.
   if (sport && body !== "truck" && body !== "suv") {
     if (spoiler === "wing") {
@@ -515,6 +518,249 @@ export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport 
   car.userData.camLift = body === "truck" ? 0.75 : body === "suv" ? 0.45 : 0; // see over tall vehicles
   car.userData.exhaustY = exhaustY - drop;
   return car;
+}
+
+// ---------- the front end, by brand ----------
+
+const FRONT = {
+  light: new THREE.MeshStandardMaterial({ color: 0xf4f7ff, emissive: 0xdde8ff, emissiveIntensity: 1.2, roughness: 0.15 }),
+  amber: new THREE.MeshStandardMaterial({ color: 0xffb020, emissive: 0xff9a00, emissiveIntensity: 0.8 }),
+  gold: new THREE.MeshStandardMaterial({ color: 0xd4a72c, metalness: 1, roughness: 0.25 }),
+  red: new THREE.MeshStandardMaterial({ color: 0xc81e1e, roughness: 0.4 }),
+  blue: new THREE.MeshStandardMaterial({ color: 0x1d4ed8, emissive: 0x1d4ed8, emissiveIntensity: 0.4 }),
+};
+
+// Grilles, lights and badges on the nose (the car faces -z). Simple shapes
+// that read as the brand at a glance, not copies of any real car.
+function buildFront(car, s, half, body, brand, paintMat, wheelR) {
+  const tall = body === "truck" ? 1.7 : body === "suv" ? 1.35 : 1;
+  const z = -(half + 0.16); // the nose
+  const zl = -(half + 0.18); // the bumper, a touch further out
+  const W = s.W;
+  const lightY = s.belt - 0.2 * tall;
+  const grilleY = s.clear + 0.42 * tall;
+  const add = (w, h, d, mat, x, y, zz = z, rz = 0) => {
+    const m = box(w, h, d, mat, x, y, zz);
+    m.rotation.z = rz;
+    car.add(m);
+    return m;
+  };
+  const ring = (r, mat, x, y, tube = 0.018) => {
+    const m = new THREE.Mesh(new THREE.TorusGeometry(r, tube, 8, 28), mat);
+    m.position.set(x, y, z - 0.02);
+    car.add(m);
+    return m;
+  };
+  const disc = (r, mat, x, y) => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.05, 24).rotateX(Math.PI / 2), mat);
+    m.position.set(x, y, z - 0.01);
+    car.add(m);
+    return m;
+  };
+  const lx = W / 2 - 0.34;
+  const lights = (w = 0.42, h = 0.09) => {
+    for (const side of [-1, 1]) add(w, h, 0.05, FRONT.light, side * lx, lightY);
+  };
+  const intake = (w = W - 0.6, h = 0.14) => add(w, h * tall, 0.05, MAT.hole, 0, s.clear + 0.2 * tall, zl);
+  // A grille: a dark panel in a chrome (or dark) frame.
+  const grille = (w, h, y = grilleY, frame = MAT.chrome) => {
+    add(w + 0.05, h + 0.05, 0.04, frame, 0, y, z + 0.01);
+    return add(w, h, 0.05, MAT.trim, 0, y, z - 0.005);
+  };
+
+  switch (brand) {
+    case "bmw":
+      // Twin kidneys and ring ("angel eye") headlights.
+      for (const side of [-1, 1]) {
+        add(0.25, 0.2 * tall, 0.04, MAT.chrome, side * 0.15, grilleY + 0.03, z + 0.01);
+        add(0.21, 0.16 * tall, 0.05, MAT.trim, side * 0.15, grilleY + 0.03, z - 0.005);
+        for (const k of [0, 1]) ring(0.065, FRONT.light, side * (lx - 0.1 + k * 0.17), lightY, 0.014);
+      }
+      intake();
+      break;
+    case "mercedes":
+      grille(0.8, 0.22 * tall);
+      add(0.8, 0.025, 0.06, MAT.chrome, 0, grilleY, z - 0.02);
+      ring(0.09, MAT.chrome, 0, grilleY, 0.016);
+      for (const a of [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3]) add(0.012, 0.085, 0.06, MAT.chrome, Math.sin(a) * 0.04, grilleY + Math.cos(a) * 0.04, z - 0.03, -a);
+      lights(0.44, 0.08);
+      intake();
+      break;
+    case "audi":
+      // One big grille, four rings above it.
+      grille(0.7, 0.3 * tall, grilleY - 0.03, MAT.trim);
+      for (let k = 0; k < 4; k++) ring(0.05, MAT.chrome, -0.11 + k * 0.073, grilleY + 0.17 * tall, 0.012);
+      lights(0.46, 0.07);
+      add(W - 0.4, 0.1, 0.05, MAT.hole, 0, s.clear + 0.16, zl);
+      break;
+    case "volkswagen":
+      add(0.9, 0.07, 0.05, MAT.trim, 0, lightY - 0.02);
+      add(0.9, 0.015, 0.06, MAT.chrome, 0, lightY - 0.06);
+      ring(0.07, MAT.chrome, 0, lightY - 0.02);
+      lights(0.38, 0.09);
+      intake(W - 0.5, 0.18);
+      break;
+    case "porsche":
+    case "lamborghini":
+    case "ferrari":
+      // No grille: big intakes low down, lights high on the wings.
+      for (const side of [-1, 1]) {
+        add(0.42, 0.16, 0.05, MAT.hole, side * (W / 2 - 0.38), s.clear + 0.28, zl, brand === "lamborghini" ? side * 0.25 : 0);
+        if (brand === "porsche") disc(0.11, FRONT.light, side * lx, lightY + 0.03);
+        else add(0.4, 0.06, 0.05, FRONT.light, side * lx, lightY + 0.02, z, side * -0.15);
+      }
+      add(0.5, 0.1, 0.05, MAT.hole, 0, s.clear + 0.24, zl);
+      if (brand === "ferrari") add(0.1, 0.12, 0.05, FRONT.gold, 0, grilleY + 0.12, z - 0.02);
+      break;
+    case "tesla":
+      lights(0.4, 0.06);
+      add(0.6, 0.08, 0.05, MAT.hole, 0, s.clear + 0.18, zl);
+      break;
+    case "toyota":
+      add(W - 0.5, 0.24 * tall, 0.05, MAT.hole, 0, s.clear + 0.26 * tall, zl);
+      add(0.5, 0.06, 0.05, MAT.trim, 0, lightY - 0.04);
+      disc(0.05, MAT.chrome, 0, lightY - 0.04);
+      lights(0.44, 0.07);
+      break;
+    case "lexus":
+      // Spindle: wide at the top and bottom, pinched in the middle.
+      add(0.58, 0.16 * tall, 0.05, MAT.trim, 0, grilleY + 0.12 * tall, z - 0.005);
+      add(0.36, 0.08 * tall, 0.05, MAT.trim, 0, grilleY, z - 0.005);
+      add(0.74, 0.2 * tall, 0.05, MAT.trim, 0, grilleY - 0.13 * tall, zl);
+      for (const side of [-1, 1]) add(0.018, 0.48 * tall, 0.06, MAT.chrome, side * 0.33, grilleY, z - 0.01, side * -0.2);
+      lights(0.4, 0.07);
+      break;
+    case "honda":
+      add(0.74, 0.03, 0.06, MAT.chrome, 0, lightY - 0.02);
+      add(0.6, 0.12 * tall, 0.05, MAT.trim, 0, grilleY - 0.02);
+      lights(0.44, 0.08);
+      intake();
+      break;
+    case "acura":
+      // A chrome "beak" pointing down into the grille.
+      grille(0.6, 0.24 * tall, grilleY, MAT.trim);
+      for (const side of [-1, 1]) add(0.32, 0.03, 0.06, MAT.chrome, side * 0.13, grilleY + 0.06, z - 0.02, side * 0.45);
+      lights(0.44, 0.07);
+      intake();
+      break;
+    case "nissan":
+    case "infiniti":
+      grille(0.62, 0.22 * tall, grilleY);
+      if (brand === "nissan") for (const side of [-1, 1]) add(0.28, 0.03, 0.06, MAT.chrome, side * 0.12, grilleY - 0.02, z - 0.02, side * -0.55);
+      else add(0.66, 0.035, 0.06, MAT.chrome, 0, grilleY + 0.12 * tall, z - 0.02);
+      lights(0.44, 0.08);
+      intake();
+      break;
+    case "mazda":
+      grille(0.66, 0.24 * tall, grilleY, MAT.trim);
+      for (const side of [-1, 1]) add(0.4, 0.025, 0.06, MAT.chrome, side * 0.42, grilleY - 0.08, z - 0.02, side * 0.15);
+      lights(0.42, 0.07);
+      break;
+    case "subaru": {
+      // Hood scoop, hexagon grille with a chrome wing.
+      const scoop = box(0.56, 0.08, 0.5, paintMat, 0, s.belt + 0.03, -(half - 0.75));
+      scoop.castShadow = true;
+      car.add(scoop, box(0.46, 0.05, 0.02, MAT.hole, 0, s.belt + 0.04, -(half - 0.5)));
+      grille(0.58, 0.18 * tall);
+      add(0.62, 0.02, 0.06, MAT.chrome, 0, grilleY, z - 0.02);
+      disc(0.05, FRONT.blue, 0, grilleY);
+      lights(0.42, 0.08);
+      intake();
+      break;
+    }
+    case "mitsubishi":
+      grille(0.4, 0.18 * tall);
+      for (const side of [-1, 1]) add(0.04, 0.22 * tall, 0.06, MAT.chrome, side * 0.3, grilleY + 0.01, z - 0.02, side * 0.25);
+      lights(0.42, 0.08);
+      intake();
+      break;
+    case "ford":
+      grille(0.74, 0.24 * tall);
+      for (const k of [-1, 0, 1]) add(0.74, 0.025, 0.06, MAT.chrome, 0, grilleY + k * 0.07 * tall, z - 0.02);
+      ring(0.055, FRONT.blue, 0, grilleY, 0.02);
+      lights(0.4, body === "truck" ? 0.16 : 0.08);
+      intake();
+      break;
+    case "chevrolet":
+      grille(0.8, 0.22 * tall);
+      add(0.8, 0.05, 0.06, MAT.chrome, 0, grilleY + 0.02, z - 0.02);
+      add(0.16, 0.05, 0.07, FRONT.gold, 0, grilleY + 0.02, z - 0.03);
+      add(0.07, 0.08, 0.07, FRONT.gold, 0, grilleY + 0.02, z - 0.03);
+      lights(0.42, 0.08);
+      intake();
+      break;
+    case "dodge":
+    case "ram":
+      grille(0.86, 0.26 * tall);
+      add(0.86, 0.035, 0.06, MAT.chrome, 0, grilleY, z - 0.02);
+      add(0.035, 0.26 * tall, 0.06, MAT.chrome, 0, grilleY, z - 0.02);
+      for (const side of [-1, 1]) add(0.34, 0.06, 0.05, FRONT.light, side * lx, lightY);
+      intake();
+      break;
+    case "hyundai":
+    case "kia":
+    case "genesis":
+      if (brand === "genesis") {
+        // A big crest: a diamond in a chrome frame.
+        const crest = add(0.34 * tall, 0.34 * tall, 0.05, MAT.trim, 0, grilleY, z - 0.005, Math.PI / 4);
+        crest.scale.set(1, 0.8, 1);
+        add(0.42 * tall, 0.42 * tall, 0.04, MAT.chrome, 0, grilleY, z + 0.01, Math.PI / 4).scale.set(1, 0.8, 1);
+        for (const side of [-1, 1]) for (const k of [0, 1]) add(0.36, 0.025, 0.05, FRONT.light, side * lx, lightY + k * 0.06);
+      } else {
+        // Kia's "tiger nose": pinched in the middle.
+        for (const side of [-1, 1]) add(0.36, brand === "kia" ? 0.12 : 0.2, 0.05, MAT.trim, side * 0.17, grilleY + (brand === "kia" ? 0.02 : 0), z - 0.005, brand === "kia" ? side * 0.12 : 0);
+        add(0.74, 0.02, 0.06, MAT.chrome, 0, grilleY + 0.12, z - 0.02);
+        lights(0.44, 0.06);
+      }
+      intake();
+      break;
+    case "jeep":
+      // Seven slots and round lights.
+      for (let k = -3; k <= 3; k++) add(0.06, 0.26 * tall, 0.05, MAT.hole, k * 0.1, grilleY + 0.04, z - 0.005);
+      for (const side of [-1, 1]) {
+        disc(0.13, FRONT.light, side * lx, lightY);
+        ring(0.14, MAT.chrome, side * lx, lightY, 0.02);
+      }
+      intake();
+      break;
+    case "gmc":
+    case "cadillac":
+      grille(0.86, 0.3 * tall);
+      if (brand === "gmc") add(0.24, 0.07, 0.07, FRONT.red, 0, grilleY, z - 0.03);
+      else for (let k = -2; k <= 2; k++) add(0.86, 0.012, 0.06, MAT.chrome, 0, grilleY + k * 0.05 * tall, z - 0.02);
+      for (const side of [-1, 1]) add(0.06, brand === "cadillac" ? 0.32 * tall : 0.1, 0.05, FRONT.light, side * (W / 2 - 0.12), lightY - 0.06, z);
+      lights(0.32, 0.08);
+      intake();
+      break;
+    case "volvo":
+      grille(0.56, 0.22 * tall);
+      add(0.62, 0.025, 0.06, MAT.chrome, 0, grilleY, z - 0.02, -0.35);
+      ring(0.06, MAT.chrome, 0, grilleY, 0.016);
+      for (const side of [-1, 1]) {
+        add(0.4, 0.07, 0.05, FRONT.light, side * lx, lightY);
+        add(0.2, 0.025, 0.06, FRONT.light, side * lx, lightY, z - 0.02); // the "hammer"
+      }
+      intake();
+      break;
+    case "land rover":
+      grille(0.86, 0.12 * tall, lightY - 0.03, MAT.trim);
+      for (const side of [-1, 1]) add(0.32, 0.07, 0.05, FRONT.light, side * (W / 2 - 0.3), lightY - 0.03);
+      intake(W - 0.4, 0.12);
+      break;
+    case "mini":
+      for (const side of [-1, 1]) {
+        disc(0.14, FRONT.light, side * (lx - 0.05), lightY);
+        ring(0.15, MAT.chrome, side * (lx - 0.05), lightY, 0.022);
+      }
+      grille(0.5, 0.18, grilleY, MAT.chrome);
+      break;
+    default:
+      grille(0.62, 0.16 * tall);
+      lights(0.42, 0.08);
+      intake();
+  }
+  // Amber side markers by the wheels, on every car.
+  for (const side of [-1, 1]) add(0.03, 0.05, 0.12, FRONT.amber, side * (W / 2 + 0.01), wheelR + 0.25, -(half - 0.35));
 }
 
 // ---------- other things on the road ----------
