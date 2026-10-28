@@ -11,6 +11,14 @@ import { loadVehicles } from "../lib/store.js";
 
 const LOW_POWER = typeof navigator !== "undefined" && (navigator.hardwareConcurrency || 8) <= 4;
 const loadShowroom = () => import("../lib/showroom3d.js");
+// CarCareKiosk's free how-to and repair videos for this car (make / model
+// / year; extra bits like "(G30)" dropped). Without a make, their home page.
+export function repairLink(v) {
+  const part = (x) => encodeURIComponent(String(x).replace(/\(.*?\)/g, "").trim().replace(/\s+/g, "_"));
+  const bits = [v?.make, v?.model, v?.year].filter(Boolean).map(part).filter(Boolean);
+  return bits.length ? `https://www.carcarekiosk.com/videos/${bits.join("/")}` : "https://www.carcarekiosk.com/";
+}
+
 export const carName = (v) => (v ? [v.year, v.make, v.model].filter(Boolean).join(" ") : "TUNR loaner");
 
 // The stage. 3D unless `flat` (or the phone can't do 3D): then a drawing of
@@ -457,6 +465,9 @@ export function GarageShowroom({ title, cars, startId, plate = "", editable = fa
         <div style={{ fontSize: 13, color: "#7D8796", fontFamily: "'Barlow', sans-serif" }}>No build notes yet.</div>
       )}
       {car.photo_url && <img src={car.photo_url} alt={`${carName(car)}, the real thing`} style={{ width: "100%", maxHeight: 160, objectFit: "cover", borderRadius: 12 }} />}
+      <a href={repairLink(car)} target="_blank" rel="noopener noreferrer" style={{ ...glassBtn, display: "block", padding: "10px 0", fontSize: 13, textAlign: "center", textDecoration: "none", color: "#34D399" }}>
+        🔧 HOW-TO & REPAIR VIDEOS
+      </a>
       {editable && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           <button className="action-btn" onClick={() => onEdit(car)} style={{ ...glassBtn, flex: 1, padding: "10px 0", fontSize: 13 }}>

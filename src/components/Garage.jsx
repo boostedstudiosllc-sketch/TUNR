@@ -11,7 +11,7 @@ import {
 import { compressImage } from "../lib/image.js";
 import { loadMyInvites, openInvites } from "../lib/invites.js";
 import StickerSheet from "./StickerSheet.jsx";
-import { ShowroomStage, GarageShowroom, OtherColor } from "./Showroom.jsx";
+import { ShowroomStage, GarageShowroom, OtherColor, repairLink } from "./Showroom.jsx";
 import { saveGameLook } from "../lib/rush.js";
 import { lookOf, GAME_COLORS, COLOR_NAMES, guessBody, BODY_NAMES } from "../lib/rushEngine.js";
 
@@ -330,6 +330,9 @@ export default function Garage({ user, onToast }) {
                   <button className="action-btn" onClick={() => setShowroom(v.id)} style={{ ...linkStyle, color: "#FACC15" }}>
                     style in 3D
                   </button>
+                  <a href={repairLink(v)} target="_blank" rel="noopener noreferrer" style={{ ...linkStyle, color: "#34D399", textDecoration: "none" }}>
+                    🔧 how-to videos
+                  </a>
                   <button className="action-btn" onClick={() => editDetails(v)} style={linkStyle}>
                     edit
                   </button>
