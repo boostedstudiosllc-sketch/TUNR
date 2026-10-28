@@ -430,6 +430,10 @@ The 📋 button in the header (`Checklist.jsx`) lists every way to earn points a
 
 **How-to videos**: each garage car (row link and the 3D garage INFO tab) links to CarCareKiosk's free repair videos for that make/model/year (`repairLink` in `Showroom.jsx`, `carcarekiosk.com/videos/Make/Model/Year`).
 
+**Clean language (086)**: swear words and slurs become `***` in linkup chat, club chat, forum posts and comments, and meet comments. The app masks first (`cleanForSending` in `src/lib/clean.js`) and shows a short warning (`tunr:notice` → toast); a server trigger (`clean_words()`, same regex) masks anything that gets past it. Keep the two lists in step. `test/clean.test.js`.
+
+**Arcade screen**: a TUNR Rush hero card (today's points game) and every game as a phone-style app icon (`AppIcon` in `Arcade.jsx`: gradient art, gloss, badge, progress line). **Track edges**: `edge()` in `f1Render3d.js` holds lines on the inside of a tight bend within its radius, so kerbs and barriers don't fold over (Island Hairpin's hairpin was also widened).
+
 **Car models** (`buildCar` in `src/lib/rush3d.js`; Lamborghini/Ferrari/McLaren coupes use the low `exotic` wedge shape): each body is a side profile extruded across the car, then bent into shape (`bodyFit`: nose and tail round in, sides lean in toward the roof, the bottom tucks under, hood and roof crown) and smooth-shaded. Your own car (`sport`) gets a finer mesh (`refine`, crack-free edge splitting), flush wheels with tire sidewalls, brake discs and calipers, side skirts, door seams and handles, window trim and headlight housings; lights, grilles and trim are ray-cast onto the curved surface. Traffic stays on the lighter mesh so the games stay fast.
 
 Each Arcade game has a "Your garage" row (`GarageRow` / `useGarageCar` in `Showroom.jsx`; the pick is kept per game in localStorage as `tunr.<game>.car`, "game" for the game's own car, default your main car):

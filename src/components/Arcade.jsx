@@ -16,80 +16,12 @@ import { muted, quietButton } from "./Sheet.jsx";
 // Every TUNR game in one place. One game pays points each day (TUNR Rush);
 // the rest are free play.
 const GAMES = [
-  {
-    id: "rush",
-    icon: "🏁",
-    name: (
-      <>
-        TUNR <span style={{ color: "#0080F0" }}>RUSH</span>
-      </>
-    ),
-    blurb:
-      "Drive your own car through traffic. Pick Easy, Medium or Hard for up to +3 points, once a day.",
-    badge: {
-      text: "⭐ TODAY'S POINTS GAME",
-      color: "#FACC15",
-      border: "#4A3A00",
-    },
-  },
-  {
-    id: "park",
-    icon: "🅿️",
-    name: (
-      <>
-        PARK <span style={{ color: "#0080F0" }}>UP</span>
-      </>
-    ),
-    blurb:
-      "Wheel, gas and brake. Squeeze into the yellow spot without a scratch.",
-    badge: { text: "FREE PLAY", color: "#7FBFF5", border: "#003A75" },
-  },
-  {
-    id: "drift",
-    icon: "🏎️",
-    name: (
-      <>
-        DRIFT <span style={{ color: "#0080F0" }}>KING</span>
-      </>
-    ),
-    blurb:
-      "Race a Formula car, GT, tuner or muscle car on 22 real circuit layouts. Three rivals, drift the corners, grab Boosted coins for a burst of speed.",
-    badge: { text: "FREE PLAY", color: "#7FBFF5", border: "#003A75" },
-  },
-  {
-    id: "karts",
-    icon: "🛞",
-    name: (
-      <>
-        BOOSTED <span style={{ color: "#0080F0" }}>KARTS</span>
-      </>
-    ),
-    blurb:
-      "Go-kart racing against five rivals. Drift for mini-turbos, stack Boosted tokens for nitro, hit the boost pads, dodge the junk.",
-    badge: { text: "FREE PLAY", color: "#7FBFF5", border: "#003A75" },
-  },
-  {
-    id: "ball",
-    icon: "⚽",
-    name: (
-      <>
-        TURBO <span style={{ color: "#0080F0" }}>BALL</span>
-      </>
-    ),
-    blurb: "Car soccer. Boost, jump and flip into a giant ball, 1 v 1 or 2 v 2 against the computer.",
-    badge: { text: "NEW · FREE PLAY", color: "#7FBFF5", border: "#003A75" },
-  },
-  {
-    id: "egg",
-    icon: "🥚",
-    name: (
-      <>
-        EGG <span style={{ color: "#0080F0" }}>HAUL</span>
-      </>
-    ),
-    blurb: "Hills, bumps and an egg on your roof. Drive as far as you can without dropping it.",
-    badge: { text: "NEW · FREE PLAY", color: "#7FBFF5", border: "#003A75" },
-  },
+  { id: "rush", icon: "🏁", title: "TUNR Rush", blurb: "Your car, real traffic. Up to +3 points a day.", art: "linear-gradient(145deg, #0b3d91 0%, #0080F0 55%, #38bdf8 100%)", glow: "rgba(0,128,240,0.55)", tag: "+3" },
+  { id: "drift", icon: "🏎️", title: "Drift King", blurb: "22 circuits, 4 car types, drift the corners.", art: "linear-gradient(145deg, #450a0a 0%, #dc2626 55%, #fb923c 100%)", glow: "rgba(220,38,38,0.5)" },
+  { id: "karts", icon: "🛞", title: "Boosted Karts", blurb: "Drift for turbos, nitro, boost pads.", art: "linear-gradient(145deg, #3b0764 0%, #9333ea 55%, #f472b6 100%)", glow: "rgba(147,51,234,0.5)" },
+  { id: "ball", icon: "⚽", title: "Turbo Ball", blurb: "Car soccer: boost, jump, flip.", art: "linear-gradient(145deg, #052e16 0%, #16a34a 55%, #a3e635 100%)", glow: "rgba(22,163,74,0.5)" },
+  { id: "egg", icon: "🥚", title: "Egg Haul", blurb: "Hills with an egg on your roof.", art: "linear-gradient(145deg, #7c2d12 0%, #f97316 50%, #fde047 100%)", glow: "rgba(249,115,22,0.5)", tag: "NEW" },
+  { id: "park", icon: "🅿️", title: "Park Up", blurb: "Squeeze into the spot. No scratches.", art: "linear-gradient(145deg, #1e293b 0%, #475569 55%, #facc15 100%)", glow: "rgba(250,204,21,0.4)" },
 ];
 
 export default function Arcade({ user, onClose, onToast, onNeedAccount, startGame = null, startVehicle = null }) {
@@ -133,6 +65,17 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+
+  // A line of progress under each icon.
+  const stat = (id) =>
+    ({
+      park: parkStars ? `★ ${parkStars}/${PARK_LEVELS.length * 3}` : "",
+      drift: driftBest ? `🏆 ${driftBest} ${driftBest === 1 ? "win" : "wins"}` : "",
+      karts: kartWins ? `🏆 ${kartWins} ${kartWins === 1 ? "win" : "wins"}` : "",
+      ball: ballRecord && ballRecord.wins + ballRecord.losses > 0 ? `${ballRecord.wins}–${ballRecord.losses}` : "",
+      egg: eggBest ? `${eggBest} m` : "",
+      rush: "Daily points",
+    })[id] || "";
 
   if (open === "rush") {
     return (
@@ -203,164 +146,41 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
           fun.
         </div>
 
-        {GAMES.map((g) => (
-          <button
-            key={g.id}
-            className="action-btn"
-            disabled={g.soon}
-            onClick={() => setOpen(g.id)}
-            style={{
-              width: "100%",
-              marginTop: 12,
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "16px 14px",
-              textAlign: "left",
-              borderRadius: 14,
-              background: g.soon
-                ? "#101010"
-                : "linear-gradient(135deg, #001830, #141414)",
-              border: `1px solid ${g.soon ? "#1E1E1E" : "#003A75"}`,
-              color: g.soon ? "#666" : "#F0F0F0",
-              cursor: g.soon ? "default" : "pointer",
-              fontFamily: "'Barlow Condensed', sans-serif",
-            }}
-          >
-            <span
-              aria-hidden="true"
-              style={{
-                fontSize: 34,
-                width: 44,
-                textAlign: "center",
-                filter: g.soon ? "grayscale(1)" : "none",
-              }}
-            >
-              {g.icon}
-            </span>
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <span
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  flexWrap: "wrap",
-                }}
-              >
-                <span
-                  style={{ fontSize: 20, fontWeight: 900, letterSpacing: 0.5 }}
-                >
-                  {g.name}
-                </span>
-                {g.badge && (
-                  <span
-                    style={{
-                      fontSize: 10.5,
-                      fontWeight: 900,
-                      letterSpacing: 1,
-                      color: g.badge.color,
-                      border: `1px solid ${g.badge.border}`,
-                      borderRadius: 6,
-                      padding: "2px 6px",
-                    }}
-                  >
-                    {g.badge.text}
-                  </span>
-                )}
-                {g.soon && (
-                  <span
-                    style={{
-                      fontSize: 10.5,
-                      fontWeight: 900,
-                      letterSpacing: 1,
-                      color: "#777",
-                      border: "1px solid #2A2A2A",
-                      borderRadius: 6,
-                      padding: "2px 6px",
-                    }}
-                  >
-                    COMING SOON
-                  </span>
-                )}
-              </span>
-              <span
-                style={{
-                  display: "block",
-                  fontSize: 13,
-                  color: g.soon ? "#555" : "#9DB7CF",
-                  fontFamily: "'Barlow', sans-serif",
-                  marginTop: 3,
-                }}
-              >
-                {g.blurb}
-              </span>
-              {g.id === "drift" && driftBest > 0 && (
-                <span
-                  style={{
-                    display: "block",
-                    fontSize: 12.5,
-                    color: "#FACC15",
-                    marginTop: 4,
-                    fontWeight: 800,
-                  }}
-                >
-                  🏆 Won on {driftBest} {driftBest === 1 ? "track" : "tracks"}
-                </span>
-              )}
-              {g.id === "karts" && kartWins > 0 && (
-                <span
-                  style={{
-                    display: "block",
-                    fontSize: 12.5,
-                    color: "#FACC15",
-                    marginTop: 4,
-                    fontWeight: 800,
-                  }}
-                >
-                  🏆 Won on {kartWins} {kartWins === 1 ? "track" : "tracks"}
-                </span>
-              )}
-              {g.id === "ball" && ballRecord && ballRecord.wins + ballRecord.losses > 0 && (
-                <span
-                  style={{
-                    display: "block",
-                    fontSize: 12.5,
-                    color: "#FACC15",
-                    marginTop: 4,
-                    fontWeight: 800,
-                  }}
-                >
-                  🏆 {ballRecord.wins}–{ballRecord.losses} · {ballRecord.goals} {ballRecord.goals === 1 ? "goal" : "goals"}
-                </span>
-              )}
-              {g.id === "egg" && eggBest > 0 && (
-                <span style={{ display: "block", fontSize: 12.5, color: "#FACC15", marginTop: 4, fontWeight: 800 }}>🏆 Best: {eggBest} m</span>
-              )}
-              {g.id === "park" && (
-                <span
-                  style={{
-                    display: "block",
-                    fontSize: 12.5,
-                    color: "#FACC15",
-                    marginTop: 4,
-                    fontWeight: 800,
-                  }}
-                >
-                  ★ {parkStars} / {PARK_LEVELS.length * 3} stars ·{" "}
-                  {PARK_LEVELS.length} levels
-                </span>
-              )}
-            </span>
-            {!g.soon && (
-              <span
-                aria-hidden="true"
-                style={{ fontSize: 22, color: "#7FBFF5" }}
-              >
-                ›
-              </span>
-            )}
-          </button>
-        ))}
+        {/* Today's points game, up top. */}
+        <button
+          className="action-btn"
+          onClick={() => setOpen("rush")}
+          style={{
+            position: "relative",
+            width: "100%",
+            marginTop: 16,
+            padding: "16px 16px",
+            borderRadius: 22,
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "radial-gradient(120% 140% at 100% 0%, rgba(56,189,248,0.45), transparent 55%), linear-gradient(135deg, #0b1f3f, #0a4fa8)",
+            color: "#fff",
+            textAlign: "left",
+            cursor: "pointer",
+            overflow: "hidden",
+            fontFamily: "'Barlow Condensed', sans-serif",
+            boxShadow: "0 10px 30px rgba(0,128,240,0.35)",
+          }}
+        >
+          <span aria-hidden="true" style={{ position: "absolute", right: -6, top: -10, fontSize: 92, opacity: 0.9, transform: "rotate(-12deg)", filter: "drop-shadow(0 6px 10px rgba(0,0,0,0.4))" }}>
+            🏁
+          </span>
+          <span style={{ display: "inline-block", fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#111", background: "#FACC15", borderRadius: 6, padding: "3px 8px" }}>⭐ TODAY'S POINTS GAME</span>
+          <span style={{ display: "block", fontSize: 30, fontWeight: 900, lineHeight: 1, marginTop: 8 }}>TUNR RUSH</span>
+          <span style={{ display: "block", fontSize: 13.5, color: "#BFDBFE", marginTop: 4, maxWidth: "70%", fontFamily: "'Barlow', sans-serif" }}>Drive your car through traffic. Clear today's level for up to +3 points.</span>
+          <span style={{ display: "inline-block", marginTop: 12, fontSize: 15, fontWeight: 900, letterSpacing: 1.5, background: "#fff", color: "#0a4fa8", borderRadius: 999, padding: "7px 18px" }}>PLAY ▶</span>
+        </button>
+
+        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#7D8796", margin: "22px 2px 12px" }}>ALL GAMES</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "18px 10px" }}>
+          {GAMES.map((g) => (
+            <AppIcon key={g.id} game={g} stat={stat(g.id)} onOpen={() => setOpen(g.id)} />
+          ))}
+        </div>
 
         <button
           className="action-btn"
@@ -383,5 +203,47 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
         </button>
       </div>
     </div>
+  );
+}
+
+// One game, as a phone app icon: a glossy rounded square with its art, a
+// badge in the corner, the name and a line of progress under it.
+function AppIcon({ game, stat, onOpen }) {
+  return (
+    <button
+      className="action-btn"
+      onClick={onOpen}
+      aria-label={`${game.title}. ${game.blurb}`}
+      style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#F0F0F0", display: "flex", flexDirection: "column", alignItems: "center", gap: 7, fontFamily: "'Barlow Condensed', sans-serif" }}
+    >
+      <span
+        style={{
+          position: "relative",
+          width: "min(84px, 24vw)",
+          aspectRatio: "1",
+          borderRadius: "23%",
+          background: game.art,
+          boxShadow: `0 8px 22px ${game.glow}, inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -10px 20px rgba(0,0,0,0.25)`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "visible",
+        }}
+      >
+        {/* Speed lines and a glossy top. */}
+        <span aria-hidden="true" style={{ position: "absolute", inset: 0, borderRadius: "inherit", background: "repeating-linear-gradient(115deg, rgba(255,255,255,0.07) 0 3px, transparent 3px 11px)" }} />
+        <span aria-hidden="true" style={{ position: "absolute", inset: "0 0 50% 0", borderRadius: "23% 23% 40% 40% / 23% 23% 18% 18%", background: "linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0.04))" }} />
+        <span aria-hidden="true" style={{ position: "relative", fontSize: "min(44px, 12.5vw)", filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.45))" }}>
+          {game.icon}
+        </span>
+        {game.tag && (
+          <span style={{ position: "absolute", top: -6, right: -6, minWidth: 22, height: 22, padding: "0 6px", borderRadius: 11, background: game.tag === "NEW" ? "#EF4444" : "#FACC15", color: game.tag === "NEW" ? "#fff" : "#111", fontSize: 11, fontWeight: 900, lineHeight: "22px", boxShadow: "0 2px 6px rgba(0,0,0,0.4)", border: "2px solid #0A0A0A" }}>
+            {game.tag}
+          </span>
+        )}
+      </span>
+      <span style={{ fontSize: 13.5, fontWeight: 800, letterSpacing: 0.3, lineHeight: 1.1, textAlign: "center" }}>{game.title}</span>
+      <span style={{ fontSize: 11, fontWeight: 800, color: "#FACC15", minHeight: 13, marginTop: -4 }}>{stat}</span>
+    </button>
   );
 }

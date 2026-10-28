@@ -302,6 +302,11 @@ function ribbon(left, right, vScale, uv = [0, 1]) {
 // Points `off` meters left of the middle (negative = right), at height y.
 export function edge(track, i, off, y) {
   const [fx, fz] = fwd(track.heading[i]);
+  // On the inside of a tight bend, a line further out than the bend's
+  // radius would fold back over itself (broken rails and kerbs): hold it
+  // just inside the radius.
+  const k = track.k[i];
+  if (off * k > 0 && Math.abs(off) > 0.8 / Math.abs(k)) off = Math.sign(off) * (0.8 / Math.abs(k));
   return [track.x[i] + fz * off, y, track.z[i] - fx * off];
 }
 

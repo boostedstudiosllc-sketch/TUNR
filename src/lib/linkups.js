@@ -4,6 +4,7 @@
 import { supabase } from "./supabase.js";
 import { friendlyWriteError, withReason } from "./errors.js";
 import { kickPush } from "./alerts.js";
+import { cleanForSending } from "./clean.js";
 
 export const LINKUP_KINDS = [
   { id: "photos", emoji: "📸", label: "Photos", blurb: "Shooting cars" },
@@ -172,7 +173,7 @@ export async function sendLinkupMessage(linkupId, body, userId) {
   const text = body.trim();
   if (!text) throw new Error("Write something first.");
   if (text.length > 500) throw new Error("That message is too long (500 characters max).");
-  const { error } = await supabase.from("linkup_messages").insert({ linkup_id: linkupId, user_id: userId, body: text });
+  const { error } = await supabase.from("linkup_messages").insert({ linkup_id: linkupId, user_id: userId, body: cleanForSending(text) });
   if (error) throw new Error(friendlyWriteError(error, "Couldn't send that message."));
   kickPush();
 }

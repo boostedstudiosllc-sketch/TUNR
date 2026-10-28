@@ -2,6 +2,7 @@
 import { supabase } from "./supabase.js";
 import { friendlyWriteError, withReason } from "./errors.js";
 import { kickPush } from "./alerts.js";
+import { cleanForSending } from "./clean.js";
 
 export const POST_TAGS = [
   { id: "question", label: "❓ Question" },
@@ -123,8 +124,8 @@ export async function createPost(draft, userId) {
     id,
     forum_id: draft.forumId,
     user_id: userId,
-    title: draft.title.trim(),
-    body: (draft.body || "").trim(),
+    title: cleanForSending(draft.title.trim()),
+    body: cleanForSending((draft.body || "").trim()),
     tag: draft.tag,
     photo_urls: draft.photoUrls || [],
     place: draft.tag === "spot" ? (draft.place || "").trim() || null : null,
@@ -159,7 +160,7 @@ export async function addForumComment(postId, body, userId, parentId = null) {
   need();
   const text = body.trim();
   if (!text) throw new Error("Write something first.");
-  const { error } = await supabase.from("forum_comments").insert({ post_id: postId, user_id: userId, body: text, parent_id: parentId });
+  const { error } = await supabase.from("forum_comments").insert({ post_id: postId, user_id: userId, body: cleanForSending(text), parent_id: parentId });
   if (error) throw new Error(friendlyWriteError(error, "Couldn't post that comment."));
   kickPush();
 }
@@ -298,7 +299,7 @@ export async function sendClubMessage(clubId, body, userId) {
   need();
   const text = body.trim();
   if (!text) throw new Error("Write something first.");
-  const { error } = await supabase.from("club_messages").insert({ club_id: clubId, user_id: userId, body: text });
+  const { error } = await supabase.from("club_messages").insert({ club_id: clubId, user_id: userId, body: cleanForSending(text) });
   if (error) throw new Error(friendlyWriteError(error, "Couldn't send that message."));
   kickPush();
 }

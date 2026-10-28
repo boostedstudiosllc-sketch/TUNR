@@ -4,6 +4,7 @@
 // and keep device-local RSVPs). Without Supabase env vars everything falls
 // back to seed data + localStorage so the app still runs.
 
+import { cleanForSending } from "./clean.js";
 import { seedEvents } from "../data/events.js";
 import { supabase } from "./supabase.js";
 import { DEFAULT_TZ, parseLocal, isoInTz } from "./dates.js";
@@ -1400,7 +1401,7 @@ export async function addComment(eventId, body, userId) {
   if (text.length > 1000) throw new Error("Comment is too long.");
   const { error } = await supabase
     .from("comments")
-    .insert({ event_id: eventId, user_id: userId, body: text });
+    .insert({ event_id: eventId, user_id: userId, body: cleanForSending(text) });
   if (error) {
     throw new Error(friendlyWriteError(error, "Couldn't post that comment."));
   }

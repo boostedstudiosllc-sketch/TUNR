@@ -185,6 +185,12 @@ export default function App() {
     window.addEventListener("tunr:open", go);
     return () => window.removeEventListener("tunr:open", go);
   });
+  // Short notices from anywhere in the app (e.g. the language warning).
+  useEffect(() => {
+    const show = (e) => e.detail?.message && showToast(e.detail.message);
+    window.addEventListener("tunr:notice", show);
+    return () => window.removeEventListener("tunr:notice", show);
+  });
   useEffect(() => {
     const open = (e) => setInviting({ reason: e.detail?.reason || "" });
     window.addEventListener("tunr:invites", open);
