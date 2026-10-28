@@ -226,7 +226,7 @@ function tickPlayer(race, c, input, dt) {
   const top = (c.surface === "grass" && !boosted ? OFF_MAX : KART.vmax + (boosted ? c.boostTop : 0)) * (c.spin > 0 ? 0.5 : 1);
 
   // Nitro: a tap spends the tokens.
-  if (input.nitro && !c.nitroHeld && c.tokens >= NITRO.cost && !c.finished) {
+  if ((input.nitroTap || (input.nitro && !c.nitroHeld)) && c.tokens >= NITRO.cost && !c.finished) {
     c.tokens -= NITRO.cost;
     giveBoost(c, "nitro", NITRO.seconds, NITRO.speed, NITRO.accel);
     race.events.push({ kind: "nitro" });

@@ -176,3 +176,13 @@ test("harder difficulty means faster rivals", () => {
   const hard = lead("hard");
   assert.ok(easy < hard, `easy ${easy} hard ${hard}`);
 });
+
+test("a nitro tap counts even while the button reads as held", () => {
+  const race = newKartRace(buildKartTrack(KART_TRACKS[0]), { rivals: 0 });
+  race.obstacles = [];
+  run(race, {}, 3.5);
+  race.player.tokens = 3;
+  race.player.nitroHeld = true;
+  run(race, { nitro: true, nitroTap: true }, 1 / 120);
+  assert.equal(race.player.boostKind, "nitro");
+});

@@ -273,6 +273,7 @@ function KartRace({ def, laps, difficulty, color, audio, sound, onToggle, onFini
       const k = keys[e.key];
       if (k) {
         e.preventDefault();
+        if (k === "nitro" && !e.repeat) input.current.nitroTap = true;
         input.current[k] = true;
       } else if (e.key === "Escape") setPaused((p) => !p);
     };
@@ -315,7 +316,10 @@ function KartRace({ def, laps, difficulty, color, audio, sound, onToggle, onFini
           if (!live.current.paused) {
             acc += dt;
             while (acc >= STEP) {
-              tickKartRace(race, input.current);
+              // A tap quicker than a frame still counts.
+              const i = input.current;
+              tickKartRace(race, i);
+              i.nitroTap = false;
               acc -= STEP;
             }
           }
@@ -416,6 +420,7 @@ function KartRace({ def, laps, difficulty, color, audio, sound, onToggle, onFini
       e.preventDefault();
       e.currentTarget.setPointerCapture?.(e.pointerId);
       input.current[key] = true;
+      if (key === "nitro") input.current.nitroTap = true;
     },
     onPointerUp: () => (input.current[key] = false),
     onPointerCancel: () => (input.current[key] = false),
