@@ -19,8 +19,21 @@ import { displayDate } from "../lib/dates.js";
 import { Logo, ReportSheet, Author } from "./CommunityBits.jsx";
 import { ConfirmToChat } from "./ConfirmEmail.jsx";
 import Sheet, { muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
+import { uploadEventPhoto } from "../lib/store.js";
+import { compressImage } from "../lib/image.js";
 
 const ROLE = { owner: "OWNER", admin: "ADMIN" };
+const KIND_ART = { car_club: "linear-gradient(135deg, #0b2a52, #0080F0 55%, #38bdf8)", crew: "linear-gradient(135deg, #3b0764, #7c3aed 55%, #f472b6)", photo: "linear-gradient(135deg, #1f2937, #475569 55%, #facc15)" };
+const WELCOMES = ["Welcome! 👋", "Glad you're here 🔥", "What do you drive? 🚗"];
+
+// The club's socials, as links.
+function socials(club) {
+  return [
+    club.instagram && ["📸", "Instagram", `https://instagram.com/${club.instagram}`],
+    club.tiktok && ["🎵", "TikTok", `https://www.tiktok.com/@${club.tiktok}`],
+    club.website && ["🌐", "Website", club.website],
+  ].filter(Boolean);
+}
 
 // A club: who's in it, join or leave, requests for the people running it,
 // the meets members are going to, and the club chat.
@@ -79,9 +92,22 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
 
   return (
     <Sheet onClose={onClose} label={club.name} zIndex={265}>
-      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-        <Logo url={club.logo_url} fallback={kindLabel(club.kind).split(" ")[0]} size={60} />
-        <div style={{ minWidth: 0 }}>
+      {/* Banner: the club's cover photo, or a color for its kind. */}
+      <div
+        aria-hidden="true"
+        style={{
+          height: 128,
+          borderRadius: 14,
+          marginBottom: -34,
+          background: club.cover_url ? `center / cover no-repeat url("${club.cover_url}")` : KIND_ART[club.kind] || KIND_ART.car_club,
+          boxShadow: "inset 0 -50px 40px -20px rgba(0,0,0,0.55)",
+        }}
+      />
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-end", padding: "0 10px" }}>
+        <span style={{ borderRadius: 14, border: "3px solid #0D0D0D", background: "#0D0D0D", lineHeight: 0 }}>
+          <Logo url={club.logo_url} fallback={kindLabel(club.kind).split(" ")[0]} size={64} />
+        </span>
+        <div style={{ minWidth: 0, paddingBottom: 2 }}>
           <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.1 }}>{club.name}</div>
           <div style={{ fontSize: 12, color: "#888", marginTop: 3 }}>
             {kindLabel(club.kind)} · {club.visibility === "private" ? "🔒 Private" : "🌐 Public"}
@@ -91,9 +117,19 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
         </div>
       </div>
       {editing ? (
-        <ClubEdit club={club} onDone={() => (setEditing(false), onChanged())} onToast={onToast} />
+        <ClubEdit club={club} user={user} onDone={() => (setEditing(false), onChanged())} onToast={onToast} />
       ) : (
         club.description && <div style={{ ...muted, marginTop: 10, whiteSpace: "pre-wrap" }}>{club.description}</div>
+      )}
+      {!editing && socials(club).length > 0 && (
+        <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+          {socials(club).map(([icon, name, href]) => (
+            <a key={name} href={href} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 999, background: "#161a20", border: "1px solid #2A2E36", color: "#E6E6E6", fontSize: 13, fontWeight: 800, textDecoration: "none" }}>
+              <span aria-hidden="true">{icon}</span>
+              {name}
+            </a>
+          ))}
+        </div>
       )}
       {error && <div style={{ ...muted, color: "#EF4444", marginTop: 8 }}>{error}</div>}
 
@@ -147,7 +183,20 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
       {inClub && upcoming.length > 0 && (
         <div style={{ marginTop: 16 }}>
           <div style={label}>WHERE THE CLUB'S GOING</div>
-          {upcoming.slice(0, 6).map((m) => (
+          {upcoming.slice(0, 6).map((m, i) => (
+            i === 0 ? (
+              <button
+                key={m.event_id}
+                onClick={() => onOpenMeet(m.event)}
+                style={{ display: "block", width: "100%", textAlign: "left", background: "linear-gradient(160deg, #0b2a52, #111)", border: "1px solid #1d4ed8", borderRadius: 12, padding: 12, color: "#F0F0F0", cursor: "pointer", marginBottom: 8 }}
+              >
+                <span style={{ display: "block", fontSize: 10.5, fontWeight: 900, letterSpacing: 1.5, color: "#FACC15" }}>DON'T MISS THIS ONE</span>
+                <span style={{ display: "block", fontSize: 18, fontWeight: 900, marginTop: 3 }}>{m.event.title}</span>
+                <span style={{ display: "block", fontSize: 12.5, color: "#9DB7CF", marginTop: 2 }}>
+                  {displayDate(m.event)} · {m.event.city} · <b style={{ color: "#3CABFD" }}>{m.members_going} going</b>
+                </span>
+              </button>
+            ) : (
             <button
               key={m.event_id}
               onClick={() => onOpenMeet(m.event)}
@@ -159,6 +208,7 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
               </span>
               <span style={{ fontSize: 12, color: "#3CABFD", fontWeight: 800, whiteSpace: "nowrap" }}>{m.members_going} going</span>
             </button>
+            )
           ))}
         </div>
       )}
@@ -237,23 +287,66 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
   );
 }
 
-function ClubEdit({ club, onDone, onToast }) {
+function ClubEdit({ club, user, onDone, onToast }) {
   const [description, setDescription] = useState(club.description || "");
   const [city, setCity] = useState(club.city || "");
   const [visibility, setVisibility] = useState(club.visibility);
+  const [cover, setCover] = useState(club.cover_url || "");
+  const [uploading, setUploading] = useState(false);
+  const [instagram, setInstagram] = useState(club.instagram || "");
+  const [tiktok, setTiktok] = useState(club.tiktok || "");
+  const [website, setWebsite] = useState(club.website || "");
+  const handle = (v) => v.trim().replace(/^@/, "").replace(/^https?:\/\/(www\.)?(instagram\.com|tiktok\.com)\/@?/i, "").replace(/\/.*$/, "");
+
+  async function pickCover(file) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      setCover(await uploadEventPhoto(await compressImage(file, { maxDim: 1400 }), user.id));
+    } catch (e) {
+      onToast(e.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
     <div style={{ marginTop: 10, background: "#121212", border: "1px solid #222", borderRadius: 10, padding: 12 }}>
+      <div style={label}>COVER PHOTO</div>
+      <label style={{ display: "block", height: 90, borderRadius: 10, cursor: "pointer", background: cover ? `center / cover no-repeat url("${cover}")` : "#1a1d23", border: "1px dashed #3A4250", color: "#9AA4B2", fontSize: 13, fontWeight: 800, textAlign: "center", lineHeight: "90px" }}>
+        {uploading ? "Uploading…" : cover ? "" : "📷 Add a wide photo of the club"}
+        <input type="file" accept="image/*" onChange={(e) => pickCover(e.target.files?.[0])} style={{ display: "none" }} />
+      </label>
+      {cover && (
+        <button onClick={() => setCover("")} style={{ ...linkBtn, marginTop: 4 }}>
+          remove cover
+        </button>
+      )}
       <div style={label}>CITY</div>
       <input style={field} maxLength={60} value={city} onChange={(e) => setCity(e.target.value)} />
       <div style={{ ...label, marginTop: 10 }}>ABOUT</div>
       <textarea style={{ ...field, minHeight: 70 }} maxLength={500} value={description} onChange={(e) => setDescription(e.target.value)} />
+      <div style={{ ...label, marginTop: 10 }}>INSTAGRAM</div>
+      <input style={field} placeholder="clubname" maxLength={60} value={instagram} onChange={(e) => setInstagram(e.target.value)} />
+      <div style={{ ...label, marginTop: 10 }}>TIKTOK</div>
+      <input style={field} placeholder="clubname" maxLength={60} value={tiktok} onChange={(e) => setTiktok(e.target.value)} />
+      <div style={{ ...label, marginTop: 10 }}>WEBSITE</div>
+      <input style={field} placeholder="https://" maxLength={200} value={website} onChange={(e) => setWebsite(e.target.value)} />
       <label style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10, fontSize: 13, color: "#CCC" }}>
         <input type="checkbox" checked={visibility === "private"} onChange={(e) => setVisibility(e.target.checked ? "private" : "public")} style={{ accentColor: "#0080F0" }} />
         Private — approve who joins
       </label>
       <button
         onClick={() =>
-          updateClub(club.id, { description: description.trim() || null, city: city.trim() || null, visibility })
+          updateClub(club.id, {
+            description: description.trim() || null,
+            city: city.trim() || null,
+            visibility,
+            cover_url: cover || null,
+            instagram: handle(instagram) || null,
+            tiktok: handle(tiktok) || null,
+            website: website.trim() ? (/^https?:\/\//i.test(website.trim()) ? website.trim() : `https://${website.trim()}`) : null,
+          })
             .then(() => {
               onToast("Club updated");
               onDone();
@@ -277,12 +370,12 @@ function ClubChat({ club, user, messages, runs, onSent, onToast, onOpenPerson })
     end.current?.scrollIntoView({ block: "nearest" });
   }, [messages.length]);
 
-  async function send() {
-    if (!text.trim()) return;
+  async function send(body = text) {
+    if (!body.trim()) return;
     setSending(true);
     try {
-      await sendClubMessage(club.id, text, user.id);
-      setText("");
+      await sendClubMessage(club.id, body, user.id);
+      if (body === text) setText("");
       onSent();
     } catch (e) {
       onToast(e.message);
@@ -298,7 +391,18 @@ function ClubChat({ club, user, messages, runs, onSent, onToast, onOpenPerson })
         {messages.length === 0 ? (
           <div style={{ ...muted, fontSize: 12.5 }}>Only members see this. Plan a cruise, share a shoot, say hi.</div>
         ) : (
-          messages.map((m) => (
+          messages.map((m, i) =>
+            m.kind === "joined" ? (
+              <Joined
+                key={m.id}
+                m={m}
+                // Quick welcomes on the newest few joins, not your own.
+                replies={m.user_id !== user.id && i >= messages.length - 12 && !(account && !account.confirmed)}
+                sending={sending}
+                onReply={(w) => send(`@${m.username} ${w}`)}
+                onOpenPerson={onOpenPerson}
+              />
+            ) : (
             <div key={m.id} style={{ marginBottom: 8 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <Author name={m.username} photographer={m.photographer} photographerVerified={m.photographer_verified} onOpen={() => onOpenPerson(m.user_id)} />
@@ -319,7 +423,8 @@ function ClubChat({ club, user, messages, runs, onSent, onToast, onOpenPerson })
               </div>
               <div style={{ fontSize: 13.5, color: "#E6E6E6", lineHeight: 1.45, overflowWrap: "anywhere", fontFamily: "'Barlow', sans-serif" }}>{m.body}</div>
             </div>
-          ))
+            )
+          )
         )}
         <div ref={end} />
       </div>
@@ -328,9 +433,32 @@ function ClubChat({ club, user, messages, runs, onSent, onToast, onOpenPerson })
       ) : (
         <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
           <input style={{ ...field, flex: 1 }} placeholder="Message the club" maxLength={1000} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} />
-          <button disabled={sending || !text.trim()} onClick={send} style={{ ...bigButton, width: 70, padding: 0 }}>
+          <button disabled={sending || !text.trim()} onClick={() => send()} style={{ ...bigButton, width: 70, padding: 0 }}>
             SEND
           </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// "@x joined the club", with one-tap welcomes.
+function Joined({ m, replies, sending, onReply, onOpenPerson }) {
+  return (
+    <div style={{ margin: "4px 0 10px", padding: "8px 10px", borderRadius: 10, background: "rgba(0,128,240,0.08)", border: "1px solid #12355e" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#C9D1DC" }}>
+        <span aria-hidden="true">👋</span>
+        <Author name={m.username} photographer={m.photographer} photographerVerified={m.photographer_verified} onOpen={() => onOpenPerson(m.user_id)} />
+        <span>joined the club</span>
+        <span style={{ fontSize: 10.5, color: "#555", marginLeft: "auto" }}>{new Date(m.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+      </div>
+      {replies && (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 7 }}>
+          {WELCOMES.map((w) => (
+            <button key={w} disabled={sending} onClick={() => onReply(w)} style={{ padding: "5px 10px", borderRadius: 999, border: "1px solid #2A3646", background: "#161a20", color: "#E6E6E6", fontSize: 12.5, fontWeight: 800, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" }}>
+              {w}
+            </button>
+          ))}
         </div>
       )}
     </div>
