@@ -136,7 +136,7 @@ export default function CarSoccer({ onClose, user = null }) {
                   {error}
                 </div>
               )}
-              <GarageRow user={user} garage={garage} first={{ icon: "⚽", name: "Battle car", sub: "Turbo Ball's own" }} />
+              <GarageRow user={user} garage={garage} game="Turbo Ball" first={{ icon: "⚽", name: "Battle car", sub: "Turbo Ball's own" }} />
               {garage.car && (
                 <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>
                   You'll play in your {carName(garage.car)}. It handles like everyone else's, and glows blue underneath so you know whose side it's on.

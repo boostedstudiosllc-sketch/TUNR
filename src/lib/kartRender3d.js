@@ -4,8 +4,8 @@
 // a low chase camera.
 
 import * as THREE from "three";
-import { canvasTexture, speckle, LOOKS, box, buildCircuit, buildSurroundings } from "./f1Render3d.js";
-import { PAD, TRACK_W } from "./kartEngine.js";
+import { canvasTexture, speckle, LOOKS, box, buildCircuit, buildSurroundings, buildGuide, guideOffsets, drawGuide } from "./f1Render3d.js";
+import { PAD, TRACK_W, KART } from "./kartEngine.js";
 import { locate } from "./f1Engine.js";
 
 const fwd = (h) => [-Math.sin(h), -Math.cos(h)];
@@ -167,7 +167,7 @@ function buildObstacle(o) {
   return g;
 }
 
-export function createKartScene(canvas, race, { lowPower = false } = {}) {
+export function createKartScene(canvas, race, { lowPower = false, guide = true } = {}) {
   const track = race.track;
   const look = LOOKS[track.look] || LOOKS.day;
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: !lowPower, powerPreference: "high-performance" });
@@ -250,6 +250,10 @@ export function createKartScene(canvas, race, { lowPower = false } = {}) {
   let hop = 0;
   let wasDrifting = false;
 
+  // The guide line, as in Drift King.
+  const guideMesh = guide ? buildGuide(scene) : null;
+  const guideOff = guideOffsets(track);
+
   function resize(w, h) {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
@@ -258,6 +262,7 @@ export function createKartScene(canvas, race, { lowPower = false } = {}) {
 
   function render(race, dt) {
     time += dt;
+    if (guideMesh) drawGuide(guideMesh, track, guideOff, race, KART.brake * 0.8);
     const p = race.player;
     if (p.drifting && !wasDrifting) hop = 0.25;
     wasDrifting = p.drifting;

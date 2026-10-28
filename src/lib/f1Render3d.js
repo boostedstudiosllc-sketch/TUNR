@@ -532,7 +532,7 @@ export function buildSurroundings(scene, track, look) {
 
 // Where the guide line runs: toward the inside of each corner, more so the
 // tighter it is. Left of centre (side > 0) for a left turn.
-function guideOffsets(track) {
+export function guideOffsets(track) {
   const { n, k } = track;
   const out = new Float32Array(n);
   const W = 10;
@@ -549,7 +549,7 @@ const GREEN = [0.13, 0.77, 0.37];
 const YELLOW = [0.98, 0.8, 0.08];
 const RED = [0.94, 0.27, 0.27];
 
-function buildGuide(scene) {
+export function buildGuide(scene) {
   const pos = new Float32Array(GUIDE_PTS * 2 * 3);
   const col = new Float32Array(GUIDE_PTS * 2 * 4);
   const index = [];
@@ -569,6 +569,48 @@ function buildGuide(scene) {
   mesh.renderOrder = 1;
   scene.add(mesh);
   return mesh;
+}
+
+// Redraw the guide line from just ahead of the car, coloured for your speed
+// (brake: how hard the car can brake). Drift King and Boosted Karts.
+export function drawGuide(guideMesh, track, guideOff, race, brake) {
+  const p = race.player;
+  const { n, x, z, heading, s: dist, L } = track;
+  const pos = guideMesh.geometry.attributes.position.array;
+  const col = guideMesh.geometry.attributes.color.array;
+  const v = Math.abs(p.speed);
+  const start = (p.idx + 2) % n;
+  for (let k = 0; k < GUIDE_PTS; k++) {
+    const i = (start + k) % n;
+    const [fx, fz] = fwd(heading[i]);
+    const o = guideOff[i];
+    const half = 0.5;
+    for (const [m, w] of [
+      [0, o + half],
+      [1, o - half],
+    ]) {
+      const at = (k * 2 + m) * 3;
+      pos[at] = x[i] + fz * w;
+      pos[at + 1] = 0.04;
+      pos[at + 2] = z[i] - fx * w;
+    }
+    // How hard you'd have to brake from here to take this point.
+    let d = dist[i] - dist[p.idx];
+    if (d < 0) d += L;
+    const target = race.profile[i];
+    const need = v > target ? (v * v - target * target) / (2 * Math.max(d, 1)) : 0;
+    const c = need === 0 ? GREEN : need > brake * 0.45 ? RED : YELLOW;
+    const alpha = 0.85 * Math.min(1, k / 4) * Math.min(1, (GUIDE_PTS - 1 - k) / 14);
+    for (let m = 0; m < 2; m++) {
+      const at = (k * 2 + m) * 4;
+      col[at] = c[0];
+      col[at + 1] = c[1];
+      col[at + 2] = c[2];
+      col[at + 3] = alpha;
+    }
+  }
+  guideMesh.geometry.attributes.position.needsUpdate = true;
+  guideMesh.geometry.attributes.color.needsUpdate = true;
 }
 
 // playerLook: your own car from your garage ({ color, body, spoiler, rims,
@@ -667,46 +709,7 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false, 
   const guideOff = guideOffsets(track);
   guideMesh.visible = guide;
 
-  // Redraw the guide line from just ahead of the car, coloured for your speed.
-  function updateGuide(race) {
-    const p = race.player;
-    const { n, x, z, heading, s: dist, L } = track;
-    const pos = guideMesh.geometry.attributes.position.array;
-    const col = guideMesh.geometry.attributes.color.array;
-    const v = Math.abs(p.speed);
-    const start = (p.idx + 2) % n;
-    for (let k = 0; k < GUIDE_PTS; k++) {
-      const i = (start + k) % n;
-      const [fx, fz] = fwd(heading[i]);
-      const o = guideOff[i];
-      const half = 0.5;
-      for (const [m, w] of [
-        [0, o + half],
-        [1, o - half],
-      ]) {
-        const at = (k * 2 + m) * 3;
-        pos[at] = x[i] + fz * w;
-        pos[at + 1] = 0.04;
-        pos[at + 2] = z[i] - fx * w;
-      }
-      // How hard you'd have to brake from here to take this point.
-      let d = dist[i] - dist[p.idx];
-      if (d < 0) d += L;
-      const target = race.profile[i];
-      const need = v > target ? (v * v - target * target) / (2 * Math.max(d, 1)) : 0;
-      const c = need === 0 ? GREEN : need > BRAKE * 0.45 ? RED : YELLOW;
-      const alpha = 0.85 * Math.min(1, k / 4) * Math.min(1, (GUIDE_PTS - 1 - k) / 14);
-      for (let m = 0; m < 2; m++) {
-        const at = (k * 2 + m) * 4;
-        col[at] = c[0];
-        col[at + 1] = c[1];
-        col[at + 2] = c[2];
-        col[at + 3] = alpha;
-      }
-    }
-    guideMesh.geometry.attributes.position.needsUpdate = true;
-    guideMesh.geometry.attributes.color.needsUpdate = true;
-  }
+  const updateGuide = (race) => drawGuide(guideMesh, track, guideOff, race, BRAKE);
 
   const camera = new THREE.PerspectiveCamera(60, 1, 0.12, 3000);
   let mode = view;

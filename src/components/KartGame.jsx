@@ -4,7 +4,7 @@ import { KART_TRACKS } from "../lib/kartTracks.js";
 import { RushAudio } from "../lib/rushAudio.js";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import { TrackShape, ordinal, chip, chipOn } from "./DriftKing.jsx";
-import { usePortrait, useLandscapeLock, TurnSideways } from "./Sideways.jsx";
+import { usePortrait, useLandscapeLock } from "./Sideways.jsx";
 import { GarageRow, useGarageCar, carName } from "./Showroom.jsx";
 
 const LEVELS = [
@@ -24,11 +24,12 @@ function loadPrefs() {
       laps: LAPS.includes(p.laps) ? p.laps : 3,
       difficulty: LEVELS.some(([d]) => d === p.difficulty) ? p.difficulty : "medium",
       color: COLORS.includes(p.color) ? p.color : COLORS[0],
-      gas: p.gas === "pedal" ? "pedal" : "auto",
+      gas: p.gas === "auto" ? "auto" : "pedal",
+      guide: p.guide !== false,
     };
   } catch (e) {
     console.warn("Couldn't read Boosted Karts settings:", e.message);
-    return { laps: 3, difficulty: "medium", color: COLORS[0], gas: "auto" };
+    return { laps: 3, difficulty: "medium", color: COLORS[0], gas: "pedal", guide: true };
   }
 }
 
@@ -136,7 +137,7 @@ export default function KartGame({ onClose, user = null }) {
                   {error}
                 </div>
               )}
-              <GarageRow user={user} garage={garage} first={{ icon: "🛞", name: "Kart colors", sub: "Pick one below" }} hint="Add your car in Profile → Garage to paint your kart like it." />
+              <GarageRow user={user} garage={garage} game="Boosted Karts" first={{ icon: "🛞", name: "Kart colors", sub: "Pick one below" }} hint="Add your car in Profile → Garage to paint your kart like it." />
               {garage.car && (
                 <div style={{ ...muted, fontSize: 12.5, marginTop: 5, display: "flex", alignItems: "center", gap: 6 }}>
                   <span aria-hidden="true" style={{ width: 14, height: 14, borderRadius: "50%", background: kartColor, border: "1px solid rgba(255,255,255,0.4)" }} />
@@ -174,8 +175,8 @@ export default function KartGame({ onClose, user = null }) {
               <div style={{ ...label, marginTop: 12 }}>GAS</div>
               <div style={{ display: "flex", gap: 6 }}>
                 {[
-                  ["auto", "Automatic"],
                   ["pedal", "Gas pedal"],
+                  ["auto", "Automatic"],
                 ].map(([id, name]) => (
                   <button key={id} onClick={() => setPref({ gas: id })} style={{ ...chip, ...(prefs.gas === id ? chipOn : {}) }}>
                     {name}
@@ -183,8 +184,20 @@ export default function KartGame({ onClose, user = null }) {
                 ))}
               </div>
               <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>
-                {prefs.gas === "pedal" ? "Hold GAS to go. Off the gas, the kart rolls to a stop." : "The kart goes by itself, so one thumb can steer and the other can drift."} Races are played with your phone sideways.
+                {prefs.gas === "pedal" ? "Hold GAS to go. Off the gas, the kart rolls to a stop." : "The kart goes by itself, so one thumb can steer and the other can drift."} Races are played sideways.
               </div>
+              <div style={{ ...label, marginTop: 12 }}>GUIDE LINE</div>
+              <div style={{ display: "flex", gap: 6 }}>
+                {[
+                  [true, "On"],
+                  [false, "Off"],
+                ].map(([on, name]) => (
+                  <button key={name} onClick={() => setPref({ guide: on })} style={{ ...chip, ...(prefs.guide === on ? chipOn : {}) }}>
+                    {name}
+                  </button>
+                ))}
+              </div>
+              <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>The best way round, on the track: green is fine, yellow ease off, red brake.</div>
               <div style={{ ...label, marginTop: 14 }}>PICK A TRACK</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 8 }}>
                 {KART_TRACKS.map((t) => {
@@ -222,6 +235,7 @@ export default function KartGame({ onClose, user = null }) {
           difficulty={prefs.difficulty}
           color={kartColor}
           pedal={prefs.gas === "pedal"}
+          guide={prefs.guide}
           audio={audio}
           sound={sound}
           onToggle={toggle}
@@ -272,7 +286,7 @@ export default function KartGame({ onClose, user = null }) {
 }
 
 // The race: the 3D view, the numbers on top, and the controls.
-function KartRace({ def, laps, difficulty, color, pedal = false, audio, sound, onToggle, onFinish, onQuit, onFail }) {
+function KartRace({ def, laps, difficulty, color, pedal = false, guide = true, audio, sound, onToggle, onFinish, onQuit, onFail }) {
   const wrap = useRef(null);
   const canvas = useRef(null);
   const mapRef = useRef(null);
@@ -280,11 +294,12 @@ function KartRace({ def, laps, difficulty, color, pedal = false, audio, sound, o
   const input = useRef({ left: false, right: false, brake: false, drift: false, nitro: false, gas: false });
   const scene = useRef(null);
   const [paused, setPaused] = useState(false);
-  // Raced sideways: held upright, it waits behind a "turn your phone" screen.
+  // Raced sideways: held upright, the race is drawn turned on its side, so
+  // you just turn the phone.
   const portrait = usePortrait();
   useLandscapeLock();
   const live = useRef({ paused: false });
-  live.current.paused = paused || portrait;
+  live.current.paused = paused;
   live.current.pedal = pedal;
   const cb = useRef({ onFinish, onFail });
   cb.current = { onFinish, onFail };
@@ -320,14 +335,14 @@ function KartRace({ def, laps, difficulty, color, pedal = false, audio, sound, o
       .then((mod) => {
         if (gone) return;
         try {
-          scene.current = mod.createKartScene(canvas.current, race, { lowPower: LOW_POWER });
+          scene.current = mod.createKartScene(canvas.current, race, { lowPower: LOW_POWER, guide });
         } catch (e) {
           cb.current.onFail(`Couldn't start the 3D view on this phone. (${e.message})`);
           return;
         }
         const resize = () => {
-          const r = wrap.current.getBoundingClientRect();
-          scene.current?.resize(r.width, r.height);
+          // Layout size, not on-screen box: the race may be turned sideways.
+          scene.current?.resize(wrap.current.clientWidth, wrap.current.clientHeight);
         };
         resize();
         ro = new ResizeObserver(resize);
@@ -478,7 +493,14 @@ function KartRace({ def, laps, difficulty, color, pedal = false, audio, sound, o
   const small = { ...quietButton, width: 44, height: 40, padding: 0, fontSize: 15, background: "rgba(10,10,10,0.6)" };
 
   return (
-    <div ref={wrap} style={{ position: "relative", flex: 1, overflow: "hidden", background: "#000" }}>
+    <div
+      ref={wrap}
+      style={
+        portrait
+          ? { position: "fixed", top: 0, left: "100vw", width: "100dvh", height: "100vw", transform: "rotate(90deg)", transformOrigin: "0 0", zIndex: 411, overflow: "hidden", background: "#000" }
+          : { position: "relative", flex: 1, overflow: "hidden", background: "#000" }
+      }
+    >
       <canvas ref={canvas} aria-label={`${def.name}: the race`} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }} />
 
       {/* Top: place, lap, times; the map; pause. */}
@@ -566,7 +588,6 @@ function KartRace({ def, laps, difficulty, color, pedal = false, audio, sound, o
         )}
       </div>
 
-      {portrait && <TurnSideways />}
 
       {paused && (
         <div style={{ position: "absolute", inset: 0, zIndex: 4, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>

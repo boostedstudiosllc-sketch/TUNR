@@ -627,12 +627,12 @@ export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport 
     }
   }
 
-  if (sport) buildSides(car, s, g, body);
+  if (sport) buildSides(car, s, g, body, paintMat);
   if (sport && body === "exotic") {
     // Big air intakes in the sides, ahead of the rear wheels.
     const archR = g.wheelR + ARCH_GAP;
     for (const side of [-1, 1]) {
-      const scoop = box(0.06, 0.17, 0.7, MAT.hole, side * (s.W / 2 + 0.01), s.belt - 0.2, g.axle - archR - 0.32);
+      const scoop = box(0.06, 0.17, 0.7, grilleMesh(), side * (s.W / 2 + 0.01), s.belt - 0.2, g.axle - archR - 0.32);
       scoop.rotation.x = -0.12;
       car.add(scoop);
     }
@@ -721,7 +721,7 @@ export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport 
 
 // Side skirts, the window line, door seams and handles: the small things
 // that make it read as a real car instead of a toy.
-function buildSides(car, s, g, body) {
+function buildSides(car, s, g, body, paintMat) {
   const archR = g.wheelR + ARCH_GAP;
   const fourDoor = body === "sedan" || body === "suv" || body === "truck";
   const doors = {
@@ -743,8 +743,10 @@ function buildSides(car, s, g, body) {
   const trimMat = fourDoor ? MAT.chrome : MAT.trim;
   for (const side of [-1, 1]) {
     const edge = side * (s.W / 2 + 0.004);
-    // Black skirt along the bottom between the wheels.
-    car.add(box(0.07, 0.09, skirt, MAT.trim, side * (s.W / 2 - 0.01), s.clear + 0.14, 0));
+    // A body-colored skirt along the bottom between the wheels, with a thin
+    // dark lip under it.
+    car.add(box(0.05, 0.08, skirt, paintMat, side * (s.W / 2 - 0.015), s.clear + 0.15, 0));
+    car.add(box(0.055, 0.02, skirt, MAT.trim, side * (s.W / 2 - 0.012), s.clear + 0.1, 0));
     // Shut lines, drawn in short pieces so they follow the curved side.
     for (const u of doors) {
       const y0 = archTop(u);
@@ -773,6 +775,36 @@ const FRONT = {
   lens: new THREE.MeshPhysicalMaterial({ color: 0x1a1d22, roughness: 0.08, metalness: 0.3, clearcoat: 1, clearcoatRoughness: 0.02 }),
 };
 
+// Honeycomb mesh for grilles and air intakes (made on first use: it needs a
+// canvas), instead of flat black.
+let meshMat = null;
+function grilleMesh() {
+  if (!meshMat) {
+    const tex = canvasTexture(64, 64, (ctx, w, h) => {
+      ctx.fillStyle = "#0b0c0e";
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = "#3a3d43";
+      ctx.lineWidth = 3;
+      const r = 8;
+      for (let row = -1; row < 6; row++) {
+        for (let col = -1; col < 6; col++) {
+          const cx = col * r * 1.75 + (row % 2 ? r * 0.875 : 0);
+          const cy = row * r * 1.5;
+          ctx.beginPath();
+          for (let k = 0; k < 6; k++) {
+            const a = (k / 6) * Math.PI * 2 + Math.PI / 6;
+            ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+          }
+          ctx.closePath();
+          ctx.stroke();
+        }
+      }
+    }, { repeat: [5, 2] });
+    meshMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5, metalness: 0.4 });
+  }
+  return meshMat;
+}
+
 // Grilles, lights and badges on the nose (the car faces -z). Simple shapes
 // that read as the brand at a glance, not copies of any real car.
 function buildFront(car, s, half, body, brand, paintMat, wheelR) {
@@ -780,6 +812,7 @@ function buildFront(car, s, half, body, brand, paintMat, wheelR) {
   const z = -(half + 0.16); // the nose
   const zl = -(half + 0.18); // the bumper, a touch further out
   const W = s.W;
+  const mesh = grilleMesh();
   const exotic = body === "exotic";
   // On a supercar the lights sit up on the sloping hood.
   const lightY = exotic ? s.belt - 0.16 : s.belt - (tall === 1 ? 0.28 : 0.2 * tall);
@@ -821,11 +854,11 @@ function buildFront(car, s, half, body, brand, paintMat, wheelR) {
       add(w, h * 0.6, 0.05, FRONT.light, side * lx, lightY);
     }
   };
-  const intake = (w = W - 0.6, h = 0.14) => add(w, h * tall, 0.05, MAT.trim, 0, s.clear + 0.2 * tall, zl);
+  const intake = (w = W - 0.6, h = 0.14) => add(w, h * tall, 0.05, mesh, 0, s.clear + 0.2 * tall, zl);
   // A grille: a dark panel in a chrome (or dark) frame.
   const grille = (w, h, y = grilleY, frame = MAT.chrome) => {
     add(w + 0.05, h + 0.05, 0.04, frame, 0, y, z + 0.01);
-    return add(w, h, 0.05, MAT.trim, 0, y, z - 0.005);
+    return add(w, h, 0.05, mesh, 0, y, z - 0.005);
   };
 
   switch (brand) {
@@ -851,7 +884,7 @@ function buildFront(car, s, half, body, brand, paintMat, wheelR) {
       grille(0.7, 0.3 * tall, grilleY - 0.03, MAT.trim);
       for (let k = 0; k < 4; k++) ring(0.05, MAT.chrome, -0.11 + k * 0.073, grilleY + 0.17 * tall, 0.012);
       lights(0.46, 0.07);
-      add(W - 0.4, 0.1, 0.05, MAT.hole, 0, s.clear + 0.16, zl);
+      add(W - 0.4, 0.1, 0.05, mesh, 0, s.clear + 0.16, zl);
       break;
     case "volkswagen":
       add(0.9, 0.07, 0.05, MAT.trim, 0, lightY - 0.02);
@@ -866,7 +899,7 @@ function buildFront(car, s, half, body, brand, paintMat, wheelR) {
     case "mclaren":
       // No grille: big intakes low down, lights high on the wings.
       for (const side of [-1, 1]) {
-        add(exotic ? 0.34 : 0.42, exotic ? 0.11 : 0.16, 0.05, MAT.hole, side * (W / 2 - 0.38), s.clear + (exotic ? 0.24 : 0.28), exotic ? z + 0.04 : zl, brand === "lamborghini" ? side * 0.25 : 0);
+        add(exotic ? 0.34 : 0.42, exotic ? 0.11 : 0.16, 0.05, mesh, side * (W / 2 - 0.38), s.clear + (exotic ? 0.24 : 0.28), exotic ? z + 0.04 : zl, brand === "lamborghini" ? side * 0.25 : 0);
         if (brand === "porsche") disc(0.11, FRONT.light, side * lx, lightY + 0.03);
         else if (brand === "lamborghini") {
           // Y-shaped lights in a slim dark slot.
@@ -875,15 +908,15 @@ function buildFront(car, s, half, body, brand, paintMat, wheelR) {
           onHood(add(0.16, 0.03, 0.04, FRONT.light, side * (lx + 0.12), lightY - 0.01, z, side * 0.5));
         } else onHood(add(0.4, 0.06, 0.05, FRONT.light, side * lx, lightY + 0.02, z, side * -0.15));
       }
-      add(0.5, 0.1, 0.05, MAT.hole, 0, s.clear + 0.24, zl);
+      add(0.5, 0.1, 0.05, mesh, 0, s.clear + 0.24, zl);
       if (brand === "ferrari") add(0.1, 0.12, 0.05, FRONT.gold, 0, grilleY + 0.12, z - 0.02);
       break;
     case "tesla":
       lights(0.4, 0.06);
-      add(0.6, 0.08, 0.05, MAT.hole, 0, s.clear + 0.18, zl);
+      add(0.6, 0.08, 0.05, mesh, 0, s.clear + 0.18, zl);
       break;
     case "toyota":
-      add(W - 0.5, 0.24 * tall, 0.05, MAT.hole, 0, s.clear + 0.26 * tall, zl);
+      add(W - 0.5, 0.24 * tall, 0.05, mesh, 0, s.clear + 0.26 * tall, zl);
       add(0.5, 0.06, 0.05, MAT.trim, 0, lightY - 0.04);
       disc(0.05, MAT.chrome, 0, lightY - 0.04);
       lights(0.44, 0.07);
@@ -926,7 +959,7 @@ function buildFront(car, s, half, body, brand, paintMat, wheelR) {
       // Hood scoop, hexagon grille with a chrome wing.
       const scoop = box(0.56, 0.08, 0.5, paintMat, 0, s.belt + 0.03, -(half - 0.75));
       scoop.castShadow = true;
-      car.add(scoop, box(0.46, 0.05, 0.02, MAT.hole, 0, s.belt + 0.04, -(half - 0.5)));
+      car.add(scoop, box(0.46, 0.05, 0.02, mesh, 0, s.belt + 0.04, -(half - 0.5)));
       grille(0.58, 0.18 * tall);
       add(0.62, 0.02, 0.06, MAT.chrome, 0, grilleY, z - 0.02);
       disc(0.05, FRONT.blue, 0, grilleY);
@@ -982,7 +1015,7 @@ function buildFront(car, s, half, body, brand, paintMat, wheelR) {
       break;
     case "jeep":
       // Seven slots and round lights.
-      for (let k = -3; k <= 3; k++) add(0.06, 0.26 * tall, 0.05, MAT.hole, k * 0.1, grilleY + 0.04, z - 0.005);
+      for (let k = -3; k <= 3; k++) add(0.06, 0.26 * tall, 0.05, mesh, k * 0.1, grilleY + 0.04, z - 0.005);
       for (const side of [-1, 1]) {
         disc(0.13, FRONT.light, side * lx, lightY);
         ring(0.14, MAT.chrome, side * lx, lightY, 0.02);

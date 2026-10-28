@@ -279,7 +279,7 @@ export default function ParkUp({ onClose, allAccess = false, user = null }) {
             >
               ★ {total} / {LEVELS.length * 3}
             </div>
-            <GarageRow user={user} garage={garage} first={{ icon: "🅿️", name: "Park Up car", sub: "The blue coupe" }} />
+            <GarageRow user={user} garage={garage} game="Park Up" first={{ icon: "🅿️", name: "Park Up car", sub: "The blue coupe" }} />
             {garage.car && (
               <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>
                 You're parking your {carName(garage.car)}. Same size spot for every car, so the stars are fair.

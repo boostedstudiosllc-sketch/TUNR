@@ -33,7 +33,7 @@ import { RushAudio, loadSoundPrefs } from "../lib/rushAudio.js";
 import { loadVehicles, loadProfile } from "../lib/store.js";
 import { Avatar } from "./EditProfile.jsx";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
-import { ShowroomStage, CarCards, StyleRows, carName as nameOf } from "./Showroom.jsx";
+import { GarageShowroom, RideCard, carName as nameOf } from "./Showroom.jsx";
 
 // The Boosted Studios badge (the boost pickup) and the full logo (shown
 // while boosting). Loaded once; the game draws them when ready.
@@ -92,7 +92,8 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount, startV
   const [result, setResult] = useState(null);
   const [board, setBoard] = useState(null);
   const [boardPeriod, setBoardPeriod] = useState("week");
-  const saveTimer = useRef(0);
+  const saveTimers = useRef({});
+  const [garageOpen, setGarageOpen] = useState(false);
   const audio = useRef(null);
   const [sound, setSound] = useState(loadSoundPrefs);
   const [gfx, setGfx] = useState(loadGfx);
@@ -221,20 +222,20 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount, startV
     setLook(lookOf(c));
   }
 
-  function changeLook(patch) {
-    const next = { ...look, ...patch };
-    setLook(next);
-    if (car) {
-      // The color wheel fires on every drag, so save once it settles.
-      clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => saveGameLook(car.id, next).catch((e) => onToast(e.message)), 500);
-      setCars((list) =>
-        list.map((c) =>
-          c.id === car.id ? { ...c, game_color: next.color, game_body: next.body, game_spoiler: next.spoiler, game_rims: next.rims, game_height: next.height } : c
-        )
-      );
-    }
+  // Restyling in the garage: shown at once, saved to the car once you stop
+  // tapping. The loaner (no car of your own) just keeps its look here.
+  function restyle(c, next) {
+    if (c.id === "loaner" || c.id === carId) setLook(next);
+    if (c.id === "loaner") return;
+    setCars((list) =>
+      list.map((x) => (x.id === c.id ? { ...x, game_color: next.color, game_body: next.body, game_spoiler: next.spoiler, game_rims: next.rims, game_height: next.height } : x))
+    );
+    clearTimeout(saveTimers.current[c.id]);
+    saveTimers.current[c.id] = setTimeout(() => saveGameLook(c.id, next).catch((e) => onToast(e.message)), 500);
   }
+  const garageCars = cars.length
+    ? cars
+    : [{ id: "loaner", make: "TUNR", model: "Loaner", game_color: look.color, game_body: look.body, game_spoiler: look.spoiler, game_rims: look.rims, game_height: look.height }];
 
   async function loadBoard(period = "week", lvl = boardLevel) {
     setBoardPeriod(period);
@@ -377,23 +378,33 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount, startV
                 👻 Your ghost drives your best today ({Number(ghost.distance).toLocaleString()} m). Beat it!
               </div>
             )}
-            <div style={{ position: "relative", margin: "14px -16px 8px" }}>
-              <ShowroomStage look={look} plate={plate} flat={gfx === "classic"} style={{ height: 230 }} />
-              <div style={{ position: "absolute", top: 10, left: 14, right: 14, pointerEvents: "none" }}>
-                <div style={{ display: "inline-block", fontSize: 10.5, fontWeight: 900, letterSpacing: 1.5, color: "#111", background: "#FACC15", borderRadius: 4, padding: "2px 7px" }}>YOUR RIDE</div>
-                <div style={{ fontSize: 24, fontWeight: 900, lineHeight: 1.05, marginTop: 4, color: "#0b0d11", textTransform: "uppercase" }}>{carName}</div>
-              </div>
-            </div>
-
-            {user && cars.length > 0 && <CarCards cars={cars} selectedId={carId} onPick={pick} />}
+            <div style={{ ...label, marginTop: 14 }}>YOUR RIDE</div>
+            <RideCard name={carName} look={look} onOpen={() => setGarageOpen(true)} />
             {user && cars.length === 0 && (
-              <div style={{ ...muted, fontSize: 12.5, marginTop: 4 }}>
+              <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>
                 Add your car in your garage (Profile → Garage) to drive it here. For now you're in the TUNR loaner.
               </div>
             )}
-
-            <div style={{ ...label, marginTop: 12 }}>STYLE{car ? " · SAVED TO YOUR CAR" : ""}</div>
-            <StyleRows look={look} onChange={changeLook} />
+            {garageOpen && (
+              <GarageShowroom
+                title="GARAGE"
+                cars={garageCars}
+                startId={carId || "loaner"}
+                plate={plate}
+                flat={gfx === "classic"}
+                editable
+                onLook={restyle}
+                onClose={() => setGarageOpen(false)}
+                action={{
+                  label: "SELECT",
+                  sub: "DRIVE IT IN TUNR RUSH",
+                  onPick: (c) => {
+                    if (c && c.id !== "loaner") pick(c);
+                    setGarageOpen(false);
+                  },
+                }}
+              />
+            )}
 
             <div style={{ ...label, marginTop: 12 }}>GRAPHICS</div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>

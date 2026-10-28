@@ -155,11 +155,11 @@ export default function DriftKing({ onClose, user = null }) {
                 Drive through a Boosted Studios coin for a burst of speed (two a lap). Change the camera any time from pause.
               </div>
               {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
-              <GarageRow user={user} garage={garage} first={{ icon: "🏎️", name: "Race cars", sub: "Formula, GT, more" }} />
+              <GarageRow user={user} garage={garage} game="Drift King" first={{ icon: "🏎️", name: "Race cars", sub: "Formula, GT, more" }} />
               {myLook ? (
                 <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>
                   Your {carName(garage.car)} ({BODY_NAMES[myLook.body]}) races like the {CARS[carClass].name}: {CARS[carClass].blurb.toLowerCase()} Your rivals drive{" "}
-                  {CARS[carClass].name}s. Restyle it in Profile → Garage.
+                  {CARS[carClass].name}s. Tap GARAGE to tune it.
                 </div>
               ) : (
                 <>
