@@ -5,6 +5,7 @@ import { RushAudio } from "../lib/rushAudio.js";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import { TrackShape, ordinal, chip, chipOn } from "./DriftKing.jsx";
 import { usePortrait, useLandscapeLock, TurnSideways } from "./Sideways.jsx";
+import { GarageRow, useGarageCar, carName } from "./Showroom.jsx";
 
 const LEVELS = [
   ["easy", "Easy"],
@@ -44,8 +45,11 @@ function savePrefs(p) {
 // for a mini-turbo and Boosted tokens, and spend 3 tokens on NITRO. Boost
 // pads on the track; obstacles scattered at random each race. Free play;
 // fastest lap and best finish per track are kept on this phone.
-export default function KartGame({ onClose }) {
+export default function KartGame({ onClose, user = null }) {
+  // Your kart can wear the paint of a car in your garage.
+  const garage = useGarageCar(user, "karts");
   const [prefs, setPrefs] = useState(loadPrefs);
+  const kartColor = garage.car ? garage.car.game_color || "#1D4ED8" : prefs.color;
   const [bests, setBests] = useState(loadKartBests);
   const [trackId, setTrackId] = useState(null);
   const [round, setRound] = useState(0);
@@ -132,15 +136,22 @@ export default function KartGame({ onClose }) {
                   {error}
                 </div>
               )}
-              <div style={{ ...label, marginTop: 14 }}>YOUR KART</div>
+              <GarageRow user={user} garage={garage} first={{ icon: "🛞", name: "Kart colors", sub: "Pick one below" }} hint="Add your car in Profile → Garage to paint your kart like it." />
+              {garage.car && (
+                <div style={{ ...muted, fontSize: 12.5, marginTop: 5, display: "flex", alignItems: "center", gap: 6 }}>
+                  <span aria-hidden="true" style={{ width: 14, height: 14, borderRadius: "50%", background: kartColor, border: "1px solid rgba(255,255,255,0.4)" }} />
+                  Your kart wears your {carName(garage.car)}'s paint.
+                </div>
+              )}
+              <div style={{ ...label, marginTop: 14 }}>{garage.car ? "OR PICK A KART COLOR" : "YOUR KART"}</div>
               <div style={{ display: "flex", gap: 8 }}>
                 {COLORS.map((c) => (
                   <button
                     key={c}
-                    onClick={() => setPref({ color: c })}
+                    onClick={() => (setPref({ color: c }), garage.pick("game"))}
                     aria-label={`Kart color ${c}`}
-                    aria-pressed={prefs.color === c}
-                    style={{ width: 40, height: 40, borderRadius: "50%", background: c, border: prefs.color === c ? "3px solid #3CABFD" : "2px solid #2A2A2A", boxShadow: prefs.color === c ? "0 0 0 2px #0A0A0A inset" : "none", cursor: "pointer" }}
+                    aria-pressed={!garage.car && prefs.color === c}
+                    style={{ width: 40, height: 40, borderRadius: "50%", background: c, border: !garage.car && prefs.color === c ? "3px solid #3CABFD" : "2px solid #2A2A2A", boxShadow: !garage.car && prefs.color === c ? "0 0 0 2px #0A0A0A inset" : "none", cursor: "pointer" }}
                   />
                 ))}
               </div>
@@ -209,7 +220,7 @@ export default function KartGame({ onClose }) {
           def={def}
           laps={prefs.laps}
           difficulty={prefs.difficulty}
-          color={prefs.color}
+          color={kartColor}
           pedal={prefs.gas === "pedal"}
           audio={audio}
           sound={sound}

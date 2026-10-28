@@ -3,6 +3,12 @@ import { buildTrack, newRace, tickRace, STEP, standings, placeOf, lapClock, mph,
 import { TRACKS } from "../lib/f1Tracks.js";
 import { RushAudio } from "../lib/rushAudio.js";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
+import { GarageRow, useGarageCar, carName } from "./Showroom.jsx";
+import { lookOf, BODY_NAMES } from "../lib/rushEngine.js";
+
+// Your own car (from your garage) races as the class closest to it, and the
+// rivals drive that class.
+const CLASS_FOR_BODY = { hatch: "tuner", coupe: "tuner", sedan: "gt", suv: "muscle", truck: "muscle" };
 
 const VIEWS = [
   ["top", "Overhead"],
@@ -62,8 +68,11 @@ export function TrackShape({ def, size = 92, color = "#E8E8E8" }) {
 // the gas to drift; grab the Boosted Studios coins for a burst of speed. Race
 // three rivals; your fastest lap and best finish per track are kept on this
 // phone. Free play.
-export default function DriftKing({ onClose }) {
+export default function DriftKing({ onClose, user = null }) {
   const [prefs, setPrefs] = useState(loadPrefs);
+  const garage = useGarageCar(user, "drift");
+  const myLook = garage.car ? lookOf(garage.car) : null;
+  const carClass = myLook ? CLASS_FOR_BODY[myLook.body] || "gt" : prefs.car;
   const [bests, setBests] = useState(loadBests);
   const [trackId, setTrackId] = useState(null);
   const [round, setRound] = useState(0);
@@ -114,7 +123,7 @@ export default function DriftKing({ onClose }) {
   }
 
   function finished(r) {
-    setResult(r);
+    setResult({ ...r, mine: garage.car ? carName(garage.car) : "" });
     setBests((b) => saveBest(b, r.trackId, { lap: r.bestLap, place: r.place }));
   }
 
@@ -146,7 +155,15 @@ export default function DriftKing({ onClose }) {
                 Drive through a Boosted Studios coin for a burst of speed (two a lap). Change the camera any time from pause.
               </div>
               {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
-              <div style={{ ...label, marginTop: 14 }}>CAR</div>
+              <GarageRow user={user} garage={garage} first={{ icon: "🏎️", name: "Race cars", sub: "Formula, GT, more" }} />
+              {myLook ? (
+                <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>
+                  Your {carName(garage.car)} ({BODY_NAMES[myLook.body]}) races like the {CARS[carClass].name}: {CARS[carClass].blurb.toLowerCase()} Your rivals drive{" "}
+                  {CARS[carClass].name}s. Restyle it in Profile → Garage.
+                </div>
+              ) : (
+                <>
+              <div style={{ ...label, marginTop: 14 }}>RACE CAR</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
                 {Object.entries(CARS).map(([id, c]) => (
                   <button key={id} onClick={() => setPref({ car: id })} aria-pressed={prefs.car === id} style={{ ...chip, padding: "8px 2px", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 1, ...(prefs.car === id ? chipOn : {}) }}>
@@ -160,6 +177,8 @@ export default function DriftKing({ onClose }) {
               <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>
                 {CARS[prefs.car].blurb} Your rivals drive the same kind of car.
               </div>
+                </>
+              )}
               <div style={{ ...label, marginTop: 12 }}>DIFFICULTY</div>
               <div style={{ display: "flex", gap: 6 }}>
                 {LEVELS.map(([id, name]) => (
@@ -214,7 +233,8 @@ export default function DriftKing({ onClose }) {
           def={def}
           laps={prefs.laps}
           difficulty={prefs.difficulty}
-          car={prefs.car}
+          car={carClass}
+          playerLook={myLook}
           view={prefs.view}
           onView={(v) => setPref({ view: v })}
           guide={prefs.guide}
@@ -239,7 +259,7 @@ export default function DriftKing({ onClose }) {
             </div>
             <div style={{ fontSize: 52, fontWeight: 900, lineHeight: 1.05 }}>{ordinal(result.place)}</div>
             <div style={{ ...muted, fontSize: 13 }}>
-              {def.name} · {CARS[result.car]?.name} · {LEVELS.find(([d]) => d === result.difficulty)?.[1]} · {result.laps} {result.laps === 1 ? "lap" : "laps"} ·{" "}
+              {def.name} · {result.mine || CARS[result.car]?.name} · {LEVELS.find(([d]) => d === result.difficulty)?.[1]} · {result.laps} {result.laps === 1 ? "lap" : "laps"} ·{" "}
               {lapClock(result.total)}
             </div>
             <div style={{ fontSize: 15, fontWeight: 800, marginTop: 6, color: result.newBest ? "#FACC15" : "#E8E8E8" }}>
@@ -272,7 +292,7 @@ export default function DriftKing({ onClose }) {
 }
 
 // The race: the 3D view, the numbers on top, and the controls.
-function RaceScreen({ def, laps, difficulty, car, view, onView, guide, onGuide, audio, sound, onToggle, onFinish, onQuit, onFail }) {
+function RaceScreen({ def, laps, difficulty, car, playerLook = null, view, onView, guide, onGuide, audio, sound, onToggle, onFinish, onQuit, onFail }) {
   const wrap = useRef(null);
   const canvas = useRef(null);
   const mapRef = useRef(null);
@@ -325,7 +345,7 @@ function RaceScreen({ def, laps, difficulty, car, view, onView, guide, onGuide, 
       .then((mod) => {
         if (gone) return;
         try {
-          scene.current = mod.createF1Scene(canvas.current, race, { view: live.current.view, guide: live.current.guide, lowPower: LOW_POWER });
+          scene.current = mod.createF1Scene(canvas.current, race, { view: live.current.view, guide: live.current.guide, lowPower: LOW_POWER, playerLook });
         } catch (e) {
           cb.current.onFail(`Couldn't start the 3D view on this phone. (${e.message})`);
           return;

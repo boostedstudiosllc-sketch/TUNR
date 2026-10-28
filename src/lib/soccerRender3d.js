@@ -5,6 +5,7 @@
 import * as THREE from "three";
 import { canvasTexture, box } from "./f1Render3d.js";
 import { FIELD, GOAL, BALL, TEAM_COLORS } from "./soccerEngine.js";
+import { buildCar as buildRoadCar } from "./rush3d.js";
 
 const fwd = (h) => [-Math.sin(h), -Math.cos(h)];
 const WALL_H = 16;
@@ -301,7 +302,26 @@ function ballTexture() {
   });
 }
 
-export function createSoccerScene(canvas, match, { lowPower = false, ballCam = true } = {}) {
+// Your own car from your garage, in place of the battle car: the same parts
+// the game moves (a body that tips over for flips, a boost flame).
+function buildYourCar(look) {
+  const g = new THREE.Group();
+  const body = new THREE.Group();
+  g.add(body);
+  const car = buildRoadCar({ ...look, plate: "TUNR", sport: true });
+  car.traverse((o) => o.isMesh && (o.castShadow = true));
+  body.add(car);
+  const flameMat = new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.9, depthWrite: false, toneMapped: false });
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.3, 12).rotateX(Math.PI / 2), flameMat);
+  flame.position.set(0, (car.userData.exhaustY || 0.4) + 0.05, (car.userData.rear || 2.4) + 0.7);
+  flame.visible = false;
+  body.add(flame);
+  g.userData = { body, wheels: [], front: [], flame, flameMat };
+  return g;
+}
+
+// myLook: your own car's look (paint, body, wing, wheels, ride height).
+export function createSoccerScene(canvas, match, { lowPower = false, ballCam = true, myLook = null } = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: !lowPower, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lowPower ? 1.5 : 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -361,7 +381,7 @@ export function createSoccerScene(canvas, match, { lowPower = false, ballCam = t
   scene.add(spot);
 
   const cars = match.cars.map((c) => {
-    const m = buildBallCar(c.color);
+    const m = c.me && myLook ? buildYourCar(myLook) : buildBallCar(c.color);
     scene.add(m);
     return m;
   });

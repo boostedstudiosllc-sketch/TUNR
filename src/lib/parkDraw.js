@@ -392,10 +392,11 @@ export function drawPark(ctx, view, lot, g, input, t) {
   ctx.drawImage(lot, 0, 0, WORLD.w * scale, WORLD.h * scale);
   ctx.scale(scale, scale);
   drawSpot(ctx, g.level, t, g.state === "parked");
+  // Your car's paint and shape (from your garage), on the same footprint.
   const color = view.color || "#1D4ED8";
   drawTopCar(
     ctx,
-    { x: g.x, y: g.y, heading: g.heading, w: CAR.w, h: CAR.h, color, kind: "coupe" },
+    { x: g.x, y: g.y, heading: g.heading, w: CAR.w, h: CAR.h, color, kind: view.kind || "coupe" },
     { head: true, brake: Boolean(input.brake && g.speed >= 0) || g.state === "parked", reverse: g.gear === "R" && g.speed < -0.5 }
   );
   if (g.state === "driving") drawPointer(ctx, g, g.level);

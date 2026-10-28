@@ -10,6 +10,7 @@
 
 import * as THREE from "three";
 import { TRACK_W, KERB_W, BRAKE } from "./f1Engine.js";
+import { buildCar as buildRoadCar } from "./rush3d.js";
 
 const fwd = (h) => [-Math.sin(h), -Math.cos(h)];
 
@@ -570,7 +571,9 @@ function buildGuide(scene) {
   return mesh;
 }
 
-export function createF1Scene(canvas, race, { view = "chase", lowPower = false, guide = true } = {}) {
+// playerLook: your own car from your garage ({ color, body, spoiler, rims,
+// height }), drawn instead of a race car.
+export function createF1Scene(canvas, race, { view = "chase", lowPower = false, guide = true, playerLook = null } = {}) {
   const track = race.track;
   const look = LOOKS[TRACK_LOOK[track.id] || "day"];
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: !lowPower, powerPreference: "high-performance" });
@@ -615,11 +618,18 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false, 
 
   // The cars.
   const meshes = race.cars.map((c) => {
-    const m = c.ai ? buildCar(race.car, c.color, c.accent) : buildCar(race.car, "#0080F0", "#F5F5F5");
+    let m;
+    if (c.ai) m = buildCar(race.car, c.color, c.accent);
+    else if (playerLook) {
+      m = buildRoadCar({ ...playerLook, plate: "TUNR", sport: true });
+      m.traverse((o) => o.isMesh && (o.castShadow = true));
+    } else m = buildCar(race.car, "#0080F0", "#F5F5F5");
     scene.add(m);
     return m;
   });
   const me = meshes[race.cars.indexOf(race.player)];
+  // Eye height in the cockpit view: higher in a tall road car.
+  const eyeY = playerLook ? (playerLook.body === "truck" || playerLook.body === "suv" ? 1.6 : 1.15) : 1.1;
 
   // Tyre smoke: a small pool of soft puffs.
   const puffTex = canvasTexture(64, 64, (ctx, w, h) => {
@@ -704,8 +714,9 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false, 
 
   function setView(v) {
     mode = v;
-    me.userData.driver.visible = v !== "cockpit";
-    me.userData.steeringWheel.visible = v === "cockpit";
+    // Hide the driver and cabin from inside; your own road car has none to hide.
+    if (me.userData.driver) me.userData.driver.visible = v !== "cockpit";
+    if (me.userData.steeringWheel) me.userData.steeringWheel.visible = v === "cockpit";
   }
   setView(view);
 
@@ -724,8 +735,8 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false, 
     m.rotation.y = c.heading;
     const speed = c.ai ? c.v : c.speed;
     const steer = c.ai ? 0 : c.steer;
-    for (const f of m.userData.front) f.rotation.y = steer * 0.4;
-    for (const w of m.userData.wheels) w.rotation.x -= (speed * dt) / 0.36;
+    for (const f of m.userData.front || []) f.rotation.y = steer * 0.4;
+    for (const w of m.userData.wheels || []) w.rotation.x -= (speed * dt) / 0.36;
   }
 
   function render(race, dt) {
@@ -782,8 +793,8 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false, 
       // At the driver's eyes, looking down the nose.
       camera.fov = 70;
       camera.up.set(0, 1, 0);
-      camera.position.set(p.x + fx * 0.45, 1.1, p.z + fz * 0.45);
-      camera.lookAt(p.x + fx * 22, 0.55, p.z + fz * 22);
+      camera.position.set(p.x + fx * 0.45, eyeY, p.z + fz * 0.45);
+      camera.lookAt(p.x + fx * 22, eyeY - 0.55, p.z + fz * 22);
     } else if (mode === "top") {
       // High and behind, tipped forward: you see well down the road, the
       // way arcade taxi games do. Pulls back a little with speed.

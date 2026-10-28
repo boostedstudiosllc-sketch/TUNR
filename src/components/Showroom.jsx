@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { GAME_COLORS, BODIES, SPOILERS, RIMS, HEIGHTS, COLOR_NAMES, BODY_NAMES, SPOILER_NAMES, RIM_NAMES, HEIGHT_NAMES, lookOf, drawCar } from "../lib/rushEngine.js";
-import { quietButton } from "./Sheet.jsx";
+import { quietButton, label, muted } from "./Sheet.jsx";
+import { loadVehicles } from "../lib/store.js";
 
 // The garage showroom: your car on a turntable in a 3D garage
 // (showroom3d.js), cards for each car, and rows to restyle it. Used on your
@@ -100,8 +101,9 @@ export function ShowroomStage({ look, plate = "", flat = false, interactive = tr
   );
 }
 
-// One card per car, with a little 3D picture of it.
-export function CarCards({ cars, selectedId, onPick, onAdd, addLabel = "+ ADD CAR" }) {
+// One card per car, with a little 3D picture of it. `first`: an extra card
+// before them (a game's own car): { icon, name, sub, selected, onPick }.
+export function CarCards({ cars, selectedId, onPick, onAdd, addLabel = "+ ADD CAR", first = null }) {
   const [thumbs, setThumbs] = useState([]);
   const looks = cars.map(lookOf);
   const key = JSON.stringify(looks);
@@ -118,6 +120,30 @@ export function CarCards({ cars, selectedId, onPick, onAdd, addLabel = "+ ADD CA
 
   return (
     <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "2px 2px 6px", scrollbarWidth: "none" }}>
+      {first && (
+        <button
+          onClick={first.onPick}
+          aria-pressed={first.selected}
+          style={{
+            flex: "0 0 112px",
+            padding: 0,
+            borderRadius: 10,
+            overflow: "hidden",
+            cursor: "pointer",
+            background: "#15181e",
+            border: first.selected ? "2px solid #FACC15" : "1px solid #2A2E36",
+            color: "#F0F0F0",
+            textAlign: "left",
+            fontFamily: "'Barlow Condensed', sans-serif",
+          }}
+        >
+          <div style={{ height: 74, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 34, background: "linear-gradient(160deg, #0d1a2b, #1a1d23)" }}>{first.icon}</div>
+          <div style={{ padding: "5px 7px 6px" }}>
+            <div style={{ fontSize: 13, fontWeight: 900, textTransform: "uppercase" }}>{first.name}</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: first.selected ? "#FACC15" : "#7D8796" }}>{first.selected ? "SELECTED" : first.sub}</div>
+          </div>
+        </button>
+      )}
       {cars.map((v, k) => {
         const on = v.id === selectedId;
         return (
@@ -324,13 +350,28 @@ export function GarageShowroom({ title, cars, startId, plate = "", editable = fa
         </>
       )}
       {editable && onDrive && (
-        <button
-          className="action-btn"
-          onClick={() => onDrive(car)}
-          style={{ padding: "13px 0", borderRadius: 10, border: "none", cursor: "pointer", background: "#FACC15", color: "#111", fontSize: 18, fontWeight: 900, letterSpacing: 1.5, fontFamily: "'Barlow Condensed', sans-serif" }}
-        >
-          🏁 DRIVE IN TUNR RUSH
-        </button>
+        <>
+          <button
+            className="action-btn"
+            onClick={() => onDrive(car, "rush")}
+            style={{ padding: "13px 0", borderRadius: 10, border: "none", cursor: "pointer", background: "#FACC15", color: "#111", fontSize: 18, fontWeight: 900, letterSpacing: 1.5, fontFamily: "'Barlow Condensed', sans-serif" }}
+          >
+            🏁 DRIVE IN TUNR RUSH
+          </button>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#8A94A3" }}>OR PLAY IT IN</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 6 }}>
+            {[
+              ["drift", "🏎️ Drift King"],
+              ["ball", "⚽ Turbo Ball"],
+              ["park", "🅿️ Park Up"],
+              ["karts", "🛞 Boosted Karts"],
+            ].map(([game, name]) => (
+              <button key={game} className="action-btn" onClick={() => onDrive(car, game)} style={{ ...quietButton, padding: "10px 0", fontSize: 13.5 }}>
+                {name}
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
@@ -398,3 +439,63 @@ export function GarageShowroom({ title, cars, startId, plate = "", editable = fa
     </div>
   );
 }
+
+// Which of your cars you're driving in a game, remembered per game on this
+// phone ("game" = the game's own car). With nothing picked yet, your main car.
+export function useGarageCar(user, game) {
+  const key = `tunr.${game}.car`;
+  const [cars, setCars] = useState([]);
+  const [picked, setPicked] = useState(() => {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.warn("Couldn't read your car pick:", e.message);
+      return null;
+    }
+  });
+  useEffect(() => {
+    if (!user?.id) {
+      setCars([]);
+      return;
+    }
+    let alive = true;
+    loadVehicles(user.id)
+      .then((list) => alive && setCars(list))
+      .catch((e) => console.warn("Couldn't load your garage:", e.message));
+    return () => {
+      alive = false;
+    };
+  }, [user?.id]);
+  const car = picked === "game" ? null : cars.find((c) => c.id === picked) || (picked ? null : cars.find((c) => c.is_primary) || cars[0] || null);
+  const pick = (id) => {
+    setPicked(id);
+    try {
+      localStorage.setItem(key, id);
+    } catch (e) {
+      console.warn("Couldn't save your car pick:", e.message);
+    }
+  };
+  return { cars, car, pick };
+}
+
+// The "your garage" row in a game's menu: the game's own car first (if it
+// has one), then yours.
+export function GarageRow({ user, garage, first = null, hint = "Add your car in Profile → Garage to drive it here." }) {
+  if (!user) return null;
+  return (
+    <>
+      <div style={{ ...label, marginTop: 14 }}>YOUR GARAGE</div>
+      {garage.cars.length ? (
+        <CarCards
+          cars={garage.cars}
+          selectedId={garage.car?.id}
+          onPick={(v) => garage.pick(v.id)}
+          first={first && { ...first, selected: !garage.car, onPick: () => garage.pick("game") }}
+        />
+      ) : (
+        <div style={{ ...muted, fontSize: 12.5 }}>{hint}</div>
+      )}
+    </>
+  );
+}
+

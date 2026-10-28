@@ -87,7 +87,18 @@ const GAMES = [
 ];
 
 export default function Arcade({ user, onClose, onToast, onNeedAccount, startGame = null, startVehicle = null }) {
-  const [open, setOpen] = useState(GAMES.some((g) => g.id === startGame && !g.soon) ? startGame : null);
+  const [open, setOpen] = useState(() => {
+    const game = GAMES.some((g) => g.id === startGame && !g.soon) ? startGame : null;
+    // Came from the garage with a car: that game opens with it picked.
+    if (game && game !== "rush" && startVehicle) {
+      try {
+        localStorage.setItem(`tunr.${game}.car`, startVehicle);
+      } catch (e) {
+        console.warn("Couldn't pick that car for the game:", e.message);
+      }
+    }
+    return game;
+  });
   const [parkStars, setParkStars] = useState(0);
   const [driftBest, setDriftBest] = useState(0);
   const [kartWins, setKartWins] = useState(0);
@@ -126,10 +137,10 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
       />
     );
   }
-  if (open === "park") return <ParkUp onClose={() => setOpen(null)} allAccess={allAccess} />;
-  if (open === "drift") return <DriftKing onClose={() => setOpen(null)} />;
-  if (open === "karts") return <KartGame onClose={() => setOpen(null)} />;
-  if (open === "ball") return <CarSoccer onClose={() => setOpen(null)} />;
+  if (open === "park") return <ParkUp user={user} onClose={() => setOpen(null)} allAccess={allAccess} />;
+  if (open === "drift") return <DriftKing user={user} onClose={() => setOpen(null)} />;
+  if (open === "karts") return <KartGame user={user} onClose={() => setOpen(null)} />;
+  if (open === "ball") return <CarSoccer user={user} onClose={() => setOpen(null)} />;
 
   return (
     <div

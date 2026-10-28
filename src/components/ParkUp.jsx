@@ -21,6 +21,10 @@ import {
 } from "../lib/parkDraw.js";
 import { RushAudio } from "../lib/rushAudio.js";
 import { muted, bigButton, quietButton } from "./Sheet.jsx";
+import { GarageRow, useGarageCar, carName } from "./Showroom.jsx";
+
+// Top-down shapes for your car's body (the lot drawing knows these).
+const TOP_KIND = { coupe: "coupe", hatch: "coupe", sedan: "sedan", suv: "suv", truck: "truck" };
 
 const CONTROLS_H = 176; // the strip under the lot for the wheel and pedals
 const WHEEL_RETURN = 520; // degrees a second the wheel springs back when let go
@@ -46,7 +50,10 @@ const clock = (s) =>
 // and gas on the right, like the real thing. Stop inside the yellow spot
 // without touching anything; faster parks earn more stars. Free play, no
 // points; stars are kept on this phone.
-export default function ParkUp({ onClose, allAccess = false }) {
+export default function ParkUp({ onClose, allAccess = false, user = null }) {
+  // Park your own car (its paint and shape; every car fits the same spot).
+  const garage = useGarageCar(user, "park");
+  const carLook = garage.car ? { color: garage.car.game_color || "#1D4ED8", kind: TOP_KIND[garage.car.game_body] || "coupe" } : null;
   const [screen, setScreen] = useState("levels"); // levels | play
   const [progress, setProgress] = useState(loadProgress);
   const [index, setIndex] = useState(0);
@@ -272,6 +279,12 @@ export default function ParkUp({ onClose, allAccess = false }) {
             >
               ★ {total} / {LEVELS.length * 3}
             </div>
+            <GarageRow user={user} garage={garage} first={{ icon: "🅿️", name: "Park Up car", sub: "The blue coupe" }} />
+            {garage.car && (
+              <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>
+                You're parking your {carName(garage.car)}. Same size spot for every car, so the stars are fair.
+              </div>
+            )}
             <div
               style={{
                 display: "grid",
@@ -347,6 +360,7 @@ export default function ParkUp({ onClose, allAccess = false }) {
         <ParkBoard
           key={`${level.id}:${round}`}
           level={level}
+          carLook={carLook}
           paused={paused || Boolean(result)}
           audio={audio}
           onTime={(time) => setHud({ time })}
@@ -499,7 +513,7 @@ export default function ParkUp({ onClose, allAccess = false }) {
 }
 
 // The lot and the controls on one canvas, with its own game loop.
-function ParkBoard({ level, paused, audio, onTime, onStart, onDone }) {
+function ParkBoard({ level, carLook = null, paused, audio, onTime, onStart, onDone }) {
   const wrap = useRef(null);
   const canvas = useRef(null);
   const live = useRef({ paused });
@@ -538,6 +552,8 @@ function ParkBoard({ level, paused, audio, onTime, onStart, onDone }) {
         scale,
         ox: (rect.width - WORLD.w * scale) / 2,
         oy: Math.max(0, (lotH - WORLD.h * scale) / 2),
+        color: carLook?.color,
+        kind: carLook?.kind,
       };
       lot = renderLot(level, scale * dpr);
       layout = controlLayout(rect.width, lotH, rect.height - lotH);

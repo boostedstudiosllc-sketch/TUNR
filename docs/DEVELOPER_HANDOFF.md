@@ -424,3 +424,13 @@ Main drivers: how smooth auth deep linking goes (the most fiddly part), whether 
 
 The 📋 button in the header (`Checklist.jsx`) lists every way to earn points as tasks (today: check in, stay to the end, TUNR Rush; this week: the streak; this month: referrals; getting started: email, profile, car, alerts, membership) with done marks, progress bars and a GO button to where you do it. The yellow badge counts what's left. Opening it pays any getting-started points due (`claim_starter_points`), like the Rewards sheet does.
 
+## Your garage in every game
+
+Each Arcade game has a "Your garage" row (`GarageRow` / `useGarageCar` in `Showroom.jsx`; the pick is kept per game in localStorage as `tunr.<game>.car`, "game" for the game's own car, default your main car):
+- **TUNR Rush**: drives your car with its full style (paint, body, wing, wheels, ride height).
+- **Drift King**: your car's 3D model (`rush3d.js` `buildCar`) races as the nearest class (`CLASS_FOR_BODY`: hatch/coupe → Tuner, sedan → GT, SUV/truck → Muscle); rivals drive that class.
+- **Turbo Ball**: your car's model in place of the battle car (same physics), with the blue ring under it.
+- **Park Up**: your car's paint and top-down shape on the same footprint, so stars stay fair.
+- **Boosted Karts**: your kart wears your car's paint.
+The 3D garage's DRIVE IN TUNR RUSH and "Or play it in" buttons open a game with that car picked (`play:<game>:<car id>`).
+

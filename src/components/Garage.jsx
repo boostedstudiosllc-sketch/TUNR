@@ -216,9 +216,9 @@ export default function Garage({ user, onToast }) {
           onSticker={(v) => (setShowroom(null), setSticker(v))}
           onMakeMain={makePrimary}
           onAdd={() => (setShowroom(null), startAdding())}
-          onDrive={(v) => {
+          onDrive={(v, game = "rush") => {
             setShowroom(null);
-            window.dispatchEvent(new CustomEvent("tunr:open", { detail: { link: `play:rush:${v.id}` } }));
+            window.dispatchEvent(new CustomEvent("tunr:open", { detail: { link: `play:${game}:${v.id}` } }));
           }}
         />
       )}

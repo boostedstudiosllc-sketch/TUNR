@@ -3,6 +3,8 @@ import { newMatch, tickMatch, STEP, clockText, loadRecord, saveRecord, MATCH_LEN
 import { RushAudio } from "../lib/rushAudio.js";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import { chip, chipOn } from "./DriftKing.jsx";
+import { GarageRow, useGarageCar, carName } from "./Showroom.jsx";
+import { lookOf } from "../lib/rushEngine.js";
 
 const LEVELS = [
   ["easy", "Easy"],
@@ -45,7 +47,9 @@ function savePrefs(p) {
 // (tap again in the air to flip into the ball), brake to back up. Boost pads
 // round the floor refill the meter. Free play; your wins, losses and goals
 // are kept on this phone.
-export default function CarSoccer({ onClose }) {
+export default function CarSoccer({ onClose, user = null }) {
+  // Play in your own car from your garage, or the Turbo Ball battle car.
+  const garage = useGarageCar(user, "ball");
   const [prefs, setPrefs] = useState(loadPrefs);
   const [record, setRecord] = useState(loadRecord);
   const [playing, setPlaying] = useState(false);
@@ -132,6 +136,12 @@ export default function CarSoccer({ onClose }) {
                   {error}
                 </div>
               )}
+              <GarageRow user={user} garage={garage} first={{ icon: "⚽", name: "Battle car", sub: "Turbo Ball's own" }} />
+              {garage.car && (
+                <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>
+                  You'll play in your {carName(garage.car)}. It handles like everyone else's, and glows blue underneath so you know whose side it's on.
+                </div>
+              )}
               <div style={{ ...label, marginTop: 14 }}>TEAMS</div>
               <div style={{ display: "flex", gap: 6 }}>
                 {SIZES.map(([n, name]) => (
@@ -194,6 +204,7 @@ export default function CarSoccer({ onClose }) {
           length={prefs.length}
           difficulty={prefs.difficulty}
           ballCam={prefs.ballCam}
+          myLook={garage.car ? lookOf(garage.car) : null}
           pedal={prefs.gas === "pedal"}
           onBallCam={(on) => setPref({ ballCam: on })}
           audio={audio}
@@ -239,7 +250,7 @@ export default function CarSoccer({ onClose }) {
 }
 
 // The match: the 3D view, the scoreboard, and the controls.
-function Match({ size, length, difficulty, ballCam, pedal = false, onBallCam, audio, sound, onToggle, onFinish, onQuit, onFail }) {
+function Match({ size, length, difficulty, ballCam, myLook = null, pedal = false, onBallCam, audio, sound, onToggle, onFinish, onQuit, onFail }) {
   const wrap = useRef(null);
   const canvas = useRef(null);
   const hud = useRef({});
@@ -284,7 +295,7 @@ function Match({ size, length, difficulty, ballCam, pedal = false, onBallCam, au
       .then((mod) => {
         if (gone) return;
         try {
-          scene.current = mod.createSoccerScene(canvas.current, match, { lowPower: LOW_POWER, ballCam });
+          scene.current = mod.createSoccerScene(canvas.current, match, { lowPower: LOW_POWER, ballCam, myLook });
         } catch (e) {
           cb.current.onFail(`Couldn't start the 3D view on this phone. (${e.message})`);
           return;
