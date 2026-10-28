@@ -28,7 +28,7 @@ import {
   loadPickedScenery,
   savePickedScenery,
 } from "../lib/rush.js";
-import { loadMyPoints } from "../lib/points.js";
+import { loadMyPoints, pointsEarned } from "../lib/points.js";
 import { RushAudio, loadSoundPrefs } from "../lib/rushAudio.js";
 import { loadVehicles, loadProfile } from "../lib/store.js";
 import { Avatar } from "./EditProfile.jsx";
@@ -665,7 +665,7 @@ function ResultLine({ result, triesLimit, today }) {
   if (result.serverError) return result.serverError;
   if (!server) return dist >= goal ? "Goal hit! Sign in to earn points for it." : short;
   if (!server.counts) return `Practice run: no points.${dist >= goal ? " You'd have cleared it!" : ""}`;
-  if (server.earned) return `⭐ +${server.earned} point${server.earned === 1 ? "" : "s"}! ${LEVELS[result.level].name} cleared for today.`;
+  if (server.earned) return `⭐ +${server.earned} point${server.earned === 1 ? "" : "s"}! ${LEVELS[result.level].name} cleared for today. Claim it in your 📋 checklist.`;
   if (dist >= goal) return "✓ Goal hit, but points need a confirmed email. Check Settings → Account.";
   const left = triesLimit > 0 && today ? triesLimit - today.tries : null;
   if (left === 0) return `${short} No tries left today. Practice, and come back tomorrow!`;
@@ -880,6 +880,7 @@ function Game({ look, plate, rules, difficulty, forPoints, onStarted, ghostRun, 
               return onDone({ ...r, serverError: FINISH_STATUS[server?.status] || `This run didn't count. (${server?.status || "no answer"})` });
             }
             // The server's replay is the official result.
+            if (server.earned) pointsEarned();
             onDone({ ...r, ...(server.run ? { dist: server.run.dist, score: server.run.score } : {}), server });
           })
           .catch((e) => onDone({ ...r, serverError: e.message }));

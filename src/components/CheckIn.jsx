@@ -96,7 +96,7 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
       const result = await stayCheckIn(event.id, await preciseLocation());
       if (result.status === "ok") {
         setStayed(true);
-        onToast("🏁 +1 for staying the whole meet. Respect!");
+        onToast("🏁 +1 for staying the whole meet. Respect! Claim it in your 📋 checklist.");
       } else {
         setMessage(stayMessage(result));
       }
@@ -116,7 +116,7 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
       const result = await checkIn(event.id, null, pos);
       if (result.status === "ok") {
         setCheckedIn(true);
-        onToast(`⭐ Checked in: +${result.points} point${result.points === 1 ? "" : "s"}${result.rsvp_bonus ? " (RSVP bonus)" : ""}`);
+        onToast(`⭐ Checked in: +${result.points} point${result.points === 1 ? "" : "s"}${result.rsvp_bonus ? " (RSVP bonus)" : ""}. Claim it in your 📋 checklist.`);
       } else {
         setMessage(checkinMessage(result));
       }

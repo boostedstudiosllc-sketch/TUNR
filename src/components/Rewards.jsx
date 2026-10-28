@@ -98,7 +98,7 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
       .then((s) => {
         if (!alive) return;
         setStarter(s);
-        if (s.added > 0) onToast(`⭐ +${s.added} getting-started points`);
+        if (s.added > 0) onToast(`⭐ +${s.added} getting-started points. Claim them in your 📋 checklist.`);
       })
       .catch((e) => alive && setError(e.message))
       .finally(() => alive && refresh());
@@ -677,7 +677,7 @@ function CardForm({ initialCode, onAdded, onToast }) {
     try {
       const r = await redeemPointCard(value);
       setAdded(r);
-      onToast(`⭐ +${r.points} points from your ${r.label} card`);
+      onToast(`⭐ +${r.points} points from your ${r.label} card. Claim them in your 📋 checklist.`);
       setCode("");
       onAdded();
     } catch (e) {

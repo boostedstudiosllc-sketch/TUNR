@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { claimStarterPoints, loadMyStreak, loadPointsSettings, loadPointsSince, loadMyPoints, POINTS, STREAK_MILESTONES } from "../lib/points.js";
+import { claimStarterPoints, claimPoints, loadMyStreak, loadPointsSettings, loadPointsSince, loadMyPoints, loadUnclaimed, POINTS, STREAK_MILESTONES } from "../lib/points.js";
 import { loadMyGame } from "../lib/rush.js";
 import { loadProfile } from "../lib/store.js";
 import { openInvites } from "../lib/invites.js";
@@ -7,15 +7,30 @@ import Sheet, { sheetTitle, muted } from "./Sheet.jsx";
 
 // The points checklist (the 📋 in the header): every way to earn points as a
 // task, with what's done today, this week and for good, and a GO button to
-// the place you do it. Like a farm game's task board.
+// the place you do it. Like a farm game's task board: points you earn wait
+// here until you tap CLAIM (only claimed points are in your balance).
 
 const DAY = (d) => new Date(d).toLocaleDateString("en-CA", { timeZone: "America/New_York" }); // TUNR days are Atlanta days
 const go = (link) => window.dispatchEvent(new CustomEvent("tunr:open", { detail: { link } }));
 
+// Which ledger reasons each task pays out as.
+const TASK_REASONS = {
+  checkin: ["checkin", "rsvp_bonus", "welcome_bonus"],
+  stay: ["stay_bonus"],
+  rush: ["game_bonus"],
+  streak: ["streak_bonus"],
+  friends: ["referral_bonus"],
+  profile: ["starter_profile"],
+  car: ["starter_car"],
+  alerts: ["starter_alerts"],
+  member: ["member_bonus"],
+};
+const sum = (rows) => rows.reduce((n, r) => n + r.delta, 0);
+
 async function loadTasks(user) {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const [starter, streak, rates, recent, game, profile, points] = await Promise.all([
+  const [starter, streak, rates, recent, game, profile, points, unclaimed] = await Promise.all([
     claimStarterPoints(),
     loadMyStreak(),
     loadPointsSettings(),
@@ -23,6 +38,7 @@ async function loadTasks(user) {
     loadMyGame().catch(() => null),
     loadProfile(user.id),
     loadMyPoints(),
+    loadUnclaimed(user.id),
   ]);
   const today = DAY(now);
   const todays = (reason) => recent.some((r) => r.reason === reason && DAY(r.at) === today);
@@ -75,20 +91,23 @@ async function loadTasks(user) {
   if (rates.member_bonus > 0) {
     tasks.push({ group: "GETTING STARTED", id: "member", icon: "💎", title: "Become a TUNR member", text: "Member discounts at Atlanta shops, plus a one-time bonus.", pts: `+${rates.member_bonus}`, done: Boolean(profile?.isMember), go: () => go("tab:perks") });
   }
-  return { tasks, added: starter?.added || 0, balance: Number(points?.balance || 0) };
+  // Each task's waiting points, so it shows CLAIM.
+  for (const t of tasks) t.claim = unclaimed.filter((u) => (TASK_REASONS[t.id] || []).includes(u.reason));
+  return { tasks, unclaimed, added: starter?.added || 0, balance: Number(points?.balance || 0) };
 }
 
 export default function Checklist({ user, onToast }) {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
+  const [claiming, setClaiming] = useState(false);
 
   function refresh() {
     loadTasks(user)
       .then((d) => {
         setData(d);
         setError("");
-        if (d.added > 0) onToast(`⭐ +${d.added} getting-started points`);
+        if (d.added > 0) onToast(`⭐ +${d.added} getting-started points. Claim them in your 📋 checklist.`);
       })
       .catch((e) => setError(e.message));
   }
@@ -96,13 +115,37 @@ export default function Checklist({ user, onToast }) {
   useEffect(() => {
     if (!user) {
       setData(null);
-      return;
+      return undefined;
     }
     refresh();
+    // New points anywhere in the app (or coming back to it) update the badge.
+    const again = () => refresh();
+    const onShow = () => document.visibilityState === "visible" && refresh();
+    window.addEventListener("tunr:points", again);
+    document.addEventListener("visibilitychange", onShow);
+    return () => {
+      window.removeEventListener("tunr:points", again);
+      document.removeEventListener("visibilitychange", onShow);
+    };
   }, [user?.id]);
+
+  async function claim(rows) {
+    if (!rows.length || claiming) return;
+    setClaiming(true);
+    try {
+      const r = await claimPoints(rows.length === data.unclaimed.length ? null : rows.map((x) => x.id));
+      onToast(`⭐ +${r.claimed} points claimed! You have ${Number(r.balance).toLocaleString()}.`);
+      refresh();
+    } catch (e) {
+      onToast(e.message);
+    } finally {
+      setClaiming(false);
+    }
+  }
 
   if (!user) return null;
   const left = data ? data.tasks.filter((t) => !t.done && t.group !== "THIS MONTH").length : 0;
+  const waiting = data ? data.unclaimed.length : 0;
   const groups = data ? [...new Set(data.tasks.map((t) => t.group))] : [];
 
   return (
@@ -112,11 +155,11 @@ export default function Checklist({ user, onToast }) {
           setOpen(true);
           refresh();
         }}
-        aria-label={left ? `Points checklist, ${left} to do` : "Points checklist"}
+        aria-label={waiting ? `Points checklist, ${waiting} to claim` : left ? `Points checklist, ${left} to do` : "Points checklist"}
         style={{ position: "relative", width: 38, height: 38, borderRadius: "50%", background: "#161616", border: "1px solid #2A2A2A", color: "#DDD", fontSize: 17, cursor: "pointer", flexShrink: 0 }}
       >
         📋
-        {left > 0 && (
+        {(waiting > 0 || left > 0) && (
           <span
             style={{
               position: "absolute",
@@ -126,7 +169,7 @@ export default function Checklist({ user, onToast }) {
               height: 17,
               padding: "0 4px",
               borderRadius: 9,
-              background: "#FACC15",
+              background: waiting ? "#22C55E" : "#FACC15",
               color: "#111",
               fontSize: 10,
               fontWeight: 800,
@@ -135,7 +178,7 @@ export default function Checklist({ user, onToast }) {
               boxSizing: "border-box",
             }}
           >
-            {left}
+            {waiting ? `+${sum(data.unclaimed)}` : left}
           </span>
         )}
       </button>
@@ -146,7 +189,34 @@ export default function Checklist({ user, onToast }) {
             <div style={sheetTitle}>📋 POINTS CHECKLIST</div>
             {data && <div style={{ fontSize: 16, fontWeight: 900, color: "#FACC15", whiteSpace: "nowrap" }}>⭐ {data.balance.toLocaleString()}</div>}
           </div>
-          <div style={{ ...muted, marginTop: 4 }}>Everything that earns points. Tap GO to do it.</div>
+          <div style={{ ...muted, marginTop: 4 }}>Everything that earns points. Tap GO to do it, then CLAIM to add the points to your balance.</div>
+          {data && waiting > 0 && (
+            <div style={{ marginTop: 12, padding: 12, borderRadius: 14, background: "linear-gradient(160deg, rgba(34,197,94,0.16), rgba(250,204,21,0.1))", border: "1px solid #166534" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#86EFAC" }}>🎁 READY TO CLAIM</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: "#FACC15" }}>⭐ +{sum(data.unclaimed).toLocaleString()}</div>
+                </div>
+                <button className="action-btn" disabled={claiming} onClick={() => claim(data.unclaimed)} style={claimBtn(true)}>
+                  {claiming ? "…" : "CLAIM ALL"}
+                </button>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
+                {data.unclaimed.map((u) => (
+                  <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+                    <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#E5E7EB", fontFamily: "'Barlow', sans-serif" }}>
+                      {u.label}
+                      {u.detail ? <span style={{ color: "#8A94A3" }}> · {u.detail}</span> : null}
+                    </span>
+                    <span style={{ fontWeight: 900, color: "#FACC15" }}>+{u.delta}</span>
+                    <button className="action-btn" disabled={claiming} onClick={() => claim([u])} style={claimBtn(false)}>
+                      CLAIM
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {error && (
             <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>
               {error}
@@ -169,6 +239,7 @@ export default function Checklist({ user, onToast }) {
                     <Task
                       key={t.id}
                       task={t}
+                      onClaim={() => claim(t.claim)}
                       onGo={() => {
                         setOpen(false);
                         t.go?.();
@@ -185,7 +256,21 @@ export default function Checklist({ user, onToast }) {
   );
 }
 
-function Task({ task, onGo }) {
+const claimBtn = (big) => ({
+  padding: big ? "9px 16px" : "4px 10px",
+  borderRadius: 8,
+  border: "none",
+  background: "#22C55E",
+  color: "#06210F",
+  fontSize: big ? 15 : 12,
+  fontWeight: 900,
+  letterSpacing: 1,
+  cursor: "pointer",
+  fontFamily: "'Barlow Condensed', sans-serif",
+  boxShadow: big ? "0 4px 14px rgba(34,197,94,0.35)" : "none",
+});
+
+function Task({ task, onGo, onClaim }) {
   const [have, need] = task.progress || [];
   return (
     <div
@@ -218,7 +303,11 @@ function Task({ task, onGo }) {
       </span>
       <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5, flexShrink: 0 }}>
         {task.pts && <span style={{ fontSize: 13, fontWeight: 900, color: "#FACC15", whiteSpace: "nowrap" }}>⭐ {task.pts}</span>}
-        {task.done ? (
+        {task.claim?.length ? (
+          <button className="action-btn" onClick={onClaim} style={claimBtn(false)}>
+            CLAIM +{sum(task.claim)}
+          </button>
+        ) : task.done ? (
           <span style={{ fontSize: 12, fontWeight: 900, color: "#10B981", letterSpacing: 1 }}>✓ DONE</span>
         ) : task.go ? (
           <button

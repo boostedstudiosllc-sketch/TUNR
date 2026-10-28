@@ -130,6 +130,7 @@ export async function checkIn(eventId, code, pos) {
     p_accuracy: pos?.accuracy ?? null,
   });
   if (error) throw new Error(withReason("Couldn't check in.", error));
+  if (data?.status === "ok") pointsEarned();
   return data || {};
 }
 
@@ -169,6 +170,7 @@ export async function stayCheckIn(eventId, pos) {
     p_accuracy: pos?.accuracy ?? null,
   });
   if (error) throw new Error(withReason("Couldn't add the stay bonus.", error));
+  if (data?.status === "ok") pointsEarned();
   return data || {};
 }
 
@@ -222,7 +224,7 @@ export async function loadPointHistory(userId) {
   need();
   const { data, error } = await supabase
     .from("point_ledger")
-    .select("id, delta, reason, note, created_at, event_id, events(title)")
+    .select("id, delta, reason, note, created_at, claimed_at, event_id, events(title)")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -231,9 +233,39 @@ export async function loadPointHistory(userId) {
     id: r.id,
     delta: r.delta,
     label: REASON_LABELS[r.reason] || r.reason,
-    detail: r.events?.title || r.note || "",
+    detail: [r.events?.title || r.note, r.claimed_at ? "" : "waiting to claim in 📋"].filter(Boolean).join(" · "),
     at: r.created_at,
   }));
+}
+
+// Points you've earned that wait in the checklist until you tap CLAIM.
+// Anything that earns points calls pointsEarned() so the 📋 badge updates.
+export const CLAIM_HINT = "Claim it in your 📋 checklist.";
+export function pointsEarned() {
+  window.dispatchEvent(new CustomEvent("tunr:points"));
+}
+
+export async function loadUnclaimed(userId) {
+  need();
+  const { data, error } = await supabase
+    .from("point_ledger")
+    .select("id, delta, reason, note, created_at, events(title)")
+    .eq("user_id", userId)
+    .is("claimed_at", null)
+    .gt("delta", 0)
+    .order("created_at", { ascending: true })
+    .limit(100);
+  if (error) throw new Error(withReason("Couldn't load your points to claim.", error));
+  return (data || []).map((r) => ({ id: r.id, delta: r.delta, reason: r.reason, label: REASON_LABELS[r.reason] || r.reason, detail: r.events?.title || r.note || "", at: r.created_at }));
+}
+
+// ids: the ones to claim, or null for all of them. Returns { claimed, balance }.
+export async function claimPoints(ids = null) {
+  need();
+  const { data, error } = await supabase.rpc("claim_points", { p_ids: ids });
+  if (error) throw new Error(withReason("Couldn't claim your points.", error));
+  if (data?.status !== "ok") throw new Error(`Couldn't claim your points. (${data?.status})`);
+  return data;
 }
 
 // Which kinds of points you've had since a moment (for the checklist):
@@ -368,6 +400,7 @@ export async function redeemPointCard(code) {
   const { data, error } = await supabase.rpc("redeem_point_card", { p_code: code });
   if (error) throw new Error(withReason("Couldn't add that card.", error));
   if (data?.status !== "ok") throw new Error(CARD_COPY[data?.status] || `Couldn't add that card. (${data?.status})`);
+  pointsEarned();
   return data;
 }
 
