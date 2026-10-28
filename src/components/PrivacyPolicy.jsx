@@ -144,7 +144,7 @@ export default function PrivacyPolicy({ onClose }) {
           game leaderboards with your username and car, unless you turn off “Show me on leaderboards”.
           <br />
           <br />
-          <strong>Other arcade games:</strong> Park Up, Drift King and Boosted Karts save your stars, best laps,
+          <strong>Other arcade games:</strong> Park Up, Drift King, Boosted Karts and Turbo Ball save your stars, best laps,
           finishes and settings on your device only. Nothing about those games is sent to us.
           <br />
           <br />
