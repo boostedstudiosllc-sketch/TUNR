@@ -245,6 +245,7 @@ const REASON_LABELS = {
   member_bonus: "Membership bonus",
   spin_bonus: "Weekly spin",
   host_bonus: "Hosting milestone",
+  photo_bonus: "Photo of the week",
   redeem: "Redeemed",
   refund: "Points returned",
   revoke: "Check-in removed",
@@ -369,11 +370,11 @@ export const STORES = [
 ];
 
 export async function loadPointsSettings() {
-  const fallback = { points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1, receipt_points: 10 };
+  const fallback = { points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1, receipt_points: 10, photo_points: 25 };
   if (!supabase) return fallback;
   const { data, error } = await supabase
     .from("points_settings")
-    .select("points_per_dollar, member_bonus, referral_points, welcome_points, receipt_points")
+    .select("points_per_dollar, member_bonus, referral_points, welcome_points, receipt_points, photo_points")
     .maybeSingle();
   if (error) throw new Error(withReason("Couldn't load the points rates.", error));
   return data || fallback;
@@ -446,6 +447,7 @@ export async function savePointsSettings(settings) {
       referral_points: Number(settings.referral_points),
       welcome_points: Number(settings.welcome_points),
       receipt_points: Number(settings.receipt_points ?? 10),
+      photo_points: Number(settings.photo_points ?? 25),
       updated_at: new Date().toISOString(),
     })
     .eq("id", true);

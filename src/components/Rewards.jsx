@@ -68,7 +68,7 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
   const [rewards, setRewards] = useState([]);
   const [claims, setClaims] = useState([]);
   const [history, setHistory] = useState([]);
-  const [rates, setRates] = useState({ points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1, receipt_points: 10 });
+  const [rates, setRates] = useState({ points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1, receipt_points: 10, photo_points: 25 });
   const [streak, setStreak] = useState(null);
   const [showBoard, setShowBoard] = useState(false);
   const [error, setError] = useState("");
@@ -1183,8 +1183,8 @@ export function PurchasesAdmin({ onToast }) {
             <Field name="POINTS PER RECEIPT">
               <input style={field} inputMode="numeric" maxLength={3} value={rates.receipt_points ?? 10} onChange={(e) => setRates((r) => ({ ...r, receipt_points: e.target.value.replace(/\D/g, "") }))} />
             </Field>
-            <Field name=" ">
-              <span />
+            <Field name="PHOTO OF THE WEEK">
+              <input style={field} inputMode="numeric" maxLength={3} value={rates.photo_points ?? 25} onChange={(e) => setRates((r) => ({ ...r, photo_points: e.target.value.replace(/\D/g, "") }))} />
             </Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 8 }}>

@@ -5,6 +5,7 @@ import { loadProfile } from "../lib/store.js";
 import { openInvites } from "../lib/invites.js";
 import Sheet, { sheetTitle, muted } from "./Sheet.jsx";
 import { SpinCard } from "./SpinWheel.jsx";
+import { loadPhotoBallot } from "../lib/photoWeek.js";
 
 // The points checklist (the 📋 in the header): every way to earn points as a
 // task, with what's done today, this week and for good, and a GO button to
@@ -27,6 +28,7 @@ const TASK_REASONS = {
   member: ["member_bonus"],
   receipt: ["purchase"],
   host: ["host_bonus"],
+  photo: ["photo_bonus"],
 };
 // Hosting milestones: [meets, points].
 const HOST_STEPS = [
@@ -59,7 +61,7 @@ async function loadTasks(user) {
     console.warn(e.message);
     return null;
   });
-  const [starter, streak, rates, recent, game, profile, points, unclaimed] = await Promise.all([
+  const [starter, streak, rates, recent, game, profile, points, unclaimed, ballot] = await Promise.all([
     claimStarterPoints(),
     loadMyStreak(),
     loadPointsSettings(),
@@ -68,6 +70,7 @@ async function loadTasks(user) {
     loadProfile(user.id),
     loadMyPoints(),
     loadUnclaimed(user.id),
+    loadPhotoBallot().catch(() => null),
   ]);
   const today = DAY(now);
   const todays = (reason) => recent.some((r) => r.reason === reason && DAY(r.at) === today);
@@ -97,6 +100,16 @@ async function loadTasks(user) {
       pts: next ? `+${next[1]}` : "BONUS",
       done: Boolean(streak?.this_week),
       progress: next ? [Math.min(streak?.current || 0, next[0]), next[0]] : null,
+      go: () => go("tab:discover"),
+    },
+    {
+      group: "THIS WEEK",
+      id: "photo",
+      icon: "📸",
+      title: "Vote for Photo of the week",
+      text: `Pick the best meet photo posted this week. Post your own shots from meets: the top photo wins +${rates.photo_points ?? 25}.`,
+      pts: `+${rates.photo_points ?? 25}`,
+      done: Boolean(ballot?.my_vote),
       go: () => go("tab:discover"),
     },
     // This month.

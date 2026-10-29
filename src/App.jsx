@@ -68,6 +68,7 @@ import { useLocationStatus } from "./components/LocationAccess.jsx";
 import { recordSignIn } from "./lib/activity.js";
 import { CAR_PARAM } from "./lib/buildpage.js";
 import BuildPage from "./components/BuildPage.jsx";
+import PhotoOfWeek from "./components/PhotoOfWeek.jsx";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "✨ Showcase", "⭐ Points", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -803,6 +804,16 @@ export default function App() {
               </button>
             )}
           </div>
+          {!search && (
+            <PhotoOfWeek
+              user={user}
+              onToast={showToast}
+              onNeedAccount={() => {
+                setTab("profile");
+                showToast("Create a free account first");
+              }}
+            />
+          )}
           <div
             style={{
               display: "flex",
