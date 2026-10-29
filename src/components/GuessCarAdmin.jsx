@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { loadCarPuzzles, addCarPuzzle, updateCarPuzzle, deleteCarPuzzle } from "../lib/guessCar.js";
 import { uploadVehiclePhoto } from "../lib/store.js";
+import { CAR_LIST, findCarPhoto } from "../lib/wikimediaCars.js";
 import { muted, field, label, bigButton, quietButton } from "./Sheet.jsx";
 
 // Settings → Admin → Guess the Car: the car photos the game picks from
@@ -12,6 +13,8 @@ export default function GuessCarAdmin({ user, onToast }) {
   const [error, setError] = useState("");
   const [form, setForm] = useState({ make: "", model: "", year: "", credit: "", file: null });
   const [busy, setBusy] = useState(false);
+  const [importing, setImporting] = useState(null); // { done, total, added, none, failed, finished }
+  const stop = useRef(false);
 
   const load = () =>
     loadCarPuzzles()
@@ -52,11 +55,69 @@ export default function GuessCarAdmin({ user, onToast }) {
     }
   }
 
+  // Cars from the list that aren't in yet.
+  const have = new Set((rows || []).map((r) => `${r.make} ${r.model}`.toLowerCase()));
+  const missing = CAR_LIST.filter(([make, model]) => !have.has(`${make} ${model}`.toLowerCase()));
+
+  async function importAll() {
+    setError("");
+    stop.current = false;
+    const run = { done: 0, total: missing.length, added: 0, none: [], failed: [] };
+    setImporting({ ...run });
+    for (const [make, model, words] of missing) {
+      if (stop.current) break;
+      try {
+        const photo = await findCarPhoto(words);
+        if (photo) {
+          await addCarPuzzle({ make, model, ...photo });
+          run.added += 1;
+        } else run.none.push(`${make} ${model}`);
+      } catch (e) {
+        run.failed.push(`${make} ${model} (${e.message})`);
+        // Commons asked us to slow down: stop rather than hammer it.
+        if (/429|ratelimit/i.test(e.message)) {
+          setError(`Wikimedia asked to slow down, so the import stopped. Try again in a few minutes. (${e.message})`);
+          break;
+        }
+      }
+      run.done += 1;
+      setImporting({ ...run });
+      await new Promise((ok) => setTimeout(ok, 350));
+    }
+    setImporting({ ...run, finished: true });
+    if (run.added) onToast?.(`Added ${run.added} cars from Wikimedia`);
+    load();
+  }
+
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   return (
     <div>
       <div style={{ ...muted }}>
         The game shows one car a day from these photos plus members' cars that have a photo and a public build page. Use photos you took or have permission to use, and credit whoever shot them. The answer is the make and model exactly as you type them.
+      </div>
+      <div style={{ marginTop: 14, padding: 12, borderRadius: 12, background: "#101820", border: "1px solid #1E3A5F" }}>
+        <div style={label}>IMPORT FROM WIKIMEDIA COMMONS</div>
+        <div style={{ ...muted, fontSize: 12.5 }}>
+          Finds one free-to-use photo for each of {CAR_LIST.length} popular cars and adds it with the photographer's credit and licence (shown in the game, as the licences require). Takes a couple of minutes. Check the list after and hide any odd picks.
+        </div>
+        {importing && (
+          <div role="status" style={{ ...muted, marginTop: 8, color: "#CBD5E1" }}>
+            {importing.finished ? "Done" : "Finding photos…"} {importing.done}/{importing.total} · {importing.added} added
+            {importing.none.length ? ` · ${importing.none.length} with no good photo` : ""}
+            {importing.failed.length ? ` · ${importing.failed.length} failed` : ""}
+            {importing.finished && importing.none.length > 0 && <div style={{ fontSize: 12 }}>No good photo: {importing.none.join(", ")}</div>}
+            {importing.finished && importing.failed.length > 0 && <div style={{ fontSize: 12, color: "#F87171" }}>Failed: {importing.failed.join("; ")}</div>}
+          </div>
+        )}
+        {importing && !importing.finished ? (
+          <button onClick={() => (stop.current = true)} style={{ ...quietButton, width: "100%", marginTop: 8, padding: "11px 0" }}>
+            STOP
+          </button>
+        ) : (
+          <button onClick={importAll} disabled={!rows || !missing.length} style={{ ...bigButton, marginTop: 8, opacity: !rows || !missing.length ? 0.5 : 1 }}>
+            {missing.length ? `IMPORT ${missing.length} CARS` : "ALL LIST CARS ARE IN"}
+          </button>
+        )}
       </div>
       <form onSubmit={add} style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}>
         <div style={label}>ADD A CAR</div>
@@ -89,7 +150,15 @@ export default function GuessCarAdmin({ user, onToast }) {
                 {r.year ? `${r.year} ` : ""}
                 {r.make} {r.model}
               </div>
-              <div style={{ ...muted, fontSize: 12 }}>{r.credit || "No credit"}</div>
+              <div style={{ ...muted, fontSize: 12 }}>
+                {r.source_url ? (
+                  <a href={r.source_url} target="_blank" rel="noreferrer" style={{ color: "#93C5FD" }}>
+                    {r.credit || "Source"}
+                  </a>
+                ) : (
+                  r.credit || "No credit"
+                )}
+              </div>
             </div>
             <button onClick={() => act(() => updateCarPuzzle(r.id, { active: !r.active }), r.active ? "Taken out of the game" : "Back in the game")} style={{ ...quietButton, padding: "7px 10px", fontSize: 12 }}>
               {r.active ? "HIDE" : "SHOW"}

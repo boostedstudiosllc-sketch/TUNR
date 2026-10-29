@@ -45,7 +45,7 @@ export async function loadMyGuesses() {
 
 export async function loadCarPuzzles() {
   if (!supabase) return [];
-  const { data, error } = await supabase.from("car_puzzles").select("id, photo_url, make, model, year, credit, active, created_at").order("created_at", { ascending: false });
+  const { data, error } = await supabase.from("car_puzzles").select("id, photo_url, make, model, year, credit, source_url, active, created_at").order("created_at", { ascending: false });
   if (error) throw new Error(withReason("Couldn't load the Guess the Car photos.", error));
   return data || [];
 }

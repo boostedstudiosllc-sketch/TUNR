@@ -102,7 +102,7 @@ export default function GuessCar({ onClose, user = null, onNeedAccount }) {
                 }
                 const correct = choice === round.car.answer;
                 setPracticeScore((s) => ({ right: s.right + (correct ? 1 : 0), played: s.played + 1 }));
-                return { correct, answer: round.car.answer, credit: round.car.credit, points: 0 };
+                return { correct, answer: round.car.answer, credit: round.car.credit, source_url: round.car.source_url, points: 0 };
               }}
               practiceScore={round.mode === "practice" ? practiceScore : null}
               onNext={round.mode === "practice" ? practice : () => setRound(null)}
@@ -123,7 +123,7 @@ export default function GuessCar({ onClose, user = null, onNeedAccount }) {
                   <div style={{ marginTop: 8 }}>
                     <img src={today.photo_url} alt={guessed.answer} style={{ width: "100%", borderRadius: 12, maxHeight: 260, objectFit: "cover" }} />
                     <div style={{ fontSize: 22, fontWeight: 900, marginTop: 8, color: guessed.correct ? "#4ADE80" : "#F87171" }}>{guessed.correct ? "✓ Got it" : "✗ Not quite"}: {guessed.answer}</div>
-                    {guessed.credit && <div style={{ ...muted, fontSize: 12 }}>📸 {guessed.credit}</div>}
+                    <Credit text={guessed.credit} url={guessed.source_url} />
                     <div style={{ ...muted, marginTop: 4 }}>A new car tomorrow.</div>
                   </div>
                 ) : (
@@ -153,6 +153,24 @@ export default function GuessCar({ onClose, user = null, onNeedAccount }) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// Who took the photo (and its licence, for Wikimedia photos), linked to the
+// photo's page when there is one.
+function Credit({ text, url }) {
+  if (!text) return null;
+  return (
+    <div style={{ ...muted, fontSize: 12 }}>
+      📸{" "}
+      {url ? (
+        <a href={url} target="_blank" rel="noreferrer" style={{ color: "#93C5FD" }}>
+          {text}
+        </a>
+      ) : (
+        text
+      )}
     </div>
   );
 }
@@ -261,7 +279,7 @@ function Round({ mode, car, onAnswer, onNext, nextLabel, practiceScore }) {
             {result.correct ? `${result.seconds.toFixed(1)}s` : ""}
             {result.points ? ` · ⭐ +${result.points}, waiting in your checklist` : mode === "today" && !result.correct ? "New car tomorrow." : ""}
           </div>
-          {result.credit && <div style={{ ...muted, fontSize: 12 }}>📸 {result.credit}</div>}
+          <Credit text={result.credit} url={result.source_url} />
           <button className="action-btn" onClick={onNext} style={{ ...bigButton, marginTop: 10, background: "#FACC15", color: "#111", fontSize: 18, letterSpacing: 2 }}>
             {nextLabel}
           </button>
