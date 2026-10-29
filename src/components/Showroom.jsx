@@ -318,6 +318,7 @@ const GAMES = [
   ["ball", "⚽", "Turbo Ball"],
   ["park", "🅿️", "Park Up"],
   ["karts", "🛞", "Boosted Karts"],
+  ["drag", "🚦", "Drag Race"],
 ];
 
 // The game-style tuner: pick a part (Paint, Body, Wing, Wheels, Stance),
