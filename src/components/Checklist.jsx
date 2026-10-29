@@ -230,7 +230,7 @@ export default function Checklist({ user, onToast }) {
           refresh();
         }}
         aria-label={waiting ? `Points checklist, ${waiting} to claim` : left ? `Points checklist, ${left} to do` : "Points checklist"}
-        style={{ position: "relative", width: 38, height: 38, borderRadius: "50%", background: "#161616", border: "1px solid #2A2A2A", color: "#DDD", fontSize: 17, cursor: "pointer", flexShrink: 0 }}
+        style={{ position: "relative", width: 38, height: 38, borderRadius: "50%", background: "var(--n-161616)", border: "1px solid var(--n-2a2a2a)", color: "var(--n-dddddd)", fontSize: 17, cursor: "pointer", flexShrink: 0 }}
       >
         📋
         {(waiting > 0 || left > 0) && (
@@ -269,7 +269,7 @@ export default function Checklist({ user, onToast }) {
             <div style={{ marginTop: 12, padding: 12, borderRadius: 14, background: "linear-gradient(160deg, rgba(34,197,94,0.16), rgba(250,204,21,0.1))", border: "1px solid #166534" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#86EFAC" }}>🎁 READY TO CLAIM</div>
+                  <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "var(--a-86efac)" }}>🎁 READY TO CLAIM</div>
                   <div style={{ fontSize: 22, fontWeight: 900, color: "#FACC15" }}>⭐ +{sum(data.unclaimed).toLocaleString()}</div>
                 </div>
                 <button className="action-btn" disabled={claiming} onClick={() => claim(data.unclaimed)} style={claimBtn(true)}>
@@ -279,9 +279,9 @@ export default function Checklist({ user, onToast }) {
               <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
                 {data.unclaimed.map((u) => (
                   <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
-                    <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#E5E7EB", fontFamily: "'Barlow', sans-serif" }}>
+                    <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "var(--n-e5e7eb)", fontFamily: "'Barlow', sans-serif" }}>
                       {u.label}
-                      {u.detail ? <span style={{ color: "#8A94A3" }}> · {u.detail}</span> : null}
+                      {u.detail ? <span style={{ color: "var(--n-8a94a3)" }}> · {u.detail}</span> : null}
                     </span>
                     <span style={{ fontWeight: 900, color: "#FACC15" }}>+{u.delta}</span>
                     <button className="action-btn" disabled={claiming} onClick={() => claim([u])} style={claimBtn(false)}>
@@ -293,7 +293,7 @@ export default function Checklist({ user, onToast }) {
             </div>
           )}
           {error && (
-            <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>
+            <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>
               {error}
             </div>
           )}
@@ -303,9 +303,9 @@ export default function Checklist({ user, onToast }) {
             const done = list.filter((t) => t.done).length;
             return (
               <div key={g} style={{ marginTop: 14 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#8A94A3", marginBottom: 6 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "var(--n-8a94a3)", marginBottom: 6 }}>
                   <span>{g}</span>
-                  <span style={{ color: done === list.length ? "#10B981" : "#8A94A3" }}>
+                  <span style={{ color: done === list.length ? "#10B981" : "var(--n-8a94a3)" }}>
                     {done}/{list.length}
                   </span>
                 </div>
@@ -355,22 +355,22 @@ function Task({ task, onGo, onClaim }) {
         alignItems: "center",
         padding: "10px 10px 10px 12px",
         borderRadius: 12,
-        background: task.done ? "rgba(16,185,129,0.08)" : "#15181e",
-        border: `1px solid ${task.done ? "#14532D" : "#262B34"}`,
+        background: task.done ? "rgba(16,185,129,0.08)" : "var(--n-15181e)",
+        border: `1px solid ${task.done ? "#14532D" : "var(--n-262b34)"}`,
       }}
     >
       <span aria-hidden="true" style={{ fontSize: 26, width: 32, textAlign: "center", filter: task.done ? "none" : "saturate(0.9)" }}>
         {task.icon}
       </span>
       <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: "block", fontSize: 15.5, fontWeight: 900, color: task.done ? "#A7F3D0" : "#F0F0F0" }}>{task.title}</span>
-        <span style={{ display: "block", fontSize: 12, color: "#8A94A3", fontFamily: "'Barlow', sans-serif", lineHeight: 1.35, marginTop: 1 }}>{task.text}</span>
+        <span style={{ display: "block", fontSize: 15.5, fontWeight: 900, color: task.done ? "var(--a-a7f3d0)" : "var(--n-f0f0f0)" }}>{task.title}</span>
+        <span style={{ display: "block", fontSize: 12, color: "var(--n-8a94a3)", fontFamily: "'Barlow', sans-serif", lineHeight: 1.35, marginTop: 1 }}>{task.text}</span>
         {need ? (
           <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 5 }}>
-            <span style={{ flex: 1, height: 6, borderRadius: 3, background: "#262B34", overflow: "hidden" }}>
+            <span style={{ flex: 1, height: 6, borderRadius: 3, background: "var(--n-262b34)", overflow: "hidden" }}>
               <span style={{ display: "block", height: "100%", width: `${(have / need) * 100}%`, background: task.done ? "#10B981" : "#FACC15", borderRadius: 3 }} />
             </span>
-            <span style={{ fontSize: 11, fontWeight: 800, color: "#B9C2CF" }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: "var(--n-b9c2cf)" }}>
               {have}/{need}
             </span>
           </span>

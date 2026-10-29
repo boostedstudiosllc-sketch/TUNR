@@ -16,10 +16,10 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
       className="meet-card"
       onClick={() => onOpen(event)}
       style={{
-        background: "#111",
+        background: "var(--n-111111)",
         borderRadius: 10,
         overflow: "hidden",
-        border: "1px solid #1E1E1E",
+        border: "1px solid var(--n-1e1e1e)",
         animation: `fadeSlideUp 0.4s ease ${Math.min(index * 0.05, 0.4)}s both`,
       }}
     >
@@ -28,7 +28,7 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
           position: "relative",
           height: 130,
           overflow: "hidden",
-          background: `linear-gradient(135deg, ${color}22, #0a0a0a 65%)`,
+          background: `linear-gradient(135deg, ${color}22, var(--n-0a0a0a) 65%)`,
         }}
       >
         {event.photoUrl || event.flyerUrl ? (
@@ -61,7 +61,7 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
             top: 10,
             left: 10,
             background: color,
-            color: "#fff",
+            color: "var(--n-ffffff)",
             fontSize: 10,
             fontWeight: 800,
             padding: "3px 8px",
@@ -107,7 +107,7 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
         >
           @{event.host} {event.verified && "✓"}
           {event.cohosts && event.cohosts.length > 0 && (
-            <span style={{ color: "#888" }}> +{event.cohosts.length}</span>
+            <span style={{ color: "var(--n-888888)" }}> +{event.cohosts.length}</span>
           )}
           {event.foundingHost && (
             <span style={{ marginLeft: 5 }}>
@@ -118,7 +118,7 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
         <div
           style={{
             fontSize: 13,
-            color: "#888",
+            color: "var(--n-888888)",
             marginTop: 8,
             display: "flex",
             alignItems: "center",
@@ -146,14 +146,14 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
             </span>
           )}
         </div>
-        <div style={{ fontSize: 12, color: "#666", marginTop: 3 }}>
+        <div style={{ fontSize: 12, color: "var(--n-666666)", marginTop: 3 }}>
           {event.locked ? (
             <span>🔒 Address shared once you're in · {event.city}</span>
           ) : (
             <>
               📍 {event.location} · {event.city}
               {event.distanceLabel && (
-                <span style={{ color: "#3CABFD" }}> · {event.distanceLabel}</span>
+                <span style={{ color: "var(--a-3cabfd)" }}> · {event.distanceLabel}</span>
               )}
             </>
           )}
@@ -164,9 +164,9 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
             <span
               key={tag}
               style={{
-                background: "#1A1A1A",
-                border: "1px solid #2A2A2A",
-                color: "#777",
+                background: "var(--n-1a1a1a)",
+                border: "1px solid var(--n-2a2a2a)",
+                color: "var(--n-777777)",
                 fontSize: 10,
                 padding: "3px 8px",
                 borderRadius: 3,
@@ -212,9 +212,9 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
               style={{
                 flex: 1,
                 padding: "9px 0",
-                background: going ? "#0080F0" : "#1A1A1A",
+                background: going ? "#0080F0" : "var(--n-1a1a1a)",
                 color: going ? "#fff" : "#888",
-                border: going ? "1px solid #0080F0" : "1px solid #2A2A2A",
+                border: going ? "1px solid #0080F0" : "1px solid var(--n-2a2a2a)",
                 borderRadius: 5,
                 fontSize: 12,
                 fontWeight: 700,
@@ -233,9 +233,9 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
               style={{
                 flex: 1,
                 padding: "9px 0",
-                background: interested ? "#1A0800" : "#1A1A1A",
-                color: interested ? "#3CABFD" : "#666",
-                border: interested ? "1px solid #3CABFD" : "1px solid #2A2A2A",
+                background: interested ? "var(--n-1a0800)" : "var(--n-1a1a1a)",
+                color: interested ? "var(--a-3cabfd)" : "var(--n-666666)",
+                border: interested ? "1px solid #3CABFD" : "1px solid var(--n-2a2a2a)",
                 borderRadius: 5,
                 fontSize: 12,
                 fontWeight: 700,
@@ -258,8 +258,8 @@ function Badge({ children, accent = false, points = false }) {
     <div
       style={{
         background: points ? "rgba(26,21,0,0.9)" : accent ? "rgba(0, 128, 240,0.2)" : "rgba(0,0,0,0.7)",
-        border: points ? "1px solid #FACC15" : accent ? "1px solid #0080F0" : "1px solid #444",
-        color: points ? "#FACC15" : accent ? "#0080F0" : "#aaa",
+        border: points ? "1px solid #FACC15" : accent ? "1px solid #0080F0" : "1px solid var(--n-444444)",
+        color: points ? "#FACC15" : accent ? "#0080F0" : "var(--n-aaaaaa)",
         fontSize: 9,
         fontWeight: 700,
         padding: "3px 7px",

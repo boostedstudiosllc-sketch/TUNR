@@ -9,12 +9,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 const UP = "#10B981";
 const DOWN = "#EF6A5A";
-const FLAT = "#8A8A8A";
-const SURFACE = "#0B0B0B";
-const GRID = "#1C1C1C";
-const INK = "#F0F0F0";
-const INK_2 = "#9A9A9A";
-const INK_3 = "#666";
+const FLAT = "var(--n-8a8a8a)";
+const SURFACE = "var(--n-0b0b0b)";
+const GRID = "var(--n-1c1c1c)";
+const INK = "var(--n-f0f0f0)";
+const INK_2 = "var(--n-9a9a9a)";
+const INK_3 = "var(--n-666666)";
 
 const RANGES = [
   { id: "1d", label: "24H", ms: 864e5, word: "today" },
@@ -163,7 +163,7 @@ export default function GoingTicker({ points, current, label = "GOING", allWord 
     .slice(0, 12);
 
   return (
-    <div ref={box} style={{ background: `radial-gradient(120% 90% at 100% 0%, ${color}14, transparent 60%), ${SURFACE}`, border: "1px solid #1E1E1E", borderRadius: 14, padding: "14px 14px 10px", position: "relative" }}>
+    <div ref={box} style={{ background: `radial-gradient(120% 90% at 100% 0%, ${color}14, transparent 60%), ${SURFACE}`, border: "1px solid var(--n-1e1e1e)", borderRadius: 14, padding: "14px 14px 10px", position: "relative" }}>
       <style>{"@keyframes tick-pulse { 0% { r: 4; opacity: 0.55; } 100% { r: 14; opacity: 0; } } @keyframes tick-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } } @keyframes tick-fade { from { opacity: 0; } to { opacity: 1; } }"}</style>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
         <div style={{ minWidth: 0 }}>
@@ -188,7 +188,7 @@ export default function GoingTicker({ points, current, label = "GOING", allWord 
           {/* Kept while hovering (just hidden) so the chart doesn't jump. */}
           <div style={{ fontSize: 11.5, color: INK_3, marginTop: 4, fontFamily: "'Barlow', sans-serif", visibility: h ? "hidden" : "visible" }}>{word}</div>
         </div>
-        <div role="group" aria-label="Time range" style={{ display: "flex", gap: 2, background: "#151515", border: "1px solid #222", borderRadius: 999, padding: 2, flexShrink: 0 }}>
+        <div role="group" aria-label="Time range" style={{ display: "flex", gap: 2, background: "var(--n-151515)", border: "1px solid var(--n-222222)", borderRadius: 999, padding: 2, flexShrink: 0 }}>
           {RANGES.map((r) => (
             <button
               key={r.id}
@@ -276,8 +276,8 @@ export default function GoingTicker({ points, current, label = "GOING", allWord 
             top: (svgRef.current?.offsetTop ?? 70) + Math.max(0, y(h.v) - 58),
             width: 140,
             pointerEvents: "none",
-            background: "rgba(20,20,20,0.95)",
-            border: "1px solid #2A2A2A",
+            background: "rgba(var(--base),0.95)",
+            border: "1px solid var(--n-2a2a2a)",
             borderRadius: 10,
             padding: "7px 10px",
             boxShadow: "0 8px 20px rgba(0,0,0,0.5)",

@@ -100,7 +100,7 @@ export default function LinkupDetail({ linkup, user, miles, onClose, onChanged, 
         <div style={{ fontSize: 40 }}>{kind.emoji}</div>
         <div style={{ minWidth: 0 }}>
           <div style={sheetTitle}>{kind.label.toUpperCase()} LINKUP</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#3CABFD", fontWeight: 700 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--a-3cabfd)", fontWeight: 700 }}>
             <button
               onClick={() => onOpenPerson(linkup.userId)}
               style={{ background: "none", border: "none", padding: 0, color: "inherit", font: "inherit", cursor: "pointer" }}
@@ -119,13 +119,13 @@ export default function LinkupDetail({ linkup, user, miles, onClose, onChanged, 
       </div>
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 12 }}>
-        <Tag color={status.live ? "#10B981" : status.over ? "#666" : "#3CABFD"}>{status.text.toUpperCase()}</Tag>
-        <Tag color="#888">{linkup.visibility === "private" ? "🔒 PRIVATE" : "🌐 PUBLIC"}</Tag>
-        <Tag color="#888">{linkup.headcount} IN</Tag>
-        {miles != null && <Tag color="#888">{formatMiles(miles).toUpperCase()}</Tag>}
+        <Tag color={status.live ? "#10B981" : status.over ? "var(--n-666666)" : "#3CABFD"}>{status.text.toUpperCase()}</Tag>
+        <Tag color="var(--n-888888)">{linkup.visibility === "private" ? "🔒 PRIVATE" : "🌐 PUBLIC"}</Tag>
+        <Tag color="var(--n-888888)">{linkup.headcount} IN</Tag>
+        {miles != null && <Tag color="var(--n-888888)">{formatMiles(miles).toUpperCase()}</Tag>}
       </div>
 
-      <div style={{ marginTop: 14, background: "#141414", border: "1px solid #222", borderRadius: 10, padding: "12px 14px" }}>
+      <div style={{ marginTop: 14, background: "var(--n-141414)", border: "1px solid var(--n-222222)", borderRadius: 10, padding: "12px 14px" }}>
         {linkup.locked ? (
           <>
             <div style={{ fontSize: 15, fontWeight: 800 }}>🔒 {linkup.area || "Spot hidden"}</div>
@@ -139,13 +139,13 @@ export default function LinkupDetail({ linkup, user, miles, onClose, onChanged, 
           <>
             <div style={{ fontSize: 16, fontWeight: 800 }}>📍 {linkup.place}</div>
             {linkup.area && <div style={{ ...muted, fontSize: 12.5 }}>{linkup.area}</div>}
-            {linkup.note && <div style={{ fontSize: 13.5, color: "#DDD", marginTop: 8, lineHeight: 1.5, fontFamily: "'Barlow', sans-serif" }}>{linkup.note}</div>}
+            {linkup.note && <div style={{ fontSize: 13.5, color: "var(--n-dddddd)", marginTop: 8, lineHeight: 1.5, fontFamily: "'Barlow', sans-serif" }}>{linkup.note}</div>}
             {directions && (
               <a
                 href={directions}
                 target="_blank"
                 rel="noreferrer"
-                style={{ display: "block", textAlign: "center", marginTop: 10, padding: "10px 0", borderRadius: 8, background: "#0F1F0F", border: "1px solid #10B981", color: "#10B981", fontSize: 13, fontWeight: 800, letterSpacing: 1.2, textDecoration: "none", fontFamily: "'Barlow Condensed', sans-serif" }}
+                style={{ display: "block", textAlign: "center", marginTop: 10, padding: "10px 0", borderRadius: 8, background: "var(--n-0f1f0f)", border: "1px solid #10B981", color: "#10B981", fontSize: 13, fontWeight: 800, letterSpacing: 1.2, textDecoration: "none", fontFamily: "'Barlow Condensed', sans-serif" }}
               >
                 <DirectionsIcon size={15} /> DIRECTIONS
               </a>
@@ -155,13 +155,13 @@ export default function LinkupDetail({ linkup, user, miles, onClose, onChanged, 
       </div>
 
       {big && (
-        <div style={{ marginTop: 10, background: "#1F1405", border: "1px solid #5A3A0A", borderRadius: 10, padding: "10px 12px", ...muted, fontSize: 12.5, color: "#E9C27A" }}>
+        <div style={{ marginTop: 10, background: "var(--n-1f1405)", border: "1px solid var(--n-5a3a0a)", borderRadius: 10, padding: "10px 12px", ...muted, fontSize: 12.5, color: "var(--a-e9c27a)" }}>
           <b>{linkup.headcount} people in — that's a big group.</b> Big groups get noticed: public spots only, park spread
           out, respect property and the police, no racing or stunts.
         </div>
       )}
 
-      {loadError && <div style={{ ...muted, color: "#EF4444", marginTop: 8 }}>{loadError}</div>}
+      {loadError && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{loadError}</div>}
 
       {/* Your answer */}
       {!status.over && role !== "host" && (
@@ -203,10 +203,10 @@ export default function LinkupDetail({ linkup, user, miles, onClose, onChanged, 
           <div style={label}>WANT TO JOIN ({requests.length})</div>
           {requests.map((p) => (
             <PersonRow key={p.user_id} person={p} onOpen={() => onOpenPerson(p.user_id)}>
-              <button disabled={busy} onClick={() => act(() => acceptRequest(linkup.id, p.user_id), `@${p.username} is in`)} style={smallButton("#0080F0", "#fff")}>
+              <button disabled={busy} onClick={() => act(() => acceptRequest(linkup.id, p.user_id), `@${p.username} is in`)} style={smallButton("#0080F0", "var(--n-ffffff)")}>
                 ACCEPT
               </button>
-              <button disabled={busy} onClick={() => act(() => removeFromLinkup(linkup.id, p.user_id), "Declined")} style={smallButton("#1A1A1A", "#999")}>
+              <button disabled={busy} onClick={() => act(() => removeFromLinkup(linkup.id, p.user_id), "Declined")} style={smallButton("var(--n-1a1a1a)", "var(--n-999999)")}>
                 DECLINE
               </button>
             </PersonRow>
@@ -220,7 +220,7 @@ export default function LinkupDetail({ linkup, user, miles, onClose, onChanged, 
           {inPeople.map((p) => (
             <PersonRow key={p.user_id} person={p} onOpen={() => onOpenPerson(p.user_id)}>
               {role === "host" && !p.is_host && (
-                <button disabled={busy} onClick={() => act(() => removeFromLinkup(linkup.id, p.user_id), `Removed @${p.username}`)} style={smallButton("#1A1A1A", "#999")}>
+                <button disabled={busy} onClick={() => act(() => removeFromLinkup(linkup.id, p.user_id), `Removed @${p.username}`)} style={smallButton("var(--n-1a1a1a)", "var(--n-999999)")}>
                   REMOVE
                 </button>
               )}
@@ -235,7 +235,7 @@ export default function LinkupDetail({ linkup, user, miles, onClose, onChanged, 
         <button
           disabled={busy}
           onClick={() => (confirmCancel ? act(() => cancelLinkup(linkup.id), "Linkup cancelled — everyone in has been told") : setConfirmCancel(true))}
-          style={{ ...quietButton, marginTop: 16, color: "#EF4444", borderColor: confirmCancel ? "#EF4444" : "#2A2A2A" }}
+          style={{ ...quietButton, marginTop: 16, color: "var(--a-ef4444)", borderColor: confirmCancel ? "#EF4444" : "var(--n-2a2a2a)" }}
         >
           {confirmCancel ? "TAP AGAIN TO CANCEL THE LINKUP" : "CANCEL LINKUP"}
         </button>
@@ -245,7 +245,7 @@ export default function LinkupDetail({ linkup, user, miles, onClose, onChanged, 
         TUNR doesn't organize or supervise linkups. Meet in public, trust your gut, call 911 in an emergency.{" "}
         <a
           href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`Linkup report ${linkup.id}`)}`}
-          style={{ color: "#3CABFD", fontWeight: 700 }}
+          style={{ color: "var(--a-3cabfd)", fontWeight: 700 }}
         >
           Report this linkup
         </a>
@@ -281,7 +281,7 @@ function Chat({ linkup, user, messages, onSent, onToast, onOpenPerson, closed })
   return (
     <div style={{ marginTop: 18 }}>
       <div style={label}>LINKUP CHAT</div>
-      <div style={{ background: "#121212", border: "1px solid #222", borderRadius: 10, padding: 10, maxHeight: 280, overflowY: "auto" }}>
+      <div style={{ background: "var(--n-121212)", border: "1px solid var(--n-222222)", borderRadius: 10, padding: 10, maxHeight: 280, overflowY: "auto" }}>
         {messages.length === 0 ? (
           <div style={{ ...muted, fontSize: 12.5 }}>Only people in this linkup see this. Say where you're parked, what you're driving, or that you're running late.</div>
         ) : (
@@ -290,12 +290,12 @@ function Chat({ linkup, user, messages, onSent, onToast, onOpenPerson, closed })
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <button
                   onClick={() => onOpenPerson(m.user_id)}
-                  style={{ background: "none", border: "none", padding: 0, color: m.user_id === linkup.userId ? "#3CABFD" : "#CCC", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}
+                  style={{ background: "none", border: "none", padding: 0, color: m.user_id === linkup.userId ? "var(--a-3cabfd)" : "var(--n-cccccc)", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}
                 >
                   @{m.username}
                 </button>
                 <Badges dayOne={m.day_one} dayOneNumber={m.day_one_number} photographer={m.photographer} photographerVerified={m.photographer_verified} size={13} />
-                <span style={{ fontSize: 10.5, color: "#555" }}>
+                <span style={{ fontSize: 10.5, color: "var(--n-555555)" }}>
                   {new Date(m.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
                 </span>
                 {m.user_id === user.id && (
@@ -305,13 +305,13 @@ function Chat({ linkup, user, messages, onSent, onToast, onOpenPerson, closed })
                         .then(onSent)
                         .catch((e) => onToast(e.message))
                     }
-                    style={{ background: "none", border: "none", color: "#555", fontSize: 11, cursor: "pointer", padding: 0 }}
+                    style={{ background: "none", border: "none", color: "var(--n-555555)", fontSize: 11, cursor: "pointer", padding: 0 }}
                   >
                     delete
                   </button>
                 )}
               </div>
-              <div style={{ fontSize: 13.5, color: "#E6E6E6", lineHeight: 1.45, fontFamily: "'Barlow', sans-serif", overflowWrap: "anywhere" }}>{m.body}</div>
+              <div style={{ fontSize: 13.5, color: "var(--n-e6e6e6)", lineHeight: 1.45, fontFamily: "'Barlow', sans-serif", overflowWrap: "anywhere" }}>{m.body}</div>
             </div>
           ))
         )}
@@ -339,15 +339,15 @@ function Chat({ linkup, user, messages, onSent, onToast, onOpenPerson, closed })
 
 function PersonRow({ person, onOpen, children }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: "1px solid #1A1A1A" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: "1px solid var(--n-1a1a1a)" }}>
       <button
         onClick={onOpen}
-        style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, color: "#E6E6E6", cursor: "pointer", textAlign: "left" }}
+        style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, color: "var(--n-e6e6e6)", cursor: "pointer", textAlign: "left" }}
       >
         <span style={{ fontSize: 14, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis" }}>@{person.username}</span>
         <Badges photographer={person.photographer} photographerVerified={person.photographer_verified} size={14} />
         <span style={{ fontSize: 13 }}>{AS_TEXT[person.going_as] || ""}</span>
-        {person.is_host && <span style={{ fontSize: 10, color: "#3CABFD", fontWeight: 800, letterSpacing: 1 }}>HOST</span>}
+        {person.is_host && <span style={{ fontSize: 10, color: "var(--a-3cabfd)", fontWeight: 800, letterSpacing: 1 }}>HOST</span>}
       </button>
       {children}
     </div>
@@ -366,7 +366,7 @@ const smallButton = (bg, color) => ({
   padding: "6px 10px",
   background: bg,
   color,
-  border: bg === "#1A1A1A" ? "1px solid #2A2A2A" : "none",
+  border: bg === "var(--n-1a1a1a)" ? "1px solid var(--n-2a2a2a)" : "none",
   borderRadius: 6,
   fontSize: 11,
   fontWeight: 800,

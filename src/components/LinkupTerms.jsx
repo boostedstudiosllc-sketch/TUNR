@@ -28,7 +28,7 @@ export default function LinkupTerms({ onAgreed, onClose, onShowTerms }) {
       <div style={{ ...muted, marginTop: 4 }}>Linkups are real people meeting up. The ground rules:</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
         {LINKUP_RULES.map(([title, text]) => (
-          <div key={title} style={{ background: "#141414", border: "1px solid #222", borderRadius: 8, padding: "9px 12px" }}>
+          <div key={title} style={{ background: "var(--n-141414)", border: "1px solid var(--n-222222)", borderRadius: 8, padding: "9px 12px" }}>
             <div style={{ fontSize: 13.5, fontWeight: 800 }}>{title}</div>
             <div style={{ ...muted, fontSize: 12.5 }}>{text}</div>
           </div>
@@ -41,19 +41,19 @@ export default function LinkupTerms({ onAgreed, onClose, onShowTerms }) {
           onChange={(e) => setChecked(e.target.checked)}
           style={{ accentColor: "#0080F0", width: 18, height: 18, marginTop: 2, flexShrink: 0 }}
         />
-        <span style={{ ...muted, color: "#CCC" }}>
+        <span style={{ ...muted, color: "var(--n-cccccc)" }}>
           I'm 18 or older, I agree to these rules and the{" "}
           <button
             type="button"
             onClick={onShowTerms}
-            style={{ background: "none", border: "none", padding: 0, color: "#3CABFD", fontWeight: 700, cursor: "pointer", font: "inherit" }}
+            style={{ background: "none", border: "none", padding: 0, color: "var(--a-3cabfd)", fontWeight: 700, cursor: "pointer", font: "inherit" }}
           >
             Terms of Service
           </button>
           , and I understand I go to any linkup at my own risk.
         </span>
       </label>
-      {error && <div style={{ ...muted, color: "#EF4444", marginTop: 8 }}>{error}</div>}
+      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
       <button disabled={!checked || busy} onClick={agree} style={{ ...bigButton, marginTop: 14, opacity: checked ? 1 : 0.4 }}>
         {busy ? "SAVING…" : "I AGREE"}
       </button>

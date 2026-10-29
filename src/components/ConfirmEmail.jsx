@@ -20,17 +20,17 @@ export default function ConfirmEmailBanner({ account, onToast }) {
   }
 
   return (
-    <div style={{ margin: "0 20px 12px", background: "#1F1405", border: "1px solid #5A3A0A", borderRadius: 10, padding: "10px 12px" }}>
+    <div style={{ margin: "0 20px 12px", background: "var(--n-1f1405)", border: "1px solid var(--n-5a3a0a)", borderRadius: 10, padding: "10px 12px" }}>
       <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
         <div style={{ fontSize: 20 }}>✉️</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13.5, fontWeight: 800, color: "#F5C26B" }}>Confirm your email</div>
-          <div style={{ fontSize: 11.5, color: "#C9A46A", lineHeight: 1.4, fontFamily: "'Barlow', sans-serif" }}>
+          <div style={{ fontSize: 13.5, fontWeight: 800, color: "var(--a-f5c26b)" }}>Confirm your email</div>
+          <div style={{ fontSize: 11.5, color: "var(--a-c9a46a)", lineHeight: 1.4, fontFamily: "'Barlow', sans-serif" }}>
             Tap the link we emailed you to unlock chat, posting and linkups.
             {account.deleteOn ? ` Unconfirmed accounts are removed on ${shortDate(account.deleteOn)}.` : " Unconfirmed accounts are removed after 7 days."}{" "}
             <button
               onClick={() => setWhy((v) => !v)}
-              style={{ background: "none", border: "none", padding: 0, color: "#FF9A3D", fontWeight: 700, cursor: "pointer", font: "inherit" }}
+              style={{ background: "none", border: "none", padding: 0, color: "var(--a-ff9a3d)", fontWeight: 700, cursor: "pointer", font: "inherit" }}
             >
               {why ? "Hide" : "Why?"}
             </button>
@@ -52,7 +52,7 @@ export default function ConfirmEmailBanner({ account, onToast }) {
 // In place of a chat box for an account that hasn't confirmed yet.
 export function ConfirmToChat() {
   return (
-    <div style={{ marginTop: 10, background: "#141414", border: "1px dashed #3A2A10", borderRadius: 20, padding: "11px 16px", fontSize: 12.5, color: "#C9A46A", fontFamily: "'Barlow', sans-serif" }}>
+    <div style={{ marginTop: 10, background: "var(--n-141414)", border: "1px dashed var(--n-3a2a10)", borderRadius: 20, padding: "11px 16px", fontSize: 12.5, color: "var(--a-c9a46a)", fontFamily: "'Barlow', sans-serif" }}>
       ✉️ Confirm your email to chat — tap the link we emailed you.
     </div>
   );

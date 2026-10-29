@@ -23,9 +23,9 @@ export function MeetStylePicker({ style, note, onStyle, onNote, labelStyle, inpu
                 flex: 1,
                 padding: "10px 8px",
                 borderRadius: 8,
-                background: on ? (m.id === "showcase" ? "rgba(250,204,21,0.08)" : "rgba(0, 128, 240,0.1)") : "#161616",
-                border: `1.5px solid ${on ? (m.id === "showcase" ? "#FACC15" : "#0080F0") : "#2A2A2A"}`,
-                color: on ? (m.id === "showcase" ? "#FACC15" : "#3CABFD") : "#999",
+                background: on ? (m.id === "showcase" ? "rgba(250,204,21,0.08)" : "rgba(0, 128, 240,0.1)") : "var(--n-161616)",
+                border: `1.5px solid ${on ? (m.id === "showcase" ? "#FACC15" : "#0080F0") : "var(--n-2a2a2a)"}`,
+                color: on ? (m.id === "showcase" ? "#FACC15" : "var(--a-3cabfd)") : "var(--n-999999)",
                 cursor: "pointer",
                 fontFamily: "'Barlow Condensed', sans-serif",
                 textAlign: "center",
@@ -34,14 +34,14 @@ export function MeetStylePicker({ style, note, onStyle, onNote, labelStyle, inpu
               <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.8 }}>
                 {m.icon} {m.label}
               </div>
-              <div style={{ fontSize: 11, color: "#777", marginTop: 2, fontFamily: "'Barlow', sans-serif" }}>{m.sub}</div>
+              <div style={{ fontSize: 11, color: "var(--n-777777)", marginTop: 2, fontFamily: "'Barlow', sans-serif" }}>{m.sub}</div>
             </button>
           );
         })}
       </div>
       {style === "showcase" && (
         <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 11.5, color: "#999", lineHeight: 1.5, fontFamily: "'Barlow', sans-serif" }}>
+          <div style={{ fontSize: 11.5, color: "var(--n-999999)", lineHeight: 1.5, fontFamily: "'Barlow', sans-serif" }}>
             A curated lineup: modified, exotic, classic or show-quality cars. Spectators are always welcome;
             cars that don't qualify park in regular parking.
           </div>
@@ -65,18 +65,18 @@ export function ShowcaseBanner({ note }) {
       style={{
         marginTop: 12,
         background: "linear-gradient(180deg, rgba(250,204,21,0.08), rgba(250,204,21,0.02))",
-        border: "1px solid #4A3A00",
+        border: "1px solid var(--n-4a3a00)",
         borderRadius: 12,
         padding: "12px 14px",
       }}
     >
       <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 0.6, color: "#FACC15" }}>✨ SHOWCASE MEET</div>
-      <div style={{ fontSize: 13, color: "#BBB", lineHeight: 1.55, marginTop: 4, fontFamily: "'Barlow', sans-serif" }}>
+      <div style={{ fontSize: 13, color: "var(--n-bbbbbb)", lineHeight: 1.55, marginTop: 4, fontFamily: "'Barlow', sans-serif" }}>
         A curated lineup of nicer cars. Spectators are welcome; if your car doesn't qualify, park in
         regular parking and come check them out.
       </div>
       {note && (
-        <div style={{ fontSize: 13.5, color: "#F0F0F0", marginTop: 8, fontFamily: "'Barlow', sans-serif" }}>
+        <div style={{ fontSize: 13.5, color: "var(--n-f0f0f0)", marginTop: 8, fontFamily: "'Barlow', sans-serif" }}>
           <b style={{ color: "#FACC15" }}>What qualifies:</b> {note}
         </div>
       )}

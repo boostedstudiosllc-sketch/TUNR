@@ -33,11 +33,11 @@ export default function HomeScreenPrompt() {
   }
 
   return (
-    <div style={{ margin: "0 20px 12px", background: "#141414", border: "1px solid #2A2A2A", borderRadius: 10, padding: "10px 12px", display: "flex", gap: 10, alignItems: "center" }}>
+    <div style={{ margin: "0 20px 12px", background: "var(--n-141414)", border: "1px solid var(--n-2a2a2a)", borderRadius: 10, padding: "10px 12px", display: "flex", gap: 10, alignItems: "center" }}>
       <div style={{ fontSize: 22 }}>📲</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13.5, fontWeight: 800 }}>Add TUNR to your Home Screen</div>
-        <div style={{ fontSize: 11.5, color: "#888", lineHeight: 1.4, fontFamily: "'Barlow', sans-serif" }}>
+        <div style={{ fontSize: 11.5, color: "var(--n-888888)", lineHeight: 1.4, fontFamily: "'Barlow', sans-serif" }}>
           On iPhone, linkup alerts and meet reminders only work from there.
         </div>
       </div>
@@ -47,7 +47,7 @@ export default function HomeScreenPrompt() {
       >
         HOW
       </button>
-      <button onClick={dismiss} aria-label="Dismiss" style={{ background: "none", border: "none", color: "#666", fontSize: 16, cursor: "pointer", padding: 2 }}>
+      <button onClick={dismiss} aria-label="Dismiss" style={{ background: "none", border: "none", color: "var(--n-666666)", fontSize: 16, cursor: "pointer", padding: 2 }}>
         ✕
       </button>
       {steps && (

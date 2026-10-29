@@ -28,7 +28,7 @@ export default function Attendees({ eventId, goingCount }) {
 
   return (
     <div style={{ marginTop: 22 }}>
-      <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, marginBottom: 10 }}>
+      <div style={{ fontSize: 11, color: "var(--n-555555)", letterSpacing: 2, marginBottom: 10 }}>
         WHAT'S COMING · {cars.length}
       </div>
 
@@ -45,7 +45,7 @@ export default function Attendees({ eventId, goingCount }) {
         <div
           style={{
             fontSize: 11.5,
-            color: "#555",
+            color: "var(--n-555555)",
             marginTop: 9,
             fontFamily: "'Barlow', sans-serif",
           }}
@@ -64,16 +64,16 @@ function Chip({ make, model, muted = false }) {
         display: "inline-flex",
         alignItems: "baseline",
         gap: 5,
-        background: muted ? "#141414" : "#1A1A1A",
-        border: `1px solid ${muted ? "#242424" : "#333"}`,
+        background: muted ? "var(--n-141414)" : "var(--n-1a1a1a)",
+        border: `1px solid ${muted ? "var(--n-242424)" : "var(--n-333333)"}`,
         borderRadius: 20,
         padding: "6px 12px",
         fontSize: 12.5,
         fontFamily: "'Barlow', sans-serif",
       }}
     >
-      <strong style={{ color: muted ? "#777" : "#F0F0F0", fontWeight: 700 }}>{make}</strong>
-      <span style={{ color: muted ? "#555" : "#999" }}>{model}</span>
+      <strong style={{ color: muted ? "var(--n-777777)" : "var(--n-f0f0f0)", fontWeight: 700 }}>{make}</strong>
+      <span style={{ color: muted ? "var(--n-555555)" : "var(--n-999999)" }}>{model}</span>
     </span>
   );
 }

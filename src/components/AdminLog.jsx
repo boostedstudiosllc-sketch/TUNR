@@ -72,12 +72,12 @@ export default function AdminLog() {
     <div>
       <div style={muted}>Every change an admin makes is written here by itself. Nobody can edit or delete it.</div>
       {error && (
-        <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>
+        <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>
           {error}
         </div>
       )}
       {targets.length > 1 && (
-        <select value={filter} onChange={(e) => setFilter(e.target.value)} style={{ marginTop: 10, width: "100%", padding: "9px 10px", borderRadius: 8, background: "#111", color: "#DDD", border: "1px solid #2A2A2A", fontSize: 14 }}>
+        <select value={filter} onChange={(e) => setFilter(e.target.value)} style={{ marginTop: 10, width: "100%", padding: "9px 10px", borderRadius: 8, background: "var(--n-111111)", color: "var(--n-dddddd)", border: "1px solid var(--n-2a2a2a)", fontSize: 14 }}>
           <option value="">Everything</option>
           {targets.map((t) => (
             <option key={t} value={t}>
@@ -90,17 +90,17 @@ export default function AdminLog() {
       {rows && !shown.length && <div style={{ ...muted, marginTop: 10 }}>No admin changes yet.</div>}
       <div style={{ marginTop: 10 }}>
         {shown.map((r) => (
-          <div key={r.id} style={{ padding: "9px 0", borderBottom: "1px solid #1C1C1C" }}>
+          <div key={r.id} style={{ padding: "9px 0", borderBottom: "1px solid var(--n-1c1c1c)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
               <span style={{ fontSize: 14, fontWeight: 800 }}>
                 @{r.admin} {VERB[r.action]} · {WHAT[r.target] || r.target}
               </span>
-              <span style={{ fontSize: 11.5, color: "#777", whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: 11.5, color: "var(--n-777777)", whiteSpace: "nowrap" }}>
                 {new Date(r.created_at).toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
               </span>
             </div>
             {summary(r).map((line) => (
-              <div key={line} style={{ fontSize: 12.5, color: "#9AA4B2", fontFamily: "'Barlow', sans-serif", overflowWrap: "anywhere" }}>
+              <div key={line} style={{ fontSize: 12.5, color: "var(--n-9aa4b2)", fontFamily: "'Barlow', sans-serif", overflowWrap: "anywhere" }}>
                 {line}
               </div>
             ))}

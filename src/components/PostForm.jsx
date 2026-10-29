@@ -152,21 +152,21 @@ export default function PostForm({ forum, forums = [], user, onClose, onPosted, 
             <button
               onClick={() => setPhotos((p) => p.filter((x) => x !== u))}
               aria-label="Remove photo"
-              style={{ position: "absolute", top: -6, right: -6, width: 22, height: 22, borderRadius: "50%", background: "#000", color: "#fff", border: "1px solid #444", cursor: "pointer", fontSize: 11 }}
+              style={{ position: "absolute", top: -6, right: -6, width: 22, height: 22, borderRadius: "50%", background: "var(--n-000000)", color: "var(--n-ffffff)", border: "1px solid var(--n-444444)", cursor: "pointer", fontSize: 11 }}
             >
               ✕
             </button>
           </div>
         ))}
         {photos.length < 4 && (
-          <label style={{ width: 70, height: 70, borderRadius: 8, border: "1px dashed #444", display: "flex", alignItems: "center", justifyContent: "center", color: "#888", fontSize: busy === "photo" ? 11 : 24, cursor: "pointer" }}>
+          <label style={{ width: 70, height: 70, borderRadius: 8, border: "1px dashed var(--n-444444)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--n-888888)", fontSize: busy === "photo" ? 11 : 24, cursor: "pointer" }}>
             {busy === "photo" ? "…" : "+"}
             <input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={(e) => addPhotos(e.target.files)} />
           </label>
         )}
       </div>
 
-      {error && <div style={{ ...muted, color: "#EF4444", marginTop: 12 }}>{error}</div>}
+      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 12 }}>{error}</div>}
       <button disabled={busy === "post" || busy === "photo"} onClick={submit} style={{ ...bigButton, marginTop: 16 }}>
         {busy === "post" ? "POSTING…" : "POST"}
       </button>

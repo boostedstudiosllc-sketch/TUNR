@@ -611,7 +611,7 @@ export default function App() {
 
   if (needsWelcome && carView) {
     return (
-      <div style={{ fontFamily: "'Barlow Condensed', sans-serif", color: "#F0F0F0", background: "#0A0A0A", minHeight: "100vh" }}>
+      <div style={{ fontFamily: "'Barlow Condensed', sans-serif", color: "var(--n-f0f0f0)", background: "var(--n-0a0a0a)", minHeight: "100vh" }}>
         <GlobalStyles />
         <BuildPage
           vehicleId={carView}
@@ -679,8 +679,8 @@ export default function App() {
     <div
       style={{
         fontFamily: "'Barlow Condensed', sans-serif",
-        background: "#0A0A0A",
-        color: "#F0F0F0",
+        background: "var(--n-0a0a0a)",
+        color: "var(--n-f0f0f0)",
         minHeight: "100vh",
         maxWidth: 430,
         margin: "0 auto",
@@ -700,7 +700,7 @@ export default function App() {
           justifyContent: "space-between",
           position: "sticky",
           top: 0,
-          background: "linear-gradient(180deg, #0A0A0A 85%, transparent)",
+          background: "linear-gradient(180deg, var(--n-0a0a0a) 85%, transparent)",
           zIndex: 50,
         }}
       >
@@ -708,7 +708,7 @@ export default function App() {
           <div style={{ fontSize: 38, fontWeight: 900, letterSpacing: -1, lineHeight: 1 }}>
             TUN<span style={{ color: "#0080F0" }}>R</span>
           </div>
-          <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, marginTop: 1 }}>
+          <div style={{ fontSize: 11, color: "var(--n-555555)", letterSpacing: 2, marginTop: 1 }}>
             ATLANTA, GA
           </div>
         </div>
@@ -758,7 +758,7 @@ export default function App() {
                 left: 33,
                 top: "50%",
                 transform: "translateY(-50%)",
-                color: "#555",
+                color: "var(--n-555555)",
                 fontSize: 14,
                 pointerEvents: "none",
               }}
@@ -774,11 +774,11 @@ export default function App() {
               placeholder="Search meets, hosts, places…"
               style={{
                 width: "100%",
-                background: "#161616",
-                border: "1px solid #2A2A2A",
+                background: "var(--n-161616)",
+                border: "1px solid var(--n-2a2a2a)",
                 borderRadius: 20,
                 padding: "10px 38px",
-                color: "#F0F0F0",
+                color: "var(--n-f0f0f0)",
                 fontSize: 13.5,
                 outline: "none",
                 fontFamily: "'Barlow', sans-serif",
@@ -795,7 +795,7 @@ export default function App() {
                   transform: "translateY(-50%)",
                   background: "none",
                   border: "none",
-                  color: "#666",
+                  color: "var(--n-666666)",
                   fontSize: 15,
                   cursor: "pointer",
                 }}
@@ -835,9 +835,9 @@ export default function App() {
                   fontWeight: 700,
                   letterSpacing: 0.8,
                   whiteSpace: "nowrap",
-                  background: filter === f ? "#0080F0" : "#161616",
+                  background: filter === f ? "#0080F0" : "var(--n-161616)",
                   color: filter === f ? "#fff" : "#666",
-                  border: filter === f ? "1px solid #0080F0" : "1px solid #222",
+                  border: filter === f ? "1px solid #0080F0" : "1px solid var(--n-222222)",
                   fontFamily: "'Barlow Condensed', sans-serif",
                 }}
               >
@@ -857,7 +857,7 @@ export default function App() {
             <span
               style={{
                 fontSize: 10,
-                color: "#555",
+                color: "var(--n-555555)",
                 letterSpacing: 1.4,
                 fontWeight: 700,
                 flexShrink: 0,
@@ -882,15 +882,15 @@ export default function App() {
                   letterSpacing: 0.6,
                   whiteSpace: "nowrap",
                   background: sort === s.id ? "rgba(0, 128, 240,0.14)" : "transparent",
-                  color: sort === s.id ? "#0080F0" : "#666",
-                  border: `1px solid ${sort === s.id ? "#0080F0" : "#242424"}`,
+                  color: sort === s.id ? "#0080F0" : "var(--n-666666)",
+                  border: `1px solid ${sort === s.id ? "#0080F0" : "var(--n-242424)"}`,
                   fontFamily: "'Barlow Condensed', sans-serif",
                 }}
               >
                 {s.label}
               </button>
             ))}
-            <div style={{ marginLeft: "auto", display: "flex", border: "1px solid #242424", borderRadius: 16, overflow: "hidden", flexShrink: 0 }}>
+            <div style={{ marginLeft: "auto", display: "flex", border: "1px solid var(--n-242424)", borderRadius: 16, overflow: "hidden", flexShrink: 0 }}>
               {[
                 ["list", "☰ LIST"],
                 ["calendar", "📅 MONTH"],
@@ -910,7 +910,7 @@ export default function App() {
                     whiteSpace: "nowrap",
                     border: "none",
                     background: view === id ? "rgba(0, 128, 240,0.14)" : "transparent",
-                    color: view === id ? "#0080F0" : "#666",
+                    color: view === id ? "#0080F0" : "var(--n-666666)",
                     fontFamily: "'Barlow Condensed', sans-serif",
                     cursor: "pointer",
                   }}
@@ -930,10 +930,10 @@ export default function App() {
                 style={{
                   width: "100%",
                   padding: "10px 0",
-                  background: "#111",
-                  border: "1px dashed #2A2A2A",
+                  background: "var(--n-111111)",
+                  border: "1px dashed var(--n-2a2a2a)",
                   borderRadius: 10,
-                  color: "#777",
+                  color: "var(--n-777777)",
                   fontSize: 12,
                   fontWeight: 700,
                   letterSpacing: 1,
@@ -954,7 +954,7 @@ export default function App() {
               }}
               style={{
                 margin: "0 20px 16px",
-                background: "linear-gradient(135deg, #000F1F, #001A33)",
+                background: "linear-gradient(135deg, var(--n-000f1f), var(--n-001a33))",
                 border: "1px solid #0080F0",
                 borderRadius: 6,
                 padding: "10px 14px",
@@ -977,7 +977,7 @@ export default function App() {
                 <div style={{ fontSize: 11, color: "#0080F0", letterSpacing: 2, fontWeight: 700 }}>
                   HAPPENING TODAY
                 </div>
-                <div style={{ fontSize: 13, color: "#CCC", marginTop: 1 }}>
+                <div style={{ fontSize: 13, color: "var(--n-cccccc)", marginTop: 1 }}>
                   {todayCount} meet{todayCount === 1 ? "" : "s"} today near you
                 </div>
               </div>
@@ -1012,8 +1012,8 @@ export default function App() {
                 {needsAccount && (
                   <div
                     style={{
-                      background: "#111",
-                      border: "1px solid #2A2A2A",
+                      background: "var(--n-111111)",
+                      border: "1px solid var(--n-2a2a2a)",
                       borderRadius: 12,
                       padding: "18px 20px",
                       marginTop: 2,
@@ -1025,7 +1025,7 @@ export default function App() {
                     <div
                       style={{
                         fontSize: 13,
-                        color: "#999",
+                        color: "var(--n-999999)",
                         marginTop: 7,
                         marginBottom: 14,
                         lineHeight: 1.6,
@@ -1057,7 +1057,7 @@ export default function App() {
               }}
             />
           </div>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "#AAA", marginBottom: 8, cursor: "pointer" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "var(--n-aaaaaa)", marginBottom: 8, cursor: "pointer" }}>
             <input
               type="checkbox"
               checked={showSpots}
@@ -1080,13 +1080,13 @@ export default function App() {
             onSelectSpot={(spot) => openLink(`post:${spot.id}`)}
           />
           <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, fontWeight: 700 }}>
+            <div style={{ fontSize: 11, color: "var(--n-555555)", letterSpacing: 2, fontWeight: 700 }}>
               {mapWindow
                 ? `${mapEvents.length} ${mapEvents.length === 1 ? "MEET" : "MEETS"} · ${windowLabel(mapWindow).toUpperCase()}`
                 : "TAP A PIN OR BROWSE"}
             </div>
             {mapWindow && mapEvents.length === 0 && (
-              <div style={{ fontSize: 13, color: "#666", fontFamily: "'Barlow', sans-serif" }}>
+              <div style={{ fontSize: 13, color: "var(--n-666666)", fontFamily: "'Barlow', sans-serif" }}>
                 Nothing on then. Try a wider time, or clear the vibe filter on Discover.
               </div>
             )}
@@ -1096,9 +1096,9 @@ export default function App() {
                 className="meet-card"
                 onClick={() => setSelected(event)}
                 style={{
-                  background: "#111",
+                  background: "var(--n-111111)",
                   borderRadius: 8,
-                  border: "1px solid #1E1E1E",
+                  border: "1px solid var(--n-1e1e1e)",
                   padding: "10px 14px",
                 }}
               >
@@ -1123,7 +1123,7 @@ export default function App() {
                   </span>
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 800, marginTop: 2 }}>{event.title}</div>
-                <div style={{ fontSize: 11, color: "#777", marginTop: 3 }}>
+                <div style={{ fontSize: 11, color: "var(--n-777777)", marginTop: 3 }}>
                   {event.windowStart ? whenLabel(event.windowStart) : `${displayDate(event)} · ${displayTime(event)}`} ·{" "}
                   {event.city}
                 </div>
@@ -1139,13 +1139,13 @@ export default function App() {
           <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 1, marginBottom: 6 }}>
             MY MEETS
           </div>
-          <div style={{ fontSize: 13, color: "#555", marginBottom: 20 }}>
+          <div style={{ fontSize: 13, color: "var(--n-555555)", marginBottom: 20 }}>
             Meets you're going to or interested in
           </div>
           {needsAccount ? (
             <div
               style={{
-                background: "#111",
+                background: "var(--n-111111)",
                 border: "1px solid #0080F0",
                 borderRadius: 12,
                 padding: "22px 20px",
@@ -1158,7 +1158,7 @@ export default function App() {
               <div
                 style={{
                   fontSize: 13,
-                  color: "#999",
+                  color: "var(--n-999999)",
                   marginTop: 7,
                   marginBottom: 16,
                   lineHeight: 1.6,
@@ -1286,9 +1286,9 @@ export default function App() {
           transform: "translateX(-50%)",
           width: "100%",
           maxWidth: 430,
-          background: "rgba(10,10,10,0.96)",
+          background: "rgba(var(--base),0.96)",
           backdropFilter: "blur(20px)",
-          borderTop: "1px solid #1A1A1A",
+          borderTop: "1px solid var(--n-1a1a1a)",
           display: "flex",
           paddingBottom: "env(safe-area-inset-bottom)",
           zIndex: 100,
@@ -1321,7 +1321,7 @@ export default function App() {
             <span
               style={{
                 fontSize: 20,
-                color: tab === t.id ? "#0080F0" : "#8C96A5",
+                color: tab === t.id ? "#0080F0" : "var(--n-8c96a5)",
                 position: "relative",
               }}
             >
@@ -1354,7 +1354,7 @@ export default function App() {
                 fontSize: 10,
                 letterSpacing: 1.3,
                 fontWeight: 800,
-                color: tab === t.id ? "#0080F0" : "#8C96A5",
+                color: tab === t.id ? "#0080F0" : "var(--n-8c96a5)",
                 fontFamily: "'Barlow Condensed', sans-serif",
               }}
             >
@@ -1475,9 +1475,9 @@ export default function App() {
             bottom: 92,
             left: "50%",
             transform: "translateX(-50%)",
-            background: "#131315",
+            background: "var(--n-131315)",
             border: "1px solid #0080F0",
-            color: "#F0F0F0",
+            color: "var(--n-f0f0f0)",
             padding: "11px 18px",
             borderRadius: 10,
             fontSize: 13,
@@ -1502,16 +1502,16 @@ function EmptyState({ title, sub }) {
   return (
     <div
       style={{
-        background: "#111",
-        border: "1px solid #1E1E1E",
+        background: "var(--n-111111)",
+        border: "1px solid var(--n-1e1e1e)",
         borderRadius: 10,
         padding: 40,
         textAlign: "center",
       }}
     >
       <div style={{ fontSize: 40, marginBottom: 12 }}>🏁</div>
-      <div style={{ fontSize: 18, fontWeight: 700, color: "#555" }}>{title}</div>
-      <div style={{ fontSize: 13, color: "#444", marginTop: 6 }}>{sub}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: "var(--n-555555)" }}>{title}</div>
+      <div style={{ fontSize: 13, color: "var(--n-444444)", marginTop: 6 }}>{sub}</div>
     </div>
   );
 }

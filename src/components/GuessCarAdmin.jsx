@@ -95,18 +95,18 @@ export default function GuessCarAdmin({ user, onToast }) {
       <div style={{ ...muted }}>
         The game shows one car a day from these photos plus members' cars that have a photo and a public build page. Use photos you took or have permission to use, and credit whoever shot them. The answer is the make and model exactly as you type them.
       </div>
-      <div style={{ marginTop: 14, padding: 12, borderRadius: 12, background: "#101820", border: "1px solid #1E3A5F" }}>
+      <div style={{ marginTop: 14, padding: 12, borderRadius: 12, background: "var(--n-101820)", border: "1px solid #1E3A5F" }}>
         <div style={label}>IMPORT FROM WIKIMEDIA COMMONS</div>
         <div style={{ ...muted, fontSize: 12.5 }}>
           Finds one free-to-use photo for each of {CAR_LIST.length} popular cars and adds it with the photographer's credit and licence (shown in the game, as the licences require). Takes a couple of minutes. Check the list after and hide any odd picks.
         </div>
         {importing && (
-          <div role="status" style={{ ...muted, marginTop: 8, color: "#CBD5E1" }}>
+          <div role="status" style={{ ...muted, marginTop: 8, color: "var(--n-cbd5e1)" }}>
             {importing.finished ? "Done" : "Finding photos…"} {importing.done}/{importing.total} · {importing.added} added
             {importing.none.length ? ` · ${importing.none.length} with no good photo` : ""}
             {importing.failed.length ? ` · ${importing.failed.length} failed` : ""}
             {importing.finished && importing.none.length > 0 && <div style={{ fontSize: 12 }}>No good photo: {importing.none.join(", ")}</div>}
-            {importing.finished && importing.failed.length > 0 && <div style={{ fontSize: 12, color: "#F87171" }}>Failed: {importing.failed.join("; ")}</div>}
+            {importing.finished && importing.failed.length > 0 && <div style={{ fontSize: 12, color: "var(--a-f87171)" }}>Failed: {importing.failed.join("; ")}</div>}
           </div>
         )}
         {importing && !importing.finished ? (
@@ -135,7 +135,7 @@ export default function GuessCarAdmin({ user, onToast }) {
         </button>
       </form>
       {error && (
-        <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>
+        <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>
           {error}
         </div>
       )}
@@ -143,7 +143,7 @@ export default function GuessCarAdmin({ user, onToast }) {
       {rows?.length === 0 && <div style={muted}>None yet.</div>}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {(rows || []).map((r) => (
-          <div key={r.id} style={{ display: "flex", gap: 10, alignItems: "center", padding: 8, borderRadius: 12, background: "#141414", border: "1px solid #232323", opacity: r.active ? 1 : 0.55 }}>
+          <div key={r.id} style={{ display: "flex", gap: 10, alignItems: "center", padding: 8, borderRadius: 12, background: "var(--n-141414)", border: "1px solid var(--n-232323)", opacity: r.active ? 1 : 0.55 }}>
             <img src={r.photo_url} alt="" style={{ width: 72, height: 48, objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 900, fontSize: 15 }}>
@@ -152,7 +152,7 @@ export default function GuessCarAdmin({ user, onToast }) {
               </div>
               <div style={{ ...muted, fontSize: 12 }}>
                 {r.source_url ? (
-                  <a href={r.source_url} target="_blank" rel="noreferrer" style={{ color: "#93C5FD" }}>
+                  <a href={r.source_url} target="_blank" rel="noreferrer" style={{ color: "var(--a-93c5fd)" }}>
                     {r.credit || "Source"}
                   </a>
                 ) : (
@@ -166,7 +166,7 @@ export default function GuessCarAdmin({ user, onToast }) {
             <button
               onClick={() => window.confirm(`Remove the ${r.make} ${r.model}?`) && act(() => deleteCarPuzzle(r.id), "Removed")}
               aria-label={`Remove the ${r.make} ${r.model}`}
-              style={{ ...quietButton, padding: "7px 10px", fontSize: 12, color: "#F87171" }}
+              style={{ ...quietButton, padding: "7px 10px", fontSize: 12, color: "var(--a-f87171)" }}
             >
               ✕
             </button>

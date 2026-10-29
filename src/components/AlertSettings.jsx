@@ -78,7 +78,7 @@ export default function AlertSettings({ user, onClose, onToast }) {
     // Above Settings (290), which opens it too.
     <Sheet onClose={onClose} label="Alert settings" zIndex={295}>
       <div style={sheetTitle}>ALERT SETTINGS</div>
-      {loadError && <div style={{ ...muted, color: "#EF4444", marginTop: 6 }}>{loadError}</div>}
+      {loadError && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 6 }}>{loadError}</div>}
 
       <Section title="THIS DEVICE">
         {support === "ios_home_screen" ? (
@@ -120,7 +120,7 @@ export default function AlertSettings({ user, onClose, onToast }) {
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <span style={label}>WITHIN</span>
-                <span style={{ fontSize: 16, fontWeight: 900, color: "#3CABFD" }}>{settings.radius_miles} miles</span>
+                <span style={{ fontSize: 16, fontWeight: 900, color: "var(--a-3cabfd)" }}>{settings.radius_miles} miles</span>
               </div>
               <input
                 type="range"
@@ -167,7 +167,7 @@ export default function AlertSettings({ user, onClose, onToast }) {
 
 function Section({ title, children }) {
   return (
-    <div style={{ marginTop: 18, background: "#121212", border: "1px solid #222", borderRadius: 12, padding: "14px 14px 16px" }}>
+    <div style={{ marginTop: 18, background: "var(--n-121212)", border: "1px solid var(--n-222222)", borderRadius: 12, padding: "14px 14px 16px" }}>
       <div style={label}>{title}</div>
       {children}
     </div>
@@ -196,7 +196,7 @@ export function IphoneSteps() {
   return (
     <div style={muted}>
       On iPhone, alerts work once TUNR is on your Home Screen:
-      <ol style={{ margin: "8px 0 0", paddingLeft: 20, color: "#CCC" }}>
+      <ol style={{ margin: "8px 0 0", paddingLeft: 20, color: "var(--n-cccccc)" }}>
         <li>
           Tap the Share button <span aria-hidden="true">⬆️</span> at the bottom of Safari.
         </li>

@@ -48,7 +48,7 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
 
   if (done) {
     return (
-      <div style={{ marginTop: 20, fontSize: 12, color: "#666", fontFamily: "'Barlow', sans-serif" }}>
+      <div style={{ marginTop: 20, fontSize: 12, color: "var(--n-666666)", fontFamily: "'Barlow', sans-serif" }}>
         ✓ Sent to the TUNR team — thanks for the heads up. If others report the same thing, the
         meet shows a warning straight away.
       </div>
@@ -64,10 +64,10 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
           width: "100%",
           marginTop: 18,
           padding: "11px 0",
-          background: "#121212",
-          border: "1px solid #262626",
+          background: "var(--n-121212)",
+          border: "1px solid var(--n-262626)",
           borderRadius: 8,
-          color: "#999",
+          color: "var(--n-999999)",
           fontSize: 12,
           fontWeight: 700,
           letterSpacing: 0.6,
@@ -84,8 +84,8 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
     <div
       style={{
         marginTop: 18,
-        background: "#111",
-        border: "1px solid #2A2A2A",
+        background: "var(--n-111111)",
+        border: "1px solid var(--n-2a2a2a)",
         borderRadius: 10,
         padding: "14px 16px",
       }}
@@ -102,9 +102,9 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
               fontSize: 11.5,
               fontWeight: 700,
               cursor: "pointer",
-              background: reason === r ? "#0080F0" : "#1A1A1A",
+              background: reason === r ? "#0080F0" : "var(--n-1a1a1a)",
               color: reason === r ? "#fff" : "#999",
-              border: `1px solid ${reason === r ? "#0080F0" : "#2A2A2A"}`,
+              border: `1px solid ${reason === r ? "#0080F0" : "var(--n-2a2a2a)"}`,
               fontFamily: "'Barlow Condensed', sans-serif",
             }}
           >
@@ -121,11 +121,11 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
           style={{
             width: "100%",
             marginBottom: 8,
-            background: "#161616",
-            border: "1px solid #2A2A2A",
+            background: "var(--n-161616)",
+            border: "1px solid var(--n-2a2a2a)",
             borderRadius: 8,
             padding: "9px 11px",
-            color: "#F0F0F0",
+            color: "var(--n-f0f0f0)",
             fontSize: 12.5,
             outline: "none",
             fontFamily: "'Barlow', sans-serif",
@@ -141,11 +141,11 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
         maxLength={500}
         style={{
           width: "100%",
-          background: "#161616",
-          border: "1px solid #2A2A2A",
+          background: "var(--n-161616)",
+          border: "1px solid var(--n-2a2a2a)",
           borderRadius: 8,
           padding: "9px 11px",
-          color: "#F0F0F0",
+          color: "var(--n-f0f0f0)",
           fontSize: 12.5,
           outline: "none",
           resize: "none",
@@ -154,7 +154,7 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
         }}
       />
       {error && (
-        <div style={{ fontSize: 11.5, color: "#EF4444", marginTop: 6, fontFamily: "'Barlow', sans-serif" }}>
+        <div style={{ fontSize: 11.5, color: "var(--a-ef4444)", marginTop: 6, fontFamily: "'Barlow', sans-serif" }}>
           {error}
         </div>
       )}
@@ -164,10 +164,10 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
           style={{
             flex: 0.4,
             padding: "9px 0",
-            background: "#1A1A1A",
-            border: "1px solid #2A2A2A",
+            background: "var(--n-1a1a1a)",
+            border: "1px solid var(--n-2a2a2a)",
             borderRadius: 8,
-            color: "#888",
+            color: "var(--n-888888)",
             fontSize: 11.5,
             fontWeight: 700,
             cursor: "pointer",
@@ -182,7 +182,7 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
           style={{
             flex: 1,
             padding: "9px 0",
-            background: reason && !busy ? "#0080F0" : "#1E1E1E",
+            background: reason && !busy ? "#0080F0" : "var(--n-1e1e1e)",
             border: "none",
             borderRadius: 8,
             color: reason && !busy ? "#fff" : "#555",

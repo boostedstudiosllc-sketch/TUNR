@@ -52,9 +52,9 @@ export default function Connections({ user, initial = "followers", onClose, onTo
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%",
-          background: "#0F0F0F",
+          background: "var(--n-0f0f0f)",
           borderRadius: "16px 16px 0 0",
-          border: "1px solid #1E1E1E",
+          border: "1px solid var(--n-1e1e1e)",
           height: "75vh",
           display: "flex",
           flexDirection: "column",
@@ -78,9 +78,9 @@ export default function Connections({ user, initial = "followers", onClose, onTo
                 fontWeight: 800,
                 letterSpacing: 1.2,
                 cursor: "pointer",
-                background: tab === id ? "rgba(0, 128, 240,0.12)" : "#161616",
-                color: tab === id ? "#0080F0" : "#777",
-                border: `1px solid ${tab === id ? "#0080F0" : "#2A2A2A"}`,
+                background: tab === id ? "rgba(0, 128, 240,0.12)" : "var(--n-161616)",
+                color: tab === id ? "#0080F0" : "var(--n-777777)",
+                border: `1px solid ${tab === id ? "#0080F0" : "var(--n-2a2a2a)"}`,
                 fontFamily: "'Barlow Condensed', sans-serif",
               }}
             >
@@ -90,7 +90,7 @@ export default function Connections({ user, initial = "followers", onClose, onTo
           <button
             onClick={onClose}
             aria-label="Close"
-            style={{ background: "#1A1A1A", border: "1px solid #2A2A2A", color: "#fff", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", flexShrink: 0 }}
+            style={{ background: "var(--n-1a1a1a)", border: "1px solid var(--n-2a2a2a)", color: "var(--n-ffffff)", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", flexShrink: 0 }}
           >
             ✕
           </button>
@@ -109,7 +109,7 @@ export default function Connections({ user, initial = "followers", onClose, onTo
             rows.map((r) => (
               <div
                 key={r.user_id}
-                style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: "1px solid #1A1A1A" }}
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: "1px solid var(--n-1a1a1a)" }}
               >
                 <button
                   onClick={() => onOpenPerson && onOpenPerson(r.user_id)}
@@ -132,9 +132,9 @@ export default function Connections({ user, initial = "followers", onClose, onTo
                     {(r.username || "?")[0].toUpperCase()}
                   </span>
                   <span style={{ minWidth: 0 }}>
-                    <span style={{ display: "block", fontSize: 14, fontWeight: 800, color: "#E6E6E6" }}>@{r.username}</span>
+                    <span style={{ display: "block", fontSize: 14, fontWeight: 800, color: "var(--n-e6e6e6)" }}>@{r.username}</span>
                     {r.mutual && (
-                      <span style={{ fontSize: 11, color: "#777", fontFamily: "'Barlow', sans-serif" }}>
+                      <span style={{ fontSize: 11, color: "var(--n-777777)", fontFamily: "'Barlow', sans-serif" }}>
                         {tab === "followers" ? "you follow each other" : "follows you"}
                       </span>
                     )}
@@ -201,7 +201,7 @@ function SmallButton({ children, onClick, disabled, primary }) {
         flexShrink: 0,
         background: primary ? "#0080F0" : "transparent",
         color: primary ? "#fff" : "#999",
-        border: primary ? "none" : "1px solid #333",
+        border: primary ? "none" : "1px solid var(--n-333333)",
         fontFamily: "'Barlow Condensed', sans-serif",
         opacity: disabled ? 0.5 : 1,
       }}
@@ -213,7 +213,7 @@ function SmallButton({ children, onClick, disabled, primary }) {
 
 function Muted({ children }) {
   return (
-    <div style={{ fontSize: 13, color: "#666", lineHeight: 1.6, padding: "18px 0", fontFamily: "'Barlow', sans-serif" }}>
+    <div style={{ fontSize: 13, color: "var(--n-666666)", lineHeight: 1.6, padding: "18px 0", fontFamily: "'Barlow', sans-serif" }}>
       {children}
     </div>
   );

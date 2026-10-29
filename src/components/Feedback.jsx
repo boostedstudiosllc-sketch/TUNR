@@ -62,7 +62,7 @@ export function FeedbackPage({ kind, user, onToast }) {
       {kind === "contact" && (
         <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>
           In danger or seeing a crime? Call 911 first. You can also email{" "}
-          <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#38BDF8" }}>{CONTACT_EMAIL}</a>.
+          <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "var(--a-38bdf8)" }}>{CONTACT_EMAIL}</a>.
         </div>
       )}
 
@@ -78,9 +78,9 @@ export function FeedbackPage({ kind, user, onToast }) {
               padding: "8px 12px",
               minHeight: 36,
               borderRadius: 18,
-              border: `1px solid ${topic === t.id ? "#0080F0" : "#2A2A2A"}`,
-              background: topic === t.id ? "rgba(0, 128, 240,0.12)" : "#141414",
-              color: topic === t.id ? "#3CABFD" : "#BBB",
+              border: `1px solid ${topic === t.id ? "#0080F0" : "var(--n-2a2a2a)"}`,
+              background: topic === t.id ? "rgba(0, 128, 240,0.12)" : "var(--n-141414)",
+              color: topic === t.id ? "var(--a-3cabfd)" : "var(--n-bbbbbb)",
               fontSize: 12.5,
               fontWeight: 800,
               cursor: "pointer",
@@ -101,7 +101,7 @@ export function FeedbackPage({ kind, user, onToast }) {
         value={message}
         onChange={(e) => setMessage(e.target.value)}
       />
-      <div style={{ fontSize: 11, color: "#555", textAlign: "right", marginTop: 2 }}>{message.length}/2000</div>
+      <div style={{ fontSize: 11, color: "var(--n-555555)", textAlign: "right", marginTop: 2 }}>{message.length}/2000</div>
 
       {kind === "contact" && (
         <>
@@ -119,7 +119,7 @@ export function FeedbackPage({ kind, user, onToast }) {
         </>
       )}
 
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 10 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 10 }}>{error}</div>}
       <button className="action-btn" disabled={busy} onClick={send} style={{ ...bigButton, marginTop: 14, opacity: busy ? 0.6 : 1 }}>
         {busy ? "SENDING…" : copy.button}
       </button>
@@ -128,20 +128,20 @@ export function FeedbackPage({ kind, user, onToast }) {
         <>
           <div style={{ ...label, marginTop: 22 }}>{copy.mine}</div>
           {mine.map((f) => (
-            <div key={f.id} style={{ background: "#121212", border: "1px solid #222", borderRadius: 12, padding: "12px 14px", marginTop: 8 }}>
+            <div key={f.id} style={{ background: "var(--n-121212)", border: "1px solid var(--n-222222)", borderRadius: 12, padding: "12px 14px", marginTop: 8 }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 800, color: "#A0A0A0" }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: "var(--n-a0a0a0)" }}>
                   {topicLabel(kind, f.topic).toUpperCase()} · {when(f.created_at)}
                 </span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: f.status === "answered" ? "#10B981" : f.status === "closed" ? "#777" : "#FACC15" }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: f.status === "answered" ? "#10B981" : f.status === "closed" ? "var(--n-777777)" : "#FACC15" }}>
                   {f.status === "answered" ? "REPLIED" : f.status === "closed" ? "READ" : "SENT"}
                 </span>
               </div>
-              <div style={{ ...muted, color: "#DDD", marginTop: 6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{f.message}</div>
+              <div style={{ ...muted, color: "var(--n-dddddd)", marginTop: 6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{f.message}</div>
               {f.reply && (
                 <div style={{ marginTop: 8, borderLeft: "3px solid #0080F0", paddingLeft: 10 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: "#3CABFD", letterSpacing: 1 }}>TUNR</div>
-                  <div style={{ ...muted, color: "#EEE", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{f.reply}</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: "var(--a-3cabfd)", letterSpacing: 1 }}>TUNR</div>
+                  <div style={{ ...muted, color: "var(--n-eeeeee)", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{f.reply}</div>
                 </div>
               )}
             </div>
@@ -185,7 +185,7 @@ export function FeedbackInbox({ onToast }) {
     }
   }
 
-  const tab = (active) => ({ ...quietButton, flex: 1, padding: "10px 0", ...(active ? { border: "1px solid #0080F0", color: "#3CABFD" } : {}) });
+  const tab = (active) => ({ ...quietButton, flex: 1, padding: "10px 0", ...(active ? { border: "1px solid #0080F0", color: "var(--a-3cabfd)" } : {}) });
 
   return (
     <div>
@@ -212,11 +212,11 @@ export function FeedbackInbox({ onToast }) {
           </button>
         ))}
       </div>
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
       {rows && rows.length === 0 && <div style={{ ...muted, marginTop: 14 }}>Nothing here.</div>}
       {(rows || []).map((r) => (
-        <div key={r.id} style={{ background: "#121212", border: "1px solid #222", borderRadius: 12, padding: "12px 14px", marginTop: 10 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: "#A0A0A0" }}>
+        <div key={r.id} style={{ background: "var(--n-121212)", border: "1px solid var(--n-222222)", borderRadius: 12, padding: "12px 14px", marginTop: 10 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "var(--n-a0a0a0)" }}>
             {r.kind === "suggestion" ? "💡" : r.topic === "detailing" ? "🧽" : "💬"} {topicLabel(r.kind, r.topic).toUpperCase()} · {when(r.created_at)}
           </div>
           <div style={{ ...muted, fontSize: 12.5, marginTop: 4 }}>
@@ -224,11 +224,11 @@ export function FeedbackInbox({ onToast }) {
             {r.device ? ` · ${r.device}` : ""}
           </div>
           {r.phone && (
-            <a href={`tel:${r.phone.replace(/[^\d+]/g, "")}`} style={{ display: "inline-block", marginTop: 4, fontSize: 13, color: "#38BDF8", fontFamily: "'Barlow', sans-serif" }}>
+            <a href={`tel:${r.phone.replace(/[^\d+]/g, "")}`} style={{ display: "inline-block", marginTop: 4, fontSize: 13, color: "var(--a-38bdf8)", fontFamily: "'Barlow', sans-serif" }}>
               📞 {r.phone}
             </a>
           )}
-          <div style={{ ...muted, color: "#EEE", marginTop: 8, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{r.message}</div>
+          <div style={{ ...muted, color: "var(--n-eeeeee)", marginTop: 8, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{r.message}</div>
           {r.reply && <div style={{ ...muted, marginTop: 8, color: "#10B981" }}>Your reply: {r.reply}</div>}
           {status === "new" && (
             <>
@@ -246,7 +246,7 @@ export function FeedbackInbox({ onToast }) {
               {(r.reply_email || r.account_email) && (
                 <a
                   href={`mailto:${r.reply_email || r.account_email}?subject=${encodeURIComponent(r.topic === "detailing" ? "Your Boosted Detailing request" : "About your message to TUNR")}`}
-                  style={{ display: "inline-block", marginTop: 8, fontSize: 12.5, color: "#38BDF8", fontFamily: "'Barlow', sans-serif" }}
+                  style={{ display: "inline-block", marginTop: 8, fontSize: 12.5, color: "var(--a-38bdf8)", fontFamily: "'Barlow', sans-serif" }}
                 >
                   Or reply by email →
                 </a>

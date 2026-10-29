@@ -102,8 +102,8 @@ export default function StickerSheet({ vehicle, onClose, onToast, onChanged }) {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 10,
-          background: isPublic ? "rgba(16,185,129,0.08)" : "#121212",
-          border: `1px solid ${isPublic ? "#14532D" : "#2A2A2A"}`,
+          background: isPublic ? "rgba(16,185,129,0.08)" : "var(--n-121212)",
+          border: `1px solid ${isPublic ? "#14532D" : "var(--n-2a2a2a)"}`,
           borderRadius: 12,
           padding: "12px 14px",
         }}
@@ -120,16 +120,16 @@ export default function StickerSheet({ vehicle, onClose, onToast, onChanged }) {
           onClick={togglePublic}
           role="switch"
           aria-checked={isPublic}
-          style={{ ...quietButton, width: "auto", padding: "9px 14px", color: isPublic ? "#10B981" : "#FACC15", borderColor: isPublic ? "#14532D" : "#4A3A00" }}
+          style={{ ...quietButton, width: "auto", padding: "9px 14px", color: isPublic ? "#10B981" : "#FACC15", borderColor: isPublic ? "#14532D" : "var(--n-4a3a00)" }}
         >
           {isPublic ? "ON" : "TURN ON"}
         </button>
       </div>
 
-      <div style={{ background: "#0A0A0A", border: "1px solid #222", borderRadius: 16, padding: 18, marginTop: 14, textAlign: "center" }}>
-        <div style={{ fontSize: 14, fontWeight: 900, letterSpacing: 2, color: "#3CABFD" }}>SCAN MY BUILD</div>
+      <div style={{ background: "var(--n-0a0a0a)", border: "1px solid var(--n-222222)", borderRadius: 16, padding: 18, marginTop: 14, textAlign: "center" }}>
+        <div style={{ fontSize: 14, fontWeight: 900, letterSpacing: 2, color: "var(--a-3cabfd)" }}>SCAN MY BUILD</div>
         {qr ? (
-          <img src={qr} alt={`QR code for ${name}`} style={{ width: 200, height: 200, background: "#fff", borderRadius: 10, padding: 8, marginTop: 10 }} />
+          <img src={qr} alt={`QR code for ${name}`} style={{ width: 200, height: 200, background: "var(--n-ffffff)", borderRadius: 10, padding: 8, marginTop: 10 }} />
         ) : (
           <div style={{ ...muted, margin: "40px 0" }}>Drawing the QR…</div>
         )}
@@ -143,7 +143,7 @@ export default function StickerSheet({ vehicle, onClose, onToast, onChanged }) {
             [stats.total, "ALL-TIME SCANS"],
             [stats.joined, "JOINED FROM IT"],
           ].map(([n, l]) => (
-            <div key={l} style={{ flex: 1, background: "#121212", border: "1px solid #222", borderRadius: 10, padding: "10px 6px", textAlign: "center" }}>
+            <div key={l} style={{ flex: 1, background: "var(--n-121212)", border: "1px solid var(--n-222222)", borderRadius: 10, padding: "10px 6px", textAlign: "center" }}>
               <div style={{ fontSize: 22, fontWeight: 900 }}>{n}</div>
               <div style={{ ...label, marginBottom: 0, fontSize: 9.5 }}>{l}</div>
             </div>
@@ -176,14 +176,14 @@ export async function stickerHtml(url, name, sizes) {
 
 export const STICKER_CSS = `
   .print-page .wrap { display: flex; flex-wrap: wrap; gap: 0.4in; padding: 0.4in; align-items: flex-start; justify-content: center; }
-  .print-page .s { background: #0A0A0A; color: #fff; border-radius: 0.18in; text-align: center; box-sizing: border-box; border: 1px dashed #999; }
+  .print-page .s { background: var(--n-0a0a0a); color: var(--n-ffffff); border-radius: 0.18in; text-align: center; box-sizing: border-box; border: 1px dashed var(--n-999999); }
   .print-page .sL { width: 3.5in; max-width: 100%; padding: 0.22in; }
   .print-page .sS { width: 2in; padding: 0.13in; }
   .print-page .t { font-weight: 900; letter-spacing: 2px; color: #3CABFD; }
   .print-page .sL .t { font-size: 16pt; } .print-page .sS .t { font-size: 8.5pt; }
-  .print-page .q { background: #fff; border-radius: 0.08in; margin: 0.1in auto; padding: 0.08in; }
+  .print-page .q { background: var(--n-ffffff); border-radius: 0.08in; margin: 0.1in auto; padding: 0.08in; }
   .print-page .sL .q { width: 2.6in; max-width: 100%; box-sizing: border-box; } .print-page .sS .q { width: 1.5in; }
   .print-page .q svg { width: 100%; height: auto; display: block; }
   .print-page .n { font-weight: 800; } .print-page .sL .n { font-size: 12pt; } .print-page .sS .n { font-size: 7pt; }
-  .print-page .b { color: #aaa; } .print-page .sL .b { font-size: 8pt; } .print-page .sS .b { font-size: 5.5pt; }
+  .print-page .b { color: var(--n-aaaaaa); } .print-page .sL .b { font-size: 8pt; } .print-page .sS .b { font-size: 5.5pt; }
 `;

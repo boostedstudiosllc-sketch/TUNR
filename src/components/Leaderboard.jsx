@@ -35,13 +35,13 @@ export default function Leaderboard({ onClose, onOpenPerson }) {
           <button
             key={id}
             onClick={() => setKind(id)}
-            style={{ ...quietButton, flex: 1, padding: "10px 0", ...(kind === id ? { borderColor: "#0080F0", color: "#3CABFD" } : {}) }}
+            style={{ ...quietButton, flex: 1, padding: "10px 0", ...(kind === id ? { borderColor: "#0080F0", color: "var(--a-3cabfd)" } : {}) }}
           >
             {name}
           </button>
         ))}
       </div>
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 10 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 10 }}>{error}</div>}
       {rows === null && <div style={{ ...muted, marginTop: 14 }}>Loading…</div>}
       {rows && rows.length === 0 && !error && (
         <div style={{ ...muted, marginTop: 14 }}>
@@ -61,15 +61,15 @@ export default function Leaderboard({ onClose, onOpenPerson }) {
               padding: "10px 8px",
               background: r.is_me ? "rgba(0, 128, 240,0.08)" : "none",
               border: "none",
-              borderBottom: "1px solid #1A1A1A",
+              borderBottom: "1px solid var(--n-1a1a1a)",
               borderRadius: r.is_me ? 8 : 0,
-              color: "#F0F0F0",
+              color: "var(--n-f0f0f0)",
               cursor: "pointer",
               textAlign: "left",
               fontFamily: "'Barlow Condensed', sans-serif",
             }}
           >
-            <span style={{ width: 28, textAlign: "center", fontSize: r.rank <= 3 ? 20 : 15, fontWeight: 900, color: "#A0A0A0" }}>
+            <span style={{ width: 28, textAlign: "center", fontSize: r.rank <= 3 ? 20 : 15, fontWeight: 900, color: "var(--n-a0a0a0)" }}>
               {r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : r.rank}
             </span>
             <Avatar url={r.avatar_url} name={r.username} size={36} ring={Boolean(r.profile_color)} ringColor={r.profile_color || undefined} />

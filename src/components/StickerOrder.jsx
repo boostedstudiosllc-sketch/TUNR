@@ -98,7 +98,7 @@ export default function StickerOrder({ vehicle, name, isPublic, onToast }) {
     <div style={{ marginTop: 14 }}>
       <div style={label}>YOUR STICKER ORDERS</div>
       {list.map((o) => (
-        <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 8, background: "#121212", border: "1px solid #222", borderRadius: 10, padding: "10px 12px", marginBottom: 6 }}>
+        <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--n-121212)", border: "1px solid var(--n-222222)", borderRadius: 10, padding: "10px 12px", marginBottom: 6 }}>
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: "block", fontSize: 13, fontWeight: 800, color: ORDER_STATUS[o.status]?.color }}>{ORDER_STATUS[o.status]?.label || o.status}</span>
             <span style={{ display: "block", ...muted, fontSize: 11.5 }}>
@@ -107,7 +107,7 @@ export default function StickerOrder({ vehicle, name, isPublic, onToast }) {
             </span>
           </span>
           {o.status === "awaiting_payment" && card && (
-            <a className="action-btn" href={payLinkFor(settings.pay_link, o.id)} target="_blank" rel="noopener noreferrer" style={{ ...quietButton, width: "auto", padding: "8px 12px", color: "#3CABFD", textDecoration: "none", fontSize: 13 }}>
+            <a className="action-btn" href={payLinkFor(settings.pay_link, o.id)} target="_blank" rel="noopener noreferrer" style={{ ...quietButton, width: "auto", padding: "8px 12px", color: "var(--a-3cabfd)", textDecoration: "none", fontSize: 13 }}>
               PAY
             </a>
           )}
@@ -137,7 +137,7 @@ export default function StickerOrder({ vehicle, name, isPublic, onToast }) {
           className="action-btn"
           disabled={!isPublic}
           onClick={() => (setOpen(true), setDone(null), setError(""))}
-          style={{ ...quietButton, marginTop: 8, opacity: isPublic ? 1 : 0.5, color: "#E6E6E6" }}
+          style={{ ...quietButton, marginTop: 8, opacity: isPublic ? 1 : 0.5, color: "var(--n-e6e6e6)" }}
         >
           📦 GET IT MAILED · {settings.price_cents > 0 && card ? price : `${settings.points_price} POINTS`}
         </button>
@@ -150,7 +150,7 @@ export default function StickerOrder({ vehicle, name, isPublic, onToast }) {
   if (done) {
     const payUrl = done.pay_link ? payLinkFor(done.pay_link, done.id) : null;
     return (
-      <div style={{ marginTop: 14, background: "#0F1A12", border: "1px solid #14532D", borderRadius: 12, padding: 14 }}>
+      <div style={{ marginTop: 14, background: "var(--n-0f1a12)", border: "1px solid #14532D", borderRadius: 12, padding: 14 }}>
         {done.paid_with === "points" ? (
           <>
             <div style={{ fontSize: 16, fontWeight: 900, color: "#10B981" }}>✓ Ordered with {settings.points_price} points</div>
@@ -160,7 +160,7 @@ export default function StickerOrder({ vehicle, name, isPublic, onToast }) {
           </>
         ) : (
           <>
-            <div style={{ fontSize: 16, fontWeight: 900, color: "#E6E6E6" }}>Order saved. One step left: pay {price}.</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: "var(--n-e6e6e6)" }}>Order saved. One step left: pay {price}.</div>
             <div style={{ ...muted, marginTop: 4 }}>We start on it once the payment comes through, and alert you when it ships.</div>
             <a className="action-btn" href={payUrl} target="_blank" rel="noopener noreferrer" style={{ ...bigButton, display: "block", textAlign: "center", textDecoration: "none", marginTop: 10, boxSizing: "border-box" }}>
               💳 PAY {price} NOW
@@ -175,13 +175,13 @@ export default function StickerOrder({ vehicle, name, isPublic, onToast }) {
   }
 
   return (
-    <div style={{ marginTop: 14, background: "#101010", border: "1px solid #2A2A2A", borderRadius: 14, padding: 14 }}>
+    <div style={{ marginTop: 14, background: "var(--n-101010)", border: "1px solid var(--n-2a2a2a)", borderRadius: 14, padding: 14 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <div style={{ fontSize: 14, fontWeight: 900, letterSpacing: 1.5 }}>📦 MAILED STICKER</div>
         <div style={{ textAlign: "right" }}>
-          {card && settings.price_cents > 0 && <div style={{ fontSize: 28, fontWeight: 900, color: "#3CABFD", lineHeight: 1 }}>{price}</div>}
+          {card && settings.price_cents > 0 && <div style={{ fontSize: 28, fontWeight: 900, color: "var(--a-3cabfd)", lineHeight: 1 }}>{price}</div>}
           {points && (
-            <div style={{ fontSize: card ? 12.5 : 24, fontWeight: card ? 700 : 900, color: card ? "#9CA3AF" : "#FACC15", marginTop: 2 }}>
+            <div style={{ fontSize: card ? 12.5 : 24, fontWeight: card ? 700 : 900, color: card ? "var(--n-9ca3af)" : "#FACC15", marginTop: 2 }}>
               {card ? "or " : ""}
               {settings.points_price} points
             </div>
@@ -218,7 +218,7 @@ export default function StickerOrder({ vehicle, name, isPublic, onToast }) {
         />
       </div>
 
-      {error && <div role="alert" style={{ ...muted, color: "#EF4444", marginTop: 10 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
       {card && (
         <button className="action-btn" disabled={Boolean(busy)} onClick={() => place("card")} style={{ ...bigButton, marginTop: 12, opacity: busy ? 0.6 : 1 }}>
           {busy === "card" ? "SAVING…" : `💳 PAY ${price} BY CARD`}

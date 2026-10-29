@@ -30,9 +30,9 @@ export default function TimeFilter({ value, onChange }) {
               letterSpacing: 0.6,
               whiteSpace: "nowrap",
               cursor: "pointer",
-              background: preset === p.id ? "#0080F0" : "#161616",
+              background: preset === p.id ? "#0080F0" : "var(--n-161616)",
               color: preset === p.id ? "#fff" : "#888",
-              border: `1px solid ${preset === p.id ? "#0080F0" : "#2A2A2A"}`,
+              border: `1px solid ${preset === p.id ? "#0080F0" : "var(--n-2a2a2a)"}`,
               fontFamily: "'Barlow Condensed', sans-serif",
               flexShrink: 0,
             }}
@@ -46,7 +46,7 @@ export default function TimeFilter({ value, onChange }) {
         <div style={{ display: "flex", gap: 4, marginTop: 8, alignItems: "center" }}>
           <input type="date" value={custom.date} onChange={setCustom("date")} aria-label="Date" style={{ ...field, flex: 1.25 }} />
           <input type="time" value={custom.from} onChange={setCustom("from")} aria-label="From" style={{ ...field, flex: 1 }} />
-          <span style={{ color: "#555", fontSize: 12 }}>–</span>
+          <span style={{ color: "var(--n-555555)", fontSize: 12 }}>–</span>
           <input type="time" value={custom.to} onChange={setCustom("to")} aria-label="To" style={{ ...field, flex: 1 }} />
         </div>
       )}
@@ -56,11 +56,11 @@ export default function TimeFilter({ value, onChange }) {
 
 const field = {
   minWidth: 0,
-  background: "#161616",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-161616)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 8,
   padding: "8px 4px",
-  color: "#F0F0F0",
+  color: "var(--n-f0f0f0)",
   fontSize: 12.5,
   outline: "none",
   fontFamily: "'Barlow', sans-serif",

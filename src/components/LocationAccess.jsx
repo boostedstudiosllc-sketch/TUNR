@@ -4,9 +4,9 @@ import { muted, label, bigButton } from "./Sheet.jsx";
 
 const STATUS = {
   granted: { text: "On", color: "#10B981" },
-  denied: { text: "Blocked", color: "#F87171" },
+  denied: { text: "Blocked", color: "var(--a-f87171)" },
   prompt: { text: "Not turned on yet", color: "#FACC15" },
-  unsupported: { text: "Not available", color: "#A0A0A0" },
+  unsupported: { text: "Not available", color: "var(--n-a0a0a0)" },
 };
 
 // The live location setting for this device, kept in step if it changes.
@@ -55,7 +55,7 @@ export function LocationPage({ onToast }) {
       <div style={{ ...muted, marginTop: 6 }}>
         TUNR reads your location only at the moment you tap something that needs it. It doesn't
         track you in the background, even if your phone's setting is “Always”. Pick{" "}
-        <b style={{ color: "#DDD" }}>While Using the App</b> with <b style={{ color: "#DDD" }}>Precise</b> on:
+        <b style={{ color: "var(--n-dddddd)" }}>While Using the App</b> with <b style={{ color: "var(--n-dddddd)" }}>Precise</b> on:
         that's all TUNR needs.
       </div>
       <div style={{ ...label, marginTop: 16 }}>
@@ -64,7 +64,7 @@ export function LocationPage({ onToast }) {
 
       <div>
         {LOCATION_USES.map(([icon, title, sub]) => (
-          <div key={title} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: "1px solid #1A1A1A", opacity: status === "granted" ? 1 : 0.75 }}>
+          <div key={title} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: "1px solid var(--n-1a1a1a)", opacity: status === "granted" ? 1 : 0.75 }}>
             <span aria-hidden="true" style={{ width: 22, textAlign: "center" }}>{status === "granted" ? icon : "🔒"}</span>
             <span>
               <span style={{ display: "block", fontSize: 14.5, fontWeight: 800 }}>{title}</span>
@@ -85,7 +85,7 @@ export function LocationPage({ onToast }) {
         </div>
       )}
       {status === "unsupported" && (
-        <div style={{ ...muted, color: "#F87171", marginTop: 14 }}>
+        <div style={{ ...muted, color: "var(--a-f87171)", marginTop: 14 }}>
           This browser can't share location. Try Safari on iPhone or Chrome on Android.
         </div>
       )}
@@ -93,7 +93,7 @@ export function LocationPage({ onToast }) {
       {status !== "unsupported" && (
         <>
           <div style={{ ...label, marginTop: 20 }}>{status === "denied" ? "HOW TO UNBLOCK IT" : "IF IT'S BLOCKED"}</div>
-          <ol style={{ margin: 0, paddingLeft: 20, color: "#CCC", fontFamily: "'Barlow', sans-serif", fontSize: 13.5, lineHeight: 1.6 }}>
+          <ol style={{ margin: 0, paddingLeft: 20, color: "var(--n-cccccc)", fontFamily: "'Barlow', sans-serif", fontSize: 13.5, lineHeight: 1.6 }}>
             {enableSteps().map((step) => (
               <li key={step} style={{ marginBottom: 6 }}>{step}</li>
             ))}
@@ -115,12 +115,12 @@ export function LocationNotice({ status, onTurnOn, busy }) {
       style={{
         marginTop: 10,
         background: blocked ? "rgba(248,113,113,0.08)" : "rgba(250,204,21,0.07)",
-        border: `1px solid ${blocked ? "#7F1D1D" : "#4A3A00"}`,
+        border: `1px solid ${blocked ? "#7F1D1D" : "var(--n-4a3a00)"}`,
         borderRadius: 10,
         padding: "10px 12px",
       }}
     >
-      <div style={{ fontSize: 14, fontWeight: 800, color: blocked ? "#F87171" : "#FACC15" }}>
+      <div style={{ fontSize: 14, fontWeight: 800, color: blocked ? "var(--a-f87171)" : "#FACC15" }}>
         📍 {blocked ? "Location is blocked for TUNR" : "Location is needed to check in"}
       </div>
       <div style={{ ...muted, fontSize: 12.5, marginTop: 2 }}>
@@ -129,7 +129,7 @@ export function LocationNotice({ status, onTurnOn, busy }) {
       </div>
       {blocked ? (
         showSteps ? (
-          <ol style={{ margin: "8px 0 0", paddingLeft: 18, color: "#CCC", fontFamily: "'Barlow', sans-serif", fontSize: 12.5, lineHeight: 1.55 }}>
+          <ol style={{ margin: "8px 0 0", paddingLeft: 18, color: "var(--n-cccccc)", fontFamily: "'Barlow', sans-serif", fontSize: 12.5, lineHeight: 1.55 }}>
             {enableSteps().map((step) => (
               <li key={step} style={{ marginBottom: 4 }}>{step}</li>
             ))}
@@ -148,7 +148,7 @@ const linkButton = {
   background: "none",
   border: "none",
   padding: "8px 0 0",
-  color: "#38BDF8",
+  color: "var(--a-38bdf8)",
   fontSize: 13,
   fontWeight: 800,
   cursor: "pointer",

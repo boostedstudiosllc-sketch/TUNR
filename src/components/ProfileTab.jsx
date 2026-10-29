@@ -18,10 +18,10 @@ import { PostCard, Segments, Logo } from "./CommunityBits.jsx";
 const legalButton = {
   flex: 1,
   padding: "12px 0",
-  background: "#111",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-111111)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 10,
-  color: "#666",
+  color: "var(--n-666666)",
   fontSize: 12,
   fontWeight: 700,
   letterSpacing: 1.5,
@@ -60,9 +60,9 @@ function SignedOut({ onShowTerms, onShowPrivacy }) {
   return (
     <div style={{ animation: "fadeIn 0.3s ease", padding: "16px 20px" }}>
       {hasBackend() ? (
-        <div style={{ background: "#111", border: "1px solid #2A2A2A", borderRadius: 10, padding: "16px 18px", marginBottom: 12 }}>
+        <div style={{ background: "var(--n-111111)", border: "1px solid var(--n-2a2a2a)", borderRadius: 10, padding: "16px 18px", marginBottom: 12 }}>
           <div style={{ fontSize: 15, fontWeight: 800 }}>Create your account</div>
-          <div style={{ fontSize: 12.5, color: "#777", marginTop: 5, lineHeight: 1.6, fontFamily: "'Barlow', sans-serif" }}>
+          <div style={{ fontSize: 12.5, color: "var(--n-777777)", marginTop: 5, lineHeight: 1.6, fontFamily: "'Barlow', sans-serif" }}>
             Your RSVPs count toward the public numbers, your posted meets go live for everyone,
             and your profile follows you across devices.
           </div>
@@ -71,7 +71,7 @@ function SignedOut({ onShowTerms, onShowPrivacy }) {
           </div>
         </div>
       ) : (
-        <div style={{ background: "#111", border: "1px solid #2A2A2A", borderRadius: 10, padding: "16px 18px", marginBottom: 12, fontSize: 12.5, color: "#777", lineHeight: 1.6, fontFamily: "'Barlow', sans-serif" }}>
+        <div style={{ background: "var(--n-111111)", border: "1px solid var(--n-2a2a2a)", borderRadius: 10, padding: "16px 18px", marginBottom: 12, fontSize: 12.5, color: "var(--n-777777)", lineHeight: 1.6, fontFamily: "'Barlow', sans-serif" }}>
           Accounts aren't set up in this build (no Supabase keys), so there's no profile to show.
         </div>
       )}
@@ -204,9 +204,9 @@ function SignedIn({
               height: 40,
               flexShrink: 0,
               borderRadius: "50%",
-              background: "#141414",
-              border: "1px solid #2A2A2A",
-              color: "#F0F0F0",
+              background: "var(--n-141414)",
+              border: "1px solid var(--n-2a2a2a)",
+              color: "var(--n-f0f0f0)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -224,7 +224,7 @@ function SignedIn({
                   height: 11,
                   borderRadius: "50%",
                   background: "#EF4444",
-                  border: "2px solid #0A0A0A",
+                  border: "2px solid var(--n-0a0a0a)",
                 }}
               />
             )}
@@ -270,13 +270,13 @@ function SignedIn({
             )}
           </div>
           {p.city && (
-            <div style={{ fontSize: 12.5, color: "#777", marginTop: 2, fontFamily: "'Barlow', sans-serif" }}>📍 {p.city}</div>
+            <div style={{ fontSize: 12.5, color: "var(--n-777777)", marginTop: 2, fontFamily: "'Barlow', sans-serif" }}>📍 {p.city}</div>
           )}
           {p.bio && (
             <div
               style={{
                 fontSize: 13.5,
-                color: "#DDD",
+                color: "var(--n-dddddd)",
                 marginTop: 6,
                 lineHeight: 1.45,
                 whiteSpace: "pre-wrap",
@@ -292,7 +292,7 @@ function SignedIn({
               href={page.href}
               target="_blank"
               rel="noreferrer nofollow"
-              style={{ display: "inline-block", fontSize: 12.5, color: "#38BDF8", marginTop: 5, fontWeight: 700, textDecoration: "none", fontFamily: "'Barlow', sans-serif" }}
+              style={{ display: "inline-block", fontSize: 12.5, color: "var(--a-38bdf8)", marginTop: 5, fontWeight: 700, textDecoration: "none", fontFamily: "'Barlow', sans-serif" }}
             >
               📸 {page.label}
             </a>
@@ -301,7 +301,7 @@ function SignedIn({
             <div>
               <button
                 onClick={() => onOpenPerson && onOpenPerson(user.id)}
-                style={{ background: "none", border: "none", padding: "10px 0", marginTop: -5, color: "#7DD3FC", fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "'Barlow', sans-serif" }}
+                style={{ background: "none", border: "none", padding: "10px 0", marginTop: -5, color: "var(--a-7dd3fc)", fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "'Barlow', sans-serif" }}
               >
                 {social.photographer_verified
                   ? "📸✓ Verified photographer"
@@ -322,11 +322,11 @@ function SignedIn({
                   alignItems: "center",
                   gap: 7,
                   flexShrink: 0,
-                  background: "#141414",
-                  border: "1px solid #242424",
+                  background: "var(--n-141414)",
+                  border: "1px solid var(--n-242424)",
                   borderRadius: 18,
                   padding: "7px 12px 7px 6px",
-                  color: "#DDD",
+                  color: "var(--n-dddddd)",
                   fontSize: 12.5,
                   fontWeight: 800,
                   letterSpacing: 0.3,
@@ -357,7 +357,7 @@ function SignedIn({
           <button
             className="action-btn"
             onClick={() => setWrapped(wrapYear)}
-            style={{ ...noticeCard, background: "linear-gradient(135deg, #0B1E3F, #0080F0 60%, #A855F7)", border: "none", color: "#fff", fontWeight: 900, letterSpacing: 1 }}
+            style={{ ...noticeCard, background: "linear-gradient(135deg, var(--n-0b1e3f), #0080F0 60%, #A855F7)", border: "none", color: "#fff", fontWeight: 900, letterSpacing: 1 }}
           >
             🎁 YOUR {wrapYear} TUNR WRAPPED IS HERE ›
           </button>
@@ -377,11 +377,11 @@ function SignedIn({
             <span style={{ fontSize: 22 }}>✍️</span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: "block", fontSize: 15, fontWeight: 800 }}>Pick a username to finish your profile</span>
-              <span style={{ display: "block", fontSize: 12, color: "#B9A79C", marginTop: 2, lineHeight: 1.45, fontFamily: "'Barlow', sans-serif" }}>
+              <span style={{ display: "block", fontSize: 12, color: "var(--n-b9a79c)", marginTop: 2, lineHeight: 1.45, fontFamily: "'Barlow', sans-serif" }}>
                 It's how people find you, and the name your meets and posts go out under.
               </span>
             </span>
-            <span style={{ color: "#3CABFD", fontSize: 20 }}>›</span>
+            <span style={{ color: "var(--a-3cabfd)", fontSize: 20 }}>›</span>
           </button>
         )}
 
@@ -391,7 +391,7 @@ function SignedIn({
             <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 800 }}>
               {cohostInvites === 1 ? "1 co-host invite is waiting" : `${cohostInvites} co-host invites are waiting`}
             </span>
-            <span style={{ color: "#555", fontSize: 20 }}>›</span>
+            <span style={{ color: "var(--n-555555)", fontSize: 20 }}>›</span>
           </button>
         )}
       </div>
@@ -406,12 +406,12 @@ function SignedIn({
           top: HEADER_HEIGHT,
           zIndex: 40,
           display: "flex",
-          background: "#0A0A0A",
-          borderTop: "1px solid #1A1A1A",
-          borderBottom: "1px solid #1E1E1E",
+          background: "var(--n-0a0a0a)",
+          borderTop: "1px solid var(--n-1a1a1a)",
+          borderBottom: "1px solid var(--n-1e1e1e)",
           // The header fades out over its last few pixels; this fills that
           // band so scrolled content doesn't peek through above the tabs.
-          boxShadow: "0 -14px 0 #0A0A0A",
+          boxShadow: "0 -14px 0 var(--n-0a0a0a)",
         }}
       >
         {TABS.map((t) => {
@@ -432,7 +432,7 @@ function SignedIn({
                 background: "none",
                 border: "none",
                 borderBottom: `2px solid ${active ? "#0080F0" : "transparent"}`,
-                color: active ? "#F0F0F0" : "#8A8A8A",
+                color: active ? "var(--n-f0f0f0)" : "var(--n-8a8a8a)",
                 cursor: "pointer",
                 fontFamily: "'Barlow Condensed', sans-serif",
               }}
@@ -548,8 +548,8 @@ function MeetsPanel({ events, rsvps, filter, onFilter, onOpenMeet }) {
                   gap: 12,
                   width: "100%",
                   textAlign: "left",
-                  background: "#111",
-                  border: "1px solid #222",
+                  background: "var(--n-111111)",
+                  border: "1px solid var(--n-222222)",
                   borderRadius: 10,
                   padding: 10,
                   color: "inherit",
@@ -565,8 +565,8 @@ function MeetsPanel({ events, rsvps, filter, onFilter, onOpenMeet }) {
                     borderRadius: 8,
                     flexShrink: 0,
                     overflow: "hidden",
-                    background: "#1A1A1A",
-                    border: "1px solid #242424",
+                    background: "var(--n-1a1a1a)",
+                    border: "1px solid var(--n-242424)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -579,17 +579,17 @@ function MeetsPanel({ events, rsvps, filter, onFilter, onOpenMeet }) {
                   <div style={{ fontSize: 15.5, fontWeight: 800, letterSpacing: 0.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {e.title}
                   </div>
-                  <div style={{ fontSize: 12, color: "#3CABFD", fontWeight: 700, letterSpacing: 0.6, marginTop: 1 }}>
+                  <div style={{ fontSize: 12, color: "var(--a-3cabfd)", fontWeight: 700, letterSpacing: 0.6, marginTop: 1 }}>
                     {past ? "PAST · " : ""}
                     {displayDate(e)} · {displayTime(e)}
                   </div>
                   {e.city && (
-                    <div style={{ fontSize: 12, color: "#777", marginTop: 1, fontFamily: "'Barlow', sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div style={{ fontSize: 12, color: "var(--n-777777)", marginTop: 1, fontFamily: "'Barlow', sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       📍 {e.city}
                     </div>
                   )}
                 </div>
-                <span style={{ color: "#444", fontSize: 20, flexShrink: 0 }}>›</span>
+                <span style={{ color: "var(--n-444444)", fontSize: 20, flexShrink: 0 }}>›</span>
               </button>
             );
           })}
@@ -618,7 +618,7 @@ function PostsPanel({ user, onOpenLink, onToast }) {
   }, [user.id]);
 
   if (!posts) return <Muted>Loading your posts…</Muted>;
-  if (error) return <Muted style={{ color: "#EF4444" }}>{error}</Muted>;
+  if (error) return <Muted style={{ color: "var(--a-ef4444)" }}>{error}</Muted>;
   if (posts.length === 0) {
     return (
       <Empty
@@ -647,7 +647,7 @@ function PostsPanel({ user, onOpenLink, onToast }) {
 
 function ClubsPanel({ clubs, error, onOpenLink }) {
   if (!clubs) return <Muted>Loading your clubs…</Muted>;
-  if (error) return <Muted style={{ color: "#EF4444" }}>{error}</Muted>;
+  if (error) return <Muted style={{ color: "var(--a-ef4444)" }}>{error}</Muted>;
   if (clubs.length === 0) {
     return (
       <Empty
@@ -669,8 +669,8 @@ function ClubsPanel({ clubs, error, onOpenLink }) {
             gap: 12,
             width: "100%",
             textAlign: "left",
-            background: "#111",
-            border: "1px solid #222",
+            background: "var(--n-111111)",
+            border: "1px solid var(--n-222222)",
             borderRadius: 10,
             padding: 10,
             color: "inherit",
@@ -681,11 +681,11 @@ function ClubsPanel({ clubs, error, onOpenLink }) {
           <Logo url={c.logo_url} fallback={kindLabel(c.kind).split(" ")[0]} size={44} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 15.5, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, marginTop: 2, color: c.role === "member" ? "#777" : "#3CABFD" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, marginTop: 2, color: c.role === "member" ? "var(--n-777777)" : "var(--a-3cabfd)" }}>
               {String(c.role || "member").toUpperCase()} · {kindLabel(c.kind).replace(/^\S+\s+/, "").toUpperCase()}
             </div>
           </div>
-          <span style={{ color: "#444", fontSize: 20, flexShrink: 0 }}>›</span>
+          <span style={{ color: "var(--n-444444)", fontSize: 20, flexShrink: 0 }}>›</span>
         </button>
       ))}
     </div>
@@ -701,7 +701,7 @@ function Stat({ n, label, onClick }) {
       <div style={{ fontSize: 21, fontWeight: 900, lineHeight: 1.1 }}>
         {n === undefined || n === null ? "–" : Number(n).toLocaleString("en-US")}
       </div>
-      <div style={{ fontSize: 10, color: "#8A8A8A", letterSpacing: 1.2, fontWeight: 700, marginTop: 2 }}>{label}</div>
+      <div style={{ fontSize: 10, color: "var(--n-8a8a8a)", letterSpacing: 1.2, fontWeight: 700, marginTop: 2 }}>{label}</div>
     </button>
   );
 }
@@ -711,7 +711,7 @@ function Empty({ icon, title, text }) {
     <div style={{ textAlign: "center", padding: "34px 18px 24px" }}>
       <div style={{ fontSize: 34, opacity: 0.85 }}>{icon}</div>
       <div style={{ fontSize: 17, fontWeight: 900, marginTop: 8, letterSpacing: 0.3 }}>{title}</div>
-      <div style={{ fontSize: 13, color: "#777", marginTop: 4, lineHeight: 1.55, fontFamily: "'Barlow', sans-serif", maxWidth: 300, marginLeft: "auto", marginRight: "auto" }}>
+      <div style={{ fontSize: 13, color: "var(--n-777777)", marginTop: 4, lineHeight: 1.55, fontFamily: "'Barlow', sans-serif", maxWidth: 300, marginLeft: "auto", marginRight: "auto" }}>
         {text}
       </div>
     </div>
@@ -720,7 +720,7 @@ function Empty({ icon, title, text }) {
 
 function Muted({ children, style }) {
   return (
-    <div style={{ fontSize: 13, color: "#777", lineHeight: 1.6, padding: "10px 2px", fontFamily: "'Barlow', sans-serif", ...style }}>
+    <div style={{ fontSize: 13, color: "var(--n-777777)", lineHeight: 1.6, padding: "10px 2px", fontFamily: "'Barlow', sans-serif", ...style }}>
       {children}
     </div>
   );
@@ -738,10 +738,10 @@ function GearIcon() {
 const headerButton = {
   flex: 1,
   padding: "10px 0",
-  background: "#1A1A1A",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-1a1a1a)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 8,
-  color: "#F0F0F0",
+  color: "var(--n-f0f0f0)",
   fontSize: 13,
   fontWeight: 800,
   letterSpacing: 1.4,
@@ -755,11 +755,11 @@ const noticeCard = {
   alignItems: "center",
   gap: 12,
   textAlign: "left",
-  background: "#111",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-111111)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 10,
   padding: "13px 16px",
-  color: "#F0F0F0",
+  color: "var(--n-f0f0f0)",
   cursor: "pointer",
   fontFamily: "'Barlow Condensed', sans-serif",
 };

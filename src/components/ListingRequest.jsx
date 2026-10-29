@@ -84,9 +84,9 @@ export default function ListingRequest({ event }) {
               fontSize: 11.5,
               fontWeight: 700,
               cursor: "pointer",
-              background: kind === k.id ? "#0080F0" : "#1A1A1A",
+              background: kind === k.id ? "#0080F0" : "var(--n-1a1a1a)",
               color: kind === k.id ? "#fff" : "#999",
-              border: `1px solid ${kind === k.id ? "#0080F0" : "#2A2A2A"}`,
+              border: `1px solid ${kind === k.id ? "#0080F0" : "var(--n-2a2a2a)"}`,
               fontFamily: "'Barlow Condensed', sans-serif",
             }}
           >
@@ -124,7 +124,7 @@ export default function ListingRequest({ event }) {
         </div>
       )}
 
-      {error && <div style={{ ...note, color: "#EF4444", marginTop: 6 }}>{error}</div>}
+      {error && <div style={{ ...note, color: "var(--a-ef4444)", marginTop: 6 }}>{error}</div>}
 
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
         <button onClick={() => setOpen(false)} style={{ ...button, flex: 0.4 }}>
@@ -136,7 +136,7 @@ export default function ListingRequest({ event }) {
           style={{
             ...button,
             flex: 1,
-            background: canSubmit ? "#0080F0" : "#1E1E1E",
+            background: canSubmit ? "#0080F0" : "var(--n-1e1e1e)",
             color: canSubmit ? "#fff" : "#555",
             border: "none",
           }}
@@ -218,25 +218,25 @@ export function ListingRequestsQueue({ user, onToast }) {
         {rows.map((row) => {
           const handle = claimHandle(row);
           return (
-            <div key={row.id} style={{ background: "#0F0F0F", border: "1px solid #242424", borderRadius: 8, padding: "11px 12px" }}>
+            <div key={row.id} style={{ background: "var(--n-0f0f0f)", border: "1px solid var(--n-242424)", borderRadius: 8, padding: "11px 12px" }}>
               <div style={{ fontSize: 12, color: "#F59E0B", fontWeight: 800, letterSpacing: 0.5 }}>
                 {KIND_LABEL[row.kind] || row.kind}
-                {row.event_hidden && <span style={{ color: "#777" }}> · already hidden</span>}
-                {!row.event_imported && <span style={{ color: "#777" }}> · organizer-posted — handle as a report</span>}
-                {row.throttled && <span style={{ color: "#777" }}> · arrived during a flood</span>}
+                {row.event_hidden && <span style={{ color: "var(--n-777777)" }}> · already hidden</span>}
+                {!row.event_imported && <span style={{ color: "var(--n-777777)" }}> · organizer-posted — handle as a report</span>}
+                {row.throttled && <span style={{ color: "var(--n-777777)" }}> · arrived during a flood</span>}
               </div>
               <div style={{ fontSize: 14.5, fontWeight: 800, marginTop: 3 }}>{row.event_title}</div>
-              <div style={{ fontSize: 11.5, color: "#777", marginTop: 2 }}>
+              <div style={{ fontSize: 11.5, color: "var(--n-777777)", marginTop: 2 }}>
                 @{row.event_host} · {row.event_city}
               </div>
-              <div style={{ ...note, color: "#BBB", marginTop: 6 }}>
+              <div style={{ ...note, color: "var(--n-bbbbbb)", marginTop: 6 }}>
                 {row.requester_name ? `${row.requester_name} · ` : ""}
                 {row.contact}
                 {row.details ? ` — “${row.details}”` : ""}
               </div>
               <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
                 {row.kind === "remove" && !row.event_hidden && row.event_imported && (
-                  <button disabled={busyId === row.id} onClick={() => takeDown(row)} style={{ ...button, flex: 1, color: "#EF4444", border: "1px solid #EF4444" }}>
+                  <button disabled={busyId === row.id} onClick={() => takeDown(row)} style={{ ...button, flex: 1, color: "var(--a-ef4444)", border: "1px solid #EF4444" }}>
                     TAKE DOWN
                   </button>
                 )}
@@ -255,7 +255,7 @@ export function ListingRequestsQueue({ user, onToast }) {
                 <button
                   disabled={busyId === row.id}
                   onClick={() => act(row, () => resolveListingRequest(row.id, "dismissed", user.id))}
-                  style={{ ...button, flex: 1, color: "#555" }}
+                  style={{ ...button, flex: 1, color: "var(--n-555555)" }}
                 >
                   DISMISS
                 </button>
@@ -270,26 +270,26 @@ export function ListingRequestsQueue({ user, onToast }) {
 
 const panel = {
   marginTop: 18,
-  background: "#111",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-111111)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 10,
   padding: "14px 16px",
 };
 
 const note = {
   fontSize: 12,
-  color: "#777",
+  color: "var(--n-777777)",
   lineHeight: 1.6,
   fontFamily: "'Barlow', sans-serif",
 };
 
 const field = {
   width: "100%",
-  background: "#161616",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-161616)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 8,
   padding: "9px 11px",
-  color: "#F0F0F0",
+  color: "var(--n-f0f0f0)",
   fontSize: 13,
   outline: "none",
   fontFamily: "'Barlow', sans-serif",
@@ -298,10 +298,10 @@ const field = {
 
 const button = {
   padding: "9px 0",
-  background: "#1A1A1A",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-1a1a1a)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 8,
-  color: "#888",
+  color: "var(--n-888888)",
   fontSize: 11.5,
   fontWeight: 800,
   letterSpacing: 0.6,
@@ -314,7 +314,7 @@ const linkButton = {
   marginTop: 12,
   background: "none",
   border: "none",
-  color: "#666",
+  color: "var(--n-666666)",
   fontSize: 11.5,
   letterSpacing: 0.3,
   cursor: "pointer",

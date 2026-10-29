@@ -8,7 +8,7 @@ import { loadMySpin, spinWheel } from "../lib/points.js";
 const SLICES = [
   { pts: 1, color: "#0080F0" },
   { pts: 2, color: "#10B981" },
-  { pts: 3, color: "#A855F7" },
+  { pts: 3, color: "var(--a-a855f7)" },
   { pts: 4, color: "#F97316" },
   { pts: 5, color: "#EAB308" },
 ];
@@ -39,13 +39,13 @@ export function SpinCard({ user, onSpun, onToast }) {
       <button
         className="action-btn"
         onClick={() => setOpen(true)}
-        style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", marginTop: 12, padding: "12px 14px", borderRadius: 14, cursor: "pointer", textAlign: "left", color: "#F0F0F0", border: `1px solid ${state.spun ? "#262B34" : "#7C3AED"}`, background: state.spun ? "#15181e" : "linear-gradient(135deg, rgba(124,58,237,0.28), rgba(234,179,8,0.12))", fontFamily: "'Barlow Condensed', sans-serif" }}
+        style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", marginTop: 12, padding: "12px 14px", borderRadius: 14, cursor: "pointer", textAlign: "left", color: "var(--n-f0f0f0)", border: `1px solid ${state.spun ? "var(--n-262b34)" : "#7C3AED"}`, background: state.spun ? "var(--n-15181e)" : "linear-gradient(135deg, rgba(124,58,237,0.28), rgba(234,179,8,0.12))", fontFamily: "'Barlow Condensed', sans-serif" }}
       >
         <MiniWheel spinning={!state.spun} />
         <span style={{ flex: 1 }}>
-          <span style={{ display: "block", fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: state.spun ? "#8A94A3" : "#E9D5FF" }}>🎡 WEEKLY SPIN</span>
+          <span style={{ display: "block", fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: state.spun ? "var(--n-8a94a3)" : "var(--a-e9d5ff)" }}>🎡 WEEKLY SPIN</span>
           <span style={{ display: "block", fontSize: 16.5, fontWeight: 900 }}>{state.spun ? `You won ⭐ ${state.points} this week` : "Spin for up to ⭐ 5 points"}</span>
-          <span style={{ display: "block", fontSize: 12, color: "#9AA4B2", fontFamily: "'Barlow', sans-serif" }}>{state.spun ? `Next spin in ${untilText(state.next_at)}` : "Once a week. Free."}</span>
+          <span style={{ display: "block", fontSize: 12, color: "var(--n-9aa4b2)", fontFamily: "'Barlow', sans-serif" }}>{state.spun ? `Next spin in ${untilText(state.next_at)}` : "Once a week. Free."}</span>
         </span>
         {!state.spun && <span style={{ padding: "6px 14px", borderRadius: 8, background: "#EAB308", color: "#111", fontSize: 14, fontWeight: 900, letterSpacing: 1 }}>SPIN</span>}
       </button>
@@ -103,7 +103,7 @@ function SpinSheet({ state, onClose, onResult, onToast }) {
       <div style={{ ...muted, textAlign: "center", marginTop: 2 }}>One spin a week, 1 to 5 points.</div>
       <div style={{ position: "relative", width: size, height: size, margin: "18px auto 8px" }}>
         {/* The pointer, at the top. */}
-        <div aria-hidden="true" style={{ position: "absolute", top: -10, left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "13px solid transparent", borderRight: "13px solid transparent", borderTop: "24px solid #F0F0F0", filter: "drop-shadow(0 3px 4px rgba(0,0,0,0.5))", zIndex: 2 }} />
+        <div aria-hidden="true" style={{ position: "absolute", top: -10, left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "13px solid transparent", borderRight: "13px solid transparent", borderTop: "24px solid var(--n-f0f0f0)", filter: "drop-shadow(0 3px 4px rgba(0,0,0,0.5))", zIndex: 2 }} />
         <svg
           width={size}
           height={size}
@@ -145,7 +145,7 @@ function SpinSheet({ state, onClose, onResult, onToast }) {
           onClick={spin}
           disabled={busy || done.current}
           aria-label={done.current ? "Already spun this week" : "Spin the wheel"}
-          style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 84, height: 84, borderRadius: "50%", border: "4px solid #0D0D0D", background: done.current ? "#2A2A2A" : "radial-gradient(circle at 35% 30%, #fff7cc, #EAB308 60%, #A16207)", color: done.current ? "#888" : "#111", fontSize: 19, fontWeight: 900, letterSpacing: 1.5, cursor: busy || done.current ? "default" : "pointer", boxShadow: "0 4px 14px rgba(0,0,0,0.5)", fontFamily: "'Barlow Condensed', sans-serif" }}
+          style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 84, height: 84, borderRadius: "50%", border: "4px solid var(--n-0d0d0d)", background: done.current ? "var(--n-2a2a2a)" : "radial-gradient(circle at 35% 30%, #fff7cc, #EAB308 60%, #A16207)", color: done.current ? "#888" : "#111", fontSize: 19, fontWeight: 900, letterSpacing: 1.5, cursor: busy || done.current ? "default" : "pointer", boxShadow: "0 4px 14px rgba(0,0,0,0.5)", fontFamily: "'Barlow Condensed', sans-serif" }}
         >
           {busy ? "…" : done.current ? "✓" : "SPIN"}
         </button>
@@ -157,7 +157,7 @@ function SpinSheet({ state, onClose, onResult, onToast }) {
         </div>
       )}
       {error && (
-        <div role="alert" style={{ ...muted, color: "#F87171", textAlign: "center", marginTop: 8 }}>
+        <div role="alert" style={{ ...muted, color: "var(--a-f87171)", textAlign: "center", marginTop: 8 }}>
           {error}
         </div>
       )}

@@ -133,7 +133,7 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
   return (
     <div style={boost ? boostedBox : box}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 0.6, color: boost ? "#FACC15" : on ? "#E5C76B" : "#888" }}>
+        <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 0.6, color: boost ? "#FACC15" : on ? "var(--a-e5c76b)" : "var(--n-888888)" }}>
           {boost ? `⭐ BOOSTED: +${boost} POINTS` : on ? `+${base} POINT${base === 1 ? "" : "S"} FOR CHECKING IN` : "⭐ NO POINTS"}
         </div>
       </div>
@@ -141,8 +141,8 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
       <div style={{ ...muted, marginTop: 4 }}>
         {boost ? (
           <>
-            Check in at the meet for <b style={{ color: "#F0F0F0" }}>+{boost}</b>, plus{" "}
-            <b style={{ color: "#F0F0F0" }}>+{POINTS.rsvpBonus}</b> if you RSVP'd going before it started.
+            Check in at the meet for <b style={{ color: "var(--n-f0f0f0)" }}>+{boost}</b>, plus{" "}
+            <b style={{ color: "var(--n-f0f0f0)" }}>+{POINTS.rsvpBonus}</b> if you RSVP'd going before it started.
           </>
         ) : on ? (
           <>Every meet gives a point when you check in there. Boosted ⭐ meets give more.</>
@@ -175,7 +175,7 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
               </button>
             )}
             {boost && (
-              <button disabled={busy} onClick={() => changeBoost(null)} style={{ ...chip, color: "#F87171" }}>
+              <button disabled={busy} onClick={() => changeBoost(null)} style={{ ...chip, color: "var(--a-f87171)" }}>
                 REMOVE BOOST
               </button>
             )}
@@ -223,7 +223,7 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
               disabled={busy || locStatus === "denied" || locStatus === "unsupported"}
               style={{
                 ...bigButton,
-                ...(locStatus === "denied" || locStatus === "unsupported" ? { background: "#1A1A1A", color: "#777", border: "1px solid #2A2A2A" } : {}),
+                ...(locStatus === "denied" || locStatus === "unsupported" ? { background: "var(--n-1a1a1a)", color: "var(--n-777777)", border: "1px solid var(--n-2a2a2a)" } : {}),
                 opacity: busy ? 0.6 : 1,
               }}
             >
@@ -241,7 +241,7 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
         ))}
 
       {message && (
-        <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>
+        <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>
           {message}
         </div>
       )}
@@ -251,25 +251,25 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
 
 const box = {
   marginTop: 12,
-  background: "#121212",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-121212)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 12,
   padding: "12px 14px 14px",
 };
 
 const boostedBox = {
   ...box,
-  background: "linear-gradient(180deg, #1A1500 0%, #111 100%)",
-  border: "1px solid #3A3000",
+  background: "linear-gradient(180deg, var(--n-1a1500) 0%, var(--n-111111) 100%)",
+  border: "1px solid var(--n-3a3000)",
 };
 
 const chip = {
   padding: "7px 12px",
   minHeight: 34,
-  background: "#1A1A1A",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-1a1a1a)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 8,
-  color: "#CCC",
+  color: "var(--n-cccccc)",
   fontSize: 12.5,
   fontWeight: 800,
   letterSpacing: 0.5,
@@ -280,7 +280,7 @@ const chip = {
 const stayButton = {
   ...bigButton,
   marginTop: 10,
-  background: "#141414",
+  background: "var(--n-141414)",
   border: "1px solid #10B981",
   color: "#10B981",
 };

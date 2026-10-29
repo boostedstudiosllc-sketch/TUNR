@@ -36,7 +36,7 @@ export function MeetHistory({ onOpenLink }) {
               {r.city ? ` · ${r.city}` : ""}
             </span>
           </span>
-          <span style={{ fontSize: 12, fontWeight: 800, color: r.checked_in ? "#10B981" : "#A0A0A0", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 12, fontWeight: 800, color: r.checked_in ? "#10B981" : "var(--n-a0a0a0)", whiteSpace: "nowrap" }}>
             {r.stayed ? "🏁 STAYED" : r.checked_in ? "✓ CHECKED IN" : r.rsvp === "going" ? "GOING" : r.rsvp === "interested" ? "MAYBE" : r.rsvp === "not_going" ? "NOT GOING" : ""}
           </span>
         </button>
@@ -85,7 +85,7 @@ export function InviteHistory({ onOpenLink }) {
                 .filter(Boolean)
                 .join(" · ")}
             </span>
-            <span style={{ display: "block", fontSize: 12, fontWeight: 700, color: f.points === true ? "#10B981" : f.points === false ? "#A0A0A0" : "#A08A40", fontFamily: "'Barlow', sans-serif" }}>
+            <span style={{ display: "block", fontSize: 12, fontWeight: 700, color: f.points === true ? "#10B981" : f.points === false ? "var(--n-a0a0a0)" : "#A08A40", fontFamily: "'Barlow', sans-serif" }}>
               {f.points === true
                 ? "⭐ Invite points earned: they checked in at a meet"
                 : f.points === false
@@ -135,7 +135,7 @@ export function TransactionLog({ user }) {
                   {when(c.at)} · code {c.code}
                 </span>
               </span>
-              <span style={{ fontSize: 12, fontWeight: 800, color: c.status === "fulfilled" ? "#10B981" : c.status === "cancelled" ? "#A0A0A0" : "#FACC15" }}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: c.status === "fulfilled" ? "#10B981" : c.status === "cancelled" ? "var(--n-a0a0a0)" : "#FACC15" }}>
                 {c.status === "fulfilled" ? "COLLECTED" : c.status === "cancelled" ? "CANCELLED" : "READY"}
               </span>
             </div>
@@ -150,7 +150,7 @@ export function TransactionLog({ user }) {
             <span style={{ display: "block", fontSize: 15, fontWeight: 900 }}>{h.label}</span>
             <span style={{ display: "block", ...muted, fontSize: 12.5 }}>{[h.detail, when(h.at)].filter(Boolean).join(" · ")}</span>
           </span>
-          <span style={{ fontWeight: 900, color: h.delta > 0 ? "#10B981" : "#F87171" }}>
+          <span style={{ fontWeight: 900, color: h.delta > 0 ? "#10B981" : "var(--a-f87171)" }}>
             {h.delta > 0 ? "+" : ""}
             {h.delta}
           </span>
@@ -322,7 +322,7 @@ export function AlertSound({ onToast }) {
           <button className="action-btn" onClick={() => playAlertSound(sound)} style={{ ...quietButton, flex: 1 }}>
             ▶ PLAY
           </button>
-          <button className="action-btn" onClick={remove} style={{ ...quietButton, flex: 1, color: "#F87171" }}>
+          <button className="action-btn" onClick={remove} style={{ ...quietButton, flex: 1, color: "var(--a-f87171)" }}>
             REMOVE
           </button>
         </div>
@@ -334,7 +334,7 @@ export function AlertSound({ onToast }) {
 
 function Err({ children }) {
   return (
-    <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 10 }}>
+    <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 10 }}>
       {children}
     </div>
   );
@@ -349,8 +349,8 @@ const rowStatic = {
   alignItems: "center",
   gap: 10,
   padding: "12px 2px",
-  borderBottom: "1px solid #1A1A1A",
-  color: "#F0F0F0",
+  borderBottom: "1px solid var(--n-1a1a1a)",
+  color: "var(--n-f0f0f0)",
   fontFamily: "'Barlow Condensed', sans-serif",
 };
 
@@ -359,7 +359,7 @@ const rowButton = {
   width: "100%",
   background: "none",
   border: "none",
-  borderBottom: "1px solid #1A1A1A",
+  borderBottom: "1px solid var(--n-1a1a1a)",
   textAlign: "left",
   cursor: "pointer",
 };

@@ -55,8 +55,8 @@ export default function HostPitch({ user, onStart }) {
     <div
       style={{
         minHeight: "100vh",
-        background: "#0A0A0A",
-        color: "#F0F0F0",
+        background: "var(--n-0a0a0a)",
+        color: "var(--n-f0f0f0)",
         maxWidth: 430,
         margin: "0 auto",
         fontFamily: "'Barlow Condensed', sans-serif",
@@ -66,14 +66,14 @@ export default function HostPitch({ user, onStart }) {
       <div
         style={{
           padding: "40px 22px 30px",
-          background: "linear-gradient(180deg, #1A0800 0%, #0A0A0A 100%)",
-          borderBottom: "1px solid #1E1E1E",
+          background: "linear-gradient(180deg, var(--n-1a0800) 0%, var(--n-0a0a0a) 100%)",
+          borderBottom: "1px solid var(--n-1e1e1e)",
         }}
       >
         <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1 }}>
           TUN<span style={{ color: "#0080F0" }}>R</span>
         </div>
-        <div style={{ fontSize: 10.5, color: "#555", letterSpacing: 2.5, marginTop: 3 }}>
+        <div style={{ fontSize: 10.5, color: "var(--n-555555)", letterSpacing: 2.5, marginTop: 3 }}>
           FOR HOSTS · ATLANTA, GA
         </div>
 
@@ -87,11 +87,11 @@ export default function HostPitch({ user, onStart }) {
               padding: "11px 14px",
               fontSize: 14,
               fontFamily: "'Barlow', sans-serif",
-              color: "#DDD",
+              color: "var(--n-dddddd)",
               lineHeight: 1.5,
             }}
           >
-            <strong style={{ color: "#3CABFD" }}>@{invite.instagram_handle}</strong>, you're
+            <strong style={{ color: "var(--a-3cabfd)" }}>@{invite.instagram_handle}</strong>, you're
             invited. Sign up through this link and your page is verified on the spot.
           </div>
         )}
@@ -142,7 +142,7 @@ export default function HostPitch({ user, onStart }) {
             Nothing. Roughly thirty seconds per meet — title, address, time, drop your flyer in.
             <br />
             <br />
-            <strong style={{ color: "#F0F0F0" }}>Keep your Instagram. Keep your group.</strong> This
+            <strong style={{ color: "var(--n-f0f0f0)" }}>Keep your Instagram. Keep your group.</strong> This
             isn't a replacement for either. Post here as well, because here people can actually find
             you.
           </div>
@@ -156,7 +156,7 @@ export default function HostPitch({ user, onStart }) {
             <br />
             <br />
             It's also early, so here's what isn't built yet:{" "}
-            <strong style={{ color: "#3CABFD" }}>notifications</strong>. Right now people have to
+            <strong style={{ color: "var(--a-3cabfd)" }}>notifications</strong>. Right now people have to
             open the app to see your meet. Push reminders are next, and they're the whole point —
             "meet in Kennesaw tonight, 4 miles away" landing on a phone.
             <br />
@@ -184,7 +184,7 @@ export default function HostPitch({ user, onStart }) {
           width: "100%",
           maxWidth: 430,
           padding: "14px 22px 22px",
-          background: "linear-gradient(180deg, transparent, #0A0A0A 26%)",
+          background: "linear-gradient(180deg, transparent, var(--n-0a0a0a) 26%)",
         }}
       >
         <button
@@ -213,7 +213,7 @@ export default function HostPitch({ user, onStart }) {
         <div
           style={{
             fontSize: 11,
-            color: "#555",
+            color: "var(--n-555555)",
             textAlign: "center",
             marginTop: 9,
             fontFamily: "'Barlow', sans-serif",
@@ -228,7 +228,7 @@ export default function HostPitch({ user, onStart }) {
 
 const paragraph = {
   fontSize: 14,
-  color: "#AAA",
+  color: "var(--n-aaaaaa)",
   lineHeight: 1.7,
   marginTop: 14,
   fontFamily: "'Barlow', sans-serif",
@@ -254,7 +254,7 @@ function Point({ icon, title, children }) {
         <div
           style={{
             fontSize: 13.5,
-            color: "#999",
+            color: "var(--n-999999)",
             lineHeight: 1.65,
             marginTop: 3,
             fontFamily: "'Barlow', sans-serif",

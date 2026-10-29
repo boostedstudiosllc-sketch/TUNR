@@ -74,7 +74,7 @@ export default function MeetPhotos({ eventId, user, isHost, onNeedAccount, onToa
           marginBottom: 10,
         }}
       >
-        <div style={{ fontSize: 11, color: "#555", letterSpacing: 2 }}>
+        <div style={{ fontSize: 11, color: "var(--n-555555)", letterSpacing: 2 }}>
           PHOTOS {photos.length > 0 && `· ${photos.length}`}
         </div>
         <label
@@ -106,7 +106,7 @@ export default function MeetPhotos({ eventId, user, isHost, onNeedAccount, onToa
         <div
           style={{
             fontSize: 12.5,
-            color: "#555",
+            color: "var(--n-555555)",
             fontFamily: "'Barlow', sans-serif",
             lineHeight: 1.6,
           }}
@@ -130,8 +130,8 @@ export default function MeetPhotos({ eventId, user, isHost, onNeedAccount, onToa
                 paddingTop: "100%",
                 borderRadius: 7,
                 overflow: "hidden",
-                background: "#161616",
-                border: "1px solid #242424",
+                background: "var(--n-161616)",
+                border: "1px solid var(--n-242424)",
                 cursor: "pointer",
               }}
             >
@@ -178,14 +178,14 @@ export default function MeetPhotos({ eventId, user, isHost, onNeedAccount, onToa
             onClick={(e) => e.stopPropagation()}
             style={{ marginTop: 12, textAlign: "center", maxWidth: 380 }}
           >
-            <div style={{ fontSize: 12.5, color: "#3CABFD", fontWeight: 700 }}>
+            <div style={{ fontSize: 12.5, color: "var(--a-3cabfd)", fontWeight: 700 }}>
               @{viewing.username}
             </div>
             {viewing.caption && (
               <div
                 style={{
                   fontSize: 13,
-                  color: "#CCC",
+                  color: "var(--n-cccccc)",
                   marginTop: 4,
                   fontFamily: "'Barlow', sans-serif",
                 }}
@@ -203,7 +203,7 @@ export default function MeetPhotos({ eventId, user, isHost, onNeedAccount, onToa
                   background: "transparent",
                   border: "1px solid rgba(239,68,68,0.5)",
                   borderRadius: 7,
-                  color: "#EF4444",
+                  color: "var(--a-ef4444)",
                   fontSize: 11.5,
                   fontWeight: 800,
                   letterSpacing: 1,

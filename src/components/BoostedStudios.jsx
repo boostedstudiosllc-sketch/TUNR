@@ -30,7 +30,7 @@ export default function BoostedPage({ onOpenPerks, user, onToast, onNeedAccount 
         TUNR is part of Boosted Studios Production LLC, an Atlanta car-culture company. Here's
         everything we do.
       </div>
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 10 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 10 }}>{error}</div>}
       {rows === null && <div style={{ ...muted, marginTop: 14 }}>Loading…</div>}
       {(rows || []).map((b) => (
         <div key={b.id} style={card}>
@@ -41,8 +41,8 @@ export default function BoostedPage({ onOpenPerks, user, onToast, onNeedAccount 
                 width: 48,
                 height: 48,
                 borderRadius: 12,
-                background: "linear-gradient(135deg, #001A33, #141414)",
-                border: "1px solid #002A55",
+                background: "linear-gradient(135deg, var(--n-001a33), var(--n-141414))",
+                border: "1px solid var(--n-002a55)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -57,7 +57,7 @@ export default function BoostedPage({ onOpenPerks, user, onToast, onNeedAccount 
               {b.tagline && <span style={{ display: "block", ...muted, fontSize: 12.5 }}>{b.tagline}</span>}
             </span>
           </div>
-          {b.description && <div style={{ ...muted, color: "#CCC", marginTop: 10 }}>{b.description}</div>}
+          {b.description && <div style={{ ...muted, color: "var(--n-cccccc)", marginTop: 10 }}>{b.description}</div>}
           {b.perk && (
             <button onClick={onOpenPerks} style={perkButton}>
               🏷️ {b.perk.discount_text} for TUNR members: {b.perk.title} →
@@ -156,7 +156,7 @@ export function BoostedAdmin({ onToast }) {
           <input type="checkbox" checked={Boolean(draft.contact_form)} onChange={(e) => set({ contact_form: e.target.checked })} /> Take detail
           requests in the app (they land in Settings → Inbox)
         </label>
-        {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+        {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
         <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
           <button disabled={busy} onClick={save} style={{ ...bigButton, flex: 1 }}>{busy ? "SAVING…" : "SAVE"}</button>
           <button disabled={busy} onClick={() => (setDraft(null), setError(""))} style={{ ...quietButton, flex: 1 }}>CANCEL</button>
@@ -172,13 +172,13 @@ export function BoostedAdmin({ onToast }) {
         Instagram handles here; empty ones don't show. The Boosted Detailing discount itself lives in
         Perks.
       </div>
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
       <button onClick={() => setDraft({ ...EMPTY })} style={{ ...bigButton, marginTop: 12 }}>+ ADD A BUSINESS</button>
       {(rows || []).map((b) => (
         <button
           key={b.id}
           onClick={() => setDraft({ ...EMPTY, ...b, instagram: (b.instagram || []).map((h) => `@${h}`).join(", "), sort: String(b.sort) })}
-          style={{ ...card, width: "100%", textAlign: "left", color: "#F0F0F0", cursor: "pointer", opacity: b.active ? 1 : 0.5 }}
+          style={{ ...card, width: "100%", textAlign: "left", color: "var(--n-f0f0f0)", cursor: "pointer", opacity: b.active ? 1 : 0.5 }}
         >
           <span style={{ fontSize: 16, fontWeight: 900 }}>
             {b.icon} {b.name}
@@ -197,8 +197,8 @@ export function BoostedAdmin({ onToast }) {
 
 const card = {
   marginTop: 12,
-  background: "#121212",
-  border: "1px solid #222",
+  background: "var(--n-121212)",
+  border: "1px solid var(--n-222222)",
   borderRadius: 14,
   padding: "14px 14px",
   boxSizing: "border-box",
@@ -211,10 +211,10 @@ const chip = {
   padding: "8px 12px",
   minHeight: 36,
   boxSizing: "border-box",
-  background: "#1A1A1A",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-1a1a1a)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 18,
-  color: "#DDD",
+  color: "var(--n-dddddd)",
   fontSize: 12.5,
   fontWeight: 800,
   textDecoration: "none",

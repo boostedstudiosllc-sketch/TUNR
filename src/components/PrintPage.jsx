@@ -24,18 +24,18 @@ export default function PrintPage({ title, tip, html, css = "", pageMargin = "0.
   return createPortal(
     <div className="print-page" role="dialog" aria-label={title}>
       <style>{`
-        .print-page { position: fixed; inset: 0; z-index: 400; overflow-y: auto; background: #fff; color: #111; font-family: Arial, Helvetica, sans-serif; }
-        .print-page .bar { position: sticky; top: 0; z-index: 1; display: flex; gap: 8px; padding: calc(10px + env(safe-area-inset-top)) 12px 10px; background: #0A0A0A; }
+        .print-page { position: fixed; inset: 0; z-index: 400; overflow-y: auto; background: var(--n-ffffff); color: var(--n-111111); font-family: Arial, Helvetica, sans-serif; }
+        .print-page .bar { position: sticky; top: 0; z-index: 1; display: flex; gap: 8px; padding: calc(10px + env(safe-area-inset-top)) 12px 10px; background: var(--n-0a0a0a); }
         .print-page .bar button { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; letter-spacing: 1px; font-size: 15px; padding: 11px 16px; border-radius: 8px; cursor: pointer; }
-        .print-page .back { background: #1A1A1A; color: #E6E6E6; border: 1px solid #2A2A2A; }
-        .print-page .go { flex: 1; background: #0080F0; color: #fff; border: none; }
-        .print-page .tip { padding: 12px 16px 0; font-size: 13.5px; line-height: 1.45; color: #333; }
+        .print-page .back { background: var(--n-1a1a1a); color: var(--n-e6e6e6); border: 1px solid var(--n-2a2a2a); }
+        .print-page .go { flex: 1; background: #0080F0; color: var(--n-ffffff); border: none; }
+        .print-page .tip { padding: 12px 16px 0; font-size: 13.5px; line-height: 1.45; color: var(--n-333333); }
         .print-page .sheet { overflow-x: auto; padding-bottom: env(safe-area-inset-bottom); }
         ${css}
         @media print {
           @page { size: letter; margin: ${pageMargin}; }
           body > *:not(.print-page) { display: none !important; }
-          html, body { background: #fff !important; }
+          html, body { background: var(--n-ffffff) !important; }
           .print-page { position: static; overflow: visible; }
           .print-page .bar, .print-page .tip { display: none; }
           .print-page * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }

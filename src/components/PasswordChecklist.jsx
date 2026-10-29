@@ -5,7 +5,7 @@ export default function PasswordChecklist({ password }) {
   if (!password) return null;
   const c = passwordChecks(password);
   const row = (ok, text) => (
-    <div key={text} style={{ color: ok ? "#34D399" : "#888" }}>
+    <div key={text} style={{ color: ok ? "#34D399" : "var(--n-888888)" }}>
       {ok ? "✓" : "○"} {text}
     </div>
   );

@@ -21,7 +21,7 @@ export default function Sheet({ onClose, children, zIndex = 260, label, portal =
         display: "flex",
         alignItems: "flex-end",
         fontFamily: "'Barlow Condensed', sans-serif",
-        color: "#F0F0F0",
+        color: "var(--n-f0f0f0)",
       }}
     >
       <div
@@ -30,14 +30,14 @@ export default function Sheet({ onClose, children, zIndex = 260, label, portal =
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%",
-          background: "#0F0F0F",
+          background: "var(--n-0f0f0f)",
           borderRadius: "16px 16px 0 0",
-          border: "1px solid #1E1E1E",
+          border: "1px solid var(--n-1e1e1e)",
           maxHeight: "90vh",
           overflowY: "auto",
           padding: "18px 20px calc(28px + env(safe-area-inset-bottom))",
           animation: "slideUp 0.25s ease",
-          color: "#F0F0F0",
+          color: "var(--n-f0f0f0)",
         }}
       >
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: -8 }}>
@@ -53,9 +53,9 @@ export default function Sheet({ onClose, children, zIndex = 260, label, portal =
 }
 
 const closeButton = {
-  background: "#1A1A1A",
-  border: "1px solid #2A2A2A",
-  color: "#fff",
+  background: "var(--n-1a1a1a)",
+  border: "1px solid var(--n-2a2a2a)",
+  color: "var(--n-ffffff)",
   borderRadius: "50%",
   width: 32,
   height: 32,
@@ -70,18 +70,18 @@ export const sheetTitle = {
   fontFamily: "'Barlow Condensed', sans-serif",
 };
 
-export const muted = { fontSize: 13, color: "#888", lineHeight: 1.6, fontFamily: "'Barlow', sans-serif" };
+export const muted = { fontSize: 13, color: "var(--n-888888)", lineHeight: 1.6, fontFamily: "'Barlow', sans-serif" };
 
-export const label = { fontSize: 10.5, color: "#666", letterSpacing: 1.6, fontWeight: 700, marginBottom: 6 };
+export const label = { fontSize: 10.5, color: "var(--n-666666)", letterSpacing: 1.6, fontWeight: 700, marginBottom: 6 };
 
 export const field = {
   width: "100%",
   boxSizing: "border-box",
-  background: "#161616",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-161616)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 8,
   padding: "11px 12px",
-  color: "#F0F0F0",
+  color: "var(--n-f0f0f0)",
   fontSize: 14,
   outline: "none",
   fontFamily: "'Barlow', sans-serif",
@@ -103,9 +103,9 @@ export const bigButton = {
 
 export const quietButton = {
   ...bigButton,
-  background: "#1A1A1A",
-  border: "1px solid #2A2A2A",
-  color: "#CCC",
+  background: "var(--n-1a1a1a)",
+  border: "1px solid var(--n-2a2a2a)",
+  color: "var(--n-cccccc)",
 };
 
 export function Chip({ active, onClick, children, color = "#0080F0" }) {
@@ -123,9 +123,9 @@ export function Chip({ active, onClick, children, color = "#0080F0" }) {
         letterSpacing: 0.6,
         whiteSpace: "nowrap",
         cursor: "pointer",
-        background: active ? "rgba(0, 128, 240,0.16)" : "#161616",
-        color: active ? "#3CABFD" : "#888",
-        border: `1px solid ${active ? color : "#2A2A2A"}`,
+        background: active ? "rgba(0, 128, 240,0.16)" : "var(--n-161616)",
+        color: active ? "var(--a-3cabfd)" : "var(--n-888888)",
+        border: `1px solid ${active ? color : "var(--n-2a2a2a)"}`,
         fontFamily: "'Barlow Condensed', sans-serif",
       }}
     >

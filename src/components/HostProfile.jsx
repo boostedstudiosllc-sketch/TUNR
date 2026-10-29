@@ -62,9 +62,9 @@ export default function HostProfile({
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%",
-          background: "#0F0F0F",
+          background: "var(--n-0f0f0f)",
           borderRadius: "16px 16px 0 0",
-          border: "1px solid #1E1E1E",
+          border: "1px solid var(--n-1e1e1e)",
           maxHeight: "90vh",
           overflowY: "auto",
           animation: "slideUp 0.3s ease",
@@ -73,9 +73,9 @@ export default function HostProfile({
         {/* Header */}
         <div
           style={{
-            background: "linear-gradient(180deg, #1A0800 0%, #0F0F0F 100%)",
+            background: "linear-gradient(180deg, var(--n-1a0800) 0%, var(--n-0f0f0f) 100%)",
             padding: "20px 20px 22px",
-            borderBottom: "1px solid #1E1E1E",
+            borderBottom: "1px solid var(--n-1e1e1e)",
             position: "relative",
           }}
         >
@@ -87,8 +87,8 @@ export default function HostProfile({
               top: 14,
               right: 14,
               background: "rgba(0,0,0,0.6)",
-              border: "1px solid #333",
-              color: "#fff",
+              border: "1px solid var(--n-333333)",
+              color: "var(--n-ffffff)",
               borderRadius: "50%",
               width: 30,
               height: 30,
@@ -139,7 +139,7 @@ export default function HostProfile({
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: 12, color: "#3CABFD", marginTop: 2 }}>@{host}</div>
+              <div style={{ fontSize: 12, color: "var(--a-3cabfd)", marginTop: 2 }}>@{host}</div>
             </div>
           </div>
 
@@ -149,13 +149,13 @@ export default function HostProfile({
               <div style={{ fontSize: 22, fontWeight: 900, color: "#0080F0" }}>
                 {upcoming.length}
               </div>
-              <div style={{ fontSize: 9, color: "#555", letterSpacing: 1.4 }}>UPCOMING</div>
+              <div style={{ fontSize: 9, color: "var(--n-555555)", letterSpacing: 1.4 }}>UPCOMING</div>
             </div>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 22, fontWeight: 900, color: "#0080F0" }}>
                 {followers === null ? "—" : followers}
               </div>
-              <div style={{ fontSize: 9, color: "#555", letterSpacing: 1.4 }}>
+              <div style={{ fontSize: 9, color: "var(--n-555555)", letterSpacing: 1.4 }}>
                 {followers === 1 ? "FOLLOWER" : "FOLLOWERS"}
               </div>
             </div>
@@ -163,7 +163,7 @@ export default function HostProfile({
               <div style={{ fontSize: 22, fontWeight: 900, color: "#0080F0" }}>
                 {hostEvents.length}
               </div>
-              <div style={{ fontSize: 9, color: "#555", letterSpacing: 1.4 }}>TOTAL MEETS</div>
+              <div style={{ fontSize: 9, color: "var(--n-555555)", letterSpacing: 1.4 }}>TOTAL MEETS</div>
             </div>
           </div>
 
@@ -193,7 +193,7 @@ export default function HostProfile({
           <div
             style={{
               fontSize: 11,
-              color: "#555",
+              color: "var(--n-555555)",
               letterSpacing: 2,
               fontWeight: 700,
               marginBottom: 12,
@@ -204,20 +204,20 @@ export default function HostProfile({
           {upcoming.length === 0 ? (
             <div
               style={{
-                background: "#111",
-                border: "1px solid #1E1E1E",
+                background: "var(--n-111111)",
+                border: "1px solid var(--n-1e1e1e)",
                 borderRadius: 10,
                 padding: 28,
                 textAlign: "center",
               }}
             >
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#555" }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--n-555555)" }}>
                 No upcoming meets
               </div>
               <div
                 style={{
                   fontSize: 12.5,
-                  color: "#444",
+                  color: "var(--n-444444)",
                   marginTop: 5,
                   fontFamily: "'Barlow', sans-serif",
                 }}

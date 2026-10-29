@@ -13,11 +13,11 @@ import {
 import { INSTAGRAM_HANDLE } from "../lib/contact.js";
 
 const inputStyle = {
-  background: "#0F0F0F",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-0f0f0f)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 8,
   padding: "11px 13px",
-  color: "#F0F0F0",
+  color: "var(--n-f0f0f0)",
   fontSize: 14,
   width: "100%",
   outline: "none",
@@ -27,7 +27,7 @@ const inputStyle = {
 
 const bodyStyle = {
   fontSize: 12.5,
-  color: "#777",
+  color: "var(--n-777777)",
   marginTop: 6,
   lineHeight: 1.6,
   fontFamily: "'Barlow', sans-serif",
@@ -102,7 +102,7 @@ export default function HostVerification({ user, profile, onToast }) {
           <button
             className="action-btn"
             onClick={withdraw}
-            style={{ ...pillStyle("#555", "#242424"), width: "100%", marginTop: 8 }}
+            style={{ ...pillStyle("var(--n-555555)", "var(--n-242424)"), width: "100%", marginTop: 8 }}
           >
             CANCEL REQUEST
           </button>
@@ -118,7 +118,7 @@ export default function HostVerification({ user, profile, onToast }) {
           <button
             className="action-btn"
             onClick={withdraw}
-            style={{ ...pillStyle("#888", "#2A2A2A"), width: "100%", marginTop: 10 }}
+            style={{ ...pillStyle("var(--n-888888)", "var(--n-2a2a2a)"), width: "100%", marginTop: 10 }}
           >
             START OVER
           </button>
@@ -132,12 +132,12 @@ export default function HostVerification({ user, profile, onToast }) {
             nobody can post as you.
           </div>
           {!host ? (
-            <div style={{ ...bodyStyle, color: "#FF6B4A" }}>
+            <div style={{ ...bodyStyle, color: "var(--a-ff6b4a)" }}>
               Set a username on your profile first — that's the name you'll be verified under.
             </div>
           ) : (
             <>
-              <div style={{ ...bodyStyle, color: "#999" }}>
+              <div style={{ ...bodyStyle, color: "var(--n-999999)" }}>
                 Verifying as <strong style={{ color: "#0080F0" }}>@{host}</strong>
               </div>
               <input
@@ -157,7 +157,7 @@ export default function HostVerification({ user, profile, onToast }) {
                   width: "100%",
                   marginTop: 10,
                   padding: "12px 0",
-                  background: handle.trim() ? "#0080F0" : "#1A1A1A",
+                  background: handle.trim() ? "#0080F0" : "var(--n-1a1a1a)",
                   color: handle.trim() ? "#fff" : "#555",
                   border: "none",
                   borderRadius: 8,
@@ -241,14 +241,14 @@ export function VerificationQueue({ onToast }) {
           <div
             key={row.id}
             style={{
-              background: "#0F0F0F",
-              border: "1px solid #242424",
+              background: "var(--n-0f0f0f)",
+              border: "1px solid var(--n-242424)",
               borderRadius: 8,
               padding: "11px 12px",
             }}
           >
             <div style={{ fontSize: 14, fontWeight: 800 }}>@{row.host}</div>
-            <div style={{ fontSize: 12, color: "#777", marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: "var(--n-777777)", marginTop: 2 }}>
               claims{" "}
               <a
                 href={instagramUrl(row.instagram_handle)}
@@ -272,7 +272,7 @@ export function VerificationQueue({ onToast }) {
                 className="action-btn"
                 disabled={busyId === row.id}
                 onClick={() => decide(row, false)}
-                style={{ ...pillStyle("#666", "#333"), flex: 1 }}
+                style={{ ...pillStyle("var(--n-666666)", "var(--n-333333)"), flex: 1 }}
               >
                 REJECT
               </button>
@@ -349,7 +349,7 @@ export function HostInvites({ onToast }) {
           onClick={create}
           disabled={busy || !handle.trim()}
           style={{
-            ...pillStyle(handle.trim() ? "#fff" : "#555", handle.trim() ? "#0080F0" : "#2A2A2A"),
+            ...pillStyle(handle.trim() ? "var(--n-ffffff)" : "var(--n-555555)", handle.trim() ? "#0080F0" : "var(--n-2a2a2a)"),
             background: handle.trim() ? "#0080F0" : "transparent",
             flexShrink: 0,
           }}
@@ -371,7 +371,7 @@ export function HostInvites({ onToast }) {
                   gap: 8,
                   fontSize: 12.5,
                   fontFamily: "'Barlow', sans-serif",
-                  color: "#BBB",
+                  color: "var(--n-bbbbbb)",
                 }}
               >
                 <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -380,9 +380,9 @@ export function HostInvites({ onToast }) {
                 {row.used_at ? (
                   <span style={{ color: "#10B981" }}>✓ joined as @{row.used_host}</span>
                 ) : expired ? (
-                  <span style={{ color: "#666" }}>expired</span>
+                  <span style={{ color: "var(--n-666666)" }}>expired</span>
                 ) : (
-                  <button onClick={() => copyAgain(row)} style={{ ...pillStyle("#888", "#2A2A2A"), padding: "4px 9px" }}>
+                  <button onClick={() => copyAgain(row)} style={{ ...pillStyle("var(--n-888888)", "var(--n-2a2a2a)"), padding: "4px 9px" }}>
                     COPY AGAIN
                   </button>
                 )}
@@ -429,8 +429,8 @@ function Card({ children, accent = false }) {
   return (
     <div
       style={{
-        background: "#111",
-        border: `1px solid ${accent ? "#0080F0" : "#2A2A2A"}`,
+        background: "var(--n-111111)",
+        border: `1px solid ${accent ? "#0080F0" : "var(--n-2a2a2a)"}`,
         borderRadius: 10,
         padding: "16px 18px",
         marginBottom: 12,

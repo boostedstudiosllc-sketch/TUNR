@@ -87,7 +87,7 @@ export default function RushAdmin({ onToast }) {
           <span style={{ display: "block", fontWeight: 900, fontSize: 15 }}>Game is {draft.enabled ? "on" : "parked"}</span>
           <span style={{ ...muted, fontSize: 12 }}>{draft.enabled ? "Anyone can play" : "Nobody can start a run"}</span>
         </span>
-        <span style={{ ...pill, background: draft.enabled ? "#10B981" : "#333" }}>{draft.enabled ? "ON" : "OFF"}</span>
+        <span style={{ ...pill, background: draft.enabled ? "#10B981" : "var(--n-333333)" }}>{draft.enabled ? "ON" : "OFF"}</span>
       </button>
       <Stepper
         name="Tries a day"
@@ -133,7 +133,7 @@ export default function RushAdmin({ onToast }) {
         RESET {LEVELS[tab].name.toUpperCase()} TO DEFAULTS
       </button>
 
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 10 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 10 }}>{error}</div>}
       <button disabled={busy || !changed} onClick={save} style={{ ...bigButton, marginTop: 14, opacity: busy || !changed ? 0.5 : 1 }}>
         {busy ? "SAVING…" : changed ? "SAVE CHANGES" : "SAVED"}
       </button>
@@ -199,7 +199,7 @@ function PriceEditor({ onToast, title, help, load, saveOne, icon }) {
       <div style={{ ...muted, fontSize: 12.5 }}>
         {help}
       </div>
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
       {list === null && !error && <div style={{ ...muted, marginTop: 8 }}>Loading…</div>}
       {(list || []).map((x) => {
           const n = Number(x.draft);
@@ -225,7 +225,7 @@ function PriceEditor({ onToast, title, help, load, saveOne, icon }) {
               <button
                 disabled={busy === x.id}
                 onClick={() => save(x, { active: !x.active })}
-                style={{ ...quietButton, width: "auto", padding: "8px 10px", fontSize: 12.5, color: x.active ? "#10B981" : "#888" }}
+                style={{ ...quietButton, width: "auto", padding: "8px 10px", fontSize: 12.5, color: x.active ? "#10B981" : "var(--n-888888)" }}
               >
                 {x.active ? "ON SALE" : "OFF"}
               </button>
@@ -246,7 +246,7 @@ function Stepper({ name, help, value, show, changed, onStep, atMin, atMax }) {
       <button aria-label={`Less ${name}`} disabled={atMin} onClick={() => onStep(-1)} style={stepBtn}>
         −
       </button>
-      <span style={{ width: 82, textAlign: "center", fontWeight: 900, color: changed ? "#3CABFD" : "#F0F0F0" }}>{show(value)}</span>
+      <span style={{ width: 82, textAlign: "center", fontWeight: 900, color: changed ? "var(--a-3cabfd)" : "var(--n-f0f0f0)" }}>{show(value)}</span>
       <button aria-label={`More ${name}`} disabled={atMax} onClick={() => onStep(1)} style={stepBtn}>
         +
       </button>
@@ -260,10 +260,10 @@ const row = {
   gap: 8,
   padding: "10px 12px",
   marginTop: 6,
-  background: "#121212",
-  border: "1px solid #222",
+  background: "var(--n-121212)",
+  border: "1px solid var(--n-222222)",
   borderRadius: 12,
-  color: "#F0F0F0",
+  color: "var(--n-f0f0f0)",
   fontFamily: "'Barlow Condensed', sans-serif",
   boxSizing: "border-box",
 };
@@ -271,12 +271,12 @@ const stepBtn = {
   width: 40,
   height: 40,
   flexShrink: 0,
-  background: "#1A1A1A",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-1a1a1a)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 10,
-  color: "#F0F0F0",
+  color: "var(--n-f0f0f0)",
   fontSize: 20,
   fontWeight: 900,
   cursor: "pointer",
 };
-const pill = { padding: "4px 10px", borderRadius: 12, fontSize: 12, fontWeight: 900, color: "#fff", letterSpacing: 1 };
+const pill = { padding: "4px 10px", borderRadius: 12, fontSize: 12, fontWeight: 900, color: "var(--n-ffffff)", letterSpacing: 1 };

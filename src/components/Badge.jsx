@@ -27,9 +27,9 @@ export const HOST_LEVELS = [
 ];
 
 const BADGES = {
-  host_bronze: hostBadge("Host · 5 meets", "linear-gradient(135deg, #E8A06A, #8C4A1E)", "#fff", 5),
-  host_silver: hostBadge("Host · 10 meets", "linear-gradient(135deg, #F1F5F9, #8A97A8)", "#1E293B", 10),
-  host_gold: hostBadge("Host · 25 meets", "linear-gradient(135deg, #FDE68A, #CA8A04)", "#3B2500", 25),
+  host_bronze: hostBadge("Host · 5 meets", "linear-gradient(135deg, #E8A06A, #8C4A1E)", "var(--n-ffffff)", 5),
+  host_silver: hostBadge("Host · 10 meets", "linear-gradient(135deg, var(--n-f1f5f9), var(--n-8a97a8))", "var(--n-1e293b)", 10),
+  host_gold: hostBadge("Host · 25 meets", "linear-gradient(135deg, #FDE68A, #CA8A04)", "var(--n-3b2500)", 25),
   photographer: {
     title: "Photographer",
     gradient: "linear-gradient(135deg, #38BDF8, #2563EB)",
@@ -209,12 +209,12 @@ function BadgeInfo({ badge, number, onClose }) {
         style={{
           width: "100%",
           maxWidth: 300,
-          background: "#131313",
-          border: "1px solid #2A2A2A",
+          background: "var(--n-131313)",
+          border: "1px solid var(--n-2a2a2a)",
           borderRadius: 14,
           padding: "22px 20px 18px",
           textAlign: "center",
-          color: "#F0F0F0",
+          color: "var(--n-f0f0f0)",
           boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
         }}
       >
@@ -248,7 +248,7 @@ function BadgeInfo({ badge, number, onClose }) {
         <div
           style={{
             fontSize: 13.5,
-            color: "#AAA",
+            color: "var(--n-aaaaaa)",
             lineHeight: 1.6,
             marginTop: 6,
             fontFamily: "'Barlow', sans-serif",
@@ -263,10 +263,10 @@ function BadgeInfo({ badge, number, onClose }) {
             marginTop: 16,
             width: "100%",
             padding: "11px 0",
-            background: "#1E1E1E",
-            border: "1px solid #2A2A2A",
+            background: "var(--n-1e1e1e)",
+            border: "1px solid var(--n-2a2a2a)",
             borderRadius: 8,
-            color: "#DDD",
+            color: "var(--n-dddddd)",
             fontSize: 12.5,
             fontWeight: 800,
             letterSpacing: 1.5,

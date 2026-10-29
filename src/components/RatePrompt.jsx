@@ -76,7 +76,7 @@ export default function RatePrompt({ user, open = false, onClose, onToast }) {
                 onChange={(e) => setNote(e.target.value)}
               />
               {error && (
-                <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 6 }}>
+                <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 6 }}>
                   {error}
                 </div>
               )}
@@ -96,7 +96,7 @@ export default function RatePrompt({ user, open = false, onClose, onToast }) {
             {GOOGLE_REVIEW_URL ? "Got a minute? A Google review helps other Georgia car people find TUNR." : "Every rating is read by the TUNR team."}
           </div>
           {GOOGLE_REVIEW_URL && (
-            <a href={GOOGLE_REVIEW_URL} target="_blank" rel="noopener noreferrer" onClick={() => close("rated")} style={{ ...bigButton, display: "block", textAlign: "center", textDecoration: "none", marginTop: 14, background: "#fff", color: "#111" }}>
+            <a href={GOOGLE_REVIEW_URL} target="_blank" rel="noopener noreferrer" onClick={() => close("rated")} style={{ ...bigButton, display: "block", textAlign: "center", textDecoration: "none", marginTop: 14, background: "var(--n-ffffff)", color: "var(--n-111111)" }}>
               ⭐ REVIEW TUNR ON GOOGLE
             </a>
           )}

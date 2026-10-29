@@ -11,7 +11,7 @@ export default function TodayStrip({ events, rsvps, now, onOpen }) {
     <div style={{ padding: "0 20px 16px" }}>
       <div
         style={{
-          background: "linear-gradient(135deg, #000F1F, #00172E)",
+          background: "linear-gradient(135deg, var(--n-000f1f), var(--n-00172e))",
           border: "1px solid #0080F0",
           borderRadius: 10,
           padding: "13px 14px 11px",
@@ -47,7 +47,7 @@ export default function TodayStrip({ events, rsvps, now, onOpen }) {
                   alignItems: "center",
                   gap: 10,
                   background: "rgba(0,0,0,0.35)",
-                  border: "1px solid #001A33",
+                  border: "1px solid var(--n-001a33)",
                   borderRadius: 8,
                   padding: "9px 11px",
                 }}
@@ -74,7 +74,7 @@ export default function TodayStrip({ events, rsvps, now, onOpen }) {
                   >
                     {event.title}
                   </div>
-                  <div style={{ fontSize: 11.5, color: "#999", marginTop: 1 }}>
+                  <div style={{ fontSize: 11.5, color: "var(--n-999999)", marginTop: 1 }}>
                     {displayTime(event)}
                     {rsvps[event.id] === "going" ? " · you're going" : " · saved"}
                   </div>

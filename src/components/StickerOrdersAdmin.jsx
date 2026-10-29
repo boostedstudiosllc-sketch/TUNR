@@ -116,7 +116,7 @@ export default function StickerOrdersAdmin({ onToast }) {
         Members can order a printed copy of their car's QR sticker. They see the price before they order. Card payments go
         through your payment link (for example a Stripe Payment Link); each order's id shows on the payment as its reference.
       </div>
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
 
       {draft && (
         <div style={box}>
@@ -147,7 +147,7 @@ export default function StickerOrdersAdmin({ onToast }) {
         </div>
       )}
 
-      <div style={{ ...label, marginTop: 20, color: "#8A8A8A" }}>ORDERS</div>
+      <div style={{ ...label, marginTop: 20, color: "var(--n-8a8a8a)" }}>ORDERS</div>
       {orders === null && <div style={muted}>Loading…</div>}
       {orders && orders.length === 0 && <div style={muted}>No sticker orders yet.</div>}
       {(orders || []).map((o) => (
@@ -173,13 +173,13 @@ export default function StickerOrdersAdmin({ onToast }) {
               <button className="action-btn" onClick={() => printFile(o)} style={small}>PRINT FILE</button>
               <button className="action-btn" onClick={() => copyAddress(o)} style={small}>COPY ADDRESS</button>
               {o.status === "awaiting_payment" && (
-                <button className="action-btn" disabled={busy === o.id} onClick={() => move(o, "paid")} style={{ ...small, color: "#3CABFD" }}>MARK PAID</button>
+                <button className="action-btn" disabled={busy === o.id} onClick={() => move(o, "paid")} style={{ ...small, color: "var(--a-3cabfd)" }}>MARK PAID</button>
               )}
               {o.status !== "sent" && (
                 <button className="action-btn" disabled={busy === o.id} onClick={() => move(o, "sent")} style={{ ...small, color: "#10B981" }}>MARK SHIPPED</button>
               )}
               {o.status !== "sent" && (
-                <button className="action-btn" disabled={busy === o.id} onClick={() => move(o, "cancelled")} style={{ ...small, color: "#F87171" }}>CANCEL</button>
+                <button className="action-btn" disabled={busy === o.id} onClick={() => move(o, "cancelled")} style={{ ...small, color: "var(--a-f87171)" }}>CANCEL</button>
               )}
             </div>
           )}
@@ -189,5 +189,5 @@ export default function StickerOrdersAdmin({ onToast }) {
   );
 }
 
-const box = { marginTop: 10, background: "#121212", border: "1px solid #222", borderRadius: 12, padding: "12px 14px", boxSizing: "border-box" };
+const box = { marginTop: 10, background: "var(--n-121212)", border: "1px solid var(--n-222222)", borderRadius: 12, padding: "12px 14px", boxSizing: "border-box" };
 const small = { ...quietButton, width: "auto", padding: "8px 12px", fontSize: 12.5 };

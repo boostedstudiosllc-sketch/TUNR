@@ -94,14 +94,14 @@ export default function PostView({ postId, user, onClose, onToast, onNeedAccount
   function Comment({ c, depth = 0 }) {
     const isAnswer = c.id === post.solved_comment_id;
     return (
-      <div style={{ marginLeft: depth ? 14 : 0, borderLeft: depth ? "2px solid #222" : "none", paddingLeft: depth ? 10 : 0, marginTop: 10 }}>
+      <div style={{ marginLeft: depth ? 14 : 0, borderLeft: depth ? "2px solid var(--n-222222)" : "none", paddingLeft: depth ? 10 : 0, marginTop: 10 }}>
         <div style={{ background: isAnswer ? "rgba(16,185,129,0.08)" : "transparent", border: isAnswer ? "1px solid #10B98155" : "none", borderRadius: 8, padding: isAnswer ? "8px 10px" : 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             <Author name={c.username} photographer={c.photographer} photographerVerified={c.photographer_verified} onOpen={() => onOpenPerson(c.user_id)} />
-            <span style={{ fontSize: 10.5, color: "#555" }}>{ago(c.created_at)}</span>
+            <span style={{ fontSize: 10.5, color: "var(--n-555555)" }}>{ago(c.created_at)}</span>
             {isAnswer && <span style={{ fontSize: 10.5, color: "#10B981", fontWeight: 800 }}>✅ SOLVED IT</span>}
           </div>
-          <div style={{ fontSize: 13.5, color: c.removed ? "#666" : "#DDD", lineHeight: 1.5, marginTop: 2, whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontFamily: "'Barlow', sans-serif", fontStyle: c.removed ? "italic" : "normal" }}>
+          <div style={{ fontSize: 13.5, color: c.removed ? "var(--n-666666)" : "var(--n-dddddd)", lineHeight: 1.5, marginTop: 2, whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontFamily: "'Barlow', sans-serif", fontStyle: c.removed ? "italic" : "normal" }}>
             {c.removed ? "Removed by a moderator." : c.body}
           </div>
           {!c.removed && (
@@ -144,27 +144,27 @@ export default function PostView({ postId, user, onClose, onToast, onNeedAccount
 
   return (
     <Sheet onClose={onClose} label="Post" zIndex={275}>
-      <button onClick={() => onOpenForum(post.forum_id)} style={{ ...linkBtn, fontSize: 12, color: "#BBB", fontWeight: 800 }}>
+      <button onClick={() => onOpenForum(post.forum_id)} style={{ ...linkBtn, fontSize: 12, color: "var(--n-bbbbbb)", fontWeight: 800 }}>
         {post.forum_icon} {post.forum_name} ›
       </button>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
         <Author name={post.username} photographer={post.photographer} photographerVerified={post.photographer_verified} onOpen={() => onOpenPerson(post.user_id)} />
-        <span style={{ fontSize: 11, color: "#666" }}>
+        <span style={{ fontSize: 11, color: "var(--n-666666)" }}>
           · {ago(post.created_at)}
           {post.edited_at && " · edited"}
         </span>
-        <span style={{ marginLeft: "auto", fontSize: 11, color: "#AAA", fontWeight: 700 }}>{tagLabel(post.tag)}</span>
+        <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--n-aaaaaa)", fontWeight: 700 }}>{tagLabel(post.tag)}</span>
       </div>
       <div style={{ fontSize: 21, fontWeight: 900, lineHeight: 1.2, marginTop: 6 }}>
         {post.pinned && "📌 "}
         {post.title}
       </div>
       {(post.locked || post.removed) && (
-        <div style={{ ...muted, fontSize: 12, color: "#E9C27A", marginTop: 4 }}>
+        <div style={{ ...muted, fontSize: 12, color: "var(--a-e9c27a)", marginTop: 4 }}>
           {post.removed ? "🚫 Removed — only you and the moderators can see it." : "🔒 Locked — no new comments."}
         </div>
       )}
-      {post.body && <div style={{ fontSize: 14.5, color: "#DDD", lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontFamily: "'Barlow', sans-serif" }}>{post.body}</div>}
+      {post.body && <div style={{ fontSize: 14.5, color: "var(--n-dddddd)", lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontFamily: "'Barlow', sans-serif" }}>{post.body}</div>}
 
       {post.photo_urls?.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: post.photo_urls.length === 1 ? "1fr" : "1fr 1fr", gap: 6, marginTop: 10 }}>
@@ -181,7 +181,7 @@ export default function PostView({ postId, user, onClose, onToast, onNeedAccount
           href={`https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${post.lat},${post.lng}`}
           target="_blank"
           rel="noreferrer"
-          style={{ display: "block", textAlign: "center", marginTop: 10, padding: "10px 0", borderRadius: 8, background: "#0F1F0F", border: "1px solid #10B981", color: "#10B981", fontSize: 13, fontWeight: 800, letterSpacing: 1, textDecoration: "none", fontFamily: "'Barlow Condensed', sans-serif" }}
+          style={{ display: "block", textAlign: "center", marginTop: 10, padding: "10px 0", borderRadius: 8, background: "var(--n-0f1f0f)", border: "1px solid #10B981", color: "#10B981", fontSize: 13, fontWeight: 800, letterSpacing: 1, textDecoration: "none", fontFamily: "'Barlow Condensed', sans-serif" }}
         >
           <DirectionsIcon size={15} /> DIRECTIONS{post.place ? ` · ${post.place.toUpperCase()}` : ""}
         </a>
@@ -193,7 +193,7 @@ export default function PostView({ postId, user, onClose, onToast, onNeedAccount
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
         <VoteBox kind="post" id={post.id} score={post.score} myVote={post.my_vote} user={user} onNeedAccount={onNeedAccount} onToast={onToast} onChanged={onChanged} />
-        <span style={{ fontSize: 12.5, color: "#888" }}>💬 {post.comments}</span>
+        <span style={{ fontSize: 12.5, color: "var(--n-888888)" }}>💬 {post.comments}</span>
         <span style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
           {post.i_mod && (
             <>
@@ -220,7 +220,7 @@ export default function PostView({ postId, user, onClose, onToast, onNeedAccount
                     onClose();
                   })
                 }
-                style={{ ...linkBtn, color: "#EF4444" }}
+                style={{ ...linkBtn, color: "var(--a-ef4444)" }}
               >
                 tap again to delete
               </button>
@@ -237,7 +237,7 @@ export default function PostView({ postId, user, onClose, onToast, onNeedAccount
         </span>
       </div>
 
-      <div style={{ borderTop: "1px solid #1E1E1E", marginTop: 12, paddingTop: 4 }}>
+      <div style={{ borderTop: "1px solid var(--n-1e1e1e)", marginTop: 12, paddingTop: 4 }}>
         {top.length === 0 ? (
           <div style={{ ...muted, marginTop: 10 }}>{canComment ? "No comments yet. Be the first." : "No comments."}</div>
         ) : (
@@ -247,11 +247,11 @@ export default function PostView({ postId, user, onClose, onToast, onNeedAccount
 
       {canComment &&
         (unconfirmed ? (
-          <div style={{ ...muted, marginTop: 14, color: "#C9A46A" }}>✉️ Confirm your email to comment — tap the link we emailed you.</div>
+          <div style={{ ...muted, marginTop: 14, color: "var(--a-c9a46a)" }}>✉️ Confirm your email to comment — tap the link we emailed you.</div>
         ) : (
           <div style={{ marginTop: 14 }}>
             {replyTo && (
-              <div style={{ fontSize: 11.5, color: "#888", marginBottom: 4 }}>
+              <div style={{ fontSize: 11.5, color: "var(--n-888888)", marginBottom: 4 }}>
                 Replying to @{replyTo.username}{" "}
                 <button onClick={() => setReplyTo(null)} style={linkBtn}>
                   cancel
@@ -282,4 +282,4 @@ export default function PostView({ postId, user, onClose, onToast, onNeedAccount
   );
 }
 
-const linkBtn = { background: "none", border: "none", padding: 0, color: "#777", fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "'Barlow', sans-serif" };
+const linkBtn = { background: "none", border: "none", padding: 0, color: "var(--n-777777)", fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "'Barlow', sans-serif" };

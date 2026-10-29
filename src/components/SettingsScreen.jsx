@@ -17,6 +17,7 @@ import AdminLog from "./AdminLog.jsx";
 import RatePrompt from "./RatePrompt.jsx";
 import Wrapped from "./Wrapped.jsx";
 import GuessCarAdmin from "./GuessCarAdmin.jsx";
+import { themePref, setThemePref } from "../lib/theme.js";
 import { CohostInvites } from "./Cohosts.jsx";
 import { ListingRequestsQueue } from "./ListingRequest.jsx";
 import { SetPasswordForm } from "./SetPassword.jsx";
@@ -213,8 +214,8 @@ export default function SettingsScreen({
         width: "100%",
         maxWidth: 430,
         zIndex: 290,
-        background: "#0A0A0A",
-        color: "#F0F0F0",
+        background: "var(--n-0a0a0a)",
+        color: "var(--n-f0f0f0)",
         display: "flex",
         flexDirection: "column",
         fontFamily: "'Barlow Condensed', sans-serif",
@@ -228,8 +229,8 @@ export default function SettingsScreen({
           alignItems: "center",
           gap: 8,
           padding: "12px 12px",
-          borderBottom: "1px solid #1E1E1E",
-          background: "#0A0A0A",
+          borderBottom: "1px solid var(--n-1e1e1e)",
+          background: "var(--n-0a0a0a)",
           flexShrink: 0,
         }}
       >
@@ -239,7 +240,7 @@ export default function SettingsScreen({
           aria-label={page ? "Back" : "Close settings"}
           style={{
             background: "none",
-            color: "#F0F0F0",
+            color: "var(--n-f0f0f0)",
             padding: "6px 8px",
             fontSize: page ? 14 : 22,
             fontWeight: 800,
@@ -293,7 +294,7 @@ export default function SettingsScreen({
                 icon="👤"
                 label="Edit profile"
                 value={profile.username ? `@${profile.username}` : "Add a username"}
-                valueColor={profile.username ? "#777" : "#3CABFD"}
+                valueColor={profile.username ? "var(--n-777777)" : "#3CABFD"}
                 onClick={onEditProfile}
               />
               <Row
@@ -324,6 +325,10 @@ export default function SettingsScreen({
                 onClick={() => open("email")}
               />
               <Row icon="🛡️" label="Host verification" value={hostStatus} onClick={() => open("host")} />
+            </Section>
+
+            <Section title="APPEARANCE">
+              <ThemeRow onToast={onToast} />
             </Section>
 
             <Section title="NOTIFICATIONS">
@@ -358,7 +363,7 @@ export default function SettingsScreen({
                 sub="Your username, photo and streak or check-in count"
                 right={
                   onBoards === null ? null : (
-                    <span role="switch" aria-checked={onBoards} style={{ fontSize: 13, fontWeight: 800, color: onBoards ? "#10B981" : "#777" }}>
+                    <span role="switch" aria-checked={onBoards} style={{ fontSize: 13, fontWeight: 800, color: onBoards ? "#10B981" : "var(--n-777777)" }}>
                       {onBoards ? "ON" : "OFF"}
                     </span>
                   )
@@ -417,7 +422,7 @@ export default function SettingsScreen({
             {wrapped && <Wrapped year={wrapped} onClose={() => setWrapped(null)} onToast={onToast} />}
             <button
               onClick={() => open("boosted")}
-              style={{ display: "block", width: "100%", background: "none", border: "none", textAlign: "center", fontSize: 12, color: "#808080", marginTop: 12, padding: "8px 0", letterSpacing: 1, cursor: "pointer", fontFamily: "'Barlow', sans-serif" }}
+              style={{ display: "block", width: "100%", background: "none", border: "none", textAlign: "center", fontSize: 12, color: "var(--n-808080)", marginTop: 12, padding: "8px 0", letterSpacing: 1, cursor: "pointer", fontFamily: "'Barlow', sans-serif" }}
             >
               TUNR by Boosted Studios →
             </button>
@@ -429,10 +434,10 @@ export default function SettingsScreen({
                 width: "100%",
                 marginTop: 22,
                 padding: "14px 0",
-                background: "#141414",
-                border: "1px solid #2A2A2A",
+                background: "var(--n-141414)",
+                border: "1px solid var(--n-2a2a2a)",
                 borderRadius: 10,
-                color: "#F0F0F0",
+                color: "var(--n-f0f0f0)",
                 fontSize: 14,
                 fontWeight: 800,
                 letterSpacing: 1.5,
@@ -441,7 +446,7 @@ export default function SettingsScreen({
             >
               SIGN OUT
             </button>
-            <div style={{ textAlign: "center", fontSize: 11.5, color: "#808080", marginTop: 6, marginBottom: 22, fontFamily: "'Barlow', sans-serif", overflowWrap: "break-word" }}>
+            <div style={{ textAlign: "center", fontSize: 11.5, color: "var(--n-808080)", marginTop: 6, marginBottom: 22, fontFamily: "'Barlow', sans-serif", overflowWrap: "break-word" }}>
               Signed in as {user.email}
             </div>
 
@@ -591,8 +596,8 @@ function EmailPage({ user, account, onToast }) {
   const unconfirmed = Boolean(account && account.confirmed === false);
 
   return (
-    <div style={{ background: "#111", border: `1px solid ${unconfirmed ? "#5A3A0A" : "#2A2A2A"}`, borderRadius: 10, padding: "16px 18px" }}>
-      <div style={{ fontSize: 11, color: "#8A8A8A", letterSpacing: 1.6, fontWeight: 700 }}>YOUR EMAIL</div>
+    <div style={{ background: "var(--n-111111)", border: `1px solid ${unconfirmed ? "var(--n-5a3a0a)" : "var(--n-2a2a2a)"}`, borderRadius: 10, padding: "16px 18px" }}>
+      <div style={{ fontSize: 11, color: "var(--n-8a8a8a)", letterSpacing: 1.6, fontWeight: 700 }}>YOUR EMAIL</div>
       <div style={{ fontSize: 16, fontWeight: 700, marginTop: 3, overflowWrap: "break-word", fontFamily: "'Barlow', sans-serif" }}>
         {String(user.email || "").split("@")[0]}
         <wbr />@{String(user.email || "").split("@")[1] || ""}
@@ -630,7 +635,7 @@ function EmailPage({ user, account, onToast }) {
           >
             {busy ? "SENDING…" : "RESEND CONFIRMATION EMAIL"}
           </button>
-          <div style={{ marginTop: 14, background: "#0F0F0F", border: "1px solid #222", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "#8A8A8A", lineHeight: 1.55, fontFamily: "'Barlow', sans-serif" }}>
+          <div style={{ marginTop: 14, background: "var(--n-0f0f0f)", border: "1px solid var(--n-222222)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--n-8a8a8a)", lineHeight: 1.55, fontFamily: "'Barlow', sans-serif" }}>
             {CLEANUP_WHY}
           </div>
         </>
@@ -647,7 +652,7 @@ function StatusPill({ ok }) {
       ✓ Confirmed
     </span>
   ) : (
-    <span style={{ ...pillBase, color: "#F87171", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.5)" }}>
+    <span style={{ ...pillBase, color: "var(--a-f87171)", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.5)" }}>
       ⚠️ Not confirmed
     </span>
   );
@@ -656,22 +661,22 @@ function StatusPill({ ok }) {
 function Section({ title, children }) {
   return (
     <div style={{ marginTop: 18 }}>
-      <div style={{ fontSize: 11, color: "#8A8A8A", letterSpacing: 2, fontWeight: 800, margin: "0 4px 7px" }}>{title}</div>
-      <div style={{ background: "#111", border: "1px solid #222", borderRadius: 12, overflow: "hidden" }}>{children}</div>
+      <div style={{ fontSize: 11, color: "var(--n-8a8a8a)", letterSpacing: 2, fontWeight: 800, margin: "0 4px 7px" }}>{title}</div>
+      <div style={{ background: "var(--n-111111)", border: "1px solid var(--n-222222)", borderRadius: 12, overflow: "hidden" }}>{children}</div>
     </div>
   );
 }
 
 // One tappable line: icon, label (and a smaller line under it), then a value,
 // badge or chevron on the right. With href it's a link instead of a button.
-function Row({ icon, label, sub, subColor = "#777", value, valueColor = "#777", right, onClick, href, chevron = true }) {
+function Row({ icon, label, sub, subColor = "var(--n-777777)", value, valueColor = "var(--n-777777)", right, onClick, href, chevron = true }) {
   const inner = (
     <>
       <span aria-hidden="true" style={{ width: 26, textAlign: "center", fontSize: 18, flexShrink: 0 }}>
         {icon}
       </span>
       <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: "#EEE", fontFamily: "'Barlow', sans-serif" }}>{label}</span>
+        <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: "var(--n-eeeeee)", fontFamily: "'Barlow', sans-serif" }}>{label}</span>
         {sub && (
           <span
             style={{
@@ -707,7 +712,7 @@ function Row({ icon, label, sub, subColor = "#777", value, valueColor = "#777", 
       )}
       {right}
       {chevron && (
-        <span aria-hidden="true" style={{ color: "#444", fontSize: 20, lineHeight: 1, flexShrink: 0 }}>
+        <span aria-hidden="true" style={{ color: "var(--n-444444)", fontSize: 20, lineHeight: 1, flexShrink: 0 }}>
           ›
         </span>
       )}
@@ -722,7 +727,7 @@ function Row({ icon, label, sub, subColor = "#777", value, valueColor = "#777", 
     padding: "10px 14px",
     background: "none",
     border: "none",
-    borderTop: "1px solid #1C1C1C",
+    borderTop: "1px solid var(--n-1c1c1c)",
     marginTop: -1,
     textAlign: "left",
     color: "inherit",
@@ -738,6 +743,49 @@ function Row({ icon, label, sub, subColor = "#777", value, valueColor = "#777", 
     <button type="button" onClick={onClick} style={style}>
       {inner}
     </button>
+  );
+}
+
+// Dark, light, or follow the phone. Kept on this device.
+function ThemeRow({ onToast }) {
+  const [pref, setPref] = useState(themePref);
+  const pick = (v) => {
+    try {
+      setThemePref(v);
+      setPref(v);
+    } catch (e) {
+      onToast?.(e.message);
+    }
+  };
+  const options = [
+    ["dark", "🌙 Dark"],
+    ["light", "☀️ Light"],
+    ["system", "📱 Auto"],
+  ];
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 54, padding: "10px 14px", borderTop: "1px solid var(--n-1c1c1c)", marginTop: -1, boxSizing: "border-box" }}>
+      <span aria-hidden="true" style={{ width: 26, textAlign: "center", fontSize: 18, flexShrink: 0 }}>
+        🌓
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: "var(--n-eeeeee)", fontFamily: "'Barlow', sans-serif" }}>Theme</span>
+        <span style={{ display: "block", fontSize: 12, color: "var(--n-777777)", marginTop: 1, fontFamily: "'Barlow', sans-serif" }}>{pref === "system" ? "Matches your phone" : "Games stay dark"}</span>
+      </span>
+      <span role="radiogroup" aria-label="Theme" style={{ display: "flex", gap: 3, padding: 3, borderRadius: 999, background: "var(--n-1a1a1a)", border: "1px solid var(--n-2a2a2a)", flexShrink: 0 }}>
+        {options.map(([v, label]) => (
+          <button
+            key={v}
+            type="button"
+            role="radio"
+            aria-checked={pref === v}
+            onClick={() => pick(v)}
+            style={{ padding: "6px 10px", borderRadius: 999, border: "none", background: pref === v ? "#0080F0" : "transparent", color: pref === v ? "#fff" : "var(--n-aaaaaa)", fontSize: 12.5, fontWeight: 800, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", whiteSpace: "nowrap" }}
+          >
+            {label}
+          </button>
+        ))}
+      </span>
+    </div>
   );
 }
 
@@ -789,19 +837,19 @@ const countBadge = {
 
 const bodyText = {
   fontSize: 13,
-  color: "#999",
+  color: "var(--n-999999)",
   marginTop: 10,
   lineHeight: 1.6,
   fontFamily: "'Barlow', sans-serif",
 };
 
 const emptyStyle = {
-  background: "#111",
-  border: "1px dashed #2A2A2A",
+  background: "var(--n-111111)",
+  border: "1px dashed var(--n-2a2a2a)",
   borderRadius: 10,
   padding: "16px 18px",
   fontSize: 13,
-  color: "#777",
+  color: "var(--n-777777)",
   lineHeight: 1.6,
   fontFamily: "'Barlow', sans-serif",
 };

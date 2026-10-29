@@ -23,7 +23,7 @@ import { uploadEventPhoto } from "../lib/store.js";
 import { compressImage } from "../lib/image.js";
 
 const ROLE = { owner: "OWNER", admin: "ADMIN" };
-const KIND_ART = { car_club: "linear-gradient(135deg, #0b2a52, #0080F0 55%, #38bdf8)", crew: "linear-gradient(135deg, #3b0764, #7c3aed 55%, #f472b6)", photo: "linear-gradient(135deg, #1f2937, #475569 55%, #facc15)" };
+const KIND_ART = { car_club: "linear-gradient(135deg, var(--n-0b2a52), #0080F0 55%, #38bdf8)", crew: "linear-gradient(135deg, #3b0764, #7c3aed 55%, #f472b6)", photo: "linear-gradient(135deg, var(--n-1f2937), #475569 55%, #facc15)" };
 const WELCOMES = ["Welcome! 👋", "Glad you're here 🔥", "What do you drive? 🚗"];
 
 // The club's socials, as links.
@@ -104,16 +104,16 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
         }}
       />
       <div style={{ display: "flex", gap: 12, alignItems: "flex-end", padding: "0 10px" }}>
-        <span style={{ borderRadius: 14, border: "3px solid #0D0D0D", background: "#0D0D0D", lineHeight: 0 }}>
+        <span style={{ borderRadius: 14, border: "3px solid var(--n-0d0d0d)", background: "var(--n-0d0d0d)", lineHeight: 0 }}>
           <Logo url={club.logo_url} fallback={kindLabel(club.kind).split(" ")[0]} size={64} />
         </span>
         <div style={{ minWidth: 0, paddingBottom: 2 }}>
           <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.1 }}>{club.name}</div>
-          <div style={{ fontSize: 12, color: "#888", marginTop: 3 }}>
+          <div style={{ fontSize: 12, color: "var(--n-888888)", marginTop: 3 }}>
             {kindLabel(club.kind)} · {club.visibility === "private" ? "🔒 Private" : "🌐 Public"}
             {club.city ? ` · ${club.city}` : ""}
           </div>
-          <div style={{ fontSize: 12, color: "#888" }}>{club.members} {club.members === 1 ? "member" : "members"}</div>
+          <div style={{ fontSize: 12, color: "var(--n-888888)" }}>{club.members} {club.members === 1 ? "member" : "members"}</div>
         </div>
       </div>
       {editing ? (
@@ -124,14 +124,14 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
       {!editing && socials(club).length > 0 && (
         <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
           {socials(club).map(([icon, name, href]) => (
-            <a key={name} href={href} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 999, background: "#161a20", border: "1px solid #2A2E36", color: "#E6E6E6", fontSize: 13, fontWeight: 800, textDecoration: "none" }}>
+            <a key={name} href={href} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 999, background: "var(--n-161a20)", border: "1px solid var(--n-2a2e36)", color: "var(--n-e6e6e6)", fontSize: 13, fontWeight: 800, textDecoration: "none" }}>
               <span aria-hidden="true">{icon}</span>
               {name}
             </a>
           ))}
         </div>
       )}
-      {error && <div style={{ ...muted, color: "#EF4444", marginTop: 8 }}>{error}</div>}
+      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
 
       {/* Join / leave */}
       <div style={{ marginTop: 14 }}>
@@ -150,7 +150,7 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
           </button>
         )}
         {inClub && me && (
-          <label style={{ display: "flex", gap: 10, alignItems: "center", cursor: "pointer", fontSize: 13, color: "#CCC" }}>
+          <label style={{ display: "flex", gap: 10, alignItems: "center", cursor: "pointer", fontSize: 13, color: "var(--n-cccccc)" }}>
             <input
               type="checkbox"
               checked={me.show_on_profile !== false}
@@ -168,10 +168,10 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
           <div style={label}>WANT TO JOIN ({requests.length})</div>
           {requests.map((p) => (
             <Row key={p.user_id} p={p} onOpen={() => onOpenPerson(p.user_id)}>
-              <button disabled={busy} onClick={() => act(() => manageClubMember(club.id, p.user_id, "accept"), `@${p.username} is in`)} style={small("#0080F0", "#fff")}>
+              <button disabled={busy} onClick={() => act(() => manageClubMember(club.id, p.user_id, "accept"), `@${p.username} is in`)} style={small("#0080F0", "var(--n-ffffff)")}>
                 ACCEPT
               </button>
-              <button disabled={busy} onClick={() => act(() => manageClubMember(club.id, p.user_id, "remove"), "Declined")} style={small("#1A1A1A", "#999")}>
+              <button disabled={busy} onClick={() => act(() => manageClubMember(club.id, p.user_id, "remove"), "Declined")} style={small("var(--n-1a1a1a)", "var(--n-999999)")}>
                 DECLINE
               </button>
             </Row>
@@ -188,25 +188,25 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
               <button
                 key={m.event_id}
                 onClick={() => onOpenMeet(m.event)}
-                style={{ display: "block", width: "100%", textAlign: "left", background: "linear-gradient(160deg, #0b2a52, #111)", border: "1px solid #1d4ed8", borderRadius: 12, padding: 12, color: "#F0F0F0", cursor: "pointer", marginBottom: 8 }}
+                style={{ display: "block", width: "100%", textAlign: "left", background: "linear-gradient(160deg, var(--n-0b2a52), var(--n-111111))", border: "1px solid #1d4ed8", borderRadius: 12, padding: 12, color: "var(--n-f0f0f0)", cursor: "pointer", marginBottom: 8 }}
               >
                 <span style={{ display: "block", fontSize: 10.5, fontWeight: 900, letterSpacing: 1.5, color: "#FACC15" }}>DON'T MISS THIS ONE</span>
                 <span style={{ display: "block", fontSize: 18, fontWeight: 900, marginTop: 3 }}>{m.event.title}</span>
-                <span style={{ display: "block", fontSize: 12.5, color: "#9DB7CF", marginTop: 2 }}>
-                  {displayDate(m.event)} · {m.event.city} · <b style={{ color: "#3CABFD" }}>{m.members_going} going</b>
+                <span style={{ display: "block", fontSize: 12.5, color: "var(--a-9db7cf)", marginTop: 2 }}>
+                  {displayDate(m.event)} · {m.event.city} · <b style={{ color: "var(--a-3cabfd)" }}>{m.members_going} going</b>
                 </span>
               </button>
             ) : (
             <button
               key={m.event_id}
               onClick={() => onOpenMeet(m.event)}
-              style={{ display: "flex", width: "100%", gap: 10, alignItems: "center", textAlign: "left", background: "#111", border: "1px solid #222", borderRadius: 8, padding: "9px 11px", color: "#E6E6E6", cursor: "pointer", marginBottom: 6 }}
+              style={{ display: "flex", width: "100%", gap: 10, alignItems: "center", textAlign: "left", background: "var(--n-111111)", border: "1px solid var(--n-222222)", borderRadius: 8, padding: "9px 11px", color: "var(--n-e6e6e6)", cursor: "pointer", marginBottom: 6 }}
             >
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: "block", fontSize: 14, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.event.title}</span>
-                <span style={{ display: "block", fontSize: 11.5, color: "#777" }}>{displayDate(m.event)} · {m.event.city}</span>
+                <span style={{ display: "block", fontSize: 11.5, color: "var(--n-777777)" }}>{displayDate(m.event)} · {m.event.city}</span>
               </span>
-              <span style={{ fontSize: 12, color: "#3CABFD", fontWeight: 800, whiteSpace: "nowrap" }}>{m.members_going} going</span>
+              <span style={{ fontSize: 12, color: "var(--a-3cabfd)", fontWeight: 800, whiteSpace: "nowrap" }}>{m.members_going} going</span>
             </button>
             )
           ))}
@@ -219,15 +219,15 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
           <div style={label}>MEMBERS ({members.length})</div>
           {members.map((p) => (
             <Row key={p.user_id} p={p} onOpen={() => onOpenPerson(p.user_id)}>
-              {ROLE[p.role] && <span style={{ fontSize: 10, color: "#3CABFD", fontWeight: 800, letterSpacing: 1 }}>{ROLE[p.role]}</span>}
+              {ROLE[p.role] && <span style={{ fontSize: 10, color: "var(--a-3cabfd)", fontWeight: 800, letterSpacing: 1 }}>{ROLE[p.role]}</span>}
               {runs && p.role !== "owner" && p.user_id !== user?.id && (role === "owner" || p.role === "member") && (
                 <>
                   {role === "owner" && (
-                    <button disabled={busy} onClick={() => act(() => manageClubMember(club.id, p.user_id, p.role === "admin" ? "make_member" : "make_admin"), p.role === "admin" ? "Now a member" : `@${p.username} is an admin`)} style={small("#1A1A1A", "#999")}>
+                    <button disabled={busy} onClick={() => act(() => manageClubMember(club.id, p.user_id, p.role === "admin" ? "make_member" : "make_admin"), p.role === "admin" ? "Now a member" : `@${p.username} is an admin`)} style={small("var(--n-1a1a1a)", "var(--n-999999)")}>
                       {p.role === "admin" ? "UN-ADMIN" : "MAKE ADMIN"}
                     </button>
                   )}
-                  <button disabled={busy} onClick={() => act(() => manageClubMember(club.id, p.user_id, "remove"), `Removed @${p.username}`)} style={small("#1A1A1A", "#999")}>
+                  <button disabled={busy} onClick={() => act(() => manageClubMember(club.id, p.user_id, "remove"), `Removed @${p.username}`)} style={small("var(--n-1a1a1a)", "var(--n-999999)")}>
                     REMOVE
                   </button>
                 </>
@@ -267,7 +267,7 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
                   })
                   .catch((e) => onToast(e.message))
               }
-              style={{ ...linkBtn, color: "#EF4444" }}
+              style={{ ...linkBtn, color: "var(--a-ef4444)" }}
             >
               tap again to delete the club for everyone
             </button>
@@ -311,9 +311,9 @@ function ClubEdit({ club, user, onDone, onToast }) {
   }
 
   return (
-    <div style={{ marginTop: 10, background: "#121212", border: "1px solid #222", borderRadius: 10, padding: 12 }}>
+    <div style={{ marginTop: 10, background: "var(--n-121212)", border: "1px solid var(--n-222222)", borderRadius: 10, padding: 12 }}>
       <div style={label}>COVER PHOTO</div>
-      <label style={{ display: "block", height: 90, borderRadius: 10, cursor: "pointer", background: cover ? `center / cover no-repeat url("${cover}")` : "#1a1d23", border: "1px dashed #3A4250", color: "#9AA4B2", fontSize: 13, fontWeight: 800, textAlign: "center", lineHeight: "90px" }}>
+      <label style={{ display: "block", height: 90, borderRadius: 10, cursor: "pointer", background: cover ? `center / cover no-repeat url("${cover}")` : "var(--n-1a1d23)", border: "1px dashed var(--n-3a4250)", color: "var(--n-9aa4b2)", fontSize: 13, fontWeight: 800, textAlign: "center", lineHeight: "90px" }}>
         {uploading ? "Uploading…" : cover ? "" : "📷 Add a wide photo of the club"}
         <input type="file" accept="image/*" onChange={(e) => pickCover(e.target.files?.[0])} style={{ display: "none" }} />
       </label>
@@ -332,7 +332,7 @@ function ClubEdit({ club, user, onDone, onToast }) {
       <input style={field} placeholder="clubname" maxLength={60} value={tiktok} onChange={(e) => setTiktok(e.target.value)} />
       <div style={{ ...label, marginTop: 10 }}>WEBSITE</div>
       <input style={field} placeholder="https://" maxLength={200} value={website} onChange={(e) => setWebsite(e.target.value)} />
-      <label style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10, fontSize: 13, color: "#CCC" }}>
+      <label style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10, fontSize: 13, color: "var(--n-cccccc)" }}>
         <input type="checkbox" checked={visibility === "private"} onChange={(e) => setVisibility(e.target.checked ? "private" : "public")} style={{ accentColor: "#0080F0" }} />
         Private — approve who joins
       </label>
@@ -387,7 +387,7 @@ function ClubChat({ club, user, messages, runs, onSent, onToast, onOpenPerson })
   return (
     <div style={{ marginTop: 18 }}>
       <div style={label}>CLUB CHAT</div>
-      <div style={{ background: "#121212", border: "1px solid #222", borderRadius: 10, padding: 10, maxHeight: 300, overflowY: "auto" }}>
+      <div style={{ background: "var(--n-121212)", border: "1px solid var(--n-222222)", borderRadius: 10, padding: 10, maxHeight: 300, overflowY: "auto" }}>
         {messages.length === 0 ? (
           <div style={{ ...muted, fontSize: 12.5 }}>Only members see this. Plan a cruise, share a shoot, say hi.</div>
         ) : (
@@ -406,8 +406,8 @@ function ClubChat({ club, user, messages, runs, onSent, onToast, onOpenPerson })
             <div key={m.id} style={{ marginBottom: 8 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <Author name={m.username} photographer={m.photographer} photographerVerified={m.photographer_verified} onOpen={() => onOpenPerson(m.user_id)} />
-                {ROLE[m.role] && <span style={{ fontSize: 9.5, color: "#3CABFD", fontWeight: 800 }}>{ROLE[m.role]}</span>}
-                <span style={{ fontSize: 10.5, color: "#555" }}>{new Date(m.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</span>
+                {ROLE[m.role] && <span style={{ fontSize: 9.5, color: "var(--a-3cabfd)", fontWeight: 800 }}>{ROLE[m.role]}</span>}
+                <span style={{ fontSize: 10.5, color: "var(--n-555555)" }}>{new Date(m.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</span>
                 {(m.user_id === user.id || runs) && (
                   <button
                     onClick={() =>
@@ -415,13 +415,13 @@ function ClubChat({ club, user, messages, runs, onSent, onToast, onOpenPerson })
                         .then(onSent)
                         .catch((e) => onToast(e.message))
                     }
-                    style={{ ...linkBtn, fontSize: 10.5, color: "#555" }}
+                    style={{ ...linkBtn, fontSize: 10.5, color: "var(--n-555555)" }}
                   >
                     delete
                   </button>
                 )}
               </div>
-              <div style={{ fontSize: 13.5, color: "#E6E6E6", lineHeight: 1.45, overflowWrap: "anywhere", fontFamily: "'Barlow', sans-serif" }}>{m.body}</div>
+              <div style={{ fontSize: 13.5, color: "var(--n-e6e6e6)", lineHeight: 1.45, overflowWrap: "anywhere", fontFamily: "'Barlow', sans-serif" }}>{m.body}</div>
             </div>
             )
           )
@@ -446,16 +446,16 @@ function ClubChat({ club, user, messages, runs, onSent, onToast, onOpenPerson })
 function Joined({ m, replies, sending, onReply, onOpenPerson }) {
   return (
     <div style={{ margin: "4px 0 10px", padding: "8px 10px", borderRadius: 10, background: "rgba(0,128,240,0.08)", border: "1px solid #12355e" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#C9D1DC" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--n-c9d1dc)" }}>
         <span aria-hidden="true">👋</span>
         <Author name={m.username} photographer={m.photographer} photographerVerified={m.photographer_verified} onOpen={() => onOpenPerson(m.user_id)} />
         <span>joined the club</span>
-        <span style={{ fontSize: 10.5, color: "#555", marginLeft: "auto" }}>{new Date(m.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+        <span style={{ fontSize: 10.5, color: "var(--n-555555)", marginLeft: "auto" }}>{new Date(m.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
       </div>
       {replies && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 7 }}>
           {WELCOMES.map((w) => (
-            <button key={w} disabled={sending} onClick={() => onReply(w)} style={{ padding: "5px 10px", borderRadius: 999, border: "1px solid #2A3646", background: "#161a20", color: "#E6E6E6", fontSize: 12.5, fontWeight: 800, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" }}>
+            <button key={w} disabled={sending} onClick={() => onReply(w)} style={{ padding: "5px 10px", borderRadius: 999, border: "1px solid var(--n-2a3646)", background: "var(--n-161a20)", color: "var(--n-e6e6e6)", fontSize: 12.5, fontWeight: 800, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" }}>
               {w}
             </button>
           ))}
@@ -467,7 +467,7 @@ function Joined({ m, replies, sending, onReply, onOpenPerson }) {
 
 function Row({ p, onOpen, children }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: "1px solid #1A1A1A" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: "1px solid var(--n-1a1a1a)" }}>
       <span style={{ flex: 1, minWidth: 0 }}>
         <Author name={p.username} photographer={p.photographer} photographerVerified={p.photographer_verified} onOpen={onOpen} />
       </span>
@@ -476,12 +476,12 @@ function Row({ p, onOpen, children }) {
   );
 }
 
-const linkBtn = { background: "none", border: "none", padding: 0, color: "#777", fontSize: 11.5, fontWeight: 700, cursor: "pointer" };
+const linkBtn = { background: "none", border: "none", padding: 0, color: "var(--n-777777)", fontSize: 11.5, fontWeight: 700, cursor: "pointer" };
 const small = (bg, color) => ({
   padding: "6px 9px",
   background: bg,
   color,
-  border: bg === "#1A1A1A" ? "1px solid #2A2A2A" : "none",
+  border: bg === "var(--n-1a1a1a)" ? "1px solid var(--n-2a2a2a)" : "none",
   borderRadius: 6,
   fontSize: 10.5,
   fontWeight: 800,

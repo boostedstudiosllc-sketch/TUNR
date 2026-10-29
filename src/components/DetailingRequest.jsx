@@ -55,7 +55,7 @@ export default function DetailingRequest({ user, onClose, onToast, onNeedAccount
         </>
       ) : sent ? (
         <>
-          <div style={{ ...muted, color: "#DDD", marginTop: 6 }}>
+          <div style={{ ...muted, color: "var(--n-dddddd)", marginTop: 6 }}>
             Thanks! Boosted Detailing has your request and will reply with a time and price. You'll get
             an alert, and you can see the reply in Settings → Contact us.
           </div>
@@ -65,7 +65,7 @@ export default function DetailingRequest({ user, onClose, onToast, onNeedAccount
         <>
           <div style={{ ...muted, marginTop: 4 }}>
             Tell us what you need and we'll get back to you with a time and price. Your{" "}
-            <b style={{ color: "#3CABFD" }}>10% TUNR discount</b> is included automatically.
+            <b style={{ color: "var(--a-3cabfd)" }}>10% TUNR discount</b> is included automatically.
           </div>
 
           <div style={{ ...label, marginTop: 14 }}>PICK A DETAIL</div>
@@ -77,23 +77,23 @@ export default function DetailingRequest({ user, onClose, onToast, onNeedAccount
                   key={t.id}
                   onClick={() => setService(t.id)}
                   aria-pressed={on}
-                  style={{ position: "relative", textAlign: "left", padding: "12px 14px", borderRadius: 14, cursor: "pointer", background: on ? "linear-gradient(160deg, rgba(0,128,240,0.18), #121212)" : "#121212", border: `${on ? 2 : 1}px solid ${on ? "#0080F0" : "#262626"}`, color: "#F0F0F0", fontFamily: "'Barlow Condensed', sans-serif" }}
+                  style={{ position: "relative", textAlign: "left", padding: "12px 14px", borderRadius: 14, cursor: "pointer", background: on ? "linear-gradient(160deg, rgba(0,128,240,0.18), var(--n-121212))" : "var(--n-121212)", border: `${on ? 2 : 1}px solid ${on ? "#0080F0" : "var(--n-262626)"}`, color: "var(--n-f0f0f0)", fontFamily: "'Barlow Condensed', sans-serif" }}
                 >
                   {t.popular && <span style={{ position: "absolute", top: -9, right: 12, fontSize: 10, fontWeight: 900, letterSpacing: 1.2, background: "#FACC15", color: "#111", borderRadius: 5, padding: "2px 7px" }}>MOST POPULAR</span>}
                   <span style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
                     <span style={{ fontSize: 20, fontWeight: 900, letterSpacing: 1 }}>{t.name}</span>
                     <span style={{ fontSize: 22, fontWeight: 900 }}>
                       ${t.price}
-                      <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: "#3CABFD", textAlign: "right" }}>${(t.price * 0.9).toFixed(2)} with TUNR</span>
+                      <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: "var(--a-3cabfd)", textAlign: "right" }}>${(t.price * 0.9).toFixed(2)} with TUNR</span>
                     </span>
                   </span>
-                  <span style={{ display: "block", fontSize: 13, color: "#B9C2CF", fontFamily: "'Barlow', sans-serif" }}>
+                  <span style={{ display: "block", fontSize: 13, color: "var(--n-b9c2cf)", fontFamily: "'Barlow', sans-serif" }}>
                     {t.blurb} · {t.time}
                   </span>
                   {on && (
                     <span style={{ display: "block", marginTop: 8 }}>
                       {t.includes.map((x, i) => (
-                        <span key={x} style={{ display: "block", fontSize: 13, color: i === 0 && x.endsWith(":") ? "#7FC4FF" : "#DDD", fontFamily: "'Barlow', sans-serif", lineHeight: 1.5 }}>
+                        <span key={x} style={{ display: "block", fontSize: 13, color: i === 0 && x.endsWith(":") ? "var(--a-7fc4ff)" : "var(--n-dddddd)", fontFamily: "'Barlow', sans-serif", lineHeight: 1.5 }}>
                           {i === 0 && x.endsWith(":") ? x : `✓ ${x}`}
                         </span>
                       ))}
@@ -154,11 +154,11 @@ export default function DetailingRequest({ user, onClose, onToast, onNeedAccount
             onChange={(e) => setNotes(e.target.value)}
           />
 
-          <div style={{ marginTop: 16, padding: "10px 12px", borderRadius: 12, background: "#101010", border: "1px solid #222" }}>
-            <div style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 1.5, color: "#8A94A3" }}>PRODUCTS FROM OUR SPONSORS</div>
+          <div style={{ marginTop: 16, padding: "10px 12px", borderRadius: 12, background: "var(--n-101010)", border: "1px solid var(--n-222222)" }}>
+            <div style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 1.5, color: "var(--n-8a94a3)" }}>PRODUCTS FROM OUR SPONSORS</div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
               {DETAIL_SPONSORS.map((name) => (
-                <span key={name} style={{ fontSize: 13, fontWeight: 900, letterSpacing: 0.5, color: "#E6E6E6", background: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 999, padding: "5px 11px" }}>
+                <span key={name} style={{ fontSize: 13, fontWeight: 900, letterSpacing: 0.5, color: "var(--n-e6e6e6)", background: "var(--n-1a1a1a)", border: "1px solid var(--n-2a2a2a)", borderRadius: 999, padding: "5px 11px" }}>
                   {name}
                 </span>
               ))}
@@ -166,7 +166,7 @@ export default function DetailingRequest({ user, onClose, onToast, onNeedAccount
           </div>
           <div style={{ ...muted, fontSize: 12, marginTop: 8 }}>🧾 After your detail, upload the receipt in Perks → Points for ⭐ points.</div>
 
-          {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 10 }}>{error}</div>}
+          {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 10 }}>{error}</div>}
           <button className="action-btn" disabled={busy} onClick={send} style={{ ...bigButton, marginTop: 14, opacity: busy ? 0.6 : 1 }}>
             {busy ? "SENDING…" : "SEND REQUEST"}
           </button>
@@ -180,13 +180,13 @@ export default function DetailingRequest({ user, onClose, onToast, onNeedAccount
 const chip = {
   padding: "8px 12px",
   minHeight: 36,
-  background: "#161616",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-161616)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 18,
-  color: "#BBB",
+  color: "var(--n-bbbbbb)",
   fontSize: 13,
   fontWeight: 800,
   cursor: "pointer",
   fontFamily: "'Barlow Condensed', sans-serif",
 };
-const chipOn = { border: "1px solid #0080F0", color: "#3CABFD", background: "rgba(0, 128, 240,0.12)" };
+const chipOn = { border: "1px solid #0080F0", color: "var(--a-3cabfd)", background: "rgba(0, 128, 240,0.12)" };

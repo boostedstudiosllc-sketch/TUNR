@@ -1,3 +1,4 @@
+import { activeTheme } from "../lib/theme.js";
 import { useEffect, useRef } from "react";
 import { VIBES } from "../data/events.js";
 
@@ -19,7 +20,7 @@ export default function MapView({ events, onSelect, spots = [], onSelectSpot }) 
       mapboxgl.accessToken = MAPBOX_TOKEN;
       const map = new mapboxgl.Map({
         container: containerRef.current,
-        style: "mapbox://styles/mapbox/dark-v11",
+        style: `mapbox://styles/mapbox/${activeTheme() === "light" ? "light" : "dark"}-v11`,
         center: [-84.39, 33.85],
         zoom: 8.6,
       });
@@ -68,14 +69,14 @@ export default function MapView({ events, onSelect, spots = [], onSelectSpot }) 
           border-radius: 50% 50% 50% 0;
           transform: rotate(-45deg);
           background: ${color};
-          border: 2px solid #0A0A0A;
+          border: 2px solid var(--n-0a0a0a);
           cursor: pointer;
           box-shadow: 0 4px 16px ${color}77;
           display: flex; align-items: center; justify-content: center;
         `;
         const inner = document.createElement("div");
         inner.style.cssText =
-          "transform: rotate(45deg); color: #fff; font-size: 10px; font-weight: 900; font-family: 'Barlow Condensed', sans-serif;";
+          "transform: rotate(45deg); color: var(--n-ffffff); font-size: 10px; font-weight: 900; font-family: 'Barlow Condensed', sans-serif;";
         inner.textContent = event.vibe.slice(0, 1);
         el.appendChild(inner);
         el.addEventListener("click", () => onSelect(event));
@@ -92,7 +93,7 @@ export default function MapView({ events, onSelect, spots = [], onSelectSpot }) 
       el.title = spot.title;
       el.style.cssText = `
         width: 26px; height: 26px; border-radius: 50%;
-        background: #0E1622; border: 2px solid #38BDF8;
+        background: var(--n-0e1622); border: 2px solid #38BDF8;
         display: flex; align-items: center; justify-content: center;
         font-size: 13px; cursor: pointer; box-shadow: 0 2px 10px #38BDF855;
       `;
@@ -108,11 +109,11 @@ export default function MapView({ events, onSelect, spots = [], onSelectSpot }) 
         style={{
           height: 300,
           borderRadius: 12,
-          border: "1px dashed #2A2A2A",
+          border: "1px dashed var(--n-2a2a2a)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "#555",
+          color: "var(--n-555555)",
           fontSize: 13,
           textAlign: "center",
           padding: 20,
@@ -131,7 +132,7 @@ export default function MapView({ events, onSelect, spots = [], onSelectSpot }) 
         height: 400,
         borderRadius: 12,
         overflow: "hidden",
-        border: "1px solid #222",
+        border: "1px solid var(--n-222222)",
       }}
     />
   );

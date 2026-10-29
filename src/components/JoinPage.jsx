@@ -130,8 +130,8 @@ export default function JoinPage({ user, onEnter }) {
     <div
       style={{
         minHeight: "100vh",
-        background: "#0A0A0A",
-        color: "#F0F0F0",
+        background: "var(--n-0a0a0a)",
+        color: "var(--n-f0f0f0)",
         maxWidth: 430,
         margin: "0 auto",
         fontFamily: "'Barlow Condensed', sans-serif",
@@ -141,14 +141,14 @@ export default function JoinPage({ user, onEnter }) {
       <div
         style={{
           padding: "40px 22px 28px",
-          background: "linear-gradient(180deg, #1A0800 0%, #0A0A0A 100%)",
-          borderBottom: "1px solid #1E1E1E",
+          background: "linear-gradient(180deg, var(--n-1a0800) 0%, var(--n-0a0a0a) 100%)",
+          borderBottom: "1px solid var(--n-1e1e1e)",
         }}
       >
         <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1 }}>
           TUN<span style={{ color: "#0080F0" }}>R</span>
         </div>
-        <div style={{ fontSize: 10.5, color: "#555", letterSpacing: 2.5, marginTop: 3 }}>
+        <div style={{ fontSize: 10.5, color: "var(--n-555555)", letterSpacing: 2.5, marginTop: 3 }}>
           ATLANTA, GA
         </div>
 
@@ -186,7 +186,7 @@ export default function JoinPage({ user, onEnter }) {
             {open && (
               <div
                 style={{
-                  background: "#111",
+                  background: "var(--n-111111)",
                   border: "1px solid #3CABFD",
                   borderRadius: 12,
                   padding: "16px 18px",
@@ -227,7 +227,7 @@ export default function JoinPage({ user, onEnter }) {
                 display: "block",
                 margin: "22px auto 0",
                 fontSize: 12.5,
-                color: "#777",
+                color: "var(--n-777777)",
               }}
             >
               Just looking? Browse meets →
@@ -245,7 +245,7 @@ function Welcome({ profile, perks, onEnter, onShare, copied }) {
     <div style={{ textAlign: "center", animation: "fadeIn 0.3s ease" }}>
       {profile.dayOne ? (
         <>
-          <div style={{ fontSize: 11, color: "#3CABFD", letterSpacing: 2.5, fontWeight: 800 }}>
+          <div style={{ fontSize: 11, color: "var(--a-3cabfd)", letterSpacing: 2.5, fontWeight: 800 }}>
             YOU'RE IN
           </div>
           <div style={{ marginTop: 14 }}>
@@ -300,9 +300,9 @@ function Welcome({ profile, perks, onEnter, onShare, copied }) {
           width: "100%",
           marginTop: 10,
           padding: "14px 0",
-          background: "#161616",
-          color: "#DDD",
-          border: "1px solid #2A2A2A",
+          background: "var(--n-161616)",
+          color: "var(--n-dddddd)",
+          border: "1px solid var(--n-2a2a2a)",
           borderRadius: 10,
           fontSize: 13.5,
           fontWeight: 800,
@@ -318,7 +318,7 @@ function Welcome({ profile, perks, onEnter, onShare, copied }) {
 
 const paragraph = {
   fontSize: 14,
-  color: "#AAA",
+  color: "var(--n-aaaaaa)",
   lineHeight: 1.7,
   marginTop: 14,
   fontFamily: "'Barlow', sans-serif",
@@ -336,7 +336,7 @@ const linkButton = {
   background: "none",
   border: "none",
   padding: 0,
-  color: "#999",
+  color: "var(--n-999999)",
   textDecoration: "underline",
   cursor: "pointer",
   fontSize: "inherit",

@@ -4,7 +4,7 @@
 
 import { CONTACT_EMAIL, LEGAL_ENTITY } from "../lib/contact.js";
 
-const body = { fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "#AAA", lineHeight: 1.7 };
+const body = { fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "var(--n-aaaaaa)", lineHeight: 1.7 };
 const heading = {
   fontFamily: "'Barlow Condensed', sans-serif",
   fontSize: 13,
@@ -23,20 +23,20 @@ export default function PrivacyPolicy({ onClose }) {
         inset: 0,
         top: "env(safe-area-inset-top)",
         zIndex: 300,
-        background: "#0A0A0A",
+        background: "var(--n-0a0a0a)",
         maxWidth: 430,
         margin: "0 auto",
         display: "flex",
         flexDirection: "column",
         fontFamily: "'Barlow Condensed', sans-serif",
-        color: "#F0F0F0",
+        color: "var(--n-f0f0f0)",
       }}
     >
-      <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #1A1A1A", flexShrink: 0 }}>
+      <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid var(--n-1a1a1a)", flexShrink: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 0.5 }}>PRIVACY POLICY</div>
-            <div style={{ fontSize: 11, color: "#555", letterSpacing: 1.5, marginTop: 2 }}>
+            <div style={{ fontSize: 11, color: "var(--n-555555)", letterSpacing: 1.5, marginTop: 2 }}>
               LAST UPDATED OCTOBER 2026
             </div>
           </div>
@@ -44,9 +44,9 @@ export default function PrivacyPolicy({ onClose }) {
             className="close-btn"
             onClick={onClose}
             style={{
-              background: "#1A1A1A",
-              border: "1px solid #2A2A2A",
-              color: "#fff",
+              background: "var(--n-1a1a1a)",
+              border: "1px solid var(--n-2a2a2a)",
+              color: "var(--n-ffffff)",
               borderRadius: "50%",
               width: 32,
               height: 32,

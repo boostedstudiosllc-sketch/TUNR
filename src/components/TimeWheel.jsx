@@ -18,7 +18,7 @@ export default function TimeWheel({ value, onChange, minuteStep = 5 }) {
     { value: "PM", label: "PM" },
   ];
   return (
-    <div style={{ position: "relative", display: "flex", justifyContent: "center", gap: 4, background: "#141414", border: "1px solid #2A2A2A", borderRadius: 12, padding: "0 8px" }}>
+    <div style={{ position: "relative", display: "flex", justifyContent: "center", gap: 4, background: "var(--n-141414)", border: "1px solid var(--n-2a2a2a)", borderRadius: 12, padding: "0 8px" }}>
       <div
         aria-hidden
         style={{
@@ -34,7 +34,7 @@ export default function TimeWheel({ value, onChange, minuteStep = 5 }) {
         }}
       />
       <Wheel label="Hour" items={hours} value={value.hour} onChange={(hour) => onChange({ hour })} />
-      <div style={{ alignSelf: "center", color: "#3CABFD", fontSize: 22, fontWeight: 900, zIndex: 1 }}>:</div>
+      <div style={{ alignSelf: "center", color: "var(--a-3cabfd)", fontSize: 22, fontWeight: 900, zIndex: 1 }}>:</div>
       <Wheel label="Minute" items={minutes} value={value.minute} onChange={(minute) => onChange({ minute })} />
       <Wheel label="AM or PM" items={halves} value={value.ampm} onChange={(ampm) => onChange({ ampm })} />
     </div>
@@ -69,7 +69,7 @@ function Wheel({ label, items, value, onChange }) {
     onChange(items[next].value);
   }
 
-  const fade = "linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent)";
+  const fade = "linear-gradient(to bottom, transparent, var(--n-000000) 35%, var(--n-000000) 65%, transparent)";
   return (
     <div
       ref={ref}
@@ -110,7 +110,7 @@ function Wheel({ label, items, value, onChange }) {
             fontFamily: "'Barlow Condensed', sans-serif",
             fontSize: i === index ? 24 : 19,
             fontWeight: i === index ? 900 : 600,
-            color: i === index ? "#FFFFFF" : "#777",
+            color: i === index ? "var(--n-ffffff)" : "var(--n-777777)",
           }}
         >
           {it.label}

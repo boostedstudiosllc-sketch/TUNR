@@ -62,9 +62,9 @@ export default function NotificationBell({ user, onOpenLink, onToast, onOpenSett
           width: 38,
           height: 38,
           borderRadius: "50%",
-          background: "#161616",
-          border: "1px solid #2A2A2A",
-          color: "#DDD",
+          background: "var(--n-161616)",
+          border: "1px solid var(--n-2a2a2a)",
+          color: "var(--n-dddddd)",
           fontSize: 17,
           cursor: "pointer",
           flexShrink: 0,
@@ -98,7 +98,7 @@ export default function NotificationBell({ user, onOpenLink, onToast, onOpenSett
       {open && (
         <Sheet onClose={() => setOpen(false)} label="Alerts" zIndex={320} portal>
           <div style={sheetTitle}>ALERTS</div>
-          {error && <div style={{ ...muted, color: "#EF4444", marginTop: 8 }}>{error}</div>}
+          {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
           {items.length === 0 && !error ? (
             <div style={{ ...muted, marginTop: 10 }}>
               Nothing yet. Linkups near you, people joining yours, and meet-day reminders show up here.
@@ -115,20 +115,20 @@ export default function NotificationBell({ user, onOpenLink, onToast, onOpenSett
                   }}
                   style={{
                     textAlign: "left",
-                    background: n.read_at ? "#121212" : "#001830",
-                    border: `1px solid ${n.read_at ? "#1F1F1F" : "#003A75"}`,
+                    background: n.read_at ? "var(--n-121212)" : "var(--n-001830)",
+                    border: `1px solid ${n.read_at ? "var(--n-1f1f1f)" : "#003A75"}`,
                     borderRadius: 10,
                     padding: "10px 12px",
-                    color: "#E6E6E6",
+                    color: "var(--n-e6e6e6)",
                     cursor: n.link ? "pointer" : "default",
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                     <span style={{ fontSize: 14, fontWeight: 800 }}>{n.title}</span>
-                    <span style={{ fontSize: 10.5, color: "#666", whiteSpace: "nowrap" }}>{ago(n.created_at)}</span>
+                    <span style={{ fontSize: 10.5, color: "var(--n-666666)", whiteSpace: "nowrap" }}>{ago(n.created_at)}</span>
                   </div>
                   {n.body && (
-                    <div style={{ fontSize: 12.5, color: "#999", marginTop: 3, lineHeight: 1.45, fontFamily: "'Barlow', sans-serif" }}>
+                    <div style={{ fontSize: 12.5, color: "var(--n-999999)", marginTop: 3, lineHeight: 1.45, fontFamily: "'Barlow', sans-serif" }}>
                       {n.body}
                     </div>
                   )}

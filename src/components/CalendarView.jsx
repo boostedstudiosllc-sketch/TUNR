@@ -69,7 +69,7 @@ export default function CalendarView({ events, rsvps, onOpen, now = new Date() }
           <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: 0.5 }}>
             {MONTH_NAMES[month - 1].toUpperCase()} {year}
           </div>
-          <div style={{ fontSize: 11, color: "#666", fontFamily: "'Barlow', sans-serif" }}>
+          <div style={{ fontSize: 11, color: "var(--n-666666)", fontFamily: "'Barlow', sans-serif" }}>
             {total} {total === 1 ? "meet" : "meets"}
           </div>
         </div>
@@ -80,7 +80,7 @@ export default function CalendarView({ events, rsvps, onOpen, now = new Date() }
         <div style={{ textAlign: "center", marginTop: 6 }}>
           <button
             onClick={goToday}
-            style={{ background: "none", border: "none", color: "#3CABFD", fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "'Barlow', sans-serif" }}
+            style={{ background: "none", border: "none", color: "var(--a-3cabfd)", fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "'Barlow', sans-serif" }}
           >
             Back to today
           </button>
@@ -89,7 +89,7 @@ export default function CalendarView({ events, rsvps, onOpen, now = new Date() }
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginTop: 12 }}>
         {WEEKDAYS.map((d, i) => (
-          <div key={i} style={{ textAlign: "center", fontSize: 10, color: "#555", fontWeight: 700, letterSpacing: 1, paddingBottom: 4 }}>
+          <div key={i} style={{ textAlign: "center", fontSize: 10, color: "var(--n-555555)", fontWeight: 700, letterSpacing: 1, paddingBottom: 4 }}>
             {d}
           </div>
         ))}
@@ -116,14 +116,14 @@ export default function CalendarView({ events, rsvps, onOpen, now = new Date() }
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "space-between",
-                background: isPicked ? "rgba(0, 128, 240,0.16)" : meets.length ? "#141414" : "transparent",
-                border: `1px solid ${isPicked ? "#0080F0" : isToday ? "#555" : meets.length ? "#222" : "transparent"}`,
+                background: isPicked ? "rgba(0, 128, 240,0.16)" : meets.length ? "var(--n-141414)" : "transparent",
+                border: `1px solid ${isPicked ? "#0080F0" : isToday ? "var(--n-555555)" : meets.length ? "var(--n-222222)" : "transparent"}`,
                 opacity: past && !isPicked ? 0.45 : 1,
-                color: "#E6E6E6",
+                color: "var(--n-e6e6e6)",
                 fontFamily: "'Barlow Condensed', sans-serif",
               }}
             >
-              <span style={{ fontSize: 14, fontWeight: isToday ? 900 : 700, color: isToday ? "#3CABFD" : undefined }}>
+              <span style={{ fontSize: 14, fontWeight: isToday ? 900 : 700, color: isToday ? "var(--a-3cabfd)" : undefined }}>
                 {day}
               </span>
               <span style={{ display: "flex", gap: 2, alignItems: "center", minHeight: 8 }}>
@@ -133,7 +133,7 @@ export default function CalendarView({ events, rsvps, onOpen, now = new Date() }
                     style={{ width: 6, height: 6, borderRadius: "50%", background: VIBES[e.vibe] || "#0080F0" }}
                   />
                 ))}
-                {meets.length > 3 && <span style={{ fontSize: 9, color: "#999", fontWeight: 700 }}>+{meets.length - 3}</span>}
+                {meets.length > 3 && <span style={{ fontSize: 9, color: "var(--n-999999)", fontWeight: 700 }}>+{meets.length - 3}</span>}
               </span>
               {mine ? (
                 <span style={{ fontSize: 8, color: "#0080F0", fontWeight: 800, letterSpacing: 0.4 }}>GOING</span>
@@ -147,7 +147,7 @@ export default function CalendarView({ events, rsvps, onOpen, now = new Date() }
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
         {Object.entries(VIBES).map(([name, color]) => (
-          <span key={name} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10.5, color: "#888" }}>
+          <span key={name} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10.5, color: "var(--n-888888)" }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: color }} />
             {name}
           </span>
@@ -157,19 +157,19 @@ export default function CalendarView({ events, rsvps, onOpen, now = new Date() }
       <div style={{ marginTop: 18 }}>
         {selected ? (
           <>
-            <div style={{ fontSize: 12, color: "#888", letterSpacing: 1.6, fontWeight: 700, marginBottom: 8 }}>
+            <div style={{ fontSize: 12, color: "var(--n-888888)", letterSpacing: 1.6, fontWeight: 700, marginBottom: 8 }}>
               {dayLabel(selected).toUpperCase()}
               {selected === today && " · TODAY"}
             </div>
             {dayMeets.length === 0 ? (
-              <div style={{ fontSize: 13, color: "#666", fontFamily: "'Barlow', sans-serif" }}>
+              <div style={{ fontSize: 13, color: "var(--n-666666)", fontFamily: "'Barlow', sans-serif" }}>
                 No meets this day.
                 {nextDay && (
                   <>
                     {" "}
                     <button
                       onClick={() => setPicked(nextDay)}
-                      style={{ background: "none", border: "none", padding: 0, color: "#3CABFD", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", fontSize: "inherit" }}
+                      style={{ background: "none", border: "none", padding: 0, color: "var(--a-3cabfd)", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", fontSize: "inherit" }}
                     >
                       Next up: {dayLabel(nextDay)} →
                     </button>
@@ -188,23 +188,23 @@ export default function CalendarView({ events, rsvps, onOpen, now = new Date() }
                       gap: 12,
                       alignItems: "center",
                       textAlign: "left",
-                      background: "#111",
-                      border: "1px solid #222",
+                      background: "var(--n-111111)",
+                      border: "1px solid var(--n-222222)",
                       borderLeft: `3px solid ${VIBES[e.vibe] || "#0080F0"}`,
                       borderRadius: 8,
                       padding: "10px 12px",
-                      color: "#E6E6E6",
+                      color: "var(--n-e6e6e6)",
                       cursor: "pointer",
                     }}
                   >
-                    <div style={{ width: 58, flexShrink: 0, fontSize: 12.5, fontWeight: 800, color: "#3CABFD" }}>
+                    <div style={{ width: 58, flexShrink: 0, fontSize: 12.5, fontWeight: 800, color: "var(--a-3cabfd)" }}>
                       {displayTime(e)}
                     </div>
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ fontSize: 14.5, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {e.title}
                       </div>
-                      <div style={{ fontSize: 11.5, color: "#777", marginTop: 1, fontFamily: "'Barlow', sans-serif" }}>
+                      <div style={{ fontSize: 11.5, color: "var(--n-777777)", marginTop: 1, fontFamily: "'Barlow', sans-serif" }}>
                         @{e.host} · {e.city}
                         {e.recurrence && " · repeats"}
                       </div>
@@ -218,7 +218,7 @@ export default function CalendarView({ events, rsvps, onOpen, now = new Date() }
             )}
           </>
         ) : (
-          <div style={{ fontSize: 13, color: "#666", fontFamily: "'Barlow', sans-serif" }}>Tap a day to see its meets.</div>
+          <div style={{ fontSize: 13, color: "var(--n-666666)", fontFamily: "'Barlow', sans-serif" }}>Tap a day to see its meets.</div>
         )}
       </div>
     </div>
@@ -234,9 +234,9 @@ function NavButton({ children, onClick, label }) {
         width: 38,
         height: 38,
         borderRadius: "50%",
-        background: "#161616",
-        border: "1px solid #2A2A2A",
-        color: "#DDD",
+        background: "var(--n-161616)",
+        border: "1px solid var(--n-2a2a2a)",
+        color: "var(--n-dddddd)",
         fontSize: 22,
         lineHeight: 1,
         cursor: "pointer",

@@ -104,13 +104,13 @@ export default function PerksTab({ user, onNeedAccount, onToast, launch = null, 
     <div style={{ animation: "fadeIn 0.3s ease" }}>
       <div
         style={{
-          background: "linear-gradient(180deg, #1A0800 0%, #0A0A0A 100%)",
+          background: "linear-gradient(180deg, var(--n-1a0800) 0%, var(--n-0a0a0a) 100%)",
           padding: "20px 20px 22px",
-          borderBottom: "1px solid #1E1E1E",
+          borderBottom: "1px solid var(--n-1e1e1e)",
         }}
       >
         <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 1 }}>PERKS</div>
-        <div style={{ fontSize: 13, color: "#888", marginTop: 4, fontFamily: "'Barlow', sans-serif" }}>
+        <div style={{ fontSize: 13, color: "var(--n-888888)", marginTop: 4, fontFamily: "'Barlow', sans-serif" }}>
           {isMember
             ? "Your member discounts at Atlanta shops."
             : memberPerks === 0 && freePerks > 0
@@ -153,10 +153,10 @@ export default function PerksTab({ user, onNeedAccount, onToast, launch = null, 
             alignItems: "center",
             gap: 12,
             padding: "14px 16px",
-            background: "linear-gradient(135deg, #001830, #141414)",
+            background: "linear-gradient(135deg, var(--n-001830), var(--n-141414))",
             border: "1px solid #003A75",
             borderRadius: 12,
-            color: "#F0F0F0",
+            color: "var(--n-f0f0f0)",
             textAlign: "left",
             cursor: "pointer",
             fontFamily: "'Barlow Condensed', sans-serif",
@@ -167,11 +167,11 @@ export default function PerksTab({ user, onNeedAccount, onToast, launch = null, 
             <span style={{ display: "block", fontSize: 17, fontWeight: 900, letterSpacing: 0.5 }}>
               TUNR <span style={{ color: "#0080F0" }}>ARCADE</span>
             </span>
-            <span style={{ display: "block", fontSize: 12.5, color: "#7FBFF5", fontFamily: "'Barlow', sans-serif" }}>
+            <span style={{ display: "block", fontSize: 12.5, color: "var(--a-7fbff5)", fontFamily: "'Barlow', sans-serif" }}>
               TUNR Rush for up to +3 points a day, plus Park Up and more games.
             </span>
           </span>
-          <span aria-hidden="true" style={{ fontSize: 20, color: "#7FBFF5" }}>›</span>
+          <span aria-hidden="true" style={{ fontSize: 20, color: "var(--a-7fbff5)" }}>›</span>
         </button>
         {playing && (
           <Arcade
@@ -252,10 +252,10 @@ function PointsCard({ points, onOpen }) {
         alignItems: "center",
         gap: 12,
         padding: "14px 16px",
-        background: "linear-gradient(135deg, #2A1F00, #141414)",
-        border: "1px solid #4A3A00",
+        background: "linear-gradient(135deg, var(--n-2a1f00), var(--n-141414))",
+        border: "1px solid var(--n-4a3a00)",
         borderRadius: 12,
-        color: "#F0F0F0",
+        color: "var(--n-f0f0f0)",
         textAlign: "left",
         cursor: "pointer",
         fontFamily: "'Barlow Condensed', sans-serif",
@@ -279,7 +279,7 @@ function JoinCard({ count, user, onNeedAccount }) {
   return (
     <div
       style={{
-        background: "#111",
+        background: "var(--n-111111)",
         border: "1px solid #0080F0",
         borderRadius: 12,
         padding: "18px 20px",
@@ -292,7 +292,7 @@ function JoinCard({ count, user, onNeedAccount }) {
       <div
         style={{
           fontSize: 13,
-          color: "#999",
+          color: "var(--n-999999)",
           marginTop: 8,
           lineHeight: 1.65,
           fontFamily: "'Barlow', sans-serif",
@@ -309,9 +309,9 @@ function JoinCard({ count, user, onNeedAccount }) {
           width: "100%",
           marginTop: 14,
           padding: "13px 0",
-          background: user ? "#1A1A1A" : "#0080F0",
+          background: user ? "var(--n-1a1a1a)" : "#0080F0",
           color: user ? "#666" : "#fff",
-          border: user ? "1px solid #2A2A2A" : "none",
+          border: user ? "1px solid var(--n-2a2a2a)" : "none",
           borderRadius: 9,
           fontSize: 13,
           fontWeight: 800,
@@ -324,7 +324,7 @@ function JoinCard({ count, user, onNeedAccount }) {
       <div
         style={{
           fontSize: 11,
-          color: "#555",
+          color: "var(--n-555555)",
           marginTop: 8,
           textAlign: "center",
           fontFamily: "'Barlow', sans-serif",
@@ -343,8 +343,8 @@ export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount, onRequ
   return (
     <div
       style={{
-        background: "#111",
-        border: `1px solid ${locked ? "#1E1E1E" : "#2A2A2A"}`,
+        background: "var(--n-111111)",
+        border: `1px solid ${locked ? "var(--n-1e1e1e)" : "var(--n-2a2a2a)"}`,
         borderRadius: 10,
         padding: "14px 16px",
       }}
@@ -356,8 +356,8 @@ export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount, onRequ
             height: 42,
             borderRadius: 8,
             flexShrink: 0,
-            background: "#161616",
-            border: "1px solid #242424",
+            background: "var(--n-161616)",
+            border: "1px solid var(--n-242424)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -379,7 +379,7 @@ export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount, onRequ
           <div style={{ fontSize: 15.5, fontWeight: 800, letterSpacing: 0.2 }}>
             {perk.partner_name}
           </div>
-          <div style={{ fontSize: 10, color: "#555", letterSpacing: 1.4, fontWeight: 700 }}>
+          <div style={{ fontSize: 10, color: "var(--n-555555)", letterSpacing: 1.4, fontWeight: 700 }}>
             {CATEGORY_LABELS[perk.partner_category] || "OTHER"}
             {perk.partner_city && ` · ${perk.partner_city.toUpperCase()}`}
           </div>
@@ -407,7 +407,7 @@ export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount, onRequ
         <div
           style={{
             fontSize: 12.5,
-            color: "#999",
+            color: "var(--n-999999)",
             marginTop: 4,
             lineHeight: 1.6,
             fontFamily: "'Barlow', sans-serif",
@@ -429,10 +429,10 @@ export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount, onRequ
             style={{
               width: "100%",
               padding: "10px 0",
-              background: "#161616",
-              border: "1px dashed #333",
+              background: "var(--n-161616)",
+              border: "1px dashed var(--n-333333)",
               borderRadius: 8,
-              color: "#666",
+              color: "var(--n-666666)",
               fontSize: 12,
               fontWeight: 800,
               letterSpacing: 1.2,
@@ -446,7 +446,7 @@ export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount, onRequ
             style={{
               padding: "11px 0",
               textAlign: "center",
-              background: "#0C0C0C",
+              background: "var(--n-0c0c0c)",
               border: "1px dashed #0080F0",
               borderRadius: 8,
               color: "#0080F0",
@@ -463,7 +463,7 @@ export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount, onRequ
             <button className="action-btn" onClick={onRequest} style={unlockButton}>
               🧽 REQUEST A DETAIL
             </button>
-            <div style={{ fontSize: 11.5, color: "#777", marginTop: 6, fontFamily: "'Barlow', sans-serif" }}>
+            <div style={{ fontSize: 11.5, color: "var(--n-777777)", marginTop: 6, fontFamily: "'Barlow', sans-serif" }}>
               Send a request in the app and we'll reply with a time and price. Your discount is included.
             </div>
           </>
@@ -474,7 +474,7 @@ export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount, onRequ
               background: "rgba(0, 128, 240,0.08)",
               border: "1px solid rgba(0, 128, 240,0.4)",
               borderRadius: 8,
-              color: "#3CABFD",
+              color: "var(--a-3cabfd)",
               fontSize: 12.5,
               fontFamily: "'Barlow', sans-serif",
             }}
@@ -503,7 +503,7 @@ export function PerkCard({ perk, revealed, onReveal, user, onNeedAccount, onRequ
         <div
           style={{
             fontSize: 11,
-            color: "#555",
+            color: "var(--n-555555)",
             marginTop: 9,
             lineHeight: 1.5,
             fontFamily: "'Barlow', sans-serif",
@@ -533,20 +533,20 @@ function Empty({ title, sub }) {
   return (
     <div
       style={{
-        background: "#111",
-        border: "1px solid #1E1E1E",
+        background: "var(--n-111111)",
+        border: "1px solid var(--n-1e1e1e)",
         borderRadius: 10,
         padding: 34,
         textAlign: "center",
       }}
     >
       <div style={{ fontSize: 34, marginBottom: 10 }}>🎟</div>
-      <div style={{ fontSize: 17, fontWeight: 700, color: "#666" }}>{title}</div>
+      <div style={{ fontSize: 17, fontWeight: 700, color: "var(--n-666666)" }}>{title}</div>
       {sub && (
         <div
           style={{
             fontSize: 13,
-            color: "#555",
+            color: "var(--n-555555)",
             marginTop: 7,
             lineHeight: 1.6,
             fontFamily: "'Barlow', sans-serif",

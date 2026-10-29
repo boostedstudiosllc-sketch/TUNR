@@ -27,7 +27,7 @@ export function Avatar({ url, name, size = 64, ring = false, ringColor = "#0080F
         src={url}
         alt=""
         onError={() => setFailed(true)}
-        style={{ ...frame, objectFit: "cover", background: "#1A1A1A", display: "block" }}
+        style={{ ...frame, objectFit: "cover", background: "var(--n-1a1a1a)", display: "block" }}
       />
     );
   }
@@ -144,7 +144,7 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 14 }}>
         <Avatar url={draft.avatarUrl} name={draft.username} size={84} ring ringColor={draft.profileColor || undefined} />
         <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
-          <label style={{ ...pill, color: "#3CABFD", borderColor: "#0080F0", opacity: uploading ? 0.6 : 1 }}>
+          <label style={{ ...pill, color: "var(--a-3cabfd)", borderColor: "#0080F0", opacity: uploading ? 0.6 : 1 }}>
             {uploading ? "UPLOADING…" : draft.avatarUrl ? "📷 CHANGE PHOTO" : "📷 ADD A PHOTO"}
             <input
               type="file"
@@ -155,7 +155,7 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
             />
           </label>
           {draft.avatarUrl && !uploading && (
-            <button type="button" onClick={() => set({ avatarUrl: "" })} style={{ ...pill, color: "#999" }}>
+            <button type="button" onClick={() => set({ avatarUrl: "" })} style={{ ...pill, color: "var(--n-999999)" }}>
               REMOVE PHOTO
             </button>
           )}
@@ -165,7 +165,7 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
       <div style={{ marginTop: 18 }}>
         <div style={label}>USERNAME</div>
         <div style={{ position: "relative" }}>
-          <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#666", fontSize: 14, fontFamily: "'Barlow', sans-serif" }}>
+          <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--n-666666)", fontSize: 14, fontFamily: "'Barlow', sans-serif" }}>
             @
           </span>
           <input
@@ -198,7 +198,7 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
       <div style={{ marginTop: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <div style={label}>BIO</div>
-          <div style={{ fontSize: 11, color: draft.bio.length >= BIO_MAX ? "#3CABFD" : "#555", fontFamily: "'Barlow', sans-serif" }}>
+          <div style={{ fontSize: 11, color: draft.bio.length >= BIO_MAX ? "var(--a-3cabfd)" : "var(--n-555555)", fontFamily: "'Barlow', sans-serif" }}>
             {draft.bio.length}/{BIO_MAX}
           </div>
         </div>
@@ -227,9 +227,9 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
                   width: 34,
                   height: 34,
                   borderRadius: "50%",
-                  background: c || "#1A1A1A",
-                  border: draft.profileColor === c ? "3px solid #fff" : "1px solid #333",
-                  color: "#777",
+                  background: c || "var(--n-1a1a1a)",
+                  border: draft.profileColor === c ? "3px solid var(--n-ffffff)" : "1px solid var(--n-333333)",
+                  color: "var(--n-777777)",
                   fontSize: 14,
                   cursor: "pointer",
                 }}
@@ -242,7 +242,7 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
           <button
             type="button"
             onClick={() => openInvites("Invite 5 friends to unlock profile colors and the Connector badge.")}
-            style={{ ...pill, width: "100%", color: "#FACC15", borderColor: "#4A3A00", textAlign: "left", whiteSpace: "normal" }}
+            style={{ ...pill, width: "100%", color: "#FACC15", borderColor: "var(--n-4a3a00)", textAlign: "left", whiteSpace: "normal" }}
           >
             🔒 Invite 5 friends to pick your profile color
           </button>
@@ -256,7 +256,7 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
           gap: 10,
           marginTop: 16,
           fontSize: 14,
-          color: "#DDD",
+          color: "var(--n-dddddd)",
           cursor: "pointer",
           fontFamily: "'Barlow', sans-serif",
         }}
@@ -287,7 +287,7 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
       )}
 
       {error && (
-        <div role="alert" style={{ ...muted, color: "#FF6B4A", marginTop: 14 }}>
+        <div role="alert" style={{ ...muted, color: "var(--a-ff6b4a)", marginTop: 14 }}>
           {error}
         </div>
       )}
@@ -308,7 +308,7 @@ const pill = {
   display: "inline-block",
   padding: "8px 14px",
   background: "transparent",
-  border: "1px solid #2A2A2A",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 8,
   fontSize: 12,
   fontWeight: 800,

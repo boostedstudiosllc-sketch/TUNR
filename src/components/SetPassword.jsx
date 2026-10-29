@@ -46,7 +46,7 @@ export function SetPasswordForm({ onDone, onToast }) {
         onChange={(e) => setAgain(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && save()}
       />
-      {error && <div style={{ ...muted, color: "#EF4444", marginTop: 8 }}>{error}</div>}
+      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
       <button disabled={busy} onClick={save} style={{ ...bigButton, marginTop: 14 }}>
         {busy ? "SAVING…" : "SAVE NEW PASSWORD"}
       </button>

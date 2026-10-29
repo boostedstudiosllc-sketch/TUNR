@@ -1,3 +1,4 @@
+import { activeTheme } from "../lib/theme.js";
 import { useEffect, useState } from "react";
 import { VIBES } from "../data/events.js";
 import { displayDate, displayTime } from "../lib/dates.js";
@@ -105,9 +106,9 @@ export default function MeetDetail({
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%",
-          background: "#0F0F0F",
+          background: "var(--n-0f0f0f)",
           borderRadius: "16px 16px 0 0",
-          border: "1px solid #1E1E1E",
+          border: "1px solid var(--n-1e1e1e)",
           maxHeight: "88vh",
           overflowY: "auto",
           animation: "slideUp 0.3s ease",
@@ -117,7 +118,7 @@ export default function MeetDetail({
           style={{
             position: "relative",
             height: 190,
-            background: `linear-gradient(135deg, ${color}26, #0a0a0a 70%)`,
+            background: `linear-gradient(135deg, ${color}26, var(--n-0a0a0a) 70%)`,
           }}
         >
           {event.photoUrl || event.flyerUrl ? (
@@ -139,7 +140,7 @@ export default function MeetDetail({
             style={{
               position: "absolute",
               inset: 0,
-              background: "linear-gradient(0deg, #0F0F0F 0%, transparent 60%)",
+              background: "linear-gradient(0deg, var(--n-0f0f0f) 0%, transparent 60%)",
             }}
           />
           <button
@@ -150,8 +151,8 @@ export default function MeetDetail({
               top: 14,
               right: 14,
               background: "rgba(0,0,0,0.7)",
-              border: "1px solid #333",
-              color: "#fff",
+              border: "1px solid var(--n-333333)",
+              color: "var(--n-ffffff)",
               borderRadius: "50%",
               width: 32,
               height: 32,
@@ -169,7 +170,7 @@ export default function MeetDetail({
               top: 14,
               left: 14,
               background: color,
-              color: "#fff",
+              color: "var(--n-ffffff)",
               fontSize: 10,
               fontWeight: 800,
               padding: "3px 10px",
@@ -203,14 +204,14 @@ export default function MeetDetail({
               Hosted by @{event.host} {event.verified && "✓"}
             </div>
             {cohosts.length > 0 && (
-              <div style={{ fontSize: 12.5, color: "#999", width: "100%", marginTop: -4 }}>
+              <div style={{ fontSize: 12.5, color: "var(--n-999999)", width: "100%", marginTop: -4 }}>
                 with{" "}
                 {cohosts.map((c, i) => (
                   <span key={c}>
                     {i > 0 && ", "}
                     <span
                       onClick={() => onOpenHost && onOpenHost(c)}
-                      style={{ color: "#3CABFD", cursor: onOpenHost ? "pointer" : "default" }}
+                      style={{ color: "var(--a-3cabfd)", cursor: onOpenHost ? "pointer" : "default" }}
                     >
                       @{c}
                     </span>
@@ -224,9 +225,9 @@ export default function MeetDetail({
               style={{
                 padding: "5px 12px",
                 borderRadius: 20,
-                background: following ? "rgba(0, 128, 240,0.15)" : "#1A1A1A",
-                border: `1px solid ${following ? "#0080F0" : "#2A2A2A"}`,
-                color: following ? "#0080F0" : "#888",
+                background: following ? "rgba(0, 128, 240,0.15)" : "var(--n-1a1a1a)",
+                border: `1px solid ${following ? "#0080F0" : "var(--n-2a2a2a)"}`,
+                color: following ? "#0080F0" : "var(--n-888888)",
                 fontSize: 11,
                 fontWeight: 800,
                 letterSpacing: 1,
@@ -265,21 +266,21 @@ export default function MeetDetail({
           {!locked && (
             <div
               style={{
-                background: "#161616",
-                border: "1px solid #222",
+                background: "var(--n-161616)",
+                border: "1px solid var(--n-222222)",
                 borderRadius: 8,
                 padding: "12px 14px",
                 marginTop: 10,
               }}
             >
-              <div style={{ fontSize: 9, color: "#555", letterSpacing: 1.5, marginBottom: 4 }}>
+              <div style={{ fontSize: 9, color: "var(--n-555555)", letterSpacing: 1.5, marginBottom: 4 }}>
                 📍 LOCATION
               </div>
               <div style={{ fontSize: 14, fontWeight: 700 }}>{event.location}</div>
-              <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: "var(--n-666666)", marginTop: 2 }}>
                 {event.city}
                 {event.distanceLabel && (
-                  <span style={{ color: "#3CABFD" }}> · {event.distanceLabel} away</span>
+                  <span style={{ color: "var(--a-3cabfd)" }}> · {event.distanceLabel} away</span>
                 )}
               </div>
             </div>
@@ -300,7 +301,7 @@ export default function MeetDetail({
                 borderRadius: 8,
                 overflow: "hidden",
                 height: 160,
-                border: "1px solid #222",
+                border: "1px solid var(--n-222222)",
               }}
             >
               <img
@@ -308,20 +309,20 @@ export default function MeetDetail({
                 width="100%"
                 height="160"
                 style={{ display: "block", objectFit: "cover", width: "100%", height: 160 }}
-                src={`https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/pin-l+FF4500(${event.lng},${event.lat})/${event.lng},${event.lat},13,0/400x160@2x?access_token=${MAPBOX_TOKEN}`}
+                src={`https://api.mapbox.com/styles/v1/mapbox/${activeTheme() === "light" ? "light" : "dark"}-v11/static/pin-l+FF4500(${event.lng},${event.lat})/${event.lng},${event.lat},13,0/400x160@2x?access_token=${MAPBOX_TOKEN}`}
               />
             </div>
           )}
 
           {!locked && (
             <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: "var(--n-555555)", letterSpacing: 2, marginBottom: 8 }}>
                 ABOUT THIS MEET
               </div>
               <div
                 style={{
                   fontSize: 14,
-                  color: "#AAA",
+                  color: "var(--n-aaaaaa)",
                   lineHeight: 1.6,
                   fontFamily: "'Barlow', sans-serif",
                   fontWeight: 400,
@@ -339,9 +340,9 @@ export default function MeetDetail({
               <span
                 key={tag}
                 style={{
-                  background: "#1A1A1A",
-                  border: "1px solid #2A2A2A",
-                  color: "#777",
+                  background: "var(--n-1a1a1a)",
+                  border: "1px solid var(--n-2a2a2a)",
+                  color: "var(--n-777777)",
                   fontSize: 11,
                   padding: "5px 12px",
                   borderRadius: 4,
@@ -365,7 +366,7 @@ export default function MeetDetail({
                   style={{
                     flex: 1,
                     padding: "12px 0",
-                    background: "linear-gradient(135deg,#1A2A1A,#0F1F0F)",
+                    background: "linear-gradient(135deg,var(--n-1a2a1a),var(--n-0f1f0f))",
                     border: "1px solid #10B981",
                     borderRadius: 10,
                     color: "#10B981",
@@ -395,10 +396,10 @@ export default function MeetDetail({
                 style={{
                   flex: 1,
                   padding: "12px 0",
-                  background: "#111",
-                  border: "1px solid #2A2A2A",
+                  background: "var(--n-111111)",
+                  border: "1px solid var(--n-2a2a2a)",
                   borderRadius: 10,
-                  color: "#888",
+                  color: "var(--n-888888)",
                   fontSize: 13,
                   fontWeight: 800,
                   letterSpacing: 1.5,
@@ -422,10 +423,10 @@ export default function MeetDetail({
               style={{
                 flex: 1,
                 padding: "12px 0",
-                background: "#111",
-                border: "1px solid #2A2A2A",
+                background: "var(--n-111111)",
+                border: "1px solid var(--n-2a2a2a)",
                 borderRadius: 10,
-                color: "#888",
+                color: "var(--n-888888)",
                 fontSize: 13,
                 fontWeight: 800,
                 letterSpacing: 1.5,
@@ -470,8 +471,8 @@ export default function MeetDetail({
             <div
               style={{
                 marginTop: 12,
-                background: "#111",
-                border: "1px solid #1E1E1E",
+                background: "var(--n-111111)",
+                border: "1px solid var(--n-1e1e1e)",
                 borderRadius: 10,
                 padding: "10px 14px",
                 display: "flex",
@@ -479,7 +480,7 @@ export default function MeetDetail({
                 justifyContent: "space-between",
               }}
             >
-              <div style={{ fontSize: 11, color: "#555" }}>via {event.source}</div>
+              <div style={{ fontSize: 11, color: "var(--n-555555)" }}>via {event.source}</div>
               {event.sourceUrl && (
                 <a
                   href={event.sourceUrl}
@@ -488,10 +489,10 @@ export default function MeetDetail({
                   onClick={(e) => e.stopPropagation()}
                   style={{
                     padding: "5px 12px",
-                    background: "#1A1A1A",
-                    border: "1px solid #2A2A2A",
+                    background: "var(--n-1a1a1a)",
+                    border: "1px solid var(--n-2a2a2a)",
                     borderRadius: 8,
-                    color: "#888",
+                    color: "var(--n-888888)",
                     fontSize: 11,
                     fontWeight: 700,
                     letterSpacing: 1,
@@ -550,15 +551,15 @@ function StatBox({ label, value, sub }) {
   return (
     <div
       style={{
-        background: "#161616",
-        border: "1px solid #222",
+        background: "var(--n-161616)",
+        border: "1px solid var(--n-222222)",
         borderRadius: 8,
         padding: "10px 12px",
       }}
     >
-      <div style={{ fontSize: 9, color: "#555", letterSpacing: 1.5, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 9, color: "var(--n-555555)", letterSpacing: 1.5, marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 14, fontWeight: 700 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: "#888", marginTop: 2, fontFamily: "'Barlow', sans-serif" }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: "var(--n-888888)", marginTop: 2, fontFamily: "'Barlow', sans-serif" }}>{sub}</div>}
     </div>
   );
 }
@@ -568,7 +569,7 @@ function Flyer({ url, title }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{ marginTop: 16 }}>
-      <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, marginBottom: 8 }}>FLYER</div>
+      <div style={{ fontSize: 11, color: "var(--n-555555)", letterSpacing: 2, marginBottom: 8 }}>FLYER</div>
       <button
         onClick={() => setOpen(true)}
         aria-label="Open the flyer full screen"
@@ -576,8 +577,8 @@ function Flyer({ url, title }) {
           display: "block",
           width: "100%",
           padding: 0,
-          background: "#0A0A0A",
-          border: "1px solid #222",
+          background: "var(--n-0a0a0a)",
+          border: "1px solid var(--n-222222)",
           borderRadius: 10,
           overflow: "hidden",
           cursor: "zoom-in",
@@ -617,12 +618,12 @@ function Flyer({ url, title }) {
               position: "absolute",
               top: 16,
               right: 16,
-              color: "#fff",
+              color: "var(--n-ffffff)",
               fontSize: 13,
               fontWeight: 800,
               letterSpacing: 1,
               background: "rgba(0,0,0,0.6)",
-              border: "1px solid #444",
+              border: "1px solid var(--n-444444)",
               borderRadius: 16,
               padding: "6px 12px",
             }}
@@ -639,8 +640,8 @@ function Flyer({ url, title }) {
 function ActionBar({ rsvp, onRsvp, goingAs, onGoingAs, directions }) {
   const options = [
     { id: "going", label: "GOING", on: "✓ GOING", color: "#0080F0", fill: true },
-    { id: "interested", label: "MAYBE", on: "★ MAYBE", color: "#3CABFD" },
-    { id: "not_going", label: "NOT GOING", on: "✕ NOT GOING", color: "#888" },
+    { id: "interested", label: "MAYBE", on: "★ MAYBE", color: "var(--a-3cabfd)" },
+    { id: "not_going", label: "NOT GOING", on: "✕ NOT GOING", color: "var(--n-888888)" },
   ];
   return (
     <div
@@ -649,13 +650,13 @@ function ActionBar({ rsvp, onRsvp, goingAs, onGoingAs, directions }) {
         bottom: 0,
         margin: "22px -20px 0",
         padding: "12px 20px 18px",
-        background: "linear-gradient(0deg, #0F0F0F 82%, rgba(15,15,15,0))",
+        background: "linear-gradient(0deg, var(--n-0f0f0f) 82%, rgba(var(--base),0))",
         zIndex: 2,
       }}
     >
       {rsvp === "going" && onGoingAs && (
         <div role="group" aria-label="Going as" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-          <span style={{ fontSize: 10, color: "#666", letterSpacing: 1.2, fontWeight: 700, flexShrink: 0 }}>GOING AS</span>
+          <span style={{ fontSize: 10, color: "var(--n-666666)", letterSpacing: 1.2, fontWeight: 700, flexShrink: 0 }}>GOING AS</span>
           {GOING_AS.map((g) => {
             const active = goingAs === g.id;
             return (
@@ -672,9 +673,9 @@ function ActionBar({ rsvp, onRsvp, goingAs, onGoingAs, directions }) {
                   letterSpacing: 0.6,
                   whiteSpace: "nowrap",
                   cursor: "pointer",
-                  background: active ? "rgba(0, 128, 240,0.16)" : "#161616",
-                  color: active ? "#3CABFD" : "#888",
-                  border: `1px solid ${active ? "#0080F0" : "#2A2A2A"}`,
+                  background: active ? "rgba(0, 128, 240,0.16)" : "var(--n-161616)",
+                  color: active ? "var(--a-3cabfd)" : "var(--n-888888)",
+                  border: `1px solid ${active ? "#0080F0" : "var(--n-2a2a2a)"}`,
                   fontFamily: "'Barlow Condensed', sans-serif",
                 }}
               >
@@ -696,9 +697,9 @@ function ActionBar({ rsvp, onRsvp, goingAs, onGoingAs, directions }) {
               style={{
                 flex: o.id === "going" ? 1.25 : 1,
                 padding: "13px 0",
-                background: active ? (o.fill ? o.color : "#1A1A1A") : "#161616",
-                color: active ? (o.fill ? "#fff" : o.color) : "#777",
-                border: active && !o.fill ? `1px solid ${o.color}` : active ? "none" : "1px solid #2A2A2A",
+                background: active ? (o.fill ? o.color : "var(--n-1a1a1a)") : "var(--n-161616)",
+                color: active ? (o.fill ? "var(--n-ffffff)" : o.color) : "var(--n-777777)",
+                border: active && !o.fill ? `1px solid ${o.color}` : active ? "none" : "1px solid var(--n-2a2a2a)",
                 borderRadius: 8,
                 fontSize: 12.5,
                 fontWeight: 800,
@@ -724,7 +725,7 @@ function ActionBar({ rsvp, onRsvp, goingAs, onGoingAs, directions }) {
               alignItems: "center",
               justifyContent: "center",
               borderRadius: 8,
-              background: "#0F1F0F",
+              background: "var(--n-0f1f0f)",
               border: "1px solid #10B981",
               color: "#10B981",
               fontSize: 16,

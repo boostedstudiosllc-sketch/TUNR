@@ -16,7 +16,7 @@ const commentActionStyle = {
   marginLeft: "auto",
   background: "none",
   border: "none",
-  color: "#444",
+  color: "var(--n-444444)",
   fontSize: 11,
   cursor: "pointer",
   fontFamily: "'Barlow', sans-serif",
@@ -144,11 +144,11 @@ export default function Comments({ eventId, user, onNeedAccount, onToast, onOpen
         style={{
           flex: 1,
           minWidth: 0,
-          background: "#161616",
-          border: "1px solid #2A2A2A",
+          background: "var(--n-161616)",
+          border: "1px solid var(--n-2a2a2a)",
           borderRadius: 20,
           padding: "11px 16px",
-          color: "#F0F0F0",
+          color: "var(--n-f0f0f0)",
           fontSize: 13.5,
           outline: "none",
           fontFamily: "'Barlow', sans-serif",
@@ -160,7 +160,7 @@ export default function Comments({ eventId, user, onNeedAccount, onToast, onOpen
         disabled={busy}
         style={{
           padding: "0 16px",
-          background: body.trim() && !busy ? "#0080F0" : "#1E1E1E",
+          background: body.trim() && !busy ? "#0080F0" : "var(--n-1e1e1e)",
           color: body.trim() && !busy ? "#fff" : "#555",
           border: "none",
           borderRadius: 20,
@@ -179,7 +179,7 @@ export default function Comments({ eventId, user, onNeedAccount, onToast, onOpen
   return (
     <div style={{ marginTop: 22 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-        <span style={{ fontSize: 11, color: "#555", letterSpacing: 2 }}>
+        <span style={{ fontSize: 11, color: "var(--n-555555)", letterSpacing: 2 }}>
           MEET CHAT {comments.length > 0 && `· ${comments.length}`}
         </span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, color: "#10B981", letterSpacing: 1, fontWeight: 700 }}>
@@ -191,8 +191,8 @@ export default function Comments({ eventId, user, onNeedAccount, onToast, onOpen
       <div
         ref={listRef}
         style={{
-          background: "#0B0B0B",
-          border: "1px solid #1E1E1E",
+          background: "var(--n-0b0b0b)",
+          border: "1px solid var(--n-1e1e1e)",
           borderRadius: 10,
           padding: "12px 12px",
           maxHeight: 340,
@@ -236,7 +236,7 @@ export default function Comments({ eventId, user, onNeedAccount, onToast, onOpen
                         padding: 0,
                         fontSize: 12.5,
                         fontWeight: 800,
-                        color: "#3CABFD",
+                        color: "var(--a-3cabfd)",
                         cursor: onOpenPerson ? "pointer" : "default",
                         fontFamily: "inherit",
                       }}
@@ -251,7 +251,7 @@ export default function Comments({ eventId, user, onNeedAccount, onToast, onOpen
                       photographerVerified={c.photographer_verified}
                       size={14}
                     />
-                    <span style={{ fontSize: 10.5, color: "#555" }}>{timeAgo(c.created_at)}</span>
+                    <span style={{ fontSize: 10.5, color: "var(--n-555555)" }}>{timeAgo(c.created_at)}</span>
                     {user && c.user_id === user.id ? (
                       <button onClick={() => remove(c.id)} style={commentActionStyle}>
                         delete
@@ -267,7 +267,7 @@ export default function Comments({ eventId, user, onNeedAccount, onToast, onOpen
                   <div
                     style={{
                       fontSize: 13.5,
-                      color: "#CCC",
+                      color: "var(--n-cccccc)",
                       marginTop: 3,
                       lineHeight: 1.5,
                       fontFamily: "'Barlow', sans-serif",
@@ -277,7 +277,7 @@ export default function Comments({ eventId, user, onNeedAccount, onToast, onOpen
                     {c.body}
                   </div>
                   {c.author_restricted && (
-                    <div style={{ fontSize: 10.5, color: "#777", marginTop: 3, fontFamily: "'Barlow', sans-serif" }}>
+                    <div style={{ fontSize: 10.5, color: "var(--n-777777)", marginTop: 3, fontFamily: "'Barlow', sans-serif" }}>
                       Restricted — only you, your co-hosts and them can see this.
                     </div>
                   )}
@@ -307,7 +307,7 @@ export default function Comments({ eventId, user, onNeedAccount, onToast, onOpen
       {composer}
 
       {error && (
-        <div style={{ fontSize: 12, color: "#EF4444", marginTop: 8, fontFamily: "'Barlow', sans-serif" }}>
+        <div style={{ fontSize: 12, color: "var(--a-ef4444)", marginTop: 8, fontFamily: "'Barlow', sans-serif" }}>
           {error}
         </div>
       )}
@@ -317,7 +317,7 @@ export default function Comments({ eventId, user, onNeedAccount, onToast, onOpen
 
 const emptyStyle = {
   fontSize: 12.5,
-  color: "#555",
+  color: "var(--n-555555)",
   lineHeight: 1.6,
   textAlign: "center",
   padding: "14px 6px",
@@ -339,9 +339,9 @@ function Thumb({ icon, count, active, onClick, label }) {
         borderRadius: 12,
         fontSize: 11.5,
         cursor: "pointer",
-        background: active ? "rgba(0, 128, 240,0.14)" : "#141414",
-        border: `1px solid ${active ? "#0080F0" : "#262626"}`,
-        color: active ? "#3CABFD" : "#888",
+        background: active ? "rgba(0, 128, 240,0.14)" : "var(--n-141414)",
+        border: `1px solid ${active ? "#0080F0" : "var(--n-262626)"}`,
+        color: active ? "var(--a-3cabfd)" : "var(--n-888888)",
         fontFamily: "'Barlow', sans-serif",
         fontWeight: 700,
       }}

@@ -138,7 +138,7 @@ export default function LinkupForm({ user, onClose, onPosted, onToast }) {
       {draft.when !== "now" && (
         <div style={{ marginTop: 10 }}>
           <TimeWheel value={draft.time} onChange={(part) => setDraft((d) => ({ ...d, time: { ...d.time, ...part } }))} />
-          <div style={{ ...muted, fontSize: 12.5, marginTop: 6, textAlign: "center", color: timeProblem ? "#EF4444" : "#9CA3AF" }}>
+          <div style={{ ...muted, fontSize: 12.5, marginTop: 6, textAlign: "center", color: timeProblem ? "var(--a-ef4444)" : "var(--n-9ca3af)" }}>
             {timeProblem || startsLine(start)}
           </div>
         </div>
@@ -195,9 +195,9 @@ export default function LinkupForm({ user, onClose, onPosted, onToast }) {
               padding: "10px 12px",
               borderRadius: 10,
               cursor: "pointer",
-              background: draft.visibility === id ? "rgba(0, 128, 240,0.12)" : "#141414",
-              border: `1px solid ${draft.visibility === id ? "#0080F0" : "#2A2A2A"}`,
-              color: "#E6E6E6",
+              background: draft.visibility === id ? "rgba(0, 128, 240,0.12)" : "var(--n-141414)",
+              border: `1px solid ${draft.visibility === id ? "#0080F0" : "var(--n-2a2a2a)"}`,
+              color: "var(--n-e6e6e6)",
             }}
           >
             <div style={{ fontSize: 13, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 0.8 }}>{title}</div>
@@ -215,7 +215,7 @@ export default function LinkupForm({ user, onClose, onPosted, onToast }) {
         ))}
       </div>
 
-      {error && <div style={{ ...muted, color: "#EF4444", marginTop: 12 }}>{error}</div>}
+      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 12 }}>{error}</div>}
       <button disabled={busy === "post"} onClick={submit} style={{ ...bigButton, marginTop: 16 }}>
         {busy === "post" ? "POSTING…" : "⚡ START LINKUP"}
       </button>

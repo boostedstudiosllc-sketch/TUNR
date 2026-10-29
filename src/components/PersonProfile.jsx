@@ -93,9 +93,9 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%",
-          background: "#0F0F0F",
+          background: "var(--n-0f0f0f)",
           borderRadius: "16px 16px 0 0",
-          border: "1px solid #1E1E1E",
+          border: "1px solid var(--n-1e1e1e)",
           maxHeight: "85vh",
           overflowY: "auto",
           padding: "20px 20px 32px",
@@ -130,16 +130,16 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
                     size={18}
                   />
                 </div>
-                <div style={{ fontSize: 12, color: "#777", marginTop: 3, fontFamily: "'Barlow', sans-serif" }}>
+                <div style={{ fontSize: 12, color: "var(--n-777777)", marginTop: 3, fontFamily: "'Barlow', sans-serif" }}>
                   {[person.city, `joined ${monthYear(person.joined)}`].filter(Boolean).join(" · ")}
-                  {person.follows_me && !isMe && <span style={{ color: "#999" }}> · follows you</span>}
+                  {person.follows_me && !isMe && <span style={{ color: "var(--n-999999)" }}> · follows you</span>}
                 </div>
                 {person.is_photographer && photoPageLink(person.photo_page) && (
                   <a
                     href={photoPageLink(person.photo_page).href}
                     target="_blank"
                     rel="noreferrer nofollow"
-                    style={{ display: "inline-block", fontSize: 12, color: "#38BDF8", marginTop: 4, fontWeight: 700, textDecoration: "none" }}
+                    style={{ display: "inline-block", fontSize: 12, color: "var(--a-38bdf8)", marginTop: 4, fontWeight: 700, textDecoration: "none" }}
                   >
                     📸 {photoPageLink(person.photo_page).label}
                   </a>
@@ -151,7 +151,7 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
               <div
                 style={{
                   fontSize: 13.5,
-                  color: "#DDD",
+                  color: "var(--n-dddddd)",
                   marginTop: 12,
                   lineHeight: 1.45,
                   whiteSpace: "pre-wrap",
@@ -195,9 +195,9 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
                   style={{
                     ...wideButton,
                     flex: 1,
-                    background: person.i_follow ? "#1A1A1A" : "#0080F0",
+                    background: person.i_follow ? "var(--n-1a1a1a)" : "#0080F0",
                     color: person.i_follow ? "#DDD" : "#fff",
-                    border: person.i_follow ? "1px solid #333" : "none",
+                    border: person.i_follow ? "1px solid var(--n-333333)" : "none",
                   }}
                 >
                   {person.i_follow ? "FOLLOWING ✓" : person.follows_me ? "FOLLOW BACK" : "FOLLOW"}
@@ -209,7 +209,7 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
             )}
 
             {menu && !person.i_blocked && !isMe && (
-              <div style={{ marginTop: 10, background: "#141414", border: "1px solid #262626", borderRadius: 10, overflow: "hidden" }}>
+              <div style={{ marginTop: 10, background: "var(--n-141414)", border: "1px solid var(--n-262626)", borderRadius: 10, overflow: "hidden" }}>
                 <MenuRow
                   title={person.i_restricted ? "Unrestrict" : "Restrict"}
                   sub={
@@ -268,14 +268,14 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
 
             {clubs.length > 0 && (
               <div style={{ marginTop: 20 }}>
-                <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, marginBottom: 8 }}>CLUBS</div>
+                <div style={{ fontSize: 11, color: "var(--n-555555)", letterSpacing: 2, marginBottom: 8 }}>CLUBS</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {clubs.map((c) => (
-                    <div key={c.id} style={{ display: "flex", gap: 8, alignItems: "center", background: "#141414", border: "1px solid #222", borderRadius: 10, padding: "6px 10px 6px 6px" }}>
+                    <div key={c.id} style={{ display: "flex", gap: 8, alignItems: "center", background: "var(--n-141414)", border: "1px solid var(--n-222222)", borderRadius: 10, padding: "6px 10px 6px 6px" }}>
                       <Logo url={c.logo_url} fallback={kindLabel(c.kind).split(" ")[0]} size={30} />
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 800 }}>{c.name}</div>
-                        {c.role !== "member" && <div style={{ fontSize: 9.5, color: "#3CABFD", fontWeight: 800, letterSpacing: 0.8 }}>{c.role.toUpperCase()}</div>}
+                        {c.role !== "member" && <div style={{ fontSize: 9.5, color: "var(--a-3cabfd)", fontWeight: 800, letterSpacing: 0.8 }}>{c.role.toUpperCase()}</div>}
                       </div>
                     </div>
                   ))}
@@ -286,7 +286,7 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
             {cars.length > 0 && (
               <div style={{ marginTop: 20 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                  <div style={{ fontSize: 11, color: "#555", letterSpacing: 2 }}>GARAGE</div>
+                  <div style={{ fontSize: 11, color: "var(--n-555555)", letterSpacing: 2 }}>GARAGE</div>
                   <button
                     className="action-btn"
                     onClick={() => setShowroom((cars.find((v) => v.is_primary) || cars[0]).id)}
@@ -302,17 +302,17 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
                       className="action-btn"
                       onClick={() => setShowroom(v.id)}
                       aria-label={`See ${[v.year, v.make, v.model].filter(Boolean).join(" ")} in 3D`}
-                      style={{ display: "flex", gap: 10, alignItems: "center", background: "#141414", border: "1px solid #222", borderRadius: 8, padding: 8, cursor: "pointer", color: "#F0F0F0", textAlign: "left", width: "100%", fontFamily: "'Barlow Condensed', sans-serif" }}
+                      style={{ display: "flex", gap: 10, alignItems: "center", background: "var(--n-141414)", border: "1px solid var(--n-222222)", borderRadius: 8, padding: 8, cursor: "pointer", color: "var(--n-f0f0f0)", textAlign: "left", width: "100%", fontFamily: "'Barlow Condensed', sans-serif" }}
                     >
                       {v.photo_url ? (
                         <img src={v.photo_url} alt="" style={{ width: 56, height: 42, objectFit: "cover", borderRadius: 6 }} />
                       ) : (
-                        <div style={{ width: 56, height: 42, borderRadius: 6, background: "#1C1C1C", display: "flex", alignItems: "center", justifyContent: "center" }}>🚗</div>
+                        <div style={{ width: 56, height: 42, borderRadius: 6, background: "var(--n-1c1c1c)", display: "flex", alignItems: "center", justifyContent: "center" }}>🚗</div>
                       )}
                       <div style={{ flex: 1, fontSize: 13.5, fontWeight: 700 }}>
                         {[v.year, v.make, v.model].filter(Boolean).join(" ")}
                       </div>
-                      <span aria-hidden="true" style={{ color: "#555", fontSize: 18 }}>
+                      <span aria-hidden="true" style={{ color: "var(--n-555555)", fontSize: 18 }}>
                         ›
                       </span>
                     </button>
@@ -341,11 +341,11 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
 function PhotographerCheck({ person, isMe, busy, isAdmin, onAdmin }) {
   const verified = person.photographer_verified;
   return (
-    <div style={{ marginTop: 14, background: "#0E1622", border: "1px solid #1E3A5F", borderRadius: 10, padding: "12px 14px" }}>
-      <div style={{ fontSize: 13, fontWeight: 800, color: "#7DD3FC", letterSpacing: 0.4 }}>
+    <div style={{ marginTop: 14, background: "var(--n-0e1622)", border: "1px solid #1E3A5F", borderRadius: 10, padding: "12px 14px" }}>
+      <div style={{ fontSize: 13, fontWeight: 800, color: "var(--a-7dd3fc)", letterSpacing: 0.4 }}>
         {verified ? "📸✓ VERIFIED PHOTOGRAPHER" : "📸 PHOTOGRAPHER"}
       </div>
-      <div style={{ fontSize: 12, color: "#8BA3BF", marginTop: 3, lineHeight: 1.5, fontFamily: "'Barlow', sans-serif" }}>
+      <div style={{ fontSize: 12, color: "var(--a-8ba3bf)", marginTop: 3, lineHeight: 1.5, fontFamily: "'Barlow', sans-serif" }}>
         {verified ? "Verified by TUNR." : isMe ? "You turned on the photographer badge." : "Shoots cars at meets."}
       </div>
       {isAdmin && (
@@ -366,8 +366,8 @@ function PhotographerCheck({ person, isMe, busy, isAdmin, onAdmin }) {
                   flex: 1,
                   padding: "8px 0",
                   fontSize: 11,
-                  color: on ? "#3CABFD" : "#888",
-                  border: `1px solid ${on ? "#0080F0" : "#2A2A2A"}`,
+                  color: on ? "var(--a-3cabfd)" : "var(--n-888888)",
+                  border: `1px solid ${on ? "#0080F0" : "var(--n-2a2a2a)"}`,
                 }}
               >
                 ADMIN: {text}
@@ -384,7 +384,7 @@ function Count({ n, label }) {
   return (
     <div>
       <div style={{ fontSize: 18, fontWeight: 900 }}>{Number(n || 0).toLocaleString("en-US")}</div>
-      <div style={{ fontSize: 11, color: "#777", fontFamily: "'Barlow', sans-serif" }}>{label}</div>
+      <div style={{ fontSize: 11, color: "var(--n-777777)", fontFamily: "'Barlow', sans-serif" }}>{label}</div>
     </div>
   );
 }
@@ -399,22 +399,22 @@ function MenuRow({ title, sub, onClick, danger }) {
         textAlign: "left",
         background: "none",
         border: "none",
-        borderBottom: "1px solid #1F1F1F",
+        borderBottom: "1px solid var(--n-1f1f1f)",
         padding: "12px 14px",
         cursor: "pointer",
       }}
     >
-      <div style={{ fontSize: 14, fontWeight: 800, color: danger ? "#EF4444" : "#E6E6E6", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 0.4 }}>
+      <div style={{ fontSize: 14, fontWeight: 800, color: danger ? "var(--a-ef4444)" : "var(--n-e6e6e6)", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 0.4 }}>
         {title}
       </div>
-      <div style={{ fontSize: 11.5, color: "#777", marginTop: 2, lineHeight: 1.45, fontFamily: "'Barlow', sans-serif" }}>{sub}</div>
+      <div style={{ fontSize: 11.5, color: "var(--n-777777)", marginTop: 2, lineHeight: 1.45, fontFamily: "'Barlow', sans-serif" }}>{sub}</div>
     </button>
   );
 }
 
 function Muted({ children, style }) {
   return (
-    <div style={{ fontSize: 13, color: "#777", lineHeight: 1.6, fontFamily: "'Barlow', sans-serif", ...style }}>
+    <div style={{ fontSize: 13, color: "var(--n-777777)", lineHeight: 1.6, fontFamily: "'Barlow', sans-serif", ...style }}>
       {children}
     </div>
   );
@@ -424,9 +424,9 @@ const monthYear = (iso) =>
   iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "";
 
 const roundButton = {
-  background: "#1A1A1A",
-  border: "1px solid #2A2A2A",
-  color: "#fff",
+  background: "var(--n-1a1a1a)",
+  border: "1px solid var(--n-2a2a2a)",
+  color: "var(--n-ffffff)",
   borderRadius: "50%",
   width: 32,
   height: 32,
@@ -436,10 +436,10 @@ const roundButton = {
 
 const wideButton = {
   padding: "12px 0",
-  background: "#1A1A1A",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-1a1a1a)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 8,
-  color: "#CCC",
+  color: "var(--n-cccccc)",
   fontSize: 13,
   fontWeight: 800,
   letterSpacing: 1.2,

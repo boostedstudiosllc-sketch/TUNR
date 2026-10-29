@@ -15,11 +15,11 @@ import PrivacyPolicy from "./PrivacyPolicy.jsx";
 
 const input = {
   width: "100%",
-  background: "#161616",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-161616)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 10,
   padding: "13px 15px",
-  color: "#F0F0F0",
+  color: "var(--n-f0f0f0)",
   fontSize: 15,
   outline: "none",
   fontFamily: "'Barlow', sans-serif",
@@ -28,7 +28,7 @@ const input = {
 
 const label = {
   fontSize: 10.5,
-  color: "#666",
+  color: "var(--n-666666)",
   letterSpacing: 1.4,
   fontWeight: 700,
   marginBottom: 5,
@@ -137,8 +137,8 @@ export default function AuthForm({ onDone, initialUsername = "", initialMode = "
             style={{
               width: "100%",
               padding: "13px 0",
-              background: "#fff",
-              color: "#111",
+              background: "var(--n-ffffff)",
+              color: "var(--n-111111)",
               border: "none",
               borderRadius: 10,
               fontSize: 14,
@@ -161,9 +161,9 @@ export default function AuthForm({ onDone, initialUsername = "", initialMode = "
             Continue with Google
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-            <div style={{ flex: 1, height: 1, background: "#222" }} />
-            <span style={{ fontSize: 10.5, color: "#555", letterSpacing: 1.5 }}>OR</span>
-            <div style={{ flex: 1, height: 1, background: "#222" }} />
+            <div style={{ flex: 1, height: 1, background: "var(--n-222222)" }} />
+            <span style={{ fontSize: 10.5, color: "var(--n-555555)", letterSpacing: 1.5 }}>OR</span>
+            <div style={{ flex: 1, height: 1, background: "var(--n-222222)" }} />
           </div>
         </>
       )}
@@ -174,8 +174,8 @@ export default function AuthForm({ onDone, initialUsername = "", initialMode = "
           style={{
             display: "flex",
             gap: 6,
-            background: "#161616",
-            border: "1px solid #2A2A2A",
+            background: "var(--n-161616)",
+            border: "1px solid var(--n-2a2a2a)",
             borderRadius: 10,
             padding: 4,
             marginBottom: 14,
@@ -223,7 +223,7 @@ export default function AuthForm({ onDone, initialUsername = "", initialMode = "
                   left: 14,
                   top: "50%",
                   transform: "translateY(-50%)",
-                  color: "#555",
+                  color: "var(--n-555555)",
                   fontSize: 15,
                   fontWeight: 700,
                 }}
@@ -240,7 +240,7 @@ export default function AuthForm({ onDone, initialUsername = "", initialMode = "
               />
             </div>
             {username && !usernameOk && (
-              <div style={{ fontSize: 11, color: "#777", marginTop: 5, fontFamily: "'Barlow', sans-serif" }}>
+              <div style={{ fontSize: 11, color: "var(--n-777777)", marginTop: 5, fontFamily: "'Barlow', sans-serif" }}>
                 At least 3 characters — letters, numbers, _ and . only.
               </div>
             )}
@@ -279,7 +279,7 @@ export default function AuthForm({ onDone, initialUsername = "", initialMode = "
                     setEmail(emailProblem.suggestion);
                     setEmailProblem(null);
                   }}
-                  style={{ display: "block", marginTop: 6, background: "#1F1405", border: "1px solid #5A3A0A", borderRadius: 6, padding: "6px 10px", color: "#F59E0B", fontWeight: 800, fontSize: 12, cursor: "pointer" }}
+                  style={{ display: "block", marginTop: 6, background: "var(--n-1f1405)", border: "1px solid var(--n-5a3a0a)", borderRadius: 6, padding: "6px 10px", color: "#F59E0B", fontWeight: 800, fontSize: 12, cursor: "pointer" }}
                 >
                   Use {emailProblem.suggestion}
                 </button>
@@ -312,7 +312,7 @@ export default function AuthForm({ onDone, initialUsername = "", initialMode = "
           style={{
             marginTop: 10,
             fontSize: 12.5,
-            color: "#EF4444",
+            color: "var(--a-ef4444)",
             fontFamily: "'Barlow', sans-serif",
             lineHeight: 1.5,
           }}
@@ -346,7 +346,7 @@ export default function AuthForm({ onDone, initialUsername = "", initialMode = "
           width: "100%",
           marginTop: 14,
           padding: "15px 0",
-          background: canSubmit && !busy ? "#0080F0" : "#1E1E1E",
+          background: canSubmit && !busy ? "#0080F0" : "var(--n-1e1e1e)",
           color: canSubmit && !busy ? "#fff" : "#555",
           border: "none",
           borderRadius: 10,
@@ -370,23 +370,23 @@ export default function AuthForm({ onDone, initialUsername = "", initialMode = "
         <div
           style={{
             marginTop: 12,
-            background: "#141414",
-            border: "1px solid #2A2A2A",
+            background: "var(--n-141414)",
+            border: "1px solid var(--n-2a2a2a)",
             borderRadius: 8,
             padding: "10px 12px",
             fontSize: 12,
-            color: "#AAA",
+            color: "var(--n-aaaaaa)",
             lineHeight: 1.55,
             fontFamily: "'Barlow', sans-serif",
           }}
         >
-          ✉️ <b style={{ color: "#DDD" }}>You'll need to confirm your email.</b> We'll email you a link right away and a
+          ✉️ <b style={{ color: "var(--n-dddddd)" }}>You'll need to confirm your email.</b> We'll email you a link right away and a
           reminder after a few days. Accounts that aren't confirmed within 7 days are deleted automatically. Until
           then you can browse and RSVP; chatting, posting and linkups unlock once you confirm.{" "}
-          <button type="button" onClick={() => setShowWhy((v) => !v)} style={{ ...legalLink, color: "#3CABFD" }}>
+          <button type="button" onClick={() => setShowWhy((v) => !v)} style={{ ...legalLink, color: "var(--a-3cabfd)" }}>
             {showWhy ? "Hide" : "Why?"}
           </button>
-          {showWhy && <div style={{ marginTop: 6, color: "#888" }}>{CLEANUP_WHY}</div>}
+          {showWhy && <div style={{ marginTop: 6, color: "var(--n-888888)" }}>{CLEANUP_WHY}</div>}
         </div>
       )}
 
@@ -395,7 +395,7 @@ export default function AuthForm({ onDone, initialUsername = "", initialMode = "
           style={{
             marginTop: 10,
             fontSize: 11.5,
-            color: "#666",
+            color: "var(--n-666666)",
             textAlign: "center",
             lineHeight: 1.6,
             fontFamily: "'Barlow', sans-serif",
@@ -424,7 +424,7 @@ export default function AuthForm({ onDone, initialUsername = "", initialMode = "
             style={{
               background: "none",
               border: "none",
-              color: "#666",
+              color: "var(--n-666666)",
               fontSize: 12,
               cursor: "pointer",
               fontFamily: "'Barlow', sans-serif",
@@ -442,7 +442,7 @@ export default function AuthForm({ onDone, initialUsername = "", initialMode = "
             style={{
               background: "none",
               border: "none",
-              color: "#666",
+              color: "var(--n-666666)",
               fontSize: 12,
               cursor: "pointer",
               fontFamily: "'Barlow', sans-serif",
@@ -462,7 +462,7 @@ const legalLink = {
   background: "none",
   border: "none",
   padding: 0,
-  color: "#999",
+  color: "var(--n-999999)",
   textDecoration: "underline",
   cursor: "pointer",
   fontSize: "inherit",

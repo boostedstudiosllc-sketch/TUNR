@@ -90,7 +90,7 @@ export default function Insights() {
     <Card>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
         <div style={{ fontSize: 15, fontWeight: 800 }}>📊 Insights</div>
-        <div style={{ fontSize: 11, color: "#666", fontFamily: "'Barlow', sans-serif" }}>
+        <div style={{ fontSize: 11, color: "var(--n-666666)", fontFamily: "'Barlow', sans-serif" }}>
           last 30 days · end users only
         </div>
       </div>
@@ -134,7 +134,7 @@ export default function Insights() {
             <Table
               head={["Host", "Going", "Fans", "Views", "Next"]}
               rows={(allHosts ? hosts : hosts.slice(0, 8)).map((h) => [
-                <span key="h" style={{ fontWeight: 700, color: "#E6E6E6" }}>
+                <span key="h" style={{ fontWeight: 700, color: "var(--n-e6e6e6)" }}>
                   @{h.host}
                   {h.verified && <span style={{ color: ACCENT }}> ✓</span>}
                 </span>,
@@ -194,9 +194,9 @@ export default function Insights() {
             head={["Meet", "Going", "Maybe", "Chat", "Views"]}
             rows={meets.map((m) => [
               <span key="m">
-                <span style={{ fontWeight: 700, color: "#E6E6E6" }}>{m.title}</span>
+                <span style={{ fontWeight: 700, color: "var(--n-e6e6e6)" }}>{m.title}</span>
                 <br />
-                <span style={{ color: "#666", fontSize: 10.5 }}>
+                <span style={{ color: "var(--n-666666)", fontSize: 10.5 }}>
                   @{m.host}
                   {m.start_at ? ` · ${shortDate(m.start_at)}` : m.recurrence ? " · recurring" : ""}
                   {m.open_reports > 0 ? ` · 🚩${m.open_reports}` : ""}
@@ -222,12 +222,12 @@ export default function Insights() {
 
 function Tile({ label, value, sub, now, prev }) {
   return (
-    <div style={{ background: "#0C0C0C", border: "1px solid #1F1F1F", borderRadius: 8, padding: "10px 12px" }}>
-      <div style={{ fontSize: 11, color: "#777", fontFamily: "'Barlow', sans-serif" }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 800, marginTop: 2, color: "#F0F0F0", lineHeight: 1.1 }}>
+    <div style={{ background: "var(--n-0c0c0c)", border: "1px solid var(--n-1f1f1f)", borderRadius: 8, padding: "10px 12px" }}>
+      <div style={{ fontSize: 11, color: "var(--n-777777)", fontFamily: "'Barlow', sans-serif" }}>{label}</div>
+      <div style={{ fontSize: 24, fontWeight: 800, marginTop: 2, color: "var(--n-f0f0f0)", lineHeight: 1.1 }}>
         {typeof value === "string" ? value : compact(value)}
       </div>
-      <div style={{ fontSize: 11, color: "#777", marginTop: 3, fontFamily: "'Barlow', sans-serif" }}>
+      <div style={{ fontSize: 11, color: "var(--n-777777)", marginTop: 3, fontFamily: "'Barlow', sans-serif" }}>
         {now !== undefined && prev !== undefined ? (
           <>
             <Delta now={now} prev={prev} /> vs previous 30 days
@@ -244,10 +244,10 @@ function Tile({ label, value, sub, now, prev }) {
 function Delta({ now, prev }) {
   const a = Number(now) || 0;
   const b = Number(prev) || 0;
-  if (!a && !b) return <span style={{ color: "#555" }}>–</span>;
+  if (!a && !b) return <span style={{ color: "var(--n-555555)" }}>–</span>;
   if (!b) return <span style={{ color: UP, fontSize: 10.5, fontWeight: 700 }}>new</span>;
   const pct = Math.round(((a - b) / b) * 100);
-  if (pct === 0) return <span style={{ color: "#777", fontSize: 10.5 }}>±0%</span>;
+  if (pct === 0) return <span style={{ color: "var(--n-777777)", fontSize: 10.5 }}>±0%</span>;
   return (
     <span style={{ color: pct > 0 ? UP : DOWN, fontSize: 10.5, fontWeight: 700 }}>
       {pct > 0 ? "▲" : "▼"} {Math.abs(pct)}%
@@ -263,14 +263,14 @@ function DailyBars({ days, field, unit }) {
   const shown = hover !== null ? days[hover] : null;
   return (
     <div style={{ marginTop: 10 }}>
-      <div style={{ fontSize: 12, color: "#999", minHeight: 18, fontFamily: "'Barlow', sans-serif" }}>
+      <div style={{ fontSize: 12, color: "var(--n-999999)", minHeight: 18, fontFamily: "'Barlow', sans-serif" }}>
         {shown ? (
           <>
-            <strong style={{ color: "#F0F0F0" }}>{compact(shown[field])}</strong> {unit} on {shortDate(shown.day, true)}
+            <strong style={{ color: "var(--n-f0f0f0)" }}>{compact(shown[field])}</strong> {unit} on {shortDate(shown.day, true)}
           </>
         ) : (
           <>
-            <strong style={{ color: "#F0F0F0" }}>{compact(total)}</strong> {unit} in 30 days
+            <strong style={{ color: "var(--n-f0f0f0)" }}>{compact(total)}</strong> {unit} in 30 days
           </>
         )}
       </div>
@@ -278,7 +278,7 @@ function DailyBars({ days, field, unit }) {
         role="img"
         aria-label={`${unit} per day, last 30 days`}
         onMouseLeave={() => setHover(null)}
-        style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 84, marginTop: 6, borderBottom: "1px solid #2A2A2A" }}
+        style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 84, marginTop: 6, borderBottom: "1px solid var(--n-2a2a2a)" }}
       >
         {days.map((d, i) => {
           const v = Number(d[field]) || 0;
@@ -302,7 +302,7 @@ function DailyBars({ days, field, unit }) {
           );
         })}
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#555", marginTop: 4 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--n-555555)", marginTop: 4 }}>
         <span>{days.length ? shortDate(days[0].day, true) : ""}</span>
         <span>today</span>
       </div>
@@ -321,13 +321,13 @@ function Table({ head, rows }) {
                 key={h}
                 style={{
                   textAlign: i === 0 ? "left" : "right",
-                  color: "#666",
+                  color: "var(--n-666666)",
                   fontWeight: 600,
                   fontSize: 10.5,
                   letterSpacing: 0.4,
                   padding: "0 0 6px",
                   paddingLeft: i === 0 ? 0 : 8,
-                  borderBottom: "1px solid #222",
+                  borderBottom: "1px solid var(--n-222222)",
                 }}
               >
                 {h}
@@ -343,10 +343,10 @@ function Table({ head, rows }) {
                   key={ci}
                   style={{
                     textAlign: ci === 0 ? "left" : "right",
-                    color: "#AAA",
+                    color: "var(--n-aaaaaa)",
                     padding: "7px 0",
                     paddingLeft: ci === 0 ? 0 : 8,
-                    borderBottom: "1px solid #191919",
+                    borderBottom: "1px solid var(--n-191919)",
                     fontVariantNumeric: "tabular-nums",
                     whiteSpace: ci === 0 ? "normal" : "nowrap",
                     verticalAlign: "top",
@@ -377,9 +377,9 @@ function Chips({ options, value, onChange, small }) {
             fontSize: small ? 10.5 : 11.5,
             fontWeight: 700,
             cursor: "pointer",
-            background: value === o.id ? "rgba(0, 128, 240,0.14)" : "#161616",
-            color: value === o.id ? ACCENT : "#888",
-            border: `1px solid ${value === o.id ? ACCENT : "#2A2A2A"}`,
+            background: value === o.id ? "rgba(0, 128, 240,0.14)" : "var(--n-161616)",
+            color: value === o.id ? ACCENT : "var(--n-888888)",
+            border: `1px solid ${value === o.id ? ACCENT : "var(--n-2a2a2a)"}`,
             fontFamily: "'Barlow Condensed', sans-serif",
             letterSpacing: 0.4,
           }}
@@ -405,7 +405,7 @@ function Section({ title, right, children }) {
 
 function Card({ children }) {
   return (
-    <div style={{ background: "#111", border: "1px solid #2A2A2A", borderRadius: 10, padding: "16px 18px", marginBottom: 12 }}>
+    <div style={{ background: "var(--n-111111)", border: "1px solid var(--n-2a2a2a)", borderRadius: 10, padding: "16px 18px", marginBottom: 12 }}>
       {children}
     </div>
   );
@@ -413,7 +413,7 @@ function Card({ children }) {
 
 function Muted({ children, small }) {
   return (
-    <div style={{ fontSize: small ? 10.5 : 12.5, color: "#666", marginTop: small ? 8 : 0, lineHeight: 1.5, fontFamily: "'Barlow', sans-serif" }}>
+    <div style={{ fontSize: small ? 10.5 : 12.5, color: "var(--n-666666)", marginTop: small ? 8 : 0, lineHeight: 1.5, fontFamily: "'Barlow', sans-serif" }}>
       {children}
     </div>
   );
@@ -423,7 +423,7 @@ function LinkButton({ onClick, children }) {
   return (
     <button
       onClick={onClick}
-      style={{ background: "none", border: "none", padding: 0, color: "#888", fontSize: 11.5, textDecoration: "underline", cursor: "pointer", fontFamily: "'Barlow', sans-serif" }}
+      style={{ background: "none", border: "none", padding: 0, color: "var(--n-888888)", fontSize: 11.5, textDecoration: "underline", cursor: "pointer", fontFamily: "'Barlow', sans-serif" }}
     >
       {children}
     </button>

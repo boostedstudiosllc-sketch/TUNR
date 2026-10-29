@@ -116,8 +116,8 @@ export default function HostSetup({ user, token, invite, onStart }) {
     <div
       style={{
         minHeight: "100vh",
-        background: "#0A0A0A",
-        color: "#F0F0F0",
+        background: "var(--n-0a0a0a)",
+        color: "var(--n-f0f0f0)",
         maxWidth: 430,
         margin: "0 auto",
         fontFamily: "'Barlow Condensed', sans-serif",
@@ -128,7 +128,7 @@ export default function HostSetup({ user, token, invite, onStart }) {
       <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1 }}>
         TUN<span style={{ color: "#0080F0" }}>R</span>
       </div>
-      <div style={{ fontSize: 10.5, color: "#555", letterSpacing: 2.5, marginTop: 3, marginBottom: 26 }}>
+      <div style={{ fontSize: 10.5, color: "var(--n-555555)", letterSpacing: 2.5, marginTop: 3, marginBottom: 26 }}>
         FOR HOSTS
       </div>
       {body}
@@ -168,7 +168,7 @@ function PickName({ suggested, userId, onSaved }) {
         sub="It's what shows on your meets, and once you're verified nobody else can post under it. Use the name people know you by."
       />
       <div style={{ position: "relative" }}>
-        <span style={{ position: "absolute", left: 14, top: 13, color: "#555", fontWeight: 700 }}>@</span>
+        <span style={{ position: "absolute", left: 14, top: 13, color: "var(--n-555555)", fontWeight: 700 }}>@</span>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -179,7 +179,7 @@ function PickName({ suggested, userId, onSaved }) {
           style={{ ...inputStyle, paddingLeft: 30 }}
         />
       </div>
-      {error && <div style={{ ...small, color: "#EF4444", marginTop: 8 }}>{error}</div>}
+      {error && <div style={{ ...small, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
       <PrimaryButton disabled={busy || clean.length < 3} onClick={save}>
         {busy ? "…" : "CONTINUE"}
       </PrimaryButton>
@@ -199,7 +199,7 @@ function Verified({ profile, onStart }) {
         You're verified
       </div>
       <div style={{ ...paragraph, marginTop: 8 }}>
-        <strong style={{ color: "#3CABFD" }}>@{profile.username}</strong> is yours. Your meets carry
+        <strong style={{ color: "var(--a-3cabfd)" }}>@{profile.username}</strong> is yours. Your meets carry
         the verified check and nobody else can post under that name.
         {profile.foundingHost &&
           " You're also a founding host — that badge on your name is one nobody can get after launch."}
@@ -223,7 +223,7 @@ function InviteProblem({ result, username, detail }) {
     <div
       style={{
         ...small,
-        color: "#FF8A65",
+        color: "var(--a-ff8a65)",
         background: "rgba(0, 128, 240,0.08)",
         border: "1px solid rgba(0, 128, 240,0.35)",
         borderRadius: 8,
@@ -278,7 +278,7 @@ function RequestAccess({ user, host, request, onRequested, onStart }) {
         sub={`@${INSTAGRAM_HANDLE} will DM that page a link to verify @${host}. Opening it is the proof the page is yours — nothing to put in your bio.`}
       />
       <div style={{ position: "relative" }}>
-        <span style={{ position: "absolute", left: 14, top: 13, color: "#555", fontWeight: 700 }}>@</span>
+        <span style={{ position: "absolute", left: 14, top: 13, color: "var(--n-555555)", fontWeight: 700 }}>@</span>
         <input
           value={handle}
           onChange={(e) => setHandle(e.target.value)}
@@ -289,7 +289,7 @@ function RequestAccess({ user, host, request, onRequested, onStart }) {
           style={{ ...inputStyle, paddingLeft: 30 }}
         />
       </div>
-      {error && <div style={{ ...small, color: "#EF4444", marginTop: 8 }}>{error}</div>}
+      {error && <div style={{ ...small, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
       <PrimaryButton disabled={busy || !handle.trim()} onClick={submit}>
         {busy ? "…" : "REQUEST VERIFICATION"}
       </PrimaryButton>
@@ -321,7 +321,7 @@ function PrimaryButton({ children, onClick, disabled = false }) {
         width: "100%",
         marginTop: 18,
         padding: "15px 0",
-        background: disabled ? "#1E1E1E" : "#0080F0",
+        background: disabled ? "var(--n-1e1e1e)" : "#0080F0",
         color: disabled ? "#555" : "#fff",
         border: "none",
         borderRadius: 10,
@@ -346,7 +346,7 @@ function SecondaryButton({ children, onClick }) {
         display: "block",
         margin: "16px auto 0",
         fontSize: 13,
-        color: "#888",
+        color: "var(--n-888888)",
       }}
     >
       {children}
@@ -356,7 +356,7 @@ function SecondaryButton({ children, onClick }) {
 
 const paragraph = {
   fontSize: 14,
-  color: "#AAA",
+  color: "var(--n-aaaaaa)",
   lineHeight: 1.65,
   fontFamily: "'Barlow', sans-serif",
 };
@@ -369,11 +369,11 @@ const small = {
 
 const inputStyle = {
   width: "100%",
-  background: "#161616",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-161616)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 10,
   padding: "13px 15px",
-  color: "#F0F0F0",
+  color: "var(--n-f0f0f0)",
   fontSize: 15,
   outline: "none",
   fontFamily: "'Barlow', sans-serif",
@@ -384,7 +384,7 @@ const linkButton = {
   background: "none",
   border: "none",
   padding: 0,
-  color: "#999",
+  color: "var(--n-999999)",
   textDecoration: "underline",
   cursor: "pointer",
   fontSize: "inherit",

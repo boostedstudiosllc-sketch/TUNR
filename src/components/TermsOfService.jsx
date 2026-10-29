@@ -5,7 +5,7 @@ import { LINKUP_RULES } from "../lib/linkupRules.js";
 // Shown at the top. Change it whenever TOS_VERSION in lib/store.js changes.
 const TERMS_UPDATED = "October 2026";
 
-const body = { fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "#AAA", lineHeight: 1.7 };
+const body = { fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "var(--n-aaaaaa)", lineHeight: 1.7 };
 const heading = {
   fontFamily: "'Barlow Condensed', sans-serif",
   fontSize: 13,
@@ -23,7 +23,7 @@ const warn = {
   margin: "10px 0",
   fontFamily: "'Barlow', sans-serif",
   fontSize: 13,
-  color: "#EF4444",
+  color: "var(--a-ef4444)",
   lineHeight: 1.6,
 };
 
@@ -53,23 +53,23 @@ export default function TermsOfService({ onAccept, onClose, onDecline = null, re
         inset: 0,
         top: "env(safe-area-inset-top)",
         zIndex: 300,
-        background: "#0A0A0A",
+        background: "var(--n-0a0a0a)",
         maxWidth: 430,
         margin: "0 auto",
         display: "flex",
         flexDirection: "column",
         fontFamily: "'Barlow Condensed', sans-serif",
-        color: "#F0F0F0",
+        color: "var(--n-f0f0f0)",
       }}
     >
-      <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #1A1A1A", flexShrink: 0 }}>
+      <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid var(--n-1a1a1a)", flexShrink: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <div style={{ fontSize: 28, fontWeight: 900 }}>
               TUN<span style={{ color: "#0080F0" }}>R</span>
             </div>
             <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4 }}>Terms of Service</div>
-            <div style={{ fontSize: 12, color: "#555", marginTop: 2, fontFamily: "'Barlow', sans-serif" }}>
+            <div style={{ fontSize: 12, color: "var(--n-555555)", marginTop: 2, fontFamily: "'Barlow', sans-serif" }}>
               {readOnly ? `Last updated ${TERMS_UPDATED}` : "Please read before continuing"}
             </div>
           </div>
@@ -78,9 +78,9 @@ export default function TermsOfService({ onAccept, onClose, onDecline = null, re
               className="close-btn"
               onClick={onClose}
               style={{
-                background: "#1A1A1A",
-                border: "1px solid #2A2A2A",
-                color: "#fff",
+                background: "var(--n-1a1a1a)",
+                border: "1px solid var(--n-2a2a2a)",
+                color: "var(--n-ffffff)",
                 borderRadius: "50%",
                 width: 32,
                 height: 32,
@@ -401,16 +401,16 @@ export default function TermsOfService({ onAccept, onClose, onDecline = null, re
         <div
           style={{
             padding: "14px 20px 28px",
-            borderTop: "1px solid #1A1A1A",
+            borderTop: "1px solid var(--n-1a1a1a)",
             flexShrink: 0,
-            background: "#0A0A0A",
+            background: "var(--n-0a0a0a)",
           }}
         >
           <div
             style={{
               textAlign: "center",
               fontSize: 11.5,
-              color: scrolledToEnd ? "#555" : "#888",
+              color: scrolledToEnd ? "var(--n-555555)" : "var(--n-888888)",
               fontFamily: "'Barlow', sans-serif",
               marginBottom: 10,
             }}
@@ -427,7 +427,7 @@ export default function TermsOfService({ onAccept, onClose, onDecline = null, re
             style={{
               width: "100%",
               padding: "16px 0",
-              background: scrolledToEnd ? "#0080F0" : "#1E1E1E",
+              background: scrolledToEnd ? "#0080F0" : "var(--n-1e1e1e)",
               color: scrolledToEnd ? "#fff" : "#555",
               border: "none",
               borderRadius: 12,
@@ -445,7 +445,7 @@ export default function TermsOfService({ onAccept, onClose, onDecline = null, re
             <button
               type="button"
               onClick={onDecline}
-              style={{ display: "block", margin: "10px auto 0", background: "none", border: "none", color: "#777", fontSize: 12, cursor: "pointer", fontFamily: "'Barlow', sans-serif", textDecoration: "underline" }}
+              style={{ display: "block", margin: "10px auto 0", background: "none", border: "none", color: "var(--n-777777)", fontSize: 12, cursor: "pointer", fontFamily: "'Barlow', sans-serif", textDecoration: "underline" }}
             >
               Don't agree? Sign out and browse as a guest
             </button>

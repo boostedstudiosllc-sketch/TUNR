@@ -10,11 +10,11 @@ import { geocodeLocation } from "../lib/geocode.js";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const inputStyle = {
-  background: "#161616",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-161616)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 8,
   padding: "13px 15px",
-  color: "#F0F0F0",
+  color: "var(--n-f0f0f0)",
   fontSize: 14,
   width: "100%",
   outline: "none",
@@ -24,7 +24,7 @@ const inputStyle = {
 
 const labelStyle = {
   fontSize: 11,
-  color: "#888",
+  color: "var(--n-888888)",
   letterSpacing: 1.2,
   fontWeight: 700,
   marginBottom: 5,
@@ -194,9 +194,9 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%",
-          background: "#0F0F0F",
+          background: "var(--n-0f0f0f)",
           borderRadius: "16px 16px 0 0",
-          border: "1px solid #1E1E1E",
+          border: "1px solid var(--n-1e1e1e)",
           padding: "24px 20px 48px",
           maxHeight: "90vh",
           overflowY: "auto",
@@ -213,15 +213,15 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
         >
           <div>
             <div style={{ fontSize: 28, fontWeight: 900 }}>POST A MEET</div>
-            <div style={{ fontSize: 12, color: "#555", letterSpacing: 1 }}>STEP {step} OF 2</div>
+            <div style={{ fontSize: 12, color: "var(--n-555555)", letterSpacing: 1 }}>STEP {step} OF 2</div>
           </div>
           <button
             className="close-btn"
             onClick={onClose}
             style={{
-              background: "#1A1A1A",
-              border: "1px solid #2A2A2A",
-              color: "#fff",
+              background: "var(--n-1a1a1a)",
+              border: "1px solid var(--n-2a2a2a)",
+              color: "var(--n-ffffff)",
               borderRadius: "50%",
               width: 32,
               height: 32,
@@ -243,7 +243,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                 flex: 1,
                 height: 3,
                 borderRadius: 2,
-                background: s <= step ? "#0080F0" : "#1E1E1E",
+                background: s <= step ? "#0080F0" : "var(--n-1e1e1e)",
                 transition: "background 0.3s ease",
               }}
             />
@@ -308,9 +308,9 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                       fontSize: 11,
                       fontWeight: 700,
                       letterSpacing: 0.8,
-                      background: "#161616",
+                      background: "var(--n-161616)",
                       color: VIBES[v],
-                      border: `1.5px solid ${draft.vibe === v ? VIBES[v] : "#2A2A2A"}`,
+                      border: `1.5px solid ${draft.vibe === v ? VIBES[v] : "var(--n-2a2a2a)"}`,
                       cursor: "pointer",
                     }}
                   >
@@ -346,9 +346,9 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                       flex: 1,
                       padding: "11px 0",
                       borderRadius: 8,
-                      background: draft.visibility === v.id ? "rgba(0, 128, 240,0.12)" : "#161616",
-                      border: `1.5px solid ${draft.visibility === v.id ? "#0080F0" : "#2A2A2A"}`,
-                      color: draft.visibility === v.id ? "#0080F0" : "#777",
+                      background: draft.visibility === v.id ? "rgba(0, 128, 240,0.12)" : "var(--n-161616)",
+                      border: `1.5px solid ${draft.visibility === v.id ? "#0080F0" : "var(--n-2a2a2a)"}`,
+                      color: draft.visibility === v.id ? "#0080F0" : "var(--n-777777)",
                       fontFamily: "'Barlow Condensed', sans-serif",
                       cursor: "pointer",
                     }}
@@ -363,8 +363,8 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
             {draft.visibility === "private" && (
               <div
                 style={{
-                  background: "#131313",
-                  border: "1px solid #242424",
+                  background: "var(--n-131313)",
+                  border: "1px solid var(--n-242424)",
                   borderRadius: 8,
                   padding: "13px 14px",
                 }}
@@ -383,9 +383,9 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                         textAlign: "left",
                         padding: "9px 11px",
                         borderRadius: 6,
-                        background: draft.accessMode === m.id ? "rgba(0, 128, 240,0.1)" : "#0F0F0F",
-                        border: `1px solid ${draft.accessMode === m.id ? "#0080F0" : "#242424"}`,
-                        color: draft.accessMode === m.id ? "#0080F0" : "#888",
+                        background: draft.accessMode === m.id ? "rgba(0, 128, 240,0.1)" : "var(--n-0f0f0f)",
+                        border: `1px solid ${draft.accessMode === m.id ? "#0080F0" : "var(--n-242424)"}`,
+                        color: draft.accessMode === m.id ? "#0080F0" : "var(--n-888888)",
                         fontFamily: "'Barlow Condensed', sans-serif",
                         cursor: "pointer",
                       }}
@@ -393,14 +393,14 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                       <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.6 }}>
                         {m.label}
                       </div>
-                      <div style={{ fontSize: 11, color: "#666", letterSpacing: 0.3 }}>{m.sub}</div>
+                      <div style={{ fontSize: 11, color: "var(--n-666666)", letterSpacing: 0.3 }}>{m.sub}</div>
                     </button>
                   ))}
                 </div>
                 <div
                   style={{
                     fontSize: 11,
-                    color: "#555",
+                    color: "var(--n-555555)",
                     marginTop: 10,
                     lineHeight: 1.5,
                     fontFamily: "'Barlow', sans-serif",
@@ -445,10 +445,10 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                         width: "100%",
                         maxHeight: 260,
                         objectFit: "contain",
-                        background: "#0A0A0A",
+                        background: "var(--n-0a0a0a)",
                         borderRadius: 8,
                         display: "block",
-                        border: "1px solid #2A2A2A",
+                        border: "1px solid var(--n-2a2a2a)",
                       }}
                     />
                     <button
@@ -459,8 +459,8 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                         top: 8,
                         right: 8,
                         background: "rgba(0,0,0,0.75)",
-                        border: "1px solid #444",
-                        color: "#fff",
+                        border: "1px solid var(--n-444444)",
+                        color: "var(--n-ffffff)",
                         borderRadius: "50%",
                         width: 28,
                         height: 28,
@@ -478,9 +478,9 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                       justifyContent: "center",
                       height: 76,
                       borderRadius: 8,
-                      border: "1px dashed #2A2A2A",
-                      background: "#131313",
-                      color: "#777",
+                      border: "1px dashed var(--n-2a2a2a)",
+                      background: "var(--n-131313)",
+                      color: "var(--n-777777)",
                       fontSize: 12.5,
                       fontWeight: 700,
                       letterSpacing: 1,
@@ -501,7 +501,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                   <div
                     style={{
                       fontSize: 11,
-                      color: "#FF6B4A",
+                      color: "var(--a-ff6b4a)",
                       marginTop: 6,
                       fontFamily: "'Barlow', sans-serif",
                     }}
@@ -523,7 +523,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
               <div
                 style={{
                   fontSize: 11,
-                  color: "#555",
+                  color: "var(--n-555555)",
                   marginTop: 6,
                   fontFamily: "'Barlow', sans-serif",
                   lineHeight: 1.5,
@@ -544,9 +544,9 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
               style={{
                 flex: 0.4,
                 padding: "14px 0",
-                background: "#1A1A1A",
-                border: "1px solid #2A2A2A",
-                color: "#888",
+                background: "var(--n-1a1a1a)",
+                border: "1px solid var(--n-2a2a2a)",
+                color: "var(--n-888888)",
                 borderRadius: 8,
                 fontSize: 14,
                 fontWeight: 800,
@@ -568,7 +568,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
             style={{
               flex: 1,
               padding: "14px 0",
-              background: canContinue ? "#0080F0" : "#1E1E1E",
+              background: canContinue ? "#0080F0" : "var(--n-1e1e1e)",
               color: canContinue ? "#fff" : "#444",
               border: "none",
               borderRadius: 8,
@@ -622,7 +622,7 @@ function FlyerStart({ reader, flyerUrl, onPick, caption, setCaption, showCaption
   return (
     <div
       style={{
-        background: "#131313",
+        background: "var(--n-131313)",
         border: `1px solid ${reader.status === "done" ? "#10B981" : "rgba(0, 128, 240,0.45)"}`,
         borderRadius: 10,
         padding: "14px 15px",
@@ -639,7 +639,7 @@ function FlyerStart({ reader, flyerUrl, onPick, caption, setCaption, showCaption
                 height: 68,
                 objectFit: "cover",
                 borderRadius: 6,
-                border: "1px solid #2A2A2A",
+                border: "1px solid var(--n-2a2a2a)",
                 flexShrink: 0,
               }}
             />
@@ -690,7 +690,7 @@ function FlyerStart({ reader, flyerUrl, onPick, caption, setCaption, showCaption
             Upload it and we'll fill this in for you. You check everything before it posts.
           </div>
           {reader.status === "error" && (
-            <div style={{ ...note, color: "#FF6B4A" }}>{reader.error}</div>
+            <div style={{ ...note, color: "var(--a-ff6b4a)" }}>{reader.error}</div>
           )}
           {showCaption ? (
             <textarea
@@ -709,7 +709,7 @@ function FlyerStart({ reader, flyerUrl, onPick, caption, setCaption, showCaption
                 border: "none",
                 padding: 0,
                 marginTop: 8,
-                color: "#777",
+                color: "var(--n-777777)",
                 fontSize: 11.5,
                 textDecoration: "underline",
                 cursor: "pointer",
@@ -728,7 +728,7 @@ function FlyerStart({ reader, flyerUrl, onPick, caption, setCaption, showCaption
 
 const note = {
   fontSize: 12,
-  color: "#888",
+  color: "var(--n-888888)",
   lineHeight: 1.55,
   marginTop: 4,
   fontFamily: "'Barlow', sans-serif",

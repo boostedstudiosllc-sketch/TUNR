@@ -66,7 +66,7 @@ export default function ClubsTab({ user, events, open, onOpened, onNeedAccount, 
         + START A CLUB
       </button>
       <input style={{ ...field, marginTop: 10 }} placeholder="🔍 Search clubs by name or city" value={search} onChange={(e) => setSearch(e.target.value)} />
-      {error && <div style={{ ...muted, color: "#EF4444", marginTop: 10 }}>{error}</div>}
+      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
 
       {mine.length > 0 && (
         <>
@@ -118,21 +118,21 @@ function List({ clubs, onOpen }) {
         <button
           key={c.id}
           onClick={() => onOpen(c.id)}
-          style={{ display: "flex", gap: 10, alignItems: "center", textAlign: "left", background: "#111", border: "1px solid #222", borderRadius: 10, padding: "10px 12px", color: "#E6E6E6", cursor: "pointer" }}
+          style={{ display: "flex", gap: 10, alignItems: "center", textAlign: "left", background: "var(--n-111111)", border: "1px solid var(--n-222222)", borderRadius: 10, padding: "10px 12px", color: "var(--n-e6e6e6)", cursor: "pointer" }}
         >
           <Logo url={c.logo_url} fallback={kindLabel(c.kind).split(" ")[0]} size={44} />
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: "block", fontSize: 14.5, fontWeight: 800 }}>
               {c.name} {c.visibility === "private" && <span style={{ fontSize: 11 }}>🔒</span>}
             </span>
-            <span style={{ display: "block", fontSize: 11.5, color: "#777", fontFamily: "'Barlow', sans-serif" }}>
+            <span style={{ display: "block", fontSize: 11.5, color: "var(--n-777777)", fontFamily: "'Barlow', sans-serif" }}>
               {kindLabel(c.kind)} · {c.members} {c.members === 1 ? "member" : "members"}
               {c.city ? ` · ${c.city}` : ""}
             </span>
           </span>
           {c.requests > 0 && <span style={{ fontSize: 10.5, color: "#0080F0", fontWeight: 800 }}>{c.requests} ASKING</span>}
           {c.my_role && !c.requests && (
-            <span style={{ fontSize: 10, color: "#3CABFD", fontWeight: 800, letterSpacing: 0.8 }}>{c.my_role === "requested" ? "ASKED" : c.my_role.toUpperCase()}</span>
+            <span style={{ fontSize: 10, color: "var(--a-3cabfd)", fontWeight: 800, letterSpacing: 0.8 }}>{c.my_role === "requested" ? "ASKED" : c.my_role.toUpperCase()}</span>
           )}
         </button>
       ))}
@@ -206,7 +206,7 @@ function ClubForm({ user, onClose, onToast, onCreated }) {
           🔒 I APPROVE
         </Chip>
       </div>
-      {error && <div style={{ ...muted, color: "#EF4444", marginTop: 10 }}>{error}</div>}
+      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
       <button disabled={Boolean(busy)} onClick={submit} style={{ ...bigButton, marginTop: 16 }}>
         {busy === "save" ? "CREATING…" : "CREATE CLUB"}
       </button>

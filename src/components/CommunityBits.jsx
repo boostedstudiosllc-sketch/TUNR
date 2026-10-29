@@ -36,7 +36,7 @@ export function VoteBox({ kind, id, score, myVote, user, onNeedAccount, onToast,
       <button aria-label="Upvote" aria-pressed={mine === 1} onClick={() => cast(1)} style={btn(mine === 1, "#0080F0")}>
         👍
       </button>
-      <span style={{ minWidth: 18, textAlign: "center", fontSize: compact ? 12 : 14, fontWeight: 800, color: mine === 1 ? "#3CABFD" : mine === -1 ? "#7DA2FF" : "#BBB" }}>
+      <span style={{ minWidth: 18, textAlign: "center", fontSize: compact ? 12 : 14, fontWeight: 800, color: mine === 1 ? "var(--a-3cabfd)" : mine === -1 ? "var(--a-7da2ff)" : "var(--n-bbbbbb)" }}>
         {total}
       </span>
       <button aria-label="Downvote" aria-pressed={mine === -1} onClick={() => cast(-1)} style={btn(mine === -1, "#7DA2FF")}>
@@ -55,18 +55,18 @@ export function PostCard({ post, onOpen, showForum, user, onNeedAccount, onToast
         display: "block",
         width: "100%",
         textAlign: "left",
-        background: "#111",
-        border: `1px solid ${post.pinned ? "#003A75" : "#222"}`,
+        background: "var(--n-111111)",
+        border: `1px solid ${post.pinned ? "#003A75" : "var(--n-222222)"}`,
         borderRadius: 10,
         padding: "11px 12px",
-        color: "#E6E6E6",
+        color: "var(--n-e6e6e6)",
         cursor: "pointer",
       }}
     >
-      <div style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 11, color: "#777", fontFamily: "'Barlow', sans-serif", flexWrap: "wrap" }}>
-        {post.pinned && <span style={{ color: "#3CABFD", fontWeight: 800 }}>📌 PINNED</span>}
+      <div style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 11, color: "var(--n-777777)", fontFamily: "'Barlow', sans-serif", flexWrap: "wrap" }}>
+        {post.pinned && <span style={{ color: "var(--a-3cabfd)", fontWeight: 800 }}>📌 PINNED</span>}
         {showForum && (
-          <span style={{ color: "#BBB", fontWeight: 700 }}>
+          <span style={{ color: "var(--n-bbbbbb)", fontWeight: 700 }}>
             {post.forum_icon} {post.forum_name}
           </span>
         )}
@@ -89,10 +89,10 @@ export function PostCard({ post, onOpen, showForum, user, onNeedAccount, onToast
           <img src={post.photo_urls[0]} alt="" loading="lazy" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />
         )}
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6, fontSize: 11.5, color: "#888" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6, fontSize: 11.5, color: "var(--n-888888)" }}>
         <VoteBox kind="post" id={post.id} score={post.score} myVote={post.my_vote} user={user} onNeedAccount={onNeedAccount} onToast={onToast} compact />
         <span>💬 {post.comments}</span>
-        <span style={{ marginLeft: "auto", fontSize: 10.5, fontWeight: 700, color: "#999" }}>{tagLabel(post.tag)}</span>
+        <span style={{ marginLeft: "auto", fontSize: 10.5, fontWeight: 700, color: "var(--n-999999)" }}>{tagLabel(post.tag)}</span>
       </div>
     </button>
   );
@@ -106,7 +106,7 @@ export function Author({ name, photographer, photographerVerified, onOpen }) {
           e.stopPropagation();
           onOpen && onOpen();
         }}
-        style={{ background: "none", border: "none", padding: 0, color: "#3CABFD", fontWeight: 800, fontSize: 12.5, cursor: onOpen ? "pointer" : "default" }}
+        style={{ background: "none", border: "none", padding: 0, color: "var(--a-3cabfd)", fontWeight: 800, fontSize: 12.5, cursor: onOpen ? "pointer" : "default" }}
       >
         @{name}
       </button>
@@ -150,7 +150,7 @@ export function ReportSheet({ type, id, onClose, onToast }) {
       </div>
       <div style={{ ...label, marginTop: 14 }}>MORE DETAIL (OPTIONAL)</div>
       <textarea style={{ ...field, minHeight: 60 }} maxLength={250} value={note} onChange={(e) => setNote(e.target.value)} />
-      {error && <div style={{ ...muted, color: "#EF4444", marginTop: 8 }}>{error}</div>}
+      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
       <button disabled={!reason || busy} onClick={send} style={{ ...bigButton, marginTop: 12, opacity: reason ? 1 : 0.4 }}>
         {busy ? "SENDING…" : "SEND REPORT"}
       </button>
@@ -161,7 +161,7 @@ export function ReportSheet({ type, id, onClose, onToast }) {
 // The little segmented control used across Community.
 export function Segments({ options, value, onChange }) {
   return (
-    <div style={{ display: "flex", background: "#141414", border: "1px solid #232323", borderRadius: 10, padding: 3, gap: 3 }}>
+    <div style={{ display: "flex", background: "var(--n-141414)", border: "1px solid var(--n-232323)", borderRadius: 10, padding: 3, gap: 3 }}>
       {options.map(([id, text]) => (
         <button
           key={id}
@@ -190,9 +190,9 @@ export function Segments({ options, value, onChange }) {
 
 export function Logo({ url, fallback, size = 44 }) {
   return url ? (
-    <img src={url} alt="" style={{ width: size, height: size, borderRadius: size / 4, objectFit: "cover", flexShrink: 0, background: "#1A1A1A" }} />
+    <img src={url} alt="" style={{ width: size, height: size, borderRadius: size / 4, objectFit: "cover", flexShrink: 0, background: "var(--n-1a1a1a)" }} />
   ) : (
-    <div style={{ width: size, height: size, borderRadius: size / 4, background: "#1A1A1A", border: "1px solid #2A2A2A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.5, flexShrink: 0 }}>
+    <div style={{ width: size, height: size, borderRadius: size / 4, background: "var(--n-1a1a1a)", border: "1px solid var(--n-2a2a2a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.5, flexShrink: 0 }}>
       {fallback}
     </div>
   );

@@ -52,7 +52,7 @@ export default function BuildPage({ vehicleId, user, onClose, onOpenPerson, onJo
 
   return (
     <Sheet onClose={onClose} label="Build page" zIndex={299}>
-      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: "#3CABFD" }}>🔳 SCAN MY BUILD</div>
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: "var(--a-3cabfd)" }}>🔳 SCAN MY BUILD</div>
       {car === undefined && <div style={{ ...muted, marginTop: 14 }}>Loading the build…</div>}
       {car === null && (
         <div style={{ ...muted, marginTop: 14 }}>
@@ -65,16 +65,16 @@ export default function BuildPage({ vehicleId, user, onClose, onOpenPerson, onJo
             <img
               src={car.photo_url}
               alt={name}
-              style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", borderRadius: 12, marginTop: 10, background: "#161616" }}
+              style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", borderRadius: 12, marginTop: 10, background: "var(--n-161616)" }}
             />
           ) : (
-            <div style={{ width: "100%", aspectRatio: "4 / 3", borderRadius: 12, marginTop: 10, background: "#161616", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 64 }}>
+            <div style={{ width: "100%", aspectRatio: "4 / 3", borderRadius: 12, marginTop: 10, background: "var(--n-161616)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 64 }}>
               🚗
             </div>
           )}
           <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 0.4, marginTop: 12, lineHeight: 1.1 }}>{name}</div>
           {car.build_notes ? (
-            <div style={{ ...muted, color: "#DDD", marginTop: 8, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{car.build_notes}</div>
+            <div style={{ ...muted, color: "var(--n-dddddd)", marginTop: 8, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{car.build_notes}</div>
           ) : (
             <div style={{ ...muted, marginTop: 8 }}>No build notes yet.</div>
           )}
@@ -89,10 +89,10 @@ export default function BuildPage({ vehicleId, user, onClose, onOpenPerson, onJo
                 width: "100%",
                 marginTop: 16,
                 padding: "12px",
-                background: "#121212",
-                border: "1px solid #222",
+                background: "var(--n-121212)",
+                border: "1px solid var(--n-222222)",
                 borderRadius: 12,
-                color: "#F0F0F0",
+                color: "var(--n-f0f0f0)",
                 cursor: "pointer",
                 textAlign: "left",
                 fontFamily: "'Barlow Condensed', sans-serif",
@@ -100,13 +100,13 @@ export default function BuildPage({ vehicleId, user, onClose, onOpenPerson, onJo
             >
               <Avatar url={owner.avatar_url} name={owner.username} size={44} ring={Boolean(owner.profile_color)} ringColor={owner.profile_color || undefined} />
               <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: "block", fontSize: 11, color: "#888", letterSpacing: 1.2, fontWeight: 800 }}>OWNER</span>
+                <span style={{ display: "block", fontSize: 11, color: "var(--n-888888)", letterSpacing: 1.2, fontWeight: 800 }}>OWNER</span>
                 <span style={{ display: "block", fontSize: 17, fontWeight: 900, color: owner.profile_color || undefined }}>@{owner.username}</span>
                 <span style={{ display: "block", ...muted, fontSize: 12 }}>
                   {[owner.city, car.other_cars ? `${car.other_cars} more car${car.other_cars === 1 ? "" : "s"} in their garage` : ""].filter(Boolean).join(" · ")}
                 </span>
               </span>
-              <span aria-hidden="true" style={{ color: "#666" }}>›</span>
+              <span aria-hidden="true" style={{ color: "var(--n-666666)" }}>›</span>
             </button>
           )}
 

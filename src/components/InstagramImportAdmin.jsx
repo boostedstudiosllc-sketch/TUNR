@@ -12,10 +12,10 @@ import { muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
 const STATUS = {
   imported: { text: "Listed", color: "#10B981" },
   needs_review: { text: "Needs a look", color: "#FACC15" },
-  duplicate: { text: "Already listed", color: "#3CABFD" },
-  not_a_meet: { text: "Not a meet", color: "#777" },
-  past: { text: "Already happened", color: "#777" },
-  failed: { text: "Didn't work", color: "#F87171" },
+  duplicate: { text: "Already listed", color: "var(--a-3cabfd)" },
+  not_a_meet: { text: "Not a meet", color: "var(--n-777777)" },
+  past: { text: "Already happened", color: "var(--n-777777)" },
+  failed: { text: "Didn't work", color: "var(--a-f87171)" },
 };
 
 const when = (iso) => (iso ? new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "never");
@@ -100,7 +100,7 @@ export default function InstagramImportAdmin({ onToast, onOpenLink }) {
         new posts, reads each flyer with the same AI as “Post a meet”, and lists the meet. Car photos and recaps are skipped;
         a flyer missing its date, time or place is held here for you.
       </div>
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
 
       {needsFacebook && (
         <div style={box}>
@@ -135,7 +135,7 @@ export default function InstagramImportAdmin({ onToast, onOpenLink }) {
             Last check {when(status.last_run_at)}
             {status.last_run_at && !status.last_error ? ` · ${last.imported || 0} listed, ${last.held || 0} held, ${last.skipped || 0} skipped` : ""}
           </div>
-          {status.last_error && <div style={{ ...muted, fontSize: 12.5, marginTop: 4, color: "#F87171" }}>Last run failed: {status.last_error}</div>}
+          {status.last_error && <div style={{ ...muted, fontSize: 12.5, marginTop: 4, color: "var(--a-f87171)" }}>Last run failed: {status.last_error}</div>}
         </div>
       )}
 
@@ -143,7 +143,7 @@ export default function InstagramImportAdmin({ onToast, onOpenLink }) {
         {busy ? "CHECKING… (UP TO A MINUTE)" : "📸 CHECK NOW"}
       </button>
 
-      <div style={{ ...label, marginTop: 20, color: "#8A8A8A" }}>OTHER ACCOUNTS TO WATCH</div>
+      <div style={{ ...label, marginTop: 20, color: "var(--n-8a8a8a)" }}>OTHER ACCOUNTS TO WATCH</div>
       <div style={{ ...muted, fontSize: 12.5 }}>
         Only add accounts that said it's OK. They need to be public Business or Creator accounts. Their meets credit them and link to their post.
       </div>
@@ -151,7 +151,7 @@ export default function InstagramImportAdmin({ onToast, onOpenLink }) {
         <div key={w.username} style={{ ...box, display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 900 }}>@{w.username}</div>
-            <div style={{ ...muted, fontSize: 12, color: w.last_error ? "#F87171" : undefined }}>
+            <div style={{ ...muted, fontSize: 12, color: w.last_error ? "var(--a-f87171)" : undefined }}>
               {w.last_error ? w.last_error : w.last_checked_at ? `Read ${when(w.last_checked_at)} · ${w.last_count ?? 0} recent posts` : "Not read yet"}
             </div>
           </div>
@@ -176,7 +176,7 @@ export default function InstagramImportAdmin({ onToast, onOpenLink }) {
         </button>
       </div>
 
-      <div style={{ ...label, marginTop: 20, color: "#8A8A8A" }}>POSTS LOOKED AT</div>
+      <div style={{ ...label, marginTop: 20, color: "var(--n-8a8a8a)" }}>POSTS LOOKED AT</div>
       {posts === null && <div style={muted}>Loading…</div>}
       {posts && posts.length === 0 && <div style={muted}>None yet.</div>}
       {(posts || []).map((p) => (
@@ -184,25 +184,25 @@ export default function InstagramImportAdmin({ onToast, onOpenLink }) {
           {p.image_url ? (
             <img src={p.image_url} alt="" style={{ width: 54, height: 54, objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />
           ) : (
-            <div style={{ width: 54, height: 54, borderRadius: 8, background: "#1A1A1A", flexShrink: 0 }} />
+            <div style={{ width: 54, height: 54, borderRadius: 8, background: "var(--n-1a1a1a)", flexShrink: 0 }} />
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 800, color: STATUS[p.status]?.color || "#AAA" }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: STATUS[p.status]?.color || "var(--n-aaaaaa)" }}>
                 {STATUS[p.status]?.text || p.status}
-                {p.account ? <span style={{ color: "#888", fontWeight: 700 }}> · @{p.account}</span> : null}
+                {p.account ? <span style={{ color: "var(--n-888888)", fontWeight: 700 }}> · @{p.account}</span> : null}
               </span>
               <span style={{ ...muted, fontSize: 11.5, whiteSpace: "nowrap" }}>{when(p.posted_at)}</span>
             </div>
             {p.reason && <div style={{ ...muted, fontSize: 12.5, marginTop: 2 }}>{p.reason}</div>}
             <div style={{ display: "flex", gap: 12, marginTop: 4, fontSize: 12.5, fontWeight: 800 }}>
               {p.permalink && (
-                <a href={p.permalink} target="_blank" rel="noopener noreferrer" style={{ color: "#3CABFD", textDecoration: "none" }}>
+                <a href={p.permalink} target="_blank" rel="noopener noreferrer" style={{ color: "var(--a-3cabfd)", textDecoration: "none" }}>
                   Instagram post ↗
                 </a>
               )}
               {p.event_id && (
-                <button type="button" onClick={() => onOpenLink && onOpenLink(`meet:${p.event_id}`)} style={{ background: "none", border: "none", padding: 0, color: "#3CABFD", fontWeight: 800, fontSize: 12.5, fontFamily: "inherit", cursor: "pointer" }}>
+                <button type="button" onClick={() => onOpenLink && onOpenLink(`meet:${p.event_id}`)} style={{ background: "none", border: "none", padding: 0, color: "var(--a-3cabfd)", fontWeight: 800, fontSize: 12.5, fontFamily: "inherit", cursor: "pointer" }}>
                   Open the meet
                 </button>
               )}
@@ -214,4 +214,4 @@ export default function InstagramImportAdmin({ onToast, onOpenLink }) {
   );
 }
 
-const box = { marginTop: 10, background: "#121212", border: "1px solid #222", borderRadius: 12, padding: "12px 14px", boxSizing: "border-box" };
+const box = { marginTop: 10, background: "var(--n-121212)", border: "1px solid var(--n-222222)", borderRadius: 12, padding: "12px 14px", boxSizing: "border-box" };

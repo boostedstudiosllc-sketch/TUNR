@@ -36,22 +36,22 @@ export default function CommunityReports({ onToast, onOpenLink }) {
   });
 
   return (
-    <div style={{ background: "#111", border: "1px solid #2A2A2A", borderRadius: 10, padding: "14px 18px", marginBottom: 12 }}>
+    <div style={{ background: "var(--n-111111)", border: "1px solid var(--n-2a2a2a)", borderRadius: 10, padding: "14px 18px", marginBottom: 12 }}>
       <div style={{ fontSize: 13, fontWeight: 800 }}>Community reports {items.length > 0 && <span style={{ color: "#0080F0" }}>({items.length})</span>}</div>
-      {error && <div style={{ fontSize: 12, color: "#EF4444", marginTop: 6 }}>{error}</div>}
-      {rows && items.length === 0 && <div style={{ fontSize: 12, color: "#666", marginTop: 4, fontFamily: "'Barlow', sans-serif" }}>Nothing reported in forums or clubs.</div>}
+      {error && <div style={{ fontSize: 12, color: "var(--a-ef4444)", marginTop: 6 }}>{error}</div>}
+      {rows && items.length === 0 && <div style={{ fontSize: 12, color: "var(--n-666666)", marginTop: 4, fontFamily: "'Barlow', sans-serif" }}>Nothing reported in forums or clubs.</div>}
       {items.map((r) => (
-        <div key={r.id} style={{ borderTop: "1px solid #1E1E1E", marginTop: 10, paddingTop: 10 }}>
-          <div style={{ fontSize: 11, color: "#888" }}>
+        <div key={r.id} style={{ borderTop: "1px solid var(--n-1e1e1e)", marginTop: 10, paddingTop: 10 }}>
+          <div style={{ fontSize: 11, color: "var(--n-888888)" }}>
             {TYPE[r.target_type]} · {r.reports} {r.reports === 1 ? "report" : "reports"} · {ago(r.created_at)} · by @{r.reporter}
           </div>
-          <button onClick={() => r.link && onOpenLink(r.link)} style={{ background: "none", border: "none", padding: 0, textAlign: "left", color: "#E6E6E6", fontSize: 13.5, fontWeight: 700, marginTop: 3, cursor: "pointer" }}>
+          <button onClick={() => r.link && onOpenLink(r.link)} style={{ background: "none", border: "none", padding: 0, textAlign: "left", color: "var(--n-e6e6e6)", fontSize: 13.5, fontWeight: 700, marginTop: 3, cursor: "pointer" }}>
             {r.preview || "(already gone)"} ›
           </button>
-          <div style={{ fontSize: 12, color: "#C9A46A", marginTop: 2, fontFamily: "'Barlow', sans-serif" }}>“{r.reason}”</div>
+          <div style={{ fontSize: 12, color: "var(--a-c9a46a)", marginTop: 2, fontFamily: "'Barlow', sans-serif" }}>“{r.reason}”</div>
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
             <button onClick={() => resolve(r, "remove")} style={btn("#EF4444")}>REMOVE</button>
-            <button onClick={() => resolve(r, "dismiss")} style={btn("#888")}>DISMISS</button>
+            <button onClick={() => resolve(r, "dismiss")} style={btn("var(--n-888888)")}>DISMISS</button>
           </div>
         </div>
       ))}
@@ -62,7 +62,7 @@ export default function CommunityReports({ onToast, onOpenLink }) {
 const btn = (color) => ({
   flex: 1,
   padding: "8px 0",
-  background: "#1A1A1A",
+  background: "var(--n-1a1a1a)",
   border: `1px solid ${color}55`,
   borderRadius: 6,
   color,

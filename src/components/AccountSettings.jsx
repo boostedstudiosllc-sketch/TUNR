@@ -10,7 +10,7 @@ import {
 
 const bodyStyle = {
   fontSize: 12.5,
-  color: "#777",
+  color: "var(--n-777777)",
   marginTop: 6,
   lineHeight: 1.6,
   fontFamily: "'Barlow', sans-serif",
@@ -19,9 +19,9 @@ const bodyStyle = {
 const smallButton = {
   padding: "6px 12px",
   background: "transparent",
-  border: "1px solid #333",
+  border: "1px solid var(--n-333333)",
   borderRadius: 6,
-  color: "#888",
+  color: "var(--n-888888)",
   fontSize: 11,
   fontWeight: 800,
   letterSpacing: 1,
@@ -82,7 +82,7 @@ export function RestrictedAccounts({ user, onToast, showEmpty = false }) {
         On meets you host, their messages are seen only by them, you and your co-hosts.
       </div>
       {restricted.length === 0 ? (
-        <div style={{ ...bodyStyle, color: "#999" }}>
+        <div style={{ ...bodyStyle, color: "var(--n-999999)" }}>
           You haven't restricted anyone. To restrict someone, open their profile and tap ⋯.
         </div>
       ) : (
@@ -140,7 +140,7 @@ export function BlockedAccounts({ user, onToast, showEmpty = false }) {
         You won't see their messages, they can't message on your meets, and they can't follow you.
       </div>
       {blocked.length === 0 ? (
-        <div style={{ ...bodyStyle, color: "#999" }}>
+        <div style={{ ...bodyStyle, color: "var(--n-999999)" }}>
           You haven't blocked anyone. To block someone, open their profile and tap ⋯.
         </div>
       ) : (
@@ -182,7 +182,7 @@ export function DeleteAccount({ onToast }) {
 
   return (
     <Card danger>
-      <div style={{ fontSize: 15, fontWeight: 800, color: "#EF4444" }}>Delete account</div>
+      <div style={{ fontSize: 15, fontWeight: 800, color: "var(--a-ef4444)" }}>Delete account</div>
       {!confirming ? (
         <>
           <div style={bodyStyle}>
@@ -199,7 +199,7 @@ export function DeleteAccount({ onToast }) {
         </>
       ) : (
         <>
-          <div style={{ ...bodyStyle, color: "#EF4444" }}>
+          <div style={{ ...bodyStyle, color: "var(--a-ef4444)" }}>
             This is permanent. Type <strong>DELETE</strong> to confirm.
           </div>
           <input
@@ -213,11 +213,11 @@ export function DeleteAccount({ onToast }) {
             style={{
               width: "100%",
               marginTop: 10,
-              background: "#0F0F0F",
+              background: "var(--n-0f0f0f)",
               border: "1px solid rgba(239,68,68,0.4)",
               borderRadius: 8,
               padding: "11px 13px",
-              color: "#F0F0F0",
+              color: "var(--n-f0f0f0)",
               fontSize: 14,
               letterSpacing: 2,
               textAlign: "center",
@@ -236,10 +236,10 @@ export function DeleteAccount({ onToast }) {
               style={{
                 flex: 1,
                 padding: "11px 0",
-                background: "#1A1A1A",
-                border: "1px solid #2A2A2A",
+                background: "var(--n-1a1a1a)",
+                border: "1px solid var(--n-2a2a2a)",
                 borderRadius: 8,
-                color: "#888",
+                color: "var(--n-888888)",
                 fontSize: 12,
                 fontWeight: 800,
                 letterSpacing: 1.2,
@@ -275,7 +275,7 @@ const dangerButton = {
   background: "rgba(239,68,68,0.1)",
   border: "1px solid rgba(239,68,68,0.5)",
   borderRadius: 8,
-  color: "#EF4444",
+  color: "var(--a-ef4444)",
   fontSize: 12,
   fontWeight: 800,
   letterSpacing: 1.2,
@@ -286,8 +286,8 @@ function Card({ children, danger = false }) {
   return (
     <div
       style={{
-        background: "#111",
-        border: `1px solid ${danger ? "rgba(239,68,68,0.3)" : "#2A2A2A"}`,
+        background: "var(--n-111111)",
+        border: `1px solid ${danger ? "rgba(239,68,68,0.3)" : "var(--n-2a2a2a)"}`,
         borderRadius: 10,
         padding: "16px 18px",
         marginBottom: 12,

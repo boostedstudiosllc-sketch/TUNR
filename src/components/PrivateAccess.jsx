@@ -98,11 +98,11 @@ function AccessGate({ event, user, onNeedAccount, onToast, onJoined }) {
             spellCheck={false}
             style={{
               flex: 1,
-              background: "#0C0C0C",
-              border: "1px solid #2A2A2A",
+              background: "var(--n-0c0c0c)",
+              border: "1px solid var(--n-2a2a2a)",
               borderRadius: 8,
               padding: "12px 14px",
-              color: "#F0F0F0",
+              color: "var(--n-f0f0f0)",
               fontSize: 18,
               fontWeight: 800,
               letterSpacing: 6,
@@ -118,7 +118,7 @@ function AccessGate({ event, user, onNeedAccount, onToast, onJoined }) {
             disabled={busy || !isCompletePasscode(code)}
             style={{
               padding: "0 20px",
-              background: isCompletePasscode(code) ? "#0080F0" : "#1A1A1A",
+              background: isCompletePasscode(code) ? "#0080F0" : "var(--n-1a1a1a)",
               color: isCompletePasscode(code) ? "#fff" : "#555",
               border: "none",
               borderRadius: 8,
@@ -142,10 +142,10 @@ function AccessGate({ event, user, onNeedAccount, onToast, onJoined }) {
             width: "100%",
             marginTop: 10,
             padding: "12px 0",
-            background: requested ? "#141414" : "#1A1A1A",
-            border: `1px solid ${requested ? "#2A2A2A" : "#0080F0"}`,
+            background: requested ? "var(--n-141414)" : "var(--n-1a1a1a)",
+            border: `1px solid ${requested ? "var(--n-2a2a2a)" : "#0080F0"}`,
             borderRadius: 8,
-            color: requested ? "#666" : "#0080F0",
+            color: requested ? "var(--n-666666)" : "#0080F0",
             fontSize: 13,
             fontWeight: 800,
             letterSpacing: 1.5,
@@ -157,7 +157,7 @@ function AccessGate({ event, user, onNeedAccount, onToast, onJoined }) {
       )}
 
       {error && (
-        <div style={{ ...bodyStyle, color: "#FF6B4A", marginTop: 10 }}>{error}</div>
+        <div style={{ ...bodyStyle, color: "var(--a-ff6b4a)", marginTop: 10 }}>{error}</div>
       )}
     </Panel>
   );
@@ -205,7 +205,7 @@ function HostPanel({ event, onToast }) {
 
   return (
     <Panel>
-      <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, fontWeight: 700 }}>
+      <div style={{ fontSize: 11, color: "var(--n-555555)", letterSpacing: 2, fontWeight: 700 }}>
         🔒 PRIVATE MEET · YOU'RE THE HOST
       </div>
 
@@ -218,7 +218,7 @@ function HostPanel({ event, onToast }) {
             <div
               style={{
                 flex: 1,
-                background: "#0C0C0C",
+                background: "var(--n-0c0c0c)",
                 border: "1px dashed #0080F0",
                 borderRadius: 8,
                 padding: "12px 0",
@@ -236,10 +236,10 @@ function HostPanel({ event, onToast }) {
               onClick={copyCode}
               style={{
                 padding: "0 18px",
-                background: "#1A1A1A",
-                border: "1px solid #2A2A2A",
+                background: "var(--n-1a1a1a)",
+                border: "1px solid var(--n-2a2a2a)",
                 borderRadius: 8,
-                color: "#888",
+                color: "var(--n-888888)",
                 fontSize: 12,
                 fontWeight: 800,
                 letterSpacing: 1.2,
@@ -252,7 +252,7 @@ function HostPanel({ event, onToast }) {
         </>
       )}
 
-      <div style={{ marginTop: 16, fontSize: 11, color: "#555", letterSpacing: 2, fontWeight: 700 }}>
+      <div style={{ marginTop: 16, fontSize: 11, color: "var(--n-555555)", letterSpacing: 2, fontWeight: 700 }}>
         REQUESTS · {pending.length} WAITING · {approved.length} IN
       </div>
 
@@ -268,8 +268,8 @@ function HostPanel({ event, onToast }) {
               display: "flex",
               alignItems: "center",
               gap: 8,
-              background: "#0F0F0F",
-              border: "1px solid #242424",
+              background: "var(--n-0f0f0f)",
+              border: "1px solid var(--n-242424)",
               borderRadius: 8,
               padding: "9px 11px",
             }}
@@ -287,7 +287,7 @@ function HostPanel({ event, onToast }) {
               className="action-btn"
               disabled={busyUser === m.user_id}
               onClick={() => decide(m.user_id, false)}
-              style={pillStyle("#444")}
+              style={pillStyle("var(--n-444444)")}
             >
               DENY
             </button>
@@ -303,12 +303,12 @@ function HostPanel({ event, onToast }) {
               padding: "4px 11px",
             }}
           >
-            <div style={{ flex: 1, fontSize: 13, color: "#777" }}>✓ @{m.username}</div>
+            <div style={{ flex: 1, fontSize: 13, color: "var(--n-777777)" }}>✓ @{m.username}</div>
             <button
               className="action-btn"
               disabled={busyUser === m.user_id}
               onClick={() => decide(m.user_id, false)}
-              style={pillStyle("#444")}
+              style={pillStyle("var(--n-444444)")}
             >
               REMOVE
             </button>
@@ -335,7 +335,7 @@ function pillStyle(color) {
 
 const bodyStyle = {
   fontSize: 13,
-  color: "#999",
+  color: "var(--n-999999)",
   marginTop: 6,
   lineHeight: 1.6,
   fontFamily: "'Barlow', sans-serif",
@@ -345,8 +345,8 @@ function Panel({ children }) {
   return (
     <div
       style={{
-        background: "#131313",
-        border: "1px solid #2A2A2A",
+        background: "var(--n-131313)",
+        border: "1px solid var(--n-2a2a2a)",
         borderRadius: 10,
         padding: "16px 16px",
         marginTop: 12,

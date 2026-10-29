@@ -83,7 +83,7 @@ export default function LinkupTab({ user, position, openId, onOpened, onNeedAcco
     <div style={{ padding: "8px 20px", animation: "fadeIn 0.3s ease" }}>
       <Header />
       {unconfirmed ? (
-        <div style={{ ...muted, marginTop: 12, background: "#1F1405", border: "1px solid #5A3A0A", borderRadius: 10, padding: "10px 12px", color: "#C9A46A" }}>
+        <div style={{ ...muted, marginTop: 12, background: "var(--n-1f1405)", border: "1px solid var(--n-5a3a0a)", borderRadius: 10, padding: "10px 12px", color: "var(--a-c9a46a)" }}>
           ✉️ Confirm your email to start or join linkups and see where they are. It keeps exact meet-up spots between
           real, confirmed members.
         </div>
@@ -98,13 +98,13 @@ export default function LinkupTab({ user, position, openId, onOpened, onNeedAcco
         </button>
       )}
 
-      {error && <div style={{ ...muted, color: "#EF4444", marginTop: 12 }}>{error}</div>}
+      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 12 }}>{error}</div>}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
         {linkups === null && !error ? (
           <div style={muted}>Loading…</div>
         ) : sorted.length === 0 ? (
-          <div style={{ background: "#121212", border: "1px dashed #2A2A2A", borderRadius: 12, padding: "22px 16px", textAlign: "center" }}>
+          <div style={{ background: "var(--n-121212)", border: "1px dashed var(--n-2a2a2a)", borderRadius: 12, padding: "22px 16px", textAlign: "center" }}>
             <div style={{ fontSize: 30 }}>🌃</div>
             <div style={{ fontSize: 15, fontWeight: 800, marginTop: 6 }}>Nobody's out right now</div>
             <div style={{ ...muted, fontSize: 12.5, marginTop: 4 }}>
@@ -164,7 +164,7 @@ function Header() {
   return (
     <div>
       <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 0.5 }}>⚡ LINKUP</div>
-      <div style={{ fontSize: 12.5, color: "#777", fontFamily: "'Barlow', sans-serif" }}>
+      <div style={{ fontSize: 12.5, color: "var(--n-777777)", fontFamily: "'Barlow', sans-serif" }}>
         Who's heading out today or tomorrow — shoot, cruise or hang.
       </div>
     </div>
@@ -184,12 +184,12 @@ function LinkupCard({ linkup, miles, onOpen }) {
         gap: 12,
         alignItems: "center",
         textAlign: "left",
-        background: "#111",
-        border: `1px solid ${mine ? "#003A75" : "#222"}`,
+        background: "var(--n-111111)",
+        border: `1px solid ${mine ? "#003A75" : "var(--n-222222)"}`,
         borderLeft: `3px solid ${status.live ? "#10B981" : "#0080F0"}`,
         borderRadius: 10,
         padding: "12px 12px",
-        color: "#E6E6E6",
+        color: "var(--n-e6e6e6)",
         cursor: "pointer",
         opacity: status.over ? 0.55 : 1,
       }}
@@ -198,19 +198,19 @@ function LinkupCard({ linkup, miles, onOpen }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontSize: 15.5, fontWeight: 800 }}>{kind.label}</span>
-          <span style={{ fontSize: 13, color: "#3CABFD", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 13, color: "var(--a-3cabfd)", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             @{linkup.username}
           </span>
           <Badges photographer={linkup.photographer} photographerVerified={linkup.photographerVerified} size={14} />
         </div>
-        <div style={{ fontSize: 12, color: status.live ? "#10B981" : "#BBB", fontWeight: 700, marginTop: 2 }}>{status.text}</div>
-        <div style={{ fontSize: 11.5, color: "#777", marginTop: 2, fontFamily: "'Barlow', sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div style={{ fontSize: 12, color: status.live ? "#10B981" : "var(--n-bbbbbb)", fontWeight: 700, marginTop: 2 }}>{status.text}</div>
+        <div style={{ fontSize: 11.5, color: "var(--n-777777)", marginTop: 2, fontFamily: "'Barlow', sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {[linkup.locked ? `🔒 ${linkup.area || "Private"}` : linkup.place, miles != null && formatMiles(miles)].filter(Boolean).join(" · ")}
         </div>
       </div>
       <div style={{ textAlign: "right", flexShrink: 0 }}>
         <div style={{ fontSize: 18, fontWeight: 900 }}>{linkup.headcount}</div>
-        <div style={{ fontSize: 9, color: "#666", letterSpacing: 1.2 }}>IN</div>
+        <div style={{ fontSize: 9, color: "var(--n-666666)", letterSpacing: 1.2 }}>IN</div>
         {mine && (
           <div style={{ fontSize: 9, color: "#0080F0", fontWeight: 800, letterSpacing: 0.8, marginTop: 3 }}>
             {mine === "host" ? (linkup.requests ? `${linkup.requests} ASKING` : "YOURS") : mine === "in" ? "YOU'RE IN" : "ASKED"}
@@ -224,7 +224,7 @@ function LinkupCard({ linkup, miles, onOpen }) {
 function MissingLinkup({ onClose }) {
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 260, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <div style={{ background: "#131313", border: "1px solid #2A2A2A", borderRadius: 12, padding: 20, maxWidth: 300, textAlign: "center" }}>
+      <div style={{ background: "var(--n-131313)", border: "1px solid var(--n-2a2a2a)", borderRadius: 12, padding: 20, maxWidth: 300, textAlign: "center" }}>
         <div style={{ fontSize: 15, fontWeight: 800 }}>That linkup's over</div>
         <div style={{ ...muted, marginTop: 4 }}>It ended, was cancelled, or isn't available to you.</div>
         <button onClick={onClose} style={{ ...quietButton, marginTop: 12 }}>OK</button>

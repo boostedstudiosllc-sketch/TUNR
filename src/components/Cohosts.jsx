@@ -83,9 +83,9 @@ export function CohostsSection({ event, user, onToast, onChanged, onSteppedDown 
         <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 10 }}>
           {rows.map((row) => (
             <div key={row.id} style={rowStyle}>
-              <span style={{ flex: 1, color: "#DDD" }}>
+              <span style={{ flex: 1, color: "var(--n-dddddd)" }}>
                 @{row.host}
-                {row.status === "invited" && <span style={{ color: "#777" }}> · invite pending</span>}
+                {row.status === "invited" && <span style={{ color: "var(--n-777777)" }}> · invite pending</span>}
               </span>
               {(isOwner || row.user_id === user?.id) && (
                 <button onClick={() => remove(row)} style={smallButton}>
@@ -120,7 +120,7 @@ export function CohostsSection({ event, user, onToast, onChanged, onSteppedDown 
               padding: "0 14px",
               background: username.trim() ? "#0080F0" : "transparent",
               color: username.trim() ? "#fff" : "#555",
-              border: `1px solid ${username.trim() ? "#0080F0" : "#2A2A2A"}`,
+              border: `1px solid ${username.trim() ? "#0080F0" : "var(--n-2a2a2a)"}`,
             }}
           >
             {busy ? "…" : "INVITE"}
@@ -179,7 +179,7 @@ export function CohostInvites({ user, onToast, onChanged }) {
             <div>
               <div style={{ fontSize: 14.5, fontWeight: 800 }}>{row.event?.title || "A meet"}</div>
               {row.event && (
-                <div style={{ fontSize: 12, color: "#777", marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: "var(--n-777777)", marginTop: 2 }}>
                   @{row.event.host} · {row.event.city}
                 </div>
               )}
@@ -210,7 +210,7 @@ export function CohostInvites({ user, onToast, onChanged }) {
 }
 
 const card = {
-  background: "#111",
+  background: "var(--n-111111)",
   border: "1px solid #0080F0",
   borderRadius: 10,
   padding: "16px 18px",
@@ -219,7 +219,7 @@ const card = {
 
 const sectionLabel = {
   fontSize: 10.5,
-  color: "#666",
+  color: "var(--n-666666)",
   letterSpacing: 1.4,
   fontWeight: 700,
   fontFamily: "'Barlow Condensed', sans-serif",
@@ -227,7 +227,7 @@ const sectionLabel = {
 
 const hint = {
   fontSize: 12.5,
-  color: "#777",
+  color: "var(--n-777777)",
   marginTop: 6,
   lineHeight: 1.6,
   fontFamily: "'Barlow', sans-serif",
@@ -237,8 +237,8 @@ const rowStyle = {
   display: "flex",
   alignItems: "center",
   gap: 8,
-  background: "#0F0F0F",
-  border: "1px solid #242424",
+  background: "var(--n-0f0f0f)",
+  border: "1px solid var(--n-242424)",
   borderRadius: 8,
   padding: "9px 11px",
   fontSize: 13,
@@ -248,9 +248,9 @@ const rowStyle = {
 const smallButton = {
   padding: "7px 10px",
   background: "transparent",
-  border: "1px solid #2A2A2A",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 8,
-  color: "#888",
+  color: "var(--n-888888)",
   fontSize: 11,
   fontWeight: 800,
   letterSpacing: 1,
@@ -260,11 +260,11 @@ const smallButton = {
 
 const inputStyle = {
   flex: 1,
-  background: "#161616",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-161616)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 8,
   padding: "10px 12px",
-  color: "#F0F0F0",
+  color: "var(--n-f0f0f0)",
   fontSize: 14,
   outline: "none",
   fontFamily: "'Barlow', sans-serif",

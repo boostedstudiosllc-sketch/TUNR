@@ -39,7 +39,7 @@ export default function ForumView({ forum, user, onClose, onToast, onNeedAccount
         <div style={{ fontSize: 38 }}>{forum.icon}</div>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.1 }}>{forum.name}</div>
-          <div style={{ fontSize: 11.5, color: "#777", marginTop: 2 }}>
+          <div style={{ fontSize: 11.5, color: "var(--n-777777)", marginTop: 2 }}>
             {forum.followers} following · {forum.posts} posts · started by @{forum.creator}
           </div>
         </div>
@@ -91,7 +91,7 @@ export default function ForumView({ forum, user, onClose, onToast, onNeedAccount
         <Segments options={[["hot", "🔥 HOT"], ["new", "🆕 NEW"], ["top", "⬆ TOP"]]} value={sort} onChange={setSort} />
       </div>
 
-      {error && <div style={{ ...muted, color: "#EF4444", marginTop: 10 }}>{error}</div>}
+      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
         {posts === null ? (
           <div style={muted}>Loading…</div>
@@ -106,4 +106,4 @@ export default function ForumView({ forum, user, onClose, onToast, onNeedAccount
   );
 }
 
-const linkBtn = { background: "none", border: "none", padding: 0, color: "#777", fontSize: 11.5, fontWeight: 700, cursor: "pointer" };
+const linkBtn = { background: "none", border: "none", padding: 0, color: "var(--n-777777)", fontSize: 11.5, fontWeight: 700, cursor: "pointer" };

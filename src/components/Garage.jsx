@@ -16,11 +16,11 @@ import { saveGameLook } from "../lib/rush.js";
 import { lookOf, lookColumns, GAME_COLORS, COLOR_NAMES, guessBody, BODY_NAMES } from "../lib/rushEngine.js";
 
 const inputStyle = {
-  background: "#0F0F0F",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-0f0f0f)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 8,
   padding: "11px 13px",
-  color: "#F0F0F0",
+  color: "var(--n-f0f0f0)",
   fontSize: 14,
   width: "100%",
   outline: "none",
@@ -30,7 +30,7 @@ const inputStyle = {
 
 const labelStyle = {
   fontSize: 10.5,
-  color: "#777",
+  color: "var(--n-777777)",
   letterSpacing: 1.2,
   fontWeight: 700,
   marginBottom: 5,
@@ -169,8 +169,8 @@ export default function Garage({ user, onToast }) {
   return (
     <div
       style={{
-        background: "#111",
-        border: "1px solid #2A2A2A",
+        background: "var(--n-111111)",
+        border: "1px solid var(--n-2a2a2a)",
         borderRadius: 10,
         padding: "16px 18px",
         marginBottom: 12,
@@ -230,10 +230,10 @@ export default function Garage({ user, onToast }) {
           className="action-btn"
           onClick={() => setShowroom((vehicles.find((v) => v.is_primary) || vehicles[0]).id)}
           aria-label="Open your garage in 3D"
-          style={{ position: "relative", display: "block", width: "100%", height: 190, marginTop: 12, padding: 0, border: "1px solid #242424", borderRadius: 10, overflow: "hidden", cursor: "pointer", background: "#0c0e12" }}
+          style={{ position: "relative", display: "block", width: "100%", height: 190, marginTop: 12, padding: 0, border: "1px solid var(--n-242424)", borderRadius: 10, overflow: "hidden", cursor: "pointer", background: "var(--n-0c0e12)" }}
         >
           <ShowroomStage look={lookOf(vehicles.find((v) => v.is_primary) || vehicles[0])} plate="TUNR" interactive={false} style={{ position: "absolute", inset: 0 }} />
-          <span style={{ position: "absolute", left: 0, bottom: 0, right: 0, padding: "26px 10px 8px", display: "flex", justifyContent: "space-between", alignItems: "flex-end", fontFamily: "'Barlow Condensed', sans-serif", color: "#fff", background: "linear-gradient(180deg, rgba(10,12,16,0), rgba(10,12,16,0.78))", pointerEvents: "none" }}>
+          <span style={{ position: "absolute", left: 0, bottom: 0, right: 0, padding: "26px 10px 8px", display: "flex", justifyContent: "space-between", alignItems: "flex-end", fontFamily: "'Barlow Condensed', sans-serif", color: "var(--n-ffffff)", background: "linear-gradient(180deg, rgba(var(--base),0), rgba(10,12,16,0.78))", pointerEvents: "none" }}>
             <span style={{ fontSize: 17, fontWeight: 900, textAlign: "left", textTransform: "uppercase" }}>
               {(vehicles.find((v) => v.is_primary) || vehicles[0]).make} {(vehicles.find((v) => v.is_primary) || vehicles[0]).model}
             </span>
@@ -246,7 +246,7 @@ export default function Garage({ user, onToast }) {
         <div
           style={{
             fontSize: 12.5,
-            color: "#777",
+            color: "var(--n-777777)",
             marginTop: 8,
             lineHeight: 1.6,
             fontFamily: "'Barlow', sans-serif",
@@ -265,8 +265,8 @@ export default function Garage({ user, onToast }) {
               style={{
                 display: "flex",
                 gap: 11,
-                background: "#0F0F0F",
-                border: `1px solid ${v.is_primary ? "#0080F0" : "#242424"}`,
+                background: "var(--n-0f0f0f)",
+                border: `1px solid ${v.is_primary ? "#0080F0" : "var(--n-242424)"}`,
                 borderRadius: 8,
                 padding: 10,
               }}
@@ -278,8 +278,8 @@ export default function Garage({ user, onToast }) {
                   borderRadius: 6,
                   flexShrink: 0,
                   overflow: "hidden",
-                  background: "#161616",
-                  border: "1px solid #242424",
+                  background: "var(--n-161616)",
+                  border: "1px solid var(--n-242424)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -305,7 +305,7 @@ export default function Garage({ user, onToast }) {
                   <div
                     style={{
                       fontSize: 11.5,
-                      color: "#777",
+                      color: "var(--n-777777)",
                       marginTop: 2,
                       fontFamily: "'Barlow', sans-serif",
                       overflow: "hidden",
@@ -317,7 +317,7 @@ export default function Garage({ user, onToast }) {
                   </div>
                 )}
                 <div style={{ display: "flex", gap: 6, marginTop: 7, flexWrap: "wrap" }}>
-                  <button className="action-btn" onClick={() => setSticker(v)} style={{ ...linkStyle, color: "#3CABFD" }}>
+                  <button className="action-btn" onClick={() => setSticker(v)} style={{ ...linkStyle, color: "var(--a-3cabfd)" }}>
                     🔳 QR sticker{v.public_page ? " · page on" : ""}
                   </button>
                   {v.is_primary ? (
@@ -351,7 +351,7 @@ export default function Garage({ user, onToast }) {
           style={{
             marginTop: 14,
             paddingTop: 14,
-            borderTop: "1px solid #242424",
+            borderTop: "1px solid var(--n-242424)",
             display: "flex",
             flexDirection: "column",
             gap: 11,
@@ -398,7 +398,7 @@ export default function Garage({ user, onToast }) {
           </div>
 
           {editing.make && editing.model.trim() && (
-            <div style={{ fontSize: 11.5, color: "#7D8796", marginTop: -4, fontFamily: "'Barlow', sans-serif" }}>
+            <div style={{ fontSize: 11.5, color: "var(--n-7d8796)", marginTop: -4, fontFamily: "'Barlow', sans-serif" }}>
               In 3D it's a {BODY_NAMES[guessBody(editing.make, editing.model)].toLowerCase()}. Add the chassis code, like 540i (G30), to help. Change it any time in Style.
             </div>
           )}
@@ -414,7 +414,7 @@ export default function Garage({ user, onToast }) {
                   title={COLOR_NAMES[c]}
                   aria-pressed={editing.paint === c}
                   onClick={() => setEditing((d) => ({ ...d, paint: c }))}
-                  style={{ width: 30, height: 30, borderRadius: "50%", background: c, border: editing.paint === c ? "3px solid #fff" : "1px solid #333", cursor: "pointer" }}
+                  style={{ width: 30, height: 30, borderRadius: "50%", background: c, border: editing.paint === c ? "3px solid var(--n-ffffff)" : "1px solid var(--n-333333)", cursor: "pointer" }}
                 />
               ))}
               <OtherColor color={editing.paint || GAME_COLORS[0]} onChange={(c) => setEditing((d) => ({ ...d, paint: c }))} />
@@ -444,7 +444,7 @@ export default function Garage({ user, onToast }) {
                     objectFit: "cover",
                     borderRadius: 8,
                     display: "block",
-                    border: "1px solid #2A2A2A",
+                    border: "1px solid var(--n-2a2a2a)",
                   }}
                 />
                 <button
@@ -455,8 +455,8 @@ export default function Garage({ user, onToast }) {
                     top: 7,
                     right: 7,
                     background: "rgba(0,0,0,0.75)",
-                    border: "1px solid #444",
-                    color: "#fff",
+                    border: "1px solid var(--n-444444)",
+                    color: "var(--n-ffffff)",
                     borderRadius: "50%",
                     width: 26,
                     height: 26,
@@ -474,9 +474,9 @@ export default function Garage({ user, onToast }) {
                   justifyContent: "center",
                   height: 64,
                   borderRadius: 8,
-                  border: "1px dashed #2A2A2A",
-                  background: "#131313",
-                  color: "#777",
+                  border: "1px dashed var(--n-2a2a2a)",
+                  background: "var(--n-131313)",
+                  color: "var(--n-777777)",
                   fontSize: 12,
                   fontWeight: 700,
                   letterSpacing: 1,
@@ -500,7 +500,7 @@ export default function Garage({ user, onToast }) {
             <div
               style={{
                 fontSize: 12,
-                color: "#FF6B4A",
+                color: "var(--a-ff6b4a)",
                 fontFamily: "'Barlow', sans-serif",
               }}
             >
@@ -518,10 +518,10 @@ export default function Garage({ user, onToast }) {
               style={{
                 flex: 0.5,
                 padding: "11px 0",
-                background: "#1A1A1A",
-                border: "1px solid #2A2A2A",
+                background: "var(--n-1a1a1a)",
+                border: "1px solid var(--n-2a2a2a)",
                 borderRadius: 8,
-                color: "#888",
+                color: "var(--n-888888)",
                 fontSize: 12,
                 fontWeight: 800,
                 letterSpacing: 1.2,
@@ -537,7 +537,7 @@ export default function Garage({ user, onToast }) {
               style={{
                 flex: 1,
                 padding: "11px 0",
-                background: editing.make && editing.model.trim() ? "#0080F0" : "#1A1A1A",
+                background: editing.make && editing.model.trim() ? "#0080F0" : "var(--n-1a1a1a)",
                 color: editing.make && editing.model.trim() ? "#fff" : "#555",
                 border: "none",
                 borderRadius: 8,
@@ -573,7 +573,7 @@ function tagStyle(color) {
 const linkStyle = {
   background: "none",
   border: "none",
-  color: "#666",
+  color: "var(--n-666666)",
   fontSize: 11,
   cursor: "pointer",
   padding: 0,

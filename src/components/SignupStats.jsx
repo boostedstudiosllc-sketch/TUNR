@@ -20,8 +20,8 @@ export default function SignupStats() {
   return (
     <div
       style={{
-        background: "#111",
-        border: "1px solid #2A2A2A",
+        background: "var(--n-111111)",
+        border: "1px solid var(--n-2a2a2a)",
         borderRadius: 10,
         padding: "16px 18px",
         marginBottom: 12,
@@ -31,7 +31,7 @@ export default function SignupStats() {
       <div
         style={{
           fontSize: 12.5,
-          color: "#777",
+          color: "var(--n-777777)",
           marginTop: 6,
           lineHeight: 1.6,
           fontFamily: "'Barlow', sans-serif",
@@ -48,12 +48,12 @@ export default function SignupStats() {
               display: "flex",
               justifyContent: "space-between",
               fontSize: 13,
-              color: "#CCC",
+              color: "var(--n-cccccc)",
               fontFamily: "'Barlow', sans-serif",
             }}
           >
             <span>{r.source}</span>
-            <span style={{ color: "#888" }}>
+            <span style={{ color: "var(--n-888888)" }}>
               {r.signups}
               {Number(r.last_7_days) > 0 && (
                 <span style={{ color: "#10B981" }}> · +{r.last_7_days} this week</span>

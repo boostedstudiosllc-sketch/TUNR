@@ -145,9 +145,9 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
 
   return (
     <div>
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
 
-      <div style={{ ...card, background: "linear-gradient(135deg, #2A1F00, #141414)", borderColor: "#4A3A00", textAlign: "center" }}>
+      <div style={{ ...card, background: "linear-gradient(135deg, var(--n-2a1f00), var(--n-141414))", borderColor: "var(--n-4a3a00)", textAlign: "center" }}>
         <div style={{ fontSize: 44, fontWeight: 900, color: "#FACC15", lineHeight: 1 }}>
           {points ? balance.toLocaleString() : "…"}
         </div>
@@ -229,7 +229,7 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
         <EarnRow icon="🚗" text="Add your car to your garage" pts={`+${POINTS.car}`} done={starter?.car} />
         <EarnRow icon="🔔" text="Turn on alerts on your phone" pts={`+${POINTS.alerts}`} done={starter?.alerts} />
         {starter && !starter.confirmed && (
-          <div style={{ ...muted, color: "#F87171", fontSize: 12.5, marginTop: 8 }}>
+          <div style={{ ...muted, color: "var(--a-f87171)", fontSize: 12.5, marginTop: 8 }}>
             Confirm your email to start earning points.
           </div>
         )}
@@ -245,7 +245,7 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
         <>
           <Title>READY TO COLLECT</Title>
           {pending.map((c) => (
-            <div key={c.id} style={{ ...card, borderColor: "#3A3000" }}>
+            <div key={c.id} style={{ ...card, borderColor: "var(--n-3a3000)" }}>
               <div style={{ fontSize: 16, fontWeight: 900 }}>{c.title}</div>
               {c.partnerName && <div style={{ ...muted, fontSize: 12 }}>from {c.partnerName}</div>}
               <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 5, color: "#FACC15", marginTop: 8 }}>{c.code}</div>
@@ -436,7 +436,7 @@ export function RewardsAdmin({ onToast }) {
           <input style={field} inputMode="numeric" value={draft.cost} onChange={(e) => set({ cost: e.target.value.replace(/\D/g, "") })} placeholder="300" />
         </Field>
         <div style={{ ...muted, fontSize: 12, marginTop: 4 }}>
-          Easy rule: <b style={{ color: "#DDD" }}>10 points for every $1</b> the item is worth. A $30 shirt = 300 points,
+          Easy rule: <b style={{ color: "var(--n-dddddd)" }}>10 points for every $1</b> the item is worth. A $30 shirt = 300 points,
           a $20 hat = 200. That's about 7–8 months for a very active member.
           {Number(draft.cost) > 0 && ` ${Number(draft.cost)} points ≈ a ${dollars(Number(draft.cost) * 10)} item.`}
         </div>
@@ -468,7 +468,7 @@ export function RewardsAdmin({ onToast }) {
         <label style={{ ...muted, display: "flex", gap: 8, alignItems: "center", marginTop: 10 }}>
           <input type="checkbox" checked={draft.active} onChange={(e) => set({ active: e.target.checked })} /> Show it in the app
         </label>
-        {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+        {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
         <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
           <button disabled={busy} onClick={save} style={{ ...bigButton, flex: 1 }}>{busy ? "SAVING…" : "SAVE"}</button>
           <button disabled={busy} onClick={() => (setDraft(null), setError(""))} style={{ ...quietButton, flex: 1 }}>CANCEL</button>
@@ -483,7 +483,7 @@ export function RewardsAdmin({ onToast }) {
         Rewards people can trade points for. Every reward is guaranteed, never a drawing. To take
         one down, untick “Show it in the app” (rewards someone has claimed can't be deleted).
       </div>
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
       <button onClick={() => setDraft({ ...EMPTY_REWARD })} style={{ ...bigButton, marginTop: 12 }}>+ ADD A REWARD</button>
       {rewards.map((r) => (
         <button
@@ -503,7 +503,7 @@ export function RewardsAdmin({ onToast }) {
               active: r.active,
             })
           }
-          style={{ ...card, width: "100%", textAlign: "left", cursor: "pointer", color: "#F0F0F0", opacity: r.active ? 1 : 0.5 }}
+          style={{ ...card, width: "100%", textAlign: "left", cursor: "pointer", color: "var(--n-f0f0f0)", opacity: r.active ? 1 : 0.5 }}
         >
           <Line
             left={r.title + (r.active ? "" : " (hidden)")}
@@ -559,12 +559,12 @@ export function RedemptionsAdmin({ onToast }) {
           ["fulfilled", "COLLECTED"],
           ["cancelled", "CANCELLED"],
         ].map(([id, name]) => (
-          <button key={id} onClick={() => setStatus(id)} style={{ ...quietButton, flex: 1, padding: "10px 0", ...(status === id ? { borderColor: "#0080F0", color: "#3CABFD" } : {}) }}>
+          <button key={id} onClick={() => setStatus(id)} style={{ ...quietButton, flex: 1, padding: "10px 0", ...(status === id ? { borderColor: "#0080F0", color: "var(--a-3cabfd)" } : {}) }}>
             {name}
           </button>
         ))}
       </div>
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
       {rows && rows.length === 0 && <div style={{ ...muted, marginTop: 12 }}>Nothing here.</div>}
       {(rows || []).map((r) => (
         <div key={r.id} style={card}>
@@ -635,7 +635,7 @@ export function CheckinsAdmin({ onToast }) {
         The latest check-ins. Look for the same people checking in far apart or right at the edge
         of the distance. Removing a check-in takes back its points.
       </div>
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
 
       <Title>GIVE OR TAKE POINTS</Title>
       <div style={card}>
@@ -706,7 +706,7 @@ function ReceiptForm({ user, points, onToast }) {
     }
   }
 
-  const chip = (on) => ({ padding: "8px 12px", borderRadius: 999, border: `1px solid ${on ? "#0080F0" : "#2A2A2A"}`, background: on ? "rgba(0,128,240,0.15)" : "#161616", color: on ? "#7FC4FF" : "#BBB", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" });
+  const chip = (on) => ({ padding: "8px 12px", borderRadius: 999, border: `1px solid ${on ? "#0080F0" : "var(--n-2a2a2a)"}`, background: on ? "rgba(0,128,240,0.15)" : "var(--n-161616)", color: on ? "var(--a-7fc4ff)" : "var(--n-bbbbbb)", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" });
   return (
     <div style={card}>
       {!open ? (
@@ -727,14 +727,14 @@ function ReceiptForm({ user, points, onToast }) {
             <input style={{ ...field, flex: 2 }} placeholder="Receipt / invoice #" maxLength={60} value={orderRef} onChange={(e) => setOrderRef(e.target.value)} />
             <input style={{ ...field, flex: 1 }} placeholder="$ paid" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.$]/g, ""))} />
           </div>
-          <label style={{ display: "block", marginTop: 10, padding: "14px 12px", borderRadius: 10, border: "1px dashed #3A4250", textAlign: "center", color: file ? "#86EFAC" : "#9AA4B2", fontSize: 13.5, fontWeight: 800, cursor: "pointer" }}>
+          <label style={{ display: "block", marginTop: 10, padding: "14px 12px", borderRadius: 10, border: "1px dashed var(--n-3a4250)", textAlign: "center", color: file ? "var(--a-86efac)" : "var(--n-9aa4b2)", fontSize: 13.5, fontWeight: 800, cursor: "pointer" }}>
             {file ? `📎 ${file.name}` : "📷 Add a photo of the receipt"}
             <input type="file" accept="image/*" capture="environment" onChange={(e) => setFile(e.target.files?.[0] || null)} style={{ display: "none" }} />
           </label>
           <div style={{ ...muted, fontSize: 12.5, marginTop: 6 }}>
             <b style={{ color: "#FACC15" }}>⭐ {points}</b> points once it's checked. One receipt a day.
           </div>
-          {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+          {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
           <button className="action-btn" disabled={busy} onClick={send} style={{ ...bigButton, marginTop: 10 }}>
             {busy ? "SENDING…" : "SEND RECEIPT"}
           </button>
@@ -794,7 +794,7 @@ function CardForm({ initialCode, onAdded, onToast }) {
   }
 
   return (
-    <div style={{ ...card, borderColor: initialCode ? "#4A3A00" : "#222" }}>
+    <div style={{ ...card, borderColor: initialCode ? "var(--n-4a3a00)" : "var(--n-222222)" }}>
       <div style={{ ...muted, fontSize: 12.5 }}>
         Every Boosted order and detail comes with a points card. Scan its QR code with your phone
         camera, or type the code here.
@@ -809,7 +809,7 @@ function CardForm({ initialCode, onAdded, onToast }) {
         value={code.replace(/(.{4})(?=.)/g, "$1-")}
         onChange={(e) => setCode(cleanCardCode(e.target.value))}
       />
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 6 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 6 }}>{error}</div>}
       {added && !error && (
         <div role="status" style={{ marginTop: 8, fontSize: 15, fontWeight: 800, color: "#10B981" }}>
           ✓ +{added.points} points added from your {added.label} card
@@ -916,7 +916,7 @@ export function CardsAdmin({ onToast }) {
         Print a card for each shirt bag, sale or detail. The buyer scans it and the points land at
         once; each card works one time. No orders to check.
       </div>
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
 
       <Title>MAKE CARDS</Title>
       <div style={card}>
@@ -981,7 +981,7 @@ export function CardsAdmin({ onToast }) {
             {unused > 0 && (
               <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                 <button onClick={() => reprint(b)} style={{ ...quietButton, flex: 1, padding: "9px 0" }}>PRINT {unused} UNUSED</button>
-                <button onClick={() => cancel(b)} style={{ ...quietButton, flex: 1, padding: "9px 0", color: "#F87171" }}>CANCEL UNUSED</button>
+                <button onClick={() => cancel(b)} style={{ ...quietButton, flex: 1, padding: "9px 0", color: "var(--a-f87171)" }}>CANCEL UNUSED</button>
               </div>
             )}
           </div>
@@ -1010,15 +1010,15 @@ async function cardsPage(cards) {
 
 const CARDS_CSS = `
   .print-page .grid { display: grid; grid-template-columns: repeat(2, 3.5in); gap: 0; justify-content: center; padding: 0.3in 0; }
-  .print-page .card { width: 3.5in; height: 2in; box-sizing: border-box; border: 1px dashed #999; padding: 0.15in; display: flex; gap: 0.12in; align-items: center; break-inside: avoid; }
+  .print-page .card { width: 3.5in; height: 2in; box-sizing: border-box; border: 1px dashed var(--n-999999); padding: 0.15in; display: flex; gap: 0.12in; align-items: center; break-inside: avoid; }
   .print-page .qr { width: 1.3in; height: 1.3in; flex-shrink: 0; }
   .print-page .qr svg { width: 100%; height: 100%; }
   .print-page .brand { font-size: 8pt; letter-spacing: 1.5px; font-weight: 700; color: #0080F0; }
   .print-page .pts { font-size: 17pt; font-weight: 900; line-height: 1.1; }
   .print-page .lbl { font-size: 9pt; font-weight: 700; }
-  .print-page .how { font-size: 6.5pt; color: #444; margin-top: 3px; line-height: 1.25; }
+  .print-page .how { font-size: 6.5pt; color: var(--n-444444); margin-top: 3px; line-height: 1.25; }
   .print-page .code { font-family: "Courier New", monospace; font-size: 10.5pt; font-weight: 700; margin-top: 4px; letter-spacing: 0.5px; }
-  .print-page .fine { font-size: 5.5pt; color: #777; margin-top: 2px; }
+  .print-page .fine { font-size: 5.5pt; color: var(--n-777777); margin-top: 2px; }
   @media screen and (max-width: 760px) { .print-page .grid { grid-template-columns: 3.5in; } }
   @media print { .print-page .grid { padding: 0; } }
 `;
@@ -1060,7 +1060,7 @@ function ReceiptsToCheck({ onToast, onDone }) {
       <Title>RECEIPTS TO CHECK ({rows.length})</Title>
       <div style={card}>
         {rows.map((r) => (
-          <div key={r.id} style={{ padding: "8px 0", borderBottom: "1px solid #1E1E1E" }}>
+          <div key={r.id} style={{ padding: "8px 0", borderBottom: "1px solid var(--n-1e1e1e)" }}>
             <Line left={`@${r.username} · ${RECEIPT_BUSINESSES.find(([id]) => id === r.business)?.[1] || r.business}`} sub={`${r.order_ref} · ${new Date(r.created_at).toLocaleString()}`} right={dollars(r.amount_cents)} rightColor="#FACC15" />
             <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
               <button
@@ -1077,7 +1077,7 @@ function ReceiptsToCheck({ onToast, onDone }) {
               <button disabled={busy === r.id} onClick={() => decide(r, true)} style={{ ...quietButton, width: "auto", padding: "7px 10px", fontSize: 12.5, color: "#10B981" }}>
                 ✓ APPROVE
               </button>
-              <button disabled={busy === r.id} onClick={() => decide(r, false)} style={{ ...quietButton, width: "auto", padding: "7px 10px", fontSize: 12.5, color: "#F87171" }}>
+              <button disabled={busy === r.id} onClick={() => decide(r, false)} style={{ ...quietButton, width: "auto", padding: "7px 10px", fontSize: 12.5, color: "var(--a-f87171)" }}>
                 ✕ NO
               </button>
             </div>
@@ -1149,7 +1149,7 @@ export function PurchasesAdmin({ onToast }) {
         Points cards add purchase points by themselves (Settings → Admin → Points cards). Use this
         only for a sale where you didn't hand over a card.
       </div>
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
 
       <ReceiptsToCheck onToast={onToast} onDone={refresh} />
 
@@ -1289,14 +1289,14 @@ function IssueForm({ user, onToast }) {
           <Field name="ANYTHING ELSE (OPTIONAL)">
             <textarea style={{ ...field, minHeight: 60 }} maxLength={500} value={draft.message} onChange={(e) => set({ message: e.target.value })} />
           </Field>
-          {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+          {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
             <button disabled={busy} onClick={send} style={{ ...bigButton, flex: 1 }}>{busy ? "SENDING…" : "SEND"}</button>
             <button disabled={busy} onClick={() => (setOpen(false), setError(""))} style={{ ...quietButton, flex: 1 }}>CANCEL</button>
           </div>
         </>
       )}
-      {!open && error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {!open && error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
       {mine.length > 0 && (
         <div style={{ marginTop: 10 }}>
           {mine.map((i) => (
@@ -1305,7 +1305,7 @@ function IssueForm({ user, onToast }) {
               left={`Order ${i.order_ref}`}
               sub={i.reply || new Date(i.created_at).toLocaleDateString()}
               right={i.status === "resolved" ? `+${i.points_added ?? 0}` : i.status === "declined" ? "Answered" : "Looking into it"}
-              rightColor={i.status === "resolved" ? "#10B981" : i.status === "declined" ? "#AAA" : "#A08A40"}
+              rightColor={i.status === "resolved" ? "#10B981" : i.status === "declined" ? "var(--n-aaaaaa)" : "#A08A40"}
             />
           ))}
         </div>
@@ -1367,12 +1367,12 @@ export function IssuesAdmin({ onToast }) {
           ["resolved", "ADDED"],
           ["declined", "DECLINED"],
         ].map(([id, name]) => (
-          <button key={id} onClick={() => setStatus(id)} style={{ ...quietButton, flex: 1, padding: "10px 0", ...(status === id ? { borderColor: "#0080F0", color: "#3CABFD" } : {}) }}>
+          <button key={id} onClick={() => setStatus(id)} style={{ ...quietButton, flex: 1, padding: "10px 0", ...(status === id ? { borderColor: "#0080F0", color: "var(--a-3cabfd)" } : {}) }}>
             {name}
           </button>
         ))}
       </div>
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
       {rows && rows.length === 0 && <div style={{ ...muted, marginTop: 12 }}>Nothing here.</div>}
       {(rows || []).map((r) => (
         <div key={r.id} style={card}>
@@ -1383,7 +1383,7 @@ export function IssuesAdmin({ onToast }) {
             rightColor="#10B981"
           />
           <div style={{ ...muted, fontSize: 12.5 }}>
-            Bought with: <b style={{ color: "#DDD" }}>{r.purchase_email}</b>
+            Bought with: <b style={{ color: "var(--n-dddddd)" }}>{r.purchase_email}</b>
             <br />
             TUNR account: @{r.username || "no username"} ({r.account_email || "no email"})
             {r.item && (
@@ -1436,7 +1436,7 @@ export function IssuesAdmin({ onToast }) {
 // ============ BITS ============
 
 function Title({ children }) {
-  return <div style={{ ...label, marginTop: 20, marginBottom: 8, color: "#8A8A8A" }}>{children}</div>;
+  return <div style={{ ...label, marginTop: 20, marginBottom: 8, color: "var(--n-8a8a8a)" }}>{children}</div>;
 }
 
 function Field({ name, children }) {
@@ -1452,15 +1452,15 @@ function EarnRow({ icon, text, pts, done }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
       <span aria-hidden="true" style={{ width: 22, textAlign: "center" }}>{done ? "✅" : icon}</span>
-      <span style={{ flex: 1, fontSize: 14, fontFamily: "'Barlow', sans-serif", color: done ? "#777" : "#DDD", textDecoration: done ? "line-through" : "none" }}>
+      <span style={{ flex: 1, fontSize: 14, fontFamily: "'Barlow', sans-serif", color: done ? "var(--n-777777)" : "var(--n-dddddd)", textDecoration: done ? "line-through" : "none" }}>
         {text}
       </span>
-      <span style={{ fontWeight: 900, color: done ? "#555" : "#FACC15" }}>{pts}</span>
+      <span style={{ fontWeight: 900, color: done ? "var(--n-555555)" : "#FACC15" }}>{pts}</span>
     </div>
   );
 }
 
-function Line({ left, sub, right, rightColor = "#AAA" }) {
+function Line({ left, sub, right, rightColor = "var(--n-aaaaaa)" }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -1474,8 +1474,8 @@ function Line({ left, sub, right, rightColor = "#AAA" }) {
 
 const card = {
   marginTop: 10,
-  background: "#121212",
-  border: "1px solid #222",
+  background: "var(--n-121212)",
+  border: "1px solid var(--n-222222)",
   borderRadius: 12,
   padding: "12px 14px",
   boxSizing: "border-box",

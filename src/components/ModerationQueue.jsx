@@ -62,20 +62,20 @@ export default function ModerationQueue({ onToast }) {
   return (
     <div
       style={{
-        background: "#111",
+        background: "var(--n-111111)",
         border: "1px solid #EF4444",
         borderRadius: 10,
         padding: "16px 18px",
         marginBottom: 12,
       }}
     >
-      <div style={{ fontSize: 15, fontWeight: 800, color: "#EF4444" }}>
+      <div style={{ fontSize: 15, fontWeight: 800, color: "var(--a-ef4444)" }}>
         🚩 Reports · {rows.length} open
       </div>
       <div
         style={{
           fontSize: 12.5,
-          color: "#777",
+          color: "var(--n-777777)",
           marginTop: 6,
           lineHeight: 1.6,
           fontFamily: "'Barlow', sans-serif",
@@ -89,17 +89,17 @@ export default function ModerationQueue({ onToast }) {
           <div
             key={row.id}
             style={{
-              background: "#0F0F0F",
-              border: "1px solid #242424",
+              background: "var(--n-0f0f0f)",
+              border: "1px solid var(--n-242424)",
               borderRadius: 8,
               padding: "11px 12px",
             }}
           >
-            <div style={{ fontSize: 12, color: "#EF4444", fontWeight: 800, letterSpacing: 0.5 }}>
+            <div style={{ fontSize: 12, color: "var(--a-ef4444)", fontWeight: 800, letterSpacing: 0.5 }}>
               {REASON_LABELS[row.reason] || row.reason}
             </div>
             <div style={{ fontSize: 14.5, fontWeight: 800, marginTop: 3 }}>{row.event_title}</div>
-            <div style={{ fontSize: 11.5, color: "#777", marginTop: 2 }}>
+            <div style={{ fontSize: 11.5, color: "var(--n-777777)", marginTop: 2 }}>
               @{row.event_host} · {row.event_city} · reported by @{row.reporter}
             </div>
             {row.suggested && (
@@ -111,10 +111,10 @@ export default function ModerationQueue({ onToast }) {
               <div
                 style={{
                   fontSize: 12.5,
-                  color: "#AAA",
+                  color: "var(--n-aaaaaa)",
                   marginTop: 7,
                   padding: "7px 9px",
-                  background: "#141414",
+                  background: "var(--n-141414)",
                   borderRadius: 6,
                   lineHeight: 1.5,
                   fontFamily: "'Barlow', sans-serif",
@@ -125,7 +125,7 @@ export default function ModerationQueue({ onToast }) {
               </div>
             )}
             {row.event_hidden && (
-              <div style={{ fontSize: 11, color: "#3CABFD", marginTop: 6, fontWeight: 700 }}>
+              <div style={{ fontSize: 11, color: "var(--a-3cabfd)", marginTop: 6, fontWeight: 700 }}>
                 already hidden
               </div>
             )}
@@ -142,7 +142,7 @@ export default function ModerationQueue({ onToast }) {
                 className="action-btn"
                 disabled={busyId === row.id}
                 onClick={() => keep(row)}
-                style={pill("#888", "#333")}
+                style={pill("var(--n-888888)", "var(--n-333333)")}
               >
                 LEAVE IT UP
               </button>

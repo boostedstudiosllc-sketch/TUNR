@@ -11,11 +11,11 @@ import { CohostsSection } from "./Cohosts.jsx";
 
 const input = {
   width: "100%",
-  background: "#161616",
-  border: "1px solid #2A2A2A",
+  background: "var(--n-161616)",
+  border: "1px solid var(--n-2a2a2a)",
   borderRadius: 8,
   padding: "12px 14px",
-  color: "#F0F0F0",
+  color: "var(--n-f0f0f0)",
   fontSize: 14,
   outline: "none",
   fontFamily: "'Barlow', sans-serif",
@@ -24,7 +24,7 @@ const input = {
 
 const label = {
   fontSize: 10.5,
-  color: "#666",
+  color: "var(--n-666666)",
   letterSpacing: 1.4,
   fontWeight: 700,
   marginBottom: 5,
@@ -119,9 +119,9 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%",
-          background: "#0F0F0F",
+          background: "var(--n-0f0f0f)",
           borderRadius: "16px 16px 0 0",
-          border: "1px solid #1E1E1E",
+          border: "1px solid var(--n-1e1e1e)",
           padding: "22px 20px 40px",
           maxHeight: "92vh",
           overflowY: "auto",
@@ -134,9 +134,9 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
             className="close-btn"
             onClick={onClose}
             style={{
-              background: "#1A1A1A",
-              border: "1px solid #2A2A2A",
-              color: "#fff",
+              background: "var(--n-1a1a1a)",
+              border: "1px solid var(--n-2a2a2a)",
+              color: "var(--n-ffffff)",
               borderRadius: "50%",
               width: 30,
               height: 30,
@@ -198,9 +198,9 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
                     minWidth: 58,
                     padding: "9px 0",
                     borderRadius: 6,
-                    background: "#161616",
+                    background: "var(--n-161616)",
                     color: VIBES[v],
-                    border: `1.5px solid ${vibe === v ? VIBES[v] : "#2A2A2A"}`,
+                    border: `1.5px solid ${vibe === v ? VIBES[v] : "var(--n-2a2a2a)"}`,
                     fontSize: 11,
                     fontWeight: 700,
                     cursor: "pointer",
@@ -245,7 +245,7 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
         )}
 
         {error && (
-          <div style={{ marginTop: 10, fontSize: 12.5, color: "#EF4444", fontFamily: "'Barlow', sans-serif" }}>
+          <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--a-ef4444)", fontFamily: "'Barlow', sans-serif" }}>
             {error}
           </div>
         )}
@@ -258,7 +258,7 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
             width: "100%",
             marginTop: 18,
             padding: "15px 0",
-            background: busy || uploading ? "#1E1E1E" : "#0080F0",
+            background: busy || uploading ? "var(--n-1e1e1e)" : "#0080F0",
             color: busy || uploading ? "#555" : "#fff",
             border: "none",
             borderRadius: 10,
@@ -288,7 +288,7 @@ function ImageField({ title, url, onRemove, onPick, busy, addLabel, fit, hint })
               width: "100%",
               height: fit === "contain" ? 220 : 150,
               objectFit: fit,
-              background: "#0A0A0A",
+              background: "var(--n-0a0a0a)",
               borderRadius: 8,
               display: "block",
             }}
@@ -300,8 +300,8 @@ function ImageField({ title, url, onRemove, onPick, busy, addLabel, fit, hint })
               top: 8,
               right: 8,
               background: "rgba(0,0,0,0.75)",
-              border: "1px solid #444",
-              color: "#fff",
+              border: "1px solid var(--n-444444)",
+              color: "var(--n-ffffff)",
               borderRadius: 6,
               padding: "4px 9px",
               fontSize: 11,
@@ -318,10 +318,10 @@ function ImageField({ title, url, onRemove, onPick, busy, addLabel, fit, hint })
           display: "block",
           textAlign: "center",
           padding: "12px 0",
-          background: "#161616",
-          border: "1px dashed #2A2A2A",
+          background: "var(--n-161616)",
+          border: "1px dashed var(--n-2a2a2a)",
           borderRadius: 8,
-          color: "#888",
+          color: "var(--n-888888)",
           fontSize: 12.5,
           fontWeight: 700,
           letterSpacing: 1,
@@ -333,7 +333,7 @@ function ImageField({ title, url, onRemove, onPick, busy, addLabel, fit, hint })
         <input type="file" accept="image/*" onChange={onPick} style={{ display: "none" }} />
       </label>
       {hint && !url && (
-        <div style={{ fontSize: 11, color: "#555", marginTop: 6, fontFamily: "'Barlow', sans-serif" }}>
+        <div style={{ fontSize: 11, color: "var(--n-555555)", marginTop: 6, fontFamily: "'Barlow', sans-serif" }}>
           {hint}
         </div>
       )}

@@ -50,19 +50,19 @@ export default function InviteSheet({ reason = "", onClose, onToast, onOpenPerso
         )}{" "}
         The QR sticker on your car counts the same way.
       </div>
-      {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>{error}</div>}
 
       {data?.code && (
         <>
           <div
             style={{
               marginTop: 14,
-              background: "#121212",
-              border: "1px solid #2A2A2A",
+              background: "var(--n-121212)",
+              border: "1px solid var(--n-2a2a2a)",
               borderRadius: 10,
               padding: "10px 12px",
               fontSize: 13,
-              color: "#CCC",
+              color: "var(--n-cccccc)",
               fontFamily: "'Barlow', sans-serif",
               overflowWrap: "anywhere",
             }}
@@ -90,8 +90,8 @@ export default function InviteSheet({ reason = "", onClose, onToast, onOpenPerso
               gap: 12,
               alignItems: "center",
               marginTop: 8,
-              background: open ? "rgba(16,185,129,0.08)" : "#121212",
-              border: `1px solid ${open ? "#14532D" : "#222"}`,
+              background: open ? "rgba(16,185,129,0.08)" : "var(--n-121212)",
+              border: `1px solid ${open ? "#14532D" : "var(--n-222222)"}`,
               borderRadius: 12,
               padding: "12px 14px",
             }}
@@ -122,9 +122,9 @@ export default function InviteSheet({ reason = "", onClose, onToast, onOpenPerso
                 alignItems: "center",
                 background: "none",
                 border: "none",
-                borderBottom: "1px solid #1A1A1A",
+                borderBottom: "1px solid var(--n-1a1a1a)",
                 padding: "10px 2px",
-                color: "#F0F0F0",
+                color: "var(--n-f0f0f0)",
                 cursor: "pointer",
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontSize: 15,

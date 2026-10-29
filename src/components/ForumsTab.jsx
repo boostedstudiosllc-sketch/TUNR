@@ -90,7 +90,7 @@ export default function ForumsTab({ user, open, onOpened, onNeedAccount, onToast
         </div>
       </div>
 
-      {error && <div style={{ ...muted, color: "#EF4444", marginTop: 10 }}>{error}</div>}
+      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
         {posts === null ? (
@@ -110,16 +110,16 @@ export default function ForumsTab({ user, open, onOpened, onNeedAccount, onToast
           <button
             key={f.id}
             onClick={() => setForumId(f.id)}
-            style={{ display: "flex", gap: 10, alignItems: "center", textAlign: "left", background: "#111", border: "1px solid #222", borderRadius: 10, padding: "10px 12px", color: "#E6E6E6", cursor: "pointer" }}
+            style={{ display: "flex", gap: 10, alignItems: "center", textAlign: "left", background: "var(--n-111111)", border: "1px solid var(--n-222222)", borderRadius: 10, padding: "10px 12px", color: "var(--n-e6e6e6)", cursor: "pointer" }}
           >
             <span style={{ fontSize: 26 }}>{f.icon}</span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: "block", fontSize: 14.5, fontWeight: 800 }}>{f.name}</span>
-              <span style={{ display: "block", fontSize: 11.5, color: "#777", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Barlow', sans-serif" }}>
+              <span style={{ display: "block", fontSize: 11.5, color: "var(--n-777777)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Barlow', sans-serif" }}>
                 {f.description || `${f.posts} posts`}
               </span>
             </span>
-            <span style={{ fontSize: 10.5, color: f.i_follow ? "#3CABFD" : "#666", fontWeight: 800, letterSpacing: 0.6, whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: 10.5, color: f.i_follow ? "var(--a-3cabfd)" : "var(--n-666666)", fontWeight: 800, letterSpacing: 0.6, whiteSpace: "nowrap" }}>
               {f.i_follow ? "FOLLOWING" : `${f.followers} ★`}
             </span>
           </button>
@@ -218,7 +218,7 @@ function ForumForm({ user, onClose, onToast, onCreated }) {
             key={i}
             onClick={() => setIcon(i)}
             aria-pressed={icon === i}
-            style={{ width: 42, height: 42, fontSize: 21, borderRadius: 10, cursor: "pointer", background: icon === i ? "rgba(0, 128, 240,0.16)" : "#161616", border: `1px solid ${icon === i ? "#0080F0" : "#2A2A2A"}` }}
+            style={{ width: 42, height: 42, fontSize: 21, borderRadius: 10, cursor: "pointer", background: icon === i ? "rgba(0, 128, 240,0.16)" : "var(--n-161616)", border: `1px solid ${icon === i ? "#0080F0" : "var(--n-2a2a2a)"}` }}
           >
             {i}
           </button>
@@ -226,7 +226,7 @@ function ForumForm({ user, onClose, onToast, onCreated }) {
       </div>
       <div style={{ ...label, marginTop: 14 }}>WHAT IT'S FOR</div>
       <textarea style={{ ...field, minHeight: 70 }} maxLength={300} placeholder="Who it's for and what to post." value={description} onChange={(e) => setDescription(e.target.value)} />
-      {error && <div style={{ ...muted, color: "#EF4444", marginTop: 10 }}>{error}</div>}
+      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
       <button disabled={busy} onClick={submit} style={{ ...bigButton, marginTop: 14 }}>
         {busy ? "CREATING…" : "CREATE FORUM"}
       </button>
