@@ -68,7 +68,7 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
   const [rewards, setRewards] = useState([]);
   const [claims, setClaims] = useState([]);
   const [history, setHistory] = useState([]);
-  const [rates, setRates] = useState({ points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1 });
+  const [rates, setRates] = useState({ points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1, receipt_points: 10 });
   const [streak, setStreak] = useState(null);
   const [showBoard, setShowBoard] = useState(false);
   const [error, setError] = useState("");
@@ -195,11 +195,11 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
       )}
 
       <Title>GOT A BOOSTED RECEIPT?</Title>
-      <ReceiptForm user={user} rate={rates.points_per_dollar} onToast={onToast} />
+      <ReceiptForm user={user} points={rates.receipt_points ?? 10} onToast={onToast} />
 
       <Title>HOW TO EARN</Title>
       <div style={card}>
-        <EarnRow icon="🧾" text="Upload a receipt or invoice from any Boosted business (detailing, photography, merch)" pts={`+${rates.points_per_dollar} per $1`} />
+        <EarnRow icon="🧾" text="Upload a receipt or invoice from any Boosted business (detailing, photography, merch)" pts={`+${rates.receipt_points ?? 10} each`} />
         {SHOP_OPEN ? (
           <EarnRow icon="🛍️" text="Boosted merch or a detail: scan the points card you get" pts={`+${rates.points_per_dollar} per $1`} />
         ) : (
@@ -669,7 +669,7 @@ export function CheckinsAdmin({ onToast }) {
 // the amount and a photo. TUNR checks it, then the points wait in the
 // checklist to claim.
 const RECEIPT_STATUS = { pending: ["Being checked", "#FACC15"], approved: ["Points added", "#10B981"], rejected: ["Not matched", "#F87171"] };
-function ReceiptForm({ user, rate, onToast }) {
+function ReceiptForm({ user, points, onToast }) {
   const [open, setOpen] = useState(false);
   const [business, setBusiness] = useState("detailing");
   const [orderRef, setOrderRef] = useState("");
@@ -711,7 +711,7 @@ function ReceiptForm({ user, rate, onToast }) {
     <div style={card}>
       {!open ? (
         <button className="action-btn" onClick={() => setOpen(true)} style={{ ...bigButton, background: "#FACC15", color: "#111" }}>
-          🧾 UPLOAD A RECEIPT · +{rate} PER $1
+          🧾 UPLOAD A RECEIPT · ⭐ +{points}
         </button>
       ) : (
         <>
@@ -731,7 +731,9 @@ function ReceiptForm({ user, rate, onToast }) {
             {file ? `📎 ${file.name}` : "📷 Add a photo of the receipt"}
             <input type="file" accept="image/*" capture="environment" onChange={(e) => setFile(e.target.files?.[0] || null)} style={{ display: "none" }} />
           </label>
-          {cents > 0 && <div style={{ ...muted, fontSize: 12.5, marginTop: 6 }}>About <b style={{ color: "#FACC15" }}>⭐ {Math.floor((cents / 100) * rate)}</b> points once it's checked.</div>}
+          <div style={{ ...muted, fontSize: 12.5, marginTop: 6 }}>
+            <b style={{ color: "#FACC15" }}>⭐ {points}</b> points once it's checked. One receipt a day.
+          </div>
           {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
           <button className="action-btn" disabled={busy} onClick={send} style={{ ...bigButton, marginTop: 10 }}>
             {busy ? "SENDING…" : "SEND RECEIPT"}
@@ -1175,6 +1177,14 @@ export function PurchasesAdmin({ onToast }) {
             </Field>
             <Field name="MEMBERSHIP BONUS">
               <input style={field} inputMode="numeric" value={rates.member_bonus} onChange={(e) => setRates((r) => ({ ...r, member_bonus: e.target.value.replace(/\D/g, "") }))} />
+            </Field>
+          </div>
+          <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+            <Field name="POINTS PER RECEIPT">
+              <input style={field} inputMode="numeric" maxLength={3} value={rates.receipt_points ?? 10} onChange={(e) => setRates((r) => ({ ...r, receipt_points: e.target.value.replace(/\D/g, "") }))} />
+            </Field>
+            <Field name=" ">
+              <span />
             </Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 8 }}>

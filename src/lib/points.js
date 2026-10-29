@@ -339,11 +339,11 @@ export const STORES = [
 ];
 
 export async function loadPointsSettings() {
-  const fallback = { points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1 };
+  const fallback = { points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1, receipt_points: 10 };
   if (!supabase) return fallback;
   const { data, error } = await supabase
     .from("points_settings")
-    .select("points_per_dollar, member_bonus, referral_points, welcome_points")
+    .select("points_per_dollar, member_bonus, referral_points, welcome_points, receipt_points")
     .maybeSingle();
   if (error) throw new Error(withReason("Couldn't load the points rates.", error));
   return data || fallback;
@@ -415,6 +415,7 @@ export async function savePointsSettings(settings) {
       member_bonus: Number(settings.member_bonus),
       referral_points: Number(settings.referral_points),
       welcome_points: Number(settings.welcome_points),
+      receipt_points: Number(settings.receipt_points ?? 10),
       updated_at: new Date().toISOString(),
     })
     .eq("id", true);
@@ -437,7 +438,7 @@ const RECEIPT_COPY = {
   bad_order: "Add the receipt or invoice number (3 to 60 characters).",
   bad_amount: "Add the amount you paid, between $1 and $10,000.",
   need_receipt: "Add a photo of the receipt or invoice.",
-  rate_limited: "That's 5 receipts today, the limit. Send the rest tomorrow.",
+  rate_limited: "One receipt a day. Send the next one tomorrow.",
   duplicate: "That receipt number has already been sent. Each receipt counts once.",
 };
 
