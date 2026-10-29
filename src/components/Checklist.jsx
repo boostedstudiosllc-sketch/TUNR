@@ -4,6 +4,7 @@ import { loadMyGame } from "../lib/rush.js";
 import { loadProfile } from "../lib/store.js";
 import { openInvites } from "../lib/invites.js";
 import Sheet, { sheetTitle, muted } from "./Sheet.jsx";
+import { SpinCard } from "./SpinWheel.jsx";
 
 // The points checklist (the 📋 in the header): every way to earn points as a
 // task, with what's done today, this week and for good, and a GO button to
@@ -216,6 +217,7 @@ export default function Checklist({ user, onToast }) {
             {data && <div style={{ fontSize: 16, fontWeight: 900, color: "#FACC15", whiteSpace: "nowrap" }}>⭐ {data.balance.toLocaleString()}</div>}
           </div>
           <div style={{ ...muted, marginTop: 4 }}>Everything that earns points. Tap GO to do it, then CLAIM to add the points to your balance.</div>
+          <SpinCard user={user} onToast={onToast} onSpun={refresh} />
           {data && waiting > 0 && (
             <div style={{ marginTop: 12, padding: 12, borderRadius: 14, background: "linear-gradient(160deg, rgba(34,197,94,0.16), rgba(250,204,21,0.1))", border: "1px solid #166534" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>

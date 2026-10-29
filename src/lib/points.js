@@ -215,6 +215,7 @@ const REASON_LABELS = {
   starter_alerts: "Turned on alerts",
   purchase: "Boosted purchase",
   member_bonus: "Membership bonus",
+  spin_bonus: "Weekly spin",
   redeem: "Redeemed",
   refund: "Points returned",
   revoke: "Check-in removed",
@@ -420,6 +421,27 @@ export async function savePointsSettings(settings) {
     })
     .eq("id", true);
   if (error) throw new Error(friendlyWriteError(error, "Couldn't save the points rates."));
+}
+
+// ---------- the weekly spin (093_weekly_spin.sql) ----------
+
+// { spun, points, next_at } for this week (Monday–Sunday, Atlanta time).
+export async function loadMySpin() {
+  need();
+  const { data, error } = await supabase.rpc("my_spin");
+  if (error) throw new Error(withReason("Couldn't check your weekly spin.", error));
+  return data || { spun: false };
+}
+
+// Spin: the server picks 1–5 and adds it to your balance. { points, next_at, again }.
+export async function spinWheel() {
+  need();
+  const { data, error } = await supabase.rpc("spin_wheel");
+  if (error) throw new Error(withReason("Couldn't spin the wheel.", error));
+  if (data?.status === "ok" || data?.status === "already") return { points: data.points, next_at: data.next_at, again: data.status === "already" };
+  if (data?.status === "unconfirmed") throw new Error("Confirm your email first. Tap the link we emailed you.");
+  if (data?.status === "not_signed_in") throw new Error("Sign in to spin.");
+  throw new Error(`Couldn't spin the wheel. (${data?.status})`);
 }
 
 // ---------- Boosted receipts (091_receipts_and_detail_tiers.sql) ----------
