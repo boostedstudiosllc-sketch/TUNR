@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://tunr-gules.vercel.app/sitemap.xml

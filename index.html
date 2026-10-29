@@ -19,6 +19,38 @@
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="TUNR — Find Your Meet" />
     <meta name="twitter:description" content="Find car meets near you. Discover, RSVP, and post local meets." />
+    <meta property="og:url" content="https://tunr-gules.vercel.app/" />
+    <meta property="og:image" content="https://tunr-gules.vercel.app/icon-512.png" />
+    <meta property="og:site_name" content="TUNR" />
+    <link rel="canonical" href="https://tunr-gules.vercel.app/" />
+    <!-- Tells Google what TUNR is (its search card: name, logo, what it does, who runs it). -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://tunr-gules.vercel.app/#org",
+            "name": "TUNR",
+            "legalName": "Boosted Studios LLC",
+            "url": "https://tunr-gules.vercel.app/",
+            "logo": "https://tunr-gules.vercel.app/icon-512.png",
+            "email": "boostedstudiosllc@gmail.com",
+            "areaServed": { "@type": "State", "name": "Georgia" },
+            "description": "TUNR is Georgia's car scene app: find car meets near you, RSVP, check in for reward points, show off your garage in 3D and play car games."
+          },
+          {
+            "@type": "WebApplication",
+            "name": "TUNR",
+            "url": "https://tunr-gules.vercel.app/",
+            "applicationCategory": "LifestyleApplication",
+            "operatingSystem": "iPhone, Android, web",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "publisher": { "@id": "https://tunr-gules.vercel.app/#org" }
+          }
+        ]
+      }
+    </script>
   </head>
   <body style="margin:0;background:#0A0A0A;">
     <div id="root"></div>

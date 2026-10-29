@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { loadRatingSummary } from "../lib/ratings.js";
 import { loadAdminInsights } from "../lib/store.js";
 import { loadLinkupStats } from "../lib/linkups.js";
 import { loadCleanupStats } from "../lib/account.js";
@@ -35,6 +36,12 @@ const HOST_SORTS = [
 
 export default function Insights() {
   const [data, setData] = useState(undefined); // undefined = loading, null = unavailable
+  const [rating, setRating] = useState(null);
+  useEffect(() => {
+    loadRatingSummary()
+      .then(setRating)
+      .catch((e) => console.warn(e.message));
+  }, []);
   const [metric, setMetric] = useState("going");
   const [hostSort, setHostSort] = useState("going_30d");
   const [allHosts, setAllHosts] = useState(false);
@@ -95,6 +102,9 @@ export default function Insights() {
         <Tile label="Meet views" value={o.views_30d} now={o.views_30d} prev={o.views_prev_30d} />
         <Tile label="Chat messages" value={o.chat_30d} />
         <Tile label="Meets posted" value={o.meets_posted_30d} sub={`${compact(o.verified_hosts)} verified hosts`} />
+        {rating?.count > 0 && (
+          <Tile label="App rating" value={`${Number(rating.average).toFixed(1)} ★`} sub={`${compact(rating.count)} ratings · ${rating.count_30d ? `${Number(rating.average_30d).toFixed(1)} ★ last 30 days` : "none in 30 days"}`} />
+        )}
       </div>
 
       {o.admin_going_30d + o.admin_views_30d + o.admin_chat_30d > 0 && (
@@ -215,7 +225,7 @@ function Tile({ label, value, sub, now, prev }) {
     <div style={{ background: "#0C0C0C", border: "1px solid #1F1F1F", borderRadius: 8, padding: "10px 12px" }}>
       <div style={{ fontSize: 11, color: "#777", fontFamily: "'Barlow', sans-serif" }}>{label}</div>
       <div style={{ fontSize: 24, fontWeight: 800, marginTop: 2, color: "#F0F0F0", lineHeight: 1.1 }}>
-        {compact(value)}
+        {typeof value === "string" ? value : compact(value)}
       </div>
       <div style={{ fontSize: 11, color: "#777", marginTop: 3, fontFamily: "'Barlow', sans-serif" }}>
         {now !== undefined && prev !== undefined ? (
