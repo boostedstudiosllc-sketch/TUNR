@@ -9,6 +9,7 @@ import {
   loadProfile,
   setPhotographerStatus,
   track,
+  loadProfileCounts,
 } from "../lib/store.js";
 import { Badges } from "./Badge.jsx";
 import { photoPageLink } from "../lib/photographer.js";
@@ -30,6 +31,7 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
   const [reporting, setReporting] = useState(false);
   // Their garage in 3D, open on this car.
   const [showroom, setShowroom] = useState(null);
+  const [counts, setCounts] = useState(null);
 
   async function refresh() {
     const p = await getPerson(personId);
@@ -41,6 +43,9 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
     track("person_profile_opened", {});
     refresh();
     loadVehicles(personId).then(setCars);
+    loadProfileCounts(personId)
+      .then(setCounts)
+      .catch((e) => console.warn(e.message));
     loadPersonClubs(personId)
       .then(setClubs)
       .catch((e) => console.warn(e.message));
@@ -163,7 +168,10 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
               </div>
             )}
 
-            <div style={{ display: "flex", gap: 22, marginTop: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginTop: 16 }}>
+              <Count n={counts?.went} label="went to" />
+              <Count n={counts?.meets} label={counts?.meets === 1 ? "meet" : "meets"} />
+              <Count n={counts?.posts} label={counts?.posts === 1 ? "post" : "posts"} />
               <Count n={person.followers} label="followers" />
               <Count n={person.following} label="following" />
               <Count n={cars.length} label={cars.length === 1 ? "car" : "cars"} />

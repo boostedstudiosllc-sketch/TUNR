@@ -1467,6 +1467,14 @@ export async function getPerson(personId) {
   return data[0];
 }
 
+// { went, meets, posts }: meets checked in at, meets posted, posts (101).
+export async function loadProfileCounts(personId) {
+  if (!supabase || !personId) return null;
+  const { data, error } = await supabase.rpc("profile_counts", { p_user: personId });
+  if (error) throw new Error(withReason("Couldn't load the profile counts.", error));
+  return data;
+}
+
 export async function followPerson(personId, userId, following) {
   if (!supabase || !userId) throw new Error("Sign in to follow people");
   if (following) {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { loadProfile, hasBackend, getPerson, loadMyCohostInvites } from "../lib/store.js";
+import { loadProfile, hasBackend, getPerson, loadMyCohostInvites, loadProfileCounts } from "../lib/store.js";
 import { useAccount } from "../lib/account.js";
 import { loadPosts, loadPersonClubs, kindLabel } from "../lib/community.js";
 import { displayDate, displayTime, isPast, sortKey } from "../lib/dates.js";
@@ -114,6 +114,7 @@ function SignedIn({
   const [cohostInvites, setCohostInvites] = useState(0);
   const [editing, setEditing] = useState(false);
   const [settings, setSettings] = useState(null); // null = closed, else { page }
+  const [counts, setCounts] = useState(null);
   const [wrapped, setWrapped] = useState(null);
   const wrapYear = wrappedYearToOffer();
   const [tab, setTab] = useState(readTab);
@@ -125,6 +126,9 @@ function SignedIn({
   useEffect(() => {
     let alive = true;
     refreshSocial();
+    loadProfileCounts(user.id)
+      .then((c) => alive && setCounts(c))
+      .catch((e) => console.warn(e.message));
     loadProfile(user.id)
       .then((p) => alive && setProfile(p))
       .catch((e) => {
@@ -172,7 +176,6 @@ function SignedIn({
 
   const p = profile || { username: "", city: "" };
   // Meets still to come, not ones already over.
-  const goingCount = events.filter((e) => rsvps[e.id] === "going" && !isPast(e, new Date())).length;
   const page = p.isPhotographer ? photoPageLink(p.photoPage) : null;
 
   return (
@@ -232,17 +235,19 @@ function SignedIn({
         </div>
 
         {/* Photo and counts */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14 }}>
-          <Avatar url={p.avatarUrl} name={p.username} size={84} ring ringColor={p.profileColor || social?.profile_color || undefined} />
-          <div style={{ flex: 1, minWidth: 0, display: "flex", justifyContent: "space-around" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14 }}>
+          <Avatar url={p.avatarUrl} name={p.username} size={72} ring ringColor={p.profileColor || social?.profile_color || undefined} />
+          <div style={{ flex: 1, minWidth: 0, display: "flex", justifyContent: "space-between" }}>
+            <Stat n={counts?.went} label="WENT TO" onClick={() => setSettings({ page: "meetHistory" })} />
             <Stat
-              n={goingCount}
-              label="GOING"
+              n={counts?.meets}
+              label="MEETS"
               onClick={() => {
-                setMeetFilter("going");
+                setMeetFilter("posted");
                 chooseTab("meets", true);
               }}
             />
+            <Stat n={counts?.posts} label="POSTS" onClick={() => chooseTab("posts", true)} />
             <Stat n={social?.followers} label="FOLLOWERS" onClick={() => setConnections("followers")} />
             <Stat n={social?.following} label="FOLLOWING" onClick={() => setConnections("following")} />
           </div>
@@ -698,10 +703,10 @@ function Stat({ n, label, onClick }) {
       onClick={onClick}
       style={{ flex: 1, minHeight: 44, background: "none", border: "none", padding: "4px 2px", cursor: "pointer", color: "inherit", textAlign: "center", minWidth: 0, fontFamily: "'Barlow Condensed', sans-serif" }}
     >
-      <div style={{ fontSize: 21, fontWeight: 900, lineHeight: 1.1 }}>
+      <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1.1 }}>
         {n === undefined || n === null ? "–" : Number(n).toLocaleString("en-US")}
       </div>
-      <div style={{ fontSize: 10, color: "var(--n-8a8a8a)", letterSpacing: 1.2, fontWeight: 700, marginTop: 2 }}>{label}</div>
+      <div style={{ fontSize: 9.5, color: "var(--n-8a8a8a)", letterSpacing: 0.5, fontWeight: 700, marginTop: 2, whiteSpace: "nowrap" }}>{label}</div>
     </button>
   );
 }
