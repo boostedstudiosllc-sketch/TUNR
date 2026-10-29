@@ -13,6 +13,7 @@ import { ShowcaseBanner } from "./MeetStyle.jsx";
 import IssueFlag from "./IssueFlag.jsx";
 import { track, loadGoingHistory } from "../lib/store.js";
 import GoingTicker from "./GoingTicker.jsx";
+import MeetWeather from "./MeetWeather.jsx";
 import { directionsUrl } from "../lib/geo.js";
 import { GOING_AS, crowdLine } from "../lib/photographer.js";
 import DirectionsIcon from "./DirectionsIcon.jsx";
@@ -252,6 +253,8 @@ export default function MeetDetail({
             />
             <StatBox label="★ MAYBE" value={String(event.interested)} />
           </div>
+
+          {!locked && <MeetWeather event={event} />}
 
           {!locked && history.length > 1 && (
             <div style={{ marginTop: 10 }}>

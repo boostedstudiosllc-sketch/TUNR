@@ -30,7 +30,7 @@ export function createHandler({ env = process.env, fetchImpl = fetch, webpushImp
     }
     const out = {};
     try {
-      out.reminders = await queueMeetReminders(service, now());
+      out.reminders = await queueMeetReminders(service, now(), fetchImpl);
     } catch (e) {
       out.remindersError = String(e?.message || e).slice(0, 200);
     }
