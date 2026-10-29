@@ -202,6 +202,34 @@ export async function claimStarterPoints() {
   return data || {};
 }
 
+// Meets someone has hosted: { hosted, level (0, 5, 10 or 25), next }. Cached
+// for the visit, since a profile shows it in a few places.
+const hostBadges = new Map();
+export function loadHostBadge(userId) {
+  if (!supabase || !userId) return Promise.resolve(null);
+  if (!hostBadges.has(userId)) {
+    hostBadges.set(
+      userId,
+      supabase.rpc("host_badge", { p_user: userId }).then(({ data, error }) => {
+        if (error) {
+          hostBadges.delete(userId);
+          throw new Error(withReason("Couldn't load the host badge.", error));
+        }
+        return data;
+      })
+    );
+  }
+  return hostBadges.get(userId);
+}
+
+// Pays any host milestones reached (5, 10, 25 meets): { added, hosted }.
+export async function claimHostBadges() {
+  need();
+  const { data, error } = await supabase.rpc("claim_host_badges");
+  if (error) throw new Error(withReason("Couldn't check your hosting points.", error));
+  return data || {};
+}
+
 const REASON_LABELS = {
   checkin: "Checked in",
   rsvp_bonus: "Said you'd go, and showed up",
@@ -216,6 +244,7 @@ const REASON_LABELS = {
   purchase: "Boosted purchase",
   member_bonus: "Membership bonus",
   spin_bonus: "Weekly spin",
+  host_bonus: "Hosting milestone",
   redeem: "Redeemed",
   refund: "Points returned",
   revoke: "Check-in removed",

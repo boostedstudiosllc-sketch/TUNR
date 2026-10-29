@@ -120,6 +120,7 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 22, fontWeight: 900, overflowWrap: "anywhere", color: person.profile_color || undefined }}>@{person.username}</span>
                   <Badges
+                    hostOf={personId}
                     dayOne={person.day_one}
                     dayOneNumber={person.day_one_number}
                     foundingHost={person.founding_host}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { claimStarterPoints, claimPoints, loadMyStreak, loadPointsSettings, loadPointsSince, loadMyPoints, loadUnclaimed, POINTS, STREAK_MILESTONES, CLAIM_HINT } from "../lib/points.js";
+import { claimStarterPoints, claimHostBadges, claimPoints, loadMyStreak, loadPointsSettings, loadPointsSince, loadMyPoints, loadUnclaimed, POINTS, STREAK_MILESTONES, CLAIM_HINT } from "../lib/points.js";
 import { loadMyGame } from "../lib/rush.js";
 import { loadProfile } from "../lib/store.js";
 import { openInvites } from "../lib/invites.js";
@@ -26,12 +26,39 @@ const TASK_REASONS = {
   alerts: ["starter_alerts"],
   member: ["member_bonus"],
   receipt: ["purchase"],
+  host: ["host_bonus"],
 };
+// Hosting milestones: [meets, points].
+const HOST_STEPS = [
+  [5, 10],
+  [10, 25],
+  [25, 50],
+];
 const sum = (rows) => rows.reduce((n, r) => n + r.delta, 0);
+
+function hostTask(hosted) {
+  const step = HOST_STEPS.find(([at]) => hosted < at);
+  return {
+    group: "HOSTING",
+    id: "host",
+    icon: "🏆",
+    title: step ? `Host ${step[0]} meets` : "Hosted 25 meets: gold host",
+    text: step ? `Post meets on TUNR. Each one counts once it starts. Badges at 5, 10 and 25. ${hosted} so far.` : `All host badges earned. ${hosted} meets hosted.`,
+    pts: step ? `+${step[1]}` : "",
+    done: !step,
+    progress: step ? [hosted, step[0]] : null,
+    go: () => go("tab:discover"),
+  };
+}
 
 async function loadTasks(user) {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  // Milestones are paid first, so they show as ready to claim below.
+  const host = await claimHostBadges().catch((e) => {
+    console.warn(e.message);
+    return null;
+  });
   const [starter, streak, rates, recent, game, profile, points, unclaimed] = await Promise.all([
     claimStarterPoints(),
     loadMyStreak(),
@@ -95,6 +122,7 @@ async function loadTasks(user) {
       go: () => go("tab:perks"),
     },
     // For good.
+    hostTask(host?.hosted || 0),
     { group: "GETTING STARTED", id: "email", icon: "✉️", title: "Confirm your email", text: "Tap the link we emailed you. Points start after this.", pts: "", done: Boolean(starter?.confirmed), go: null },
     { group: "GETTING STARTED", id: "profile", icon: "👤", title: "Profile photo, username and bio", text: "Profile → Edit profile.", pts: `+${POINTS.profile}`, done: Boolean(starter?.profile), go: () => go("tab:profile") },
     { group: "GETTING STARTED", id: "car", icon: "🚗", title: "Add your car", text: "Profile → Garage → + Add car.", pts: `+${POINTS.car}`, done: Boolean(starter?.car), go: () => go("tab:profile") },

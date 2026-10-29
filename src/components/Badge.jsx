@@ -1,10 +1,35 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { loadHostBadge } from "../lib/points.js";
 
 // Profile badges. Icon only — no words on the badge itself; tapping one says
 // what it's for. The database decides who has them, so showing them is all
 // the client ever does.
+
+// Host badges: bronze at 5 meets hosted, silver at 10, gold at 25. A trophy.
+const trophy = (ink) => (
+  <g fill="none" stroke={ink} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
+    <path d="M7.5 4.5h9v4.5a4.5 4.5 0 0 1-9 0z" />
+    <path d="M7.5 6.5H5a2.5 2.5 0 0 0 3 3.6M16.5 6.5H19a2.5 2.5 0 0 1-3 3.6" />
+    <path d="M12 13.5v3.5M8.5 19.5h7" />
+  </g>
+);
+const hostBadge = (title, gradient, ink, at) => ({
+  title,
+  gradient,
+  explain: (hosted) => `Hosted ${at}+ car meets on TUNR.${hosted ? ` ${hosted} so far.` : ""}`,
+  glyph: trophy(ink),
+});
+export const HOST_LEVELS = [
+  [25, "host_gold"],
+  [10, "host_silver"],
+  [5, "host_bronze"],
+];
+
 const BADGES = {
+  host_bronze: hostBadge("Host · 5 meets", "linear-gradient(135deg, #E8A06A, #8C4A1E)", "#fff", 5),
+  host_silver: hostBadge("Host · 10 meets", "linear-gradient(135deg, #F1F5F9, #8A97A8)", "#1E293B", 10),
+  host_gold: hostBadge("Host · 25 meets", "linear-gradient(135deg, #FDE68A, #CA8A04)", "#3B2500", 25),
   photographer: {
     title: "Photographer",
     gradient: "linear-gradient(135deg, #38BDF8, #2563EB)",
@@ -124,10 +149,11 @@ export default function Badge({ kind, number = null, size = 16 }) {
 }
 
 // Badges can sit next to each other; this keeps the gap consistent.
-export function Badges({ dayOne, dayOneNumber, foundingHost, photographer, photographerVerified, connector, size = 16 }) {
-  if (!dayOne && !foundingHost && !photographer && !photographerVerified && !connector) return null;
+export function Badges({ dayOne, dayOneNumber, foundingHost, photographer, photographerVerified, connector, hostOf, size = 16 }) {
+  if (!dayOne && !foundingHost && !photographer && !photographerVerified && !connector && !hostOf) return null;
   return (
     <span style={{ display: "inline-flex", gap: 4, alignItems: "center", verticalAlign: "middle" }}>
+      {hostOf && <HostBadge userId={hostOf} size={size} />}
       {foundingHost && <Badge kind="founding_host" size={size} />}
       {dayOne && <Badge kind="day_one" number={dayOneNumber} size={size} />}
       {connector && <Badge kind="connector" size={size} />}
@@ -138,6 +164,22 @@ export function Badges({ dayOne, dayOneNumber, foundingHost, photographer, photo
       )}
     </span>
   );
+}
+
+// Looks up how many meets someone has hosted and shows their host badge, if any.
+function HostBadge({ userId, size }) {
+  const [host, setHost] = useState(null);
+  useEffect(() => {
+    let live = true;
+    loadHostBadge(userId)
+      .then((h) => live && setHost(h))
+      .catch((e) => console.warn(e.message));
+    return () => {
+      live = false;
+    };
+  }, [userId]);
+  const kind = HOST_LEVELS.find(([at]) => at === host?.level)?.[1];
+  return kind ? <Badge kind={kind} number={host.hosted} size={size} /> : null;
 }
 
 function BadgeInfo({ badge, number, onClose }) {

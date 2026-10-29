@@ -252,8 +252,9 @@ function SignedIn({
                 {p.username.toUpperCase()}
               </span>
             )}
-            {(p.dayOne || p.foundingHost || p.isPhotographer || social?.connector) && (
+            {user && (
               <Badges
+                hostOf={user.id}
                 dayOne={p.dayOne}
                 dayOneNumber={p.dayOneNumber}
                 foundingHost={p.foundingHost}
