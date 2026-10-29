@@ -255,6 +255,7 @@ const REASON_LABELS = {
   spin_bonus: "Weekly spin",
   host_bonus: "Hosting milestone",
   photo_bonus: "Photo of the week",
+  guess_bonus: "Guess the Car",
   redeem: "Redeemed",
   refund: "Points returned",
   revoke: "Check-in removed",

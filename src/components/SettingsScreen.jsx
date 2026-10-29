@@ -16,6 +16,7 @@ import Insights from "./Insights.jsx";
 import AdminLog from "./AdminLog.jsx";
 import RatePrompt from "./RatePrompt.jsx";
 import Wrapped from "./Wrapped.jsx";
+import GuessCarAdmin from "./GuessCarAdmin.jsx";
 import { CohostInvites } from "./Cohosts.jsx";
 import { ListingRequestsQueue } from "./ListingRequest.jsx";
 import { SetPasswordForm } from "./SetPassword.jsx";
@@ -53,6 +54,7 @@ const PAGES = {
   cohosts: "Co-host invites",
   insights: "Insights",
   adminLog: "Admin log",
+  guessCarAdmin: "Guess the Car photos",
   reports: "Community reports",
   moderation: "Moderation queue",
   listings: "Listing requests",
@@ -383,6 +385,7 @@ export default function SettingsScreen({
                 <Row icon="🎮" label="TUNR Rush" sub="Game on/off, daily goal, points, boosts, traffic" onClick={() => open("rushAdmin")} />
                 <Row icon="📊" label="Insights" onClick={() => open("insights")} />
                 <Row icon="🧾" label="Admin log" sub="Every change an admin made" onClick={() => open("adminLog")} />
+                <Row icon="🔍" label="Guess the Car" sub="Car photos for the daily game" onClick={() => open("guessCarAdmin")} />
                 <Row icon="🚩" label="Community reports" onClick={() => open("reports")} />
                 <Row icon="🧹" label="Moderation queue" onClick={() => open("moderation")} />
                 <Row icon="📋" label="Listing requests" onClick={() => open("listings")} />
@@ -522,6 +525,8 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
       );
     case "adminLog":
       return <AdminLog />;
+    case "guessCarAdmin":
+      return <GuessCarAdmin user={user} onToast={onToast} />;
     case "reports":
       return <CommunityReports onToast={onToast} onOpenLink={onFollow} />;
     case "moderation":

@@ -15,6 +15,7 @@ const WHAT = {
   point_cards: "Points card",
   rush_scenery: "Rush scenery",
   garage_parts: "Garage part",
+  car_puzzles: "Guess the Car photo",
   game_settings: "TUNR Rush settings",
   events: "Meet",
   meet_checkins: "Check-in",

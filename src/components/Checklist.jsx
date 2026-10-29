@@ -6,6 +6,7 @@ import { openInvites } from "../lib/invites.js";
 import Sheet, { sheetTitle, muted } from "./Sheet.jsx";
 import { SpinCard } from "./SpinWheel.jsx";
 import { loadPhotoBallot } from "../lib/photoWeek.js";
+import { loadTodaysCar } from "../lib/guessCar.js";
 
 // The points checklist (the 📋 in the header): every way to earn points as a
 // task, with what's done today, this week and for good, and a GO button to
@@ -29,6 +30,7 @@ const TASK_REASONS = {
   receipt: ["purchase"],
   host: ["host_bonus"],
   photo: ["photo_bonus"],
+  guess: ["guess_bonus"],
 };
 // Hosting milestones: [meets, points].
 const HOST_STEPS = [
@@ -61,7 +63,7 @@ async function loadTasks(user) {
     console.warn(e.message);
     return null;
   });
-  const [starter, streak, rates, recent, game, profile, points, unclaimed, ballot] = await Promise.all([
+  const [starter, streak, rates, recent, game, profile, points, unclaimed, ballot, carToday] = await Promise.all([
     claimStarterPoints(),
     loadMyStreak(),
     loadPointsSettings(),
@@ -71,6 +73,7 @@ async function loadTasks(user) {
     loadMyPoints(),
     loadUnclaimed(user.id),
     loadPhotoBallot().catch(() => null),
+    loadTodaysCar().catch(() => null),
   ]);
   const today = DAY(now);
   const todays = (reason) => recent.some((r) => r.reason === reason && DAY(r.at) === today);
@@ -90,6 +93,9 @@ async function loadTasks(user) {
       done: Boolean(game?.today?.done) || todays("game_bonus"),
       go: () => go("play:rush"),
     },
+    ...(carToday?.pool
+      ? [{ group: "TODAY", id: "guess", icon: "🔍", title: "Guess today's car", text: "Arcade → Guess the Car. Quicker guesses pay more.", pts: "+1–3", done: Boolean(carToday.guessed), go: () => go("play:guess") }]
+      : []),
     // This week.
     {
       group: "THIS WEEK",
