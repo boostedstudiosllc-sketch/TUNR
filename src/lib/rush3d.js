@@ -5,7 +5,7 @@
 import * as THREE from "three";
 import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
 import { Sky } from "three/examples/jsm/objects/Sky.js";
-import { drawHud } from "./rushEngine.js";
+import { drawHud, GLOW_COLORS } from "./rushEngine.js";
 
 const LANE_W = 3.6; // meters between lane centers
 const DEPTH = 190; // meters of road ahead, matching the engine's 0..1 z
@@ -435,11 +435,124 @@ function rimMat(rims) {
 const EXOTIC = new Set(["lamborghini", "ferrari", "mclaren"]);
 export const RIDE_DROP = { stock: 0, lowered: 0.06, slammed: 0.11, lifted: -0.14 };
 
+// Neon underglow: a pool of light on the ground under the car and glowing
+// tubes along the sills.
+const glowTex = {};
+function addUnderglow(car, hex, s, sillY) {
+  if (!glowTex[hex]) {
+    glowTex[hex] = canvasTexture(128, 256, (ctx, w, h) => {
+      const c = new THREE.Color(hex);
+      const rgb = `${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)}`;
+      ctx.save();
+      ctx.scale(1, h / w);
+      const grad = ctx.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+      grad.addColorStop(0, `rgba(${rgb},1)`);
+      grad.addColorStop(0.5, `rgba(${rgb},0.75)`);
+      grad.addColorStop(1, `rgba(${rgb},0)`);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, w);
+      ctx.restore();
+    });
+  }
+  const pool = new THREE.Mesh(
+    new THREE.PlaneGeometry(s.W * 1.7, s.L * 1.25),
+    // Normal blending, so it shows on a light floor as well as a dark road.
+    new THREE.MeshBasicMaterial({ map: glowTex[hex], transparent: true, depthWrite: false })
+  );
+  pool.rotation.x = -Math.PI / 2;
+  pool.position.y = 0.07;
+  pool.renderOrder = 1;
+  pool.userData.noShadow = true;
+  car.add(pool);
+  const tube = new THREE.MeshBasicMaterial({ color: hex });
+  for (const side of [-1, 1]) {
+    const t = box(0.03, 0.03, s.L * 0.62, tube, side * (s.W / 2 - 0.2), Math.max(0.12, sillY * 0.55), 0);
+    t.userData.noShadow = true;
+    car.add(t);
+  }
+  const light = new THREE.PointLight(hex, 2.4, 3.2, 1.6);
+  light.position.set(0, 0.14, 0);
+  car.add(light);
+}
+
+// Decals, laid onto the paint by casting down (stripes) or in from the
+// side (side stripe, race number) and following the surface.
+const decalMats = {};
+function addDecal(car, kind, color, plate, s, half, surfaces, glass) {
+  const c = new THREE.Color(color);
+  const light = c.r * 0.3 + c.g * 0.59 + c.b * 0.11 > 0.6;
+  const ink = light ? 0x111111 : 0xf5f5f5;
+  decalMats[ink] ||= new THREE.MeshStandardMaterial({ color: ink, roughness: 0.3, metalness: 0.1, polygonOffset: true, polygonOffsetFactor: -2 });
+  const mat = decalMats[ink];
+  for (const m of surfaces) m.updateMatrixWorld();
+  const ray = new THREE.Raycaster();
+  const up = new THREE.Vector3(0, 1, 0);
+  const lay = (from, dir, w, h, d) => {
+    ray.set(from, dir);
+    const hit = ray.intersectObjects(surfaces, false)[0];
+    if (!hit || hit.object === glass) return;
+    const n = hit.face.normal.clone();
+    const piece = box(w, h, d, mat, 0, 0, 0);
+    piece.quaternion.setFromUnitVectors(up, n);
+    piece.position.copy(hit.point).addScaledVector(n, 0.006);
+    car.add(piece);
+  };
+  const step = 0.1;
+  if (kind === "stripes") {
+    // Two stripes nose to tail, over the bonnet, roof and boot.
+    for (const x of [-0.14, 0.14])
+      for (let z = -half + 0.05; z <= half - 0.05; z += step) lay(new THREE.Vector3(x, 10, z), new THREE.Vector3(0, -1, 0), 0.15, 0.008, step + 0.02);
+  } else if (kind === "side") {
+    // One stripe down each side at the shoulder.
+    const y = s.belt - 0.1;
+    for (const side of [-1, 1])
+      for (let z = -half + 0.35; z <= half - 0.35; z += step) {
+        const from = new THREE.Vector3(side * 10, y, z);
+        ray.set(from, new THREE.Vector3(-side, 0, 0));
+        const hit = ray.intersectObjects(surfaces, false)[0];
+        if (!hit || hit.object === glass) continue;
+        const piece = box(0.008, 0.06, step + 0.02, mat, hit.point.x + side * 0.006, y, z);
+        car.add(piece);
+      }
+  } else if (kind === "number") {
+    // A white roundel with a number on each door.
+    const num = (String(plate).match(/\d{1,2}/) || [String((Math.round(c.r * 7 + c.g * 5 + c.b * 3) % 98) + 1)])[0];
+    const tex = canvasTexture(128, 128, (ctx, w) => {
+      ctx.fillStyle = "#f8f8f8";
+      ctx.beginPath();
+      ctx.arc(w / 2, w / 2, w / 2 - 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "#111";
+      ctx.stroke();
+      ctx.fillStyle = "#111";
+      ctx.font = `900 ${num.length > 1 ? 62 : 74}px 'Barlow Condensed', Arial, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(num, w / 2, w / 2 + 4);
+    });
+    const disc = new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.35, polygonOffset: true, polygonOffsetFactor: -2 });
+    const y = s.belt - 0.2;
+    for (const side of [-1, 1]) {
+      // On the door, ahead of its rear seam.
+      const z = -0.3;
+      ray.set(new THREE.Vector3(side * 10, y, z), new THREE.Vector3(-side, 0, 0));
+      const hit = ray.intersectObjects(surfaces, false)[0];
+      if (!hit || hit.object === glass) continue;
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.34), disc);
+      m.position.set(hit.point.x + side * 0.008, y, z);
+      m.rotation.y = side * (Math.PI / 2);
+      car.add(m);
+    }
+  }
+}
+
 // A whole car: body, glass, roof, wheels, lights, plate, bumper. `sport`
 // is your car (diffuser, quad exhaust, spoiler, spoked wheels); traffic
 // stays plain. rims: wheel finish (RIM_COLORS); height: ride height
-// (RIDE_DROP).
-export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport = false, spoiler = "lip", rims = "silver", height = "stock", brand = "generic" }) {
+// (RIDE_DROP); glow: neon underglow colour (GLOW_COLORS); decal: stripes,
+// side stripe or race number.
+export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport = false, spoiler = "lip", rims = "silver", height = "stock", brand = "generic", glow = "none", decal = "none" }) {
   // Exotic brands get the supercar wedge instead of the plain coupe.
   if (body === "coupe" && EXOTIC.has(brand)) body = "exotic";
   const g = bodyGeometries(body, sport);
@@ -707,10 +820,13 @@ export function buildCar({ color = "#0080F0", body = "coupe", plate = "", sport 
     }
   }
 
+  if (sport && decal !== "none") addDecal(car, decal, color, plate, s, half, [lower, roof, cabin], cabin);
+
   // Ride height: everything but the wheels (and the shadow) moves.
   const drop = sport ? RIDE_DROP[height] || 0 : 0;
   if (drop) for (const part of car.children) if (!wheelParts.includes(part)) part.position.y -= drop;
   car.add(shadow);
+  if (sport && GLOW_COLORS[glow]) addUnderglow(car, GLOW_COLORS[glow], s, g.wheelR - drop);
 
   car.userData.rear = rearFace;
   car.userData.exhaustX = body === "truck" ? 0.72 : body === "suv" ? 0.62 : 0.55;

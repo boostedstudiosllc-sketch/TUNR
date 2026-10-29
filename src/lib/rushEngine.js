@@ -79,7 +79,13 @@ export const RIMS = ["silver", "black", "gold", "bronze", "chrome"];
 export const RIM_NAMES = { silver: "Silver", black: "Black", gold: "Gold", bronze: "Bronze", chrome: "Chrome" };
 export const HEIGHTS = ["stock", "lowered", "slammed", "lifted"];
 export const HEIGHT_NAMES = { stock: "Stock", lowered: "Lowered", slammed: "Slammed", lifted: "Lifted" };
-export const DEFAULT_LOOK = { color: "#1D4ED8", body: "coupe", spoiler: "lip", rims: "silver", height: "stock" };
+// Neon underglow (one unlock for every colour) and decals (097).
+export const GLOWS = ["none", "blue", "pink", "green", "red", "purple", "white"];
+export const GLOW_NAMES = { none: "None", blue: "Ice blue", pink: "Hot pink", green: "Toxic green", red: "Red", purple: "Purple", white: "White" };
+export const GLOW_COLORS = { blue: "#38BDF8", pink: "#F472B6", green: "#4ADE80", red: "#F43F5E", purple: "#A855F7", white: "#F8FAFC" };
+export const DECALS = ["none", "stripes", "side", "number"];
+export const DECAL_NAMES = { none: "None", stripes: "Racing stripes", side: "Side stripe", number: "Race number" };
+export const DEFAULT_LOOK = { color: "#1D4ED8", body: "coupe", spoiler: "lip", rims: "silver", height: "stock", glow: "none", decal: "none" };
 
 // The body style a real car is closest to, from its make and model (and
 // chassis codes like G30 or F82), so a new car looks right before anyone
@@ -121,7 +127,11 @@ export const lookOf = (v) => ({
   spoiler: v?.game_spoiler || DEFAULT_LOOK.spoiler,
   rims: v?.game_rims || DEFAULT_LOOK.rims,
   height: v?.game_height || DEFAULT_LOOK.height,
+  glow: v?.game_glow || DEFAULT_LOOK.glow,
+  decal: v?.game_decal || DEFAULT_LOOK.decal,
 });
+// The vehicles columns for a look (the reverse of lookOf).
+export const lookColumns = (l) => ({ game_color: l.color, game_body: l.body, game_spoiler: l.spoiler, game_rims: l.rims, game_height: l.height, game_glow: l.glow, game_decal: l.decal });
 const TRAFFIC_COLORS = ["#F59E0B", "#2563EB", "#7C3AED", "#16A34A", "#DC2626", "#0EA5E9", "#9333EA"];
 const ROAD_DEPTH = 190; // meters of road on screen
 export const STEP = 1 / 60; // seconds per game step
@@ -398,10 +408,30 @@ export function drawCar(ctx, cx, bottomY, w, opts = {}) {
   c.belt = c.top + h * s.cabin;
   c.bodyBottom = bottomY - h * s.clear;
   c.bh = c.bodyBottom - c.belt;
+  const glow = opts.sport && GLOW_COLORS[opts.glow];
+  if (glow) {
+    // Neon underglow: a pool of colour on the road.
+    const g = ctx.createRadialGradient(cx, bottomY, 0, cx, bottomY, w * 0.75);
+    g.addColorStop(0, glow);
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(cx, bottomY, w * 0.75, h * 0.16, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
   wheels(ctx, c, opts.body);
   if (opts.body === "truck") drawPickup(ctx, c, opts);
   else if (opts.body === "suv") drawSuv(ctx, c, opts);
   else drawSporty(ctx, c, opts);
+  if (opts.sport && opts.decal === "stripes") {
+    // Racing stripes over the boot and bumper (the glass stays clear).
+    const light = parseInt(c.color.slice(1, 3), 16) * 0.3 + parseInt(c.color.slice(3, 5), 16) * 0.59 + parseInt(c.color.slice(5, 7), 16) * 0.11 > 150;
+    ctx.fillStyle = light ? "rgba(17,17,17,0.85)" : "rgba(245,245,245,0.9)";
+    for (const dx of [-0.085, 0.035]) ctx.fillRect(cx + w * dx, c.belt, w * 0.05, c.bodyBottom - c.belt - c.bh * 0.08);
+  }
 }
 
 function wheels(ctx, c, body) {

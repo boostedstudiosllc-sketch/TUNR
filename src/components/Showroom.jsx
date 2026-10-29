@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { GAME_COLORS, BODIES, SPOILERS, RIMS, HEIGHTS, COLOR_NAMES, BODY_NAMES, SPOILER_NAMES, RIM_NAMES, HEIGHT_NAMES, DEFAULT_LOOK, lookOf, drawCar } from "../lib/rushEngine.js";
+import { GAME_COLORS, BODIES, SPOILERS, RIMS, HEIGHTS, COLOR_NAMES, BODY_NAMES, SPOILER_NAMES, RIM_NAMES, HEIGHT_NAMES, GLOWS, GLOW_NAMES, DECALS, DECAL_NAMES, DEFAULT_LOOK, lookOf, lookColumns, drawCar } from "../lib/rushEngine.js";
 import { saveGameLook } from "../lib/rush.js";
 import { loadGarageParts, unlockGaragePart, partId } from "../lib/garageParts.js";
 import { quietButton, label, muted } from "./Sheet.jsx";
@@ -107,7 +107,7 @@ export function ShowroomStage({ look, plate = "", flat = false, interactive = tr
     ctx.stroke();
     const w = Math.min(vw * 0.55, 240);
     drawCar(ctx, vw / 2, base, w, { ...look, plate, sport: true });
-  }, [mode, look.color, look.body, look.spoiler, look.rims, look.height, plate, insetKey]);
+  }, [mode, look.color, look.body, look.spoiler, look.rims, look.height, look.glow, look.decal, plate, insetKey]);
 
   return (
     <div ref={wrap} style={{ position: "relative", overflow: "hidden", background: "#e9ecf0", ...style }}>
@@ -262,6 +262,8 @@ const ROWS = [
   ["spoiler", "Wing", SPOILERS, SPOILER_NAMES],
   ["rims", "Wheels", RIMS, RIM_NAMES],
   ["height", "Ride height", HEIGHTS, HEIGHT_NAMES],
+  ["glow", "Underglow", GLOWS, GLOW_NAMES],
+  ["decal", "Decals", DECALS, DECAL_NAMES],
 ];
 
 // Style rows: ◀ value ▶ for paint, body, wing, wheels and ride height.
@@ -326,6 +328,8 @@ const PARTS = [
   ["spoiler", "Wing", SPOILERS, SPOILER_NAMES],
   ["rims", "Wheels", RIMS, RIM_NAMES],
   ["height", "Stance", HEIGHTS, HEIGHT_NAMES],
+  ["glow", "Glow", GLOWS, GLOW_NAMES],
+  ["decal", "Decals", DECALS, DECAL_NAMES],
 ];
 // priceOf(key, value): points to unlock that choice (0 = free or yours).
 export function Tuner({ look, onChange, priceOf = () => 0 }) {
@@ -751,7 +755,7 @@ export function useGarageCar(user, game) {
   };
   const restyle = (vehicle, look) => {
     setCars((list) =>
-      list.map((v) => (v.id === vehicle.id ? { ...v, game_color: look.color, game_body: look.body, game_spoiler: look.spoiler, game_rims: look.rims, game_height: look.height } : v))
+      list.map((v) => (v.id === vehicle.id ? { ...v, ...lookColumns(look) } : v))
     );
     clearTimeout(timers.current[vehicle.id]);
     timers.current[vehicle.id] = setTimeout(

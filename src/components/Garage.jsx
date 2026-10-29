@@ -13,7 +13,7 @@ import { loadMyInvites, openInvites } from "../lib/invites.js";
 import StickerSheet from "./StickerSheet.jsx";
 import { ShowroomStage, GarageShowroom, OtherColor, repairLink } from "./Showroom.jsx";
 import { saveGameLook } from "../lib/rush.js";
-import { lookOf, GAME_COLORS, COLOR_NAMES, guessBody, BODY_NAMES } from "../lib/rushEngine.js";
+import { lookOf, lookColumns, GAME_COLORS, COLOR_NAMES, guessBody, BODY_NAMES } from "../lib/rushEngine.js";
 
 const inputStyle = {
   background: "#0F0F0F",
@@ -132,7 +132,7 @@ export default function Garage({ user, onToast }) {
   function restyle(vehicle, look) {
     setVehicles((list) =>
       list.map((v) =>
-        v.id === vehicle.id ? { ...v, game_color: look.color, game_body: look.body, game_spoiler: look.spoiler, game_rims: look.rims, game_height: look.height } : v
+        v.id === vehicle.id ? { ...v, ...lookColumns(look) } : v
       )
     );
     clearTimeout(saveTimers.current[vehicle.id]);

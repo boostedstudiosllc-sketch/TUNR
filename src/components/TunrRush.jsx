@@ -27,6 +27,7 @@ import {
   unlockMessage,
   loadPickedScenery,
   savePickedScenery,
+  lookColumns,
 } from "../lib/rush.js";
 import { loadMyPoints, pointsEarned, CLAIM_HINT } from "../lib/points.js";
 import { RushAudio, loadSoundPrefs } from "../lib/rushAudio.js";
@@ -228,14 +229,14 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount, startV
     if (c.id === "loaner" || c.id === carId) setLook(next);
     if (c.id === "loaner") return;
     setCars((list) =>
-      list.map((x) => (x.id === c.id ? { ...x, game_color: next.color, game_body: next.body, game_spoiler: next.spoiler, game_rims: next.rims, game_height: next.height } : x))
+      list.map((x) => (x.id === c.id ? { ...x, ...lookColumns(next) } : x))
     );
     clearTimeout(saveTimers.current[c.id]);
     saveTimers.current[c.id] = setTimeout(() => saveGameLook(c.id, next).catch((e) => onToast(e.message)), 500);
   }
   const garageCars = cars.length
     ? cars
-    : [{ id: "loaner", make: "TUNR", model: "Loaner", game_color: look.color, game_body: look.body, game_spoiler: look.spoiler, game_rims: look.rims, game_height: look.height }];
+    : [{ id: "loaner", make: "TUNR", model: "Loaner", ...lookColumns(look) }];
 
   async function loadBoard(period = "week", lvl = boardLevel) {
     setBoardPeriod(period);

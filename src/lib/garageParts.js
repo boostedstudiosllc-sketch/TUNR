@@ -8,7 +8,12 @@ import { loadAllAccess } from "./store.js";
 import { unlockMessage } from "./rush.js";
 
 // The part id for a style choice ("spoiler:wing"), or null for paint/body.
-export const partId = (key, value) => (["spoiler", "rims", "height"].includes(key) && value ? `${key}:${value}` : null);
+// Underglow is one part for every colour.
+export const partId = (key, value) => {
+  if (!value || value === "none") return null;
+  if (key === "glow") return "glow:neon";
+  return ["spoiler", "rims", "height", "decal"].includes(key) ? `${key}:${value}` : null;
+};
 
 // { prices: { [id]: { name, price } }, owned: Set }. Loaded once and kept
 // (prices hardly change); an unlock adds to it.

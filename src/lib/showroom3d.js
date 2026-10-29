@@ -237,7 +237,7 @@ export function createShowroom(canvas, { lowPower = false, interactive = true } 
     look = next;
     if (car) holder.remove(car);
     car = buildCar({ ...next, sport: true });
-    car.traverse((o) => o.isMesh && (o.castShadow = true));
+    car.traverse((o) => o.isMesh && (o.castShadow = !o.userData.noShadow));
     holder.add(car);
     drop = 0.35;
     frame();
@@ -313,7 +313,7 @@ export function createShowroom(canvas, { lowPower = false, interactive = true } 
 // in the same order. One short-lived renderer for all of them.
 const thumbCache = new Map();
 export function carThumbs(looks, W = 240, H = 140, angle = Math.PI + 0.25) {
-  const key = (l) => JSON.stringify([l.color, l.body, l.spoiler, l.rims, l.height, l.brand, angle, W, H]);
+  const key = (l) => JSON.stringify([l.color, l.body, l.spoiler, l.rims, l.height, l.glow, l.decal, l.brand, angle, W, H]);
   const missing = looks.filter((l) => !thumbCache.has(key(l)));
   if (missing.length) {
     const canvas = document.createElement("canvas");

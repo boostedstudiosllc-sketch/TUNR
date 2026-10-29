@@ -2,7 +2,7 @@
 // 065_rush_difficulty.sql). The game itself is in rushEngine.js.
 import { supabase } from "./supabase.js";
 import { friendlyWriteError, withReason } from "./errors.js";
-import { DEFAULT_RULES, DEFAULT_LEVELS, LEVEL_IDS, SCENERY, SCENERY_IDS } from "./rushEngine.js";
+import { DEFAULT_RULES, DEFAULT_LEVELS, LEVEL_IDS, SCENERY, SCENERY_IDS, lookColumns } from "./rushEngine.js";
 import { loadAllAccess } from "./store.js";
 
 export * from "./rushEngine.js";
@@ -105,12 +105,9 @@ export async function loadGameLeaderboard(period = "week", difficulty = "medium"
   return data || [];
 }
 
-export async function saveGameLook(vehicleId, { color, body, spoiler, rims, height }) {
+export async function saveGameLook(vehicleId, look) {
   if (!supabase || !vehicleId) return;
-  const { error } = await supabase
-    .from("vehicles")
-    .update({ game_color: color, game_body: body, game_spoiler: spoiler, game_rims: rims, game_height: height })
-    .eq("id", vehicleId);
+  const { error } = await supabase.from("vehicles").update(lookColumns(look)).eq("id", vehicleId);
   if (error) throw new Error(withReason("Couldn't save your car's look.", error));
 }
 
