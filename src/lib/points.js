@@ -3,6 +3,7 @@
 // limits, who can redeem) is enforced in the database (045_points_and_rewards.sql);
 // this is the app's side of it.
 import { supabase } from "./supabase.js";
+import { compressImage } from "./image.js";
 import { friendlyWriteError, withReason } from "./errors.js";
 
 // The Boosted shop isn't open yet. While false, buying, points cards and
@@ -418,6 +419,72 @@ export async function savePointsSettings(settings) {
     })
     .eq("id", true);
   if (error) throw new Error(friendlyWriteError(error, "Couldn't save the points rates."));
+}
+
+// ---------- Boosted receipts (091_receipts_and_detail_tiers.sql) ----------
+
+export const RECEIPT_BUSINESSES = [
+  ["detailing", "🧽 Detailing"],
+  ["photography", "📸 Photography"],
+  ["merch", "👕 Merch"],
+  ["other", "🏁 Other Boosted"],
+];
+
+const RECEIPT_COPY = {
+  not_signed_in: "Sign in to send a receipt.",
+  unconfirmed: "Confirm your email first. Tap the link we emailed you.",
+  bad_business: "Pick which Boosted business it's from.",
+  bad_order: "Add the receipt or invoice number (3 to 60 characters).",
+  bad_amount: "Add the amount you paid, between $1 and $10,000.",
+  need_receipt: "Add a photo of the receipt or invoice.",
+  rate_limited: "That's 5 receipts today, the limit. Send the rest tomorrow.",
+  duplicate: "That receipt number has already been sent. Each receipt counts once.",
+};
+
+// A photo of a receipt or invoice from any Boosted business, for points once
+// TUNR checks it. The photo is private (only you and TUNR's admins see it).
+export async function submitReceipt({ userId, business, orderRef, amountCents, file }) {
+  need();
+  if (!userId) throw new Error("Sign in to send a receipt.");
+  if (!file) throw new Error(RECEIPT_COPY.need_receipt);
+  if (!file.type.startsWith("image/")) throw new Error("Pick a photo of the receipt (an image file).");
+  const small = await compressImage(file, { maxDim: 1800 });
+  const path = `${userId}/${Date.now()}.jpg`;
+  const up = await supabase.storage.from("receipts").upload(path, small, { contentType: "image/jpeg", upsert: false });
+  if (up.error) throw new Error(withReason("Couldn't upload the receipt photo.", up.error));
+  const { data, error } = await supabase.rpc("submit_receipt", { p_business: business, p_order_ref: orderRef.trim(), p_amount_cents: amountCents, p_receipt_path: path });
+  if (error) throw new Error(withReason("Couldn't send your receipt.", error));
+  if (data?.status !== "ok") throw new Error(RECEIPT_COPY[data?.status] || `Couldn't send your receipt. (${data?.status})`);
+}
+
+// Your receipts and where they're at, newest first.
+export async function loadMyReceipts(userId) {
+  need();
+  const { data, error } = await supabase
+    .from("purchase_claims")
+    .select("id, business, order_ref, amount_cents, status, points, note, created_at")
+    .eq("user_id", userId)
+    .not("receipt_path", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(10);
+  if (error) throw new Error(withReason("Couldn't load your receipts.", error));
+  return data || [];
+}
+
+// Admin: a link to look at a receipt photo (good for an hour).
+export async function receiptLink(path) {
+  need();
+  const { data, error } = await supabase.storage.from("receipts").createSignedUrl(path, 3600);
+  if (error) throw new Error(withReason("Couldn't open that receipt.", error));
+  return data.signedUrl;
+}
+
+// Admin: approve (optionally fixing the amount) or turn down a receipt.
+export async function decidePurchase(id, approve, amountCents = null, note = null) {
+  need();
+  const { data, error } = await supabase.rpc("decide_purchase", { p_claim: id, p_approve: approve, p_amount_cents: amountCents, p_note: note });
+  if (error) throw new Error(withReason(approve ? "Couldn't approve that receipt." : "Couldn't turn down that receipt.", error));
+  return data;
 }
 
 export async function loadPurchaseQueue(status = "pending") {

@@ -48,7 +48,43 @@ export async function sendFeedback({ kind, topic, message, replyEmail }) {
 }
 
 // Boosted Detailing requests (061_detailing_requests_and_shirt.sql).
-export const DETAIL_SERVICES = ["Full detail", "Interior", "Exterior", "Not sure yet"];
+// Boosted Detailing's tiers (prices before the 10% TUNR discount; SUVs and
+// trucks a little more). The names are what the request sends.
+export const DETAIL_TIERS = [
+  {
+    id: "Express Detail",
+    name: "EXPRESS",
+    price: 75,
+    time: "About 1–1.5 hours",
+    blurb: "A quick interior and exterior refresh.",
+    includes: ["Foam hand wash and dry", "Wheels, tires and tire shine", "Windows inside and out", "Full interior vacuum (seats, carpets, mats)", "Dash, console and door panels wiped down"],
+  },
+  {
+    id: "Deep Clean",
+    name: "DEEP CLEAN",
+    price: 125,
+    time: "About 3 hours",
+    blurb: "Interior and exterior, deep cleaned.",
+    popular: true,
+    includes: ["Everything in Express, plus:", "Carpets and mats shampooed", "Seats deep cleaned (fabric extraction, or leather cleaned and conditioned)", "Door jambs, vents and crevices detailed", "Iron decon wash and spray sealant (about 3 months of protection)", "Trim and plastics dressed"],
+  },
+  {
+    id: "Showroom Detail",
+    name: "SHOWROOM",
+    price: 225,
+    time: "About 5–6 hours",
+    blurb: "Paint correction and protection. Show-ready.",
+    includes: ["Everything in Deep Clean, plus:", "Clay bar decontamination", "One-step machine polish (takes out light swirls)", "Ceramic sealant (about 6–12 months of protection)", "Engine bay cleaned and dressed", "Headlight touch-up and odor treatment"],
+  },
+];
+export const DETAIL_ADDONS = [
+  ["Pet hair removal", 25],
+  ["Engine bay", 30],
+  ["Odor / ozone treatment", 35],
+  ["Headlight restoration", 40],
+];
+export const DETAIL_SPONSORS = ["Chemical Guys", "Winter While Details", "Detail Guys"];
+export const DETAIL_SERVICES = [...DETAIL_TIERS.map((t) => t.id), "Not sure yet"];
 
 const DETAIL_COPY = {
   not_signed_in: "Sign in to send a request.",

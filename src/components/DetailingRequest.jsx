@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { DETAIL_SERVICES, requestDetail } from "../lib/feedback.js";
+import { DETAIL_TIERS, DETAIL_ADDONS, DETAIL_SPONSORS, requestDetail } from "../lib/feedback.js";
 import { loadVehicles } from "../lib/store.js";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
 
@@ -9,7 +9,8 @@ const carName = (c) => [c.year, c.make, c.model].filter(Boolean).join(" ");
 // detail here. It lands in the admin inbox (061_detailing_requests_and_shirt.sql)
 // and the reply comes back as an alert.
 export default function DetailingRequest({ user, onClose, onToast, onNeedAccount }) {
-  const [service, setService] = useState(DETAIL_SERVICES[0]);
+  const [service, setService] = useState("Deep Clean");
+  const [addons, setAddons] = useState([]);
   const [cars, setCars] = useState([]);
   const [car, setCar] = useState("");
   const [when, setWhen] = useState("");
@@ -33,7 +34,8 @@ export default function DetailingRequest({ user, onClose, onToast, onNeedAccount
     setBusy(true);
     setError("");
     try {
-      await requestDetail({ service, car, when, area, phone, email, notes });
+      const extras = addons.length ? `Add-ons: ${addons.join(", ")}` : "";
+      await requestDetail({ service, car, when, area, phone, email, notes: [extras, notes.trim()].filter(Boolean).join("\n") });
       setSent(true);
       onToast("🧽 Request sent");
     } catch (e) {
@@ -66,14 +68,58 @@ export default function DetailingRequest({ user, onClose, onToast, onNeedAccount
             <b style={{ color: "#3CABFD" }}>10% TUNR discount</b> is included automatically.
           </div>
 
-          <div style={{ ...label, marginTop: 14 }}>WHAT DO YOU NEED?</div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {DETAIL_SERVICES.map((s) => (
-              <button key={s} onClick={() => setService(s)} aria-pressed={service === s} style={{ ...chip, ...(service === s ? chipOn : {}) }}>
-                {s}
-              </button>
-            ))}
+          <div style={{ ...label, marginTop: 14 }}>PICK A DETAIL</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {DETAIL_TIERS.map((t) => {
+              const on = service === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setService(t.id)}
+                  aria-pressed={on}
+                  style={{ position: "relative", textAlign: "left", padding: "12px 14px", borderRadius: 14, cursor: "pointer", background: on ? "linear-gradient(160deg, rgba(0,128,240,0.18), #121212)" : "#121212", border: `${on ? 2 : 1}px solid ${on ? "#0080F0" : "#262626"}`, color: "#F0F0F0", fontFamily: "'Barlow Condensed', sans-serif" }}
+                >
+                  {t.popular && <span style={{ position: "absolute", top: -9, right: 12, fontSize: 10, fontWeight: 900, letterSpacing: 1.2, background: "#FACC15", color: "#111", borderRadius: 5, padding: "2px 7px" }}>MOST POPULAR</span>}
+                  <span style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+                    <span style={{ fontSize: 20, fontWeight: 900, letterSpacing: 1 }}>{t.name}</span>
+                    <span style={{ fontSize: 22, fontWeight: 900 }}>
+                      ${t.price}
+                      <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: "#3CABFD", textAlign: "right" }}>${(t.price * 0.9).toFixed(2)} with TUNR</span>
+                    </span>
+                  </span>
+                  <span style={{ display: "block", fontSize: 13, color: "#B9C2CF", fontFamily: "'Barlow', sans-serif" }}>
+                    {t.blurb} · {t.time}
+                  </span>
+                  {on && (
+                    <span style={{ display: "block", marginTop: 8 }}>
+                      {t.includes.map((x, i) => (
+                        <span key={x} style={{ display: "block", fontSize: 13, color: i === 0 && x.endsWith(":") ? "#7FC4FF" : "#DDD", fontFamily: "'Barlow', sans-serif", lineHeight: 1.5 }}>
+                          {i === 0 && x.endsWith(":") ? x : `✓ ${x}`}
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+            <button onClick={() => setService("Not sure yet")} aria-pressed={service === "Not sure yet"} style={{ ...chip, ...(service === "Not sure yet" ? chipOn : {}), alignSelf: "flex-start" }}>
+              Not sure yet: help me pick
+            </button>
           </div>
+
+          <div style={{ ...label, marginTop: 14 }}>ADD-ONS (OPTIONAL)</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {DETAIL_ADDONS.filter(([name]) => !(service === "Showroom Detail" && name === "Engine bay")).map(([name, price]) => {
+              const on = addons.includes(name);
+              return (
+                <button key={name} aria-pressed={on} onClick={() => setAddons((a) => (on ? a.filter((x) => x !== name) : [...a, name]))} style={{ ...chip, ...(on ? chipOn : {}) }}>
+                  {on ? "✓ " : "+ "}
+                  {name} · ${price}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>Prices are for cars; SUVs and trucks are a little more. We confirm the final price before we start.</div>
 
           <div style={{ ...label, marginTop: 14 }}>YOUR CAR</div>
           {cars.length > 1 && (
@@ -107,6 +153,18 @@ export default function DetailingRequest({ user, onClose, onToast, onNeedAccount
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
+
+          <div style={{ marginTop: 16, padding: "10px 12px", borderRadius: 12, background: "#101010", border: "1px solid #222" }}>
+            <div style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 1.5, color: "#8A94A3" }}>PRODUCTS FROM OUR SPONSORS</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+              {DETAIL_SPONSORS.map((name) => (
+                <span key={name} style={{ fontSize: 13, fontWeight: 900, letterSpacing: 0.5, color: "#E6E6E6", background: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 999, padding: "5px 11px" }}>
+                  {name}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div style={{ ...muted, fontSize: 12, marginTop: 8 }}>🧾 After your detail, upload the receipt in Perks → Points for ⭐ points.</div>
 
           {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 10 }}>{error}</div>}
           <button className="action-btn" disabled={busy} onClick={send} style={{ ...bigButton, marginTop: 14, opacity: busy ? 0.6 : 1 }}>

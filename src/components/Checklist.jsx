@@ -24,6 +24,7 @@ const TASK_REASONS = {
   car: ["starter_car"],
   alerts: ["starter_alerts"],
   member: ["member_bonus"],
+  receipt: ["purchase"],
 };
 const sum = (rows) => rows.reduce((n, r) => n + r.delta, 0);
 
@@ -81,6 +82,16 @@ async function loadTasks(user) {
       done: referrals >= 10,
       progress: [Math.min(referrals, 10), 10],
       go: () => openInvites(),
+    },
+    {
+      group: "THIS MONTH",
+      id: "receipt",
+      icon: "🧾",
+      title: "Upload a Boosted receipt",
+      text: "Detailing, photography or merch: send the receipt or invoice in Perks for points.",
+      pts: `+${rates.points_per_dollar} per $1`,
+      done: recent.some((r) => r.reason === "purchase"),
+      go: () => go("tab:perks"),
     },
     // For good.
     { group: "GETTING STARTED", id: "email", icon: "✉️", title: "Confirm your email", text: "Tap the link we emailed you. Points start after this.", pts: "", done: Boolean(starter?.confirmed), go: null },

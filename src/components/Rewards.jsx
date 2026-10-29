@@ -39,6 +39,11 @@ import {
   recordPurchase,
   findUserId,
   CLAIM_HINT,
+  RECEIPT_BUSINESSES,
+  submitReceipt,
+  loadMyReceipts,
+  receiptLink,
+  decidePurchase,
 } from "../lib/points.js";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
 import Leaderboard from "./Leaderboard.jsx";
@@ -189,8 +194,12 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
         />
       )}
 
+      <Title>GOT A BOOSTED RECEIPT?</Title>
+      <ReceiptForm user={user} rate={rates.points_per_dollar} onToast={onToast} />
+
       <Title>HOW TO EARN</Title>
       <div style={card}>
+        <EarnRow icon="🧾" text="Upload a receipt or invoice from any Boosted business (detailing, photography, merch)" pts={`+${rates.points_per_dollar} per $1`} />
         {SHOP_OPEN ? (
           <EarnRow icon="🛍️" text="Boosted merch or a detail: scan the points card you get" pts={`+${rates.points_per_dollar} per $1`} />
         ) : (
@@ -656,6 +665,100 @@ export function CheckinsAdmin({ onToast }) {
 
 // Scan the QR on a points card (it opens TUNR with the code filled in) or
 // type the code. Points land at once.
+// A receipt or invoice from any Boosted business: pick which, the number,
+// the amount and a photo. TUNR checks it, then the points wait in the
+// checklist to claim.
+const RECEIPT_STATUS = { pending: ["Being checked", "#FACC15"], approved: ["Points added", "#10B981"], rejected: ["Not matched", "#F87171"] };
+function ReceiptForm({ user, rate, onToast }) {
+  const [open, setOpen] = useState(false);
+  const [business, setBusiness] = useState("detailing");
+  const [orderRef, setOrderRef] = useState("");
+  const [amount, setAmount] = useState("");
+  const [file, setFile] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [mine, setMine] = useState([]);
+  const cents = toCents(amount);
+
+  const refresh = () =>
+    loadMyReceipts(user.id)
+      .then(setMine)
+      .catch((e) => setError(e.message));
+  useEffect(() => {
+    refresh();
+  }, [user.id]);
+
+  async function send() {
+    setBusy(true);
+    setError("");
+    try {
+      await submitReceipt({ userId: user.id, business, orderRef, amountCents: cents, file });
+      onToast("🧾 Receipt sent. We'll check it, then your points wait in your 📋 checklist.");
+      setOrderRef("");
+      setAmount("");
+      setFile(null);
+      setOpen(false);
+      refresh();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const chip = (on) => ({ padding: "8px 12px", borderRadius: 999, border: `1px solid ${on ? "#0080F0" : "#2A2A2A"}`, background: on ? "rgba(0,128,240,0.15)" : "#161616", color: on ? "#7FC4FF" : "#BBB", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" });
+  return (
+    <div style={card}>
+      {!open ? (
+        <button className="action-btn" onClick={() => setOpen(true)} style={{ ...bigButton, background: "#FACC15", color: "#111" }}>
+          🧾 UPLOAD A RECEIPT · +{rate} PER $1
+        </button>
+      ) : (
+        <>
+          <div style={label}>WHICH BOOSTED BUSINESS?</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {RECEIPT_BUSINESSES.map(([id, name]) => (
+              <button key={id} aria-pressed={business === id} onClick={() => setBusiness(id)} style={chip(business === id)}>
+                {name}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <input style={{ ...field, flex: 2 }} placeholder="Receipt / invoice #" maxLength={60} value={orderRef} onChange={(e) => setOrderRef(e.target.value)} />
+            <input style={{ ...field, flex: 1 }} placeholder="$ paid" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.$]/g, ""))} />
+          </div>
+          <label style={{ display: "block", marginTop: 10, padding: "14px 12px", borderRadius: 10, border: "1px dashed #3A4250", textAlign: "center", color: file ? "#86EFAC" : "#9AA4B2", fontSize: 13.5, fontWeight: 800, cursor: "pointer" }}>
+            {file ? `📎 ${file.name}` : "📷 Add a photo of the receipt"}
+            <input type="file" accept="image/*" capture="environment" onChange={(e) => setFile(e.target.files?.[0] || null)} style={{ display: "none" }} />
+          </label>
+          {cents > 0 && <div style={{ ...muted, fontSize: 12.5, marginTop: 6 }}>About <b style={{ color: "#FACC15" }}>⭐ {Math.floor((cents / 100) * rate)}</b> points once it's checked.</div>}
+          {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+          <button className="action-btn" disabled={busy} onClick={send} style={{ ...bigButton, marginTop: 10 }}>
+            {busy ? "SENDING…" : "SEND RECEIPT"}
+          </button>
+          <button onClick={() => setOpen(false)} style={{ ...quietButton, marginTop: 6, padding: "9px 0" }}>
+            CANCEL
+          </button>
+          <div style={{ ...muted, fontSize: 11.5, marginTop: 8 }}>Only you and the TUNR team see the photo. Each receipt counts once.</div>
+        </>
+      )}
+      {mine.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          {mine.map((r) => (
+            <Line
+              key={r.id}
+              left={`${RECEIPT_BUSINESSES.find(([id]) => id === r.business)?.[1] || "Boosted"} · ${dollars(r.amount_cents)}`}
+              sub={[r.order_ref, new Date(r.created_at).toLocaleDateString(), r.status === "rejected" && r.note].filter(Boolean).join(" · ")}
+              right={r.status === "approved" ? `+${r.points}` : RECEIPT_STATUS[r.status]?.[0]}
+              rightColor={RECEIPT_STATUS[r.status]?.[1]}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CardForm({ initialCode, onAdded, onToast }) {
   const [code, setCode] = useState(() => cleanCardCode(initialCode));
   const [busy, setBusy] = useState(false);
@@ -918,6 +1021,71 @@ const CARDS_CSS = `
   @media print { .print-page .grid { padding: 0; } }
 `;
 
+// Receipts people sent in: look at the photo, fix the amount if it's off,
+// approve (points go to their checklist) or turn it down with a reason.
+function ReceiptsToCheck({ onToast, onDone }) {
+  const [rows, setRows] = useState(null);
+  const [fix, setFix] = useState({});
+  const [busy, setBusy] = useState("");
+  const load = () =>
+    loadPurchaseQueue("pending")
+      .then((q) => setRows(q.filter((r) => r.receipt_path)))
+      .catch((e) => (onToast(e.message), setRows([])));
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function decide(r, approve) {
+    const note = approve ? null : window.prompt("Why not? (they'll see this)", "We couldn't match this receipt to a Boosted sale.");
+    if (!approve && note === null) return;
+    setBusy(r.id);
+    try {
+      const cents = fix[r.id] ? toCents(fix[r.id]) : null;
+      const pts = await decidePurchase(r.id, approve, cents || null, note);
+      onToast(approve ? `Approved: +${pts} points to @${r.username}` : `Turned down @${r.username}'s receipt`);
+      load();
+      onDone();
+    } catch (e) {
+      onToast(e.message);
+    } finally {
+      setBusy("");
+    }
+  }
+
+  if (!rows || !rows.length) return null;
+  return (
+    <>
+      <Title>RECEIPTS TO CHECK ({rows.length})</Title>
+      <div style={card}>
+        {rows.map((r) => (
+          <div key={r.id} style={{ padding: "8px 0", borderBottom: "1px solid #1E1E1E" }}>
+            <Line left={`@${r.username} · ${RECEIPT_BUSINESSES.find(([id]) => id === r.business)?.[1] || r.business}`} sub={`${r.order_ref} · ${new Date(r.created_at).toLocaleString()}`} right={dollars(r.amount_cents)} rightColor="#FACC15" />
+            <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+              <button
+                onClick={() =>
+                  receiptLink(r.receipt_path)
+                    .then((u) => window.open(u, "_blank", "noopener"))
+                    .catch((e) => onToast(e.message))
+                }
+                style={{ ...quietButton, width: "auto", padding: "7px 10px", fontSize: 12.5 }}
+              >
+                🧾 VIEW
+              </button>
+              <input style={{ ...field, width: 90, padding: "7px 8px" }} placeholder="Fix $" inputMode="decimal" value={fix[r.id] || ""} onChange={(e) => setFix((f) => ({ ...f, [r.id]: e.target.value.replace(/[^\d.$]/g, "") }))} />
+              <button disabled={busy === r.id} onClick={() => decide(r, true)} style={{ ...quietButton, width: "auto", padding: "7px 10px", fontSize: 12.5, color: "#10B981" }}>
+                ✓ APPROVE
+              </button>
+              <button disabled={busy === r.id} onClick={() => decide(r, false)} style={{ ...quietButton, width: "auto", padding: "7px 10px", fontSize: 12.5, color: "#F87171" }}>
+                ✕ NO
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 // Sales recorded by hand (in person, no card on you), what's come in, and
 // the rates.
 export function PurchasesAdmin({ onToast }) {
@@ -980,6 +1148,8 @@ export function PurchasesAdmin({ onToast }) {
         only for a sale where you didn't hand over a card.
       </div>
       {error && <div role="alert" style={{ ...muted, color: "#F87171", marginTop: 8 }}>{error}</div>}
+
+      <ReceiptsToCheck onToast={onToast} onDone={refresh} />
 
       <Title>RECORD A SALE</Title>
       <div style={card}>
