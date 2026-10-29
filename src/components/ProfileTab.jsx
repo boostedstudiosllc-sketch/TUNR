@@ -11,6 +11,8 @@ import Connections from "./Connections.jsx";
 import EditProfile, { Avatar } from "./EditProfile.jsx";
 import { openInvites } from "../lib/invites.js";
 import SettingsScreen from "./SettingsScreen.jsx";
+import Wrapped from "./Wrapped.jsx";
+import { wrappedYearToOffer } from "../lib/wrappedSlides.js";
 import { PostCard, Segments, Logo } from "./CommunityBits.jsx";
 
 const legalButton = {
@@ -112,6 +114,8 @@ function SignedIn({
   const [cohostInvites, setCohostInvites] = useState(0);
   const [editing, setEditing] = useState(false);
   const [settings, setSettings] = useState(null); // null = closed, else { page }
+  const [wrapped, setWrapped] = useState(null);
+  const wrapYear = wrappedYearToOffer();
   const [tab, setTab] = useState(readTab);
   const [meetFilter, setMeetFilter] = useState("going");
   const tabsTop = useRef(null);
@@ -348,6 +352,17 @@ function SignedIn({
             🎁 INVITE
           </button>
         </div>
+
+        {wrapYear && (
+          <button
+            className="action-btn"
+            onClick={() => setWrapped(wrapYear)}
+            style={{ ...noticeCard, background: "linear-gradient(135deg, #0B1E3F, #0080F0 60%, #A855F7)", border: "none", color: "#fff", fontWeight: 900, letterSpacing: 1 }}
+          >
+            🎁 YOUR {wrapYear} TUNR WRAPPED IS HERE ›
+          </button>
+        )}
+        {wrapped && <Wrapped year={wrapped} onClose={() => setWrapped(null)} onToast={onToast} />}
 
         {profile && !p.username && (
           <button

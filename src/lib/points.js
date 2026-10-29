@@ -230,6 +230,15 @@ export async function claimHostBadges() {
   return data || {};
 }
 
+// TUNR Wrapped: your year's numbers (098).
+export async function loadWrapped(year) {
+  need();
+  const { data, error } = await supabase.rpc("my_wrapped", { p_year: year });
+  if (error) throw new Error(withReason("Couldn't load your Wrapped.", error));
+  if (!data) throw new Error("Sign in to see your Wrapped.");
+  return data;
+}
+
 const REASON_LABELS = {
   checkin: "Checked in",
   rsvp_bonus: "Said you'd go, and showed up",

@@ -15,6 +15,7 @@ import SignupStats from "./SignupStats.jsx";
 import Insights from "./Insights.jsx";
 import AdminLog from "./AdminLog.jsx";
 import RatePrompt from "./RatePrompt.jsx";
+import Wrapped from "./Wrapped.jsx";
 import { CohostInvites } from "./Cohosts.jsx";
 import { ListingRequestsQueue } from "./ListingRequest.jsx";
 import { SetPasswordForm } from "./SetPassword.jsx";
@@ -88,6 +89,7 @@ export default function SettingsScreen({
   const unconfirmed = Boolean(account && account.confirmed === false);
   const [page, setPage] = useState(initialPage);
   const [rating, setRating] = useState(false);
+  const [wrapped, setWrapped] = useState(null);
   const [verification, setVerification] = useState(undefined); // undefined = loading
   const [counts, setCounts] = useState({});
   const [locStatus] = useLocationStatus();
@@ -406,8 +408,10 @@ export default function SettingsScreen({
               <Row icon="💬" label="Contact us" sub="Questions, problems, partnerships" onClick={() => open("contact")} />
               <Row icon="💡" label="Suggestion box" sub="Ideas to make TUNR better" onClick={() => open("suggestions")} />
               {user && <Row icon="⭐" label="Rate TUNR" sub="Tell us how we're doing" onClick={() => setRating(true)} />}
+              {user && <Row icon="🎁" label={`TUNR Wrapped ${new Date().getFullYear()}`} sub="Your year so far, in cars" onClick={() => setWrapped(new Date().getFullYear())} />}
             </Section>
             {rating && <RatePrompt user={user} open onClose={() => setRating(false)} onToast={onToast} />}
+            {wrapped && <Wrapped year={wrapped} onClose={() => setWrapped(null)} onToast={onToast} />}
             <button
               onClick={() => open("boosted")}
               style={{ display: "block", width: "100%", background: "none", border: "none", textAlign: "center", fontSize: 12, color: "#808080", marginTop: 12, padding: "8px 0", letterSpacing: 1, cursor: "pointer", fontFamily: "'Barlow', sans-serif" }}
