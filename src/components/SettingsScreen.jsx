@@ -13,6 +13,7 @@ import ModerationQueue from "./ModerationQueue.jsx";
 import CommunityReports from "./CommunityReports.jsx";
 import SignupStats from "./SignupStats.jsx";
 import Insights from "./Insights.jsx";
+import AdminLog from "./AdminLog.jsx";
 import RatePrompt from "./RatePrompt.jsx";
 import { CohostInvites } from "./Cohosts.jsx";
 import { ListingRequestsQueue } from "./ListingRequest.jsx";
@@ -50,6 +51,7 @@ const PAGES = {
   blocked: "Blocked accounts",
   cohosts: "Co-host invites",
   insights: "Insights",
+  adminLog: "Admin log",
   reports: "Community reports",
   moderation: "Moderation queue",
   listings: "Listing requests",
@@ -378,6 +380,7 @@ export default function SettingsScreen({
                 <Row icon="📸" label="Instagram import" sub="Meets from @tunr.app's posts, added by themselves" onClick={() => open("instagramImport")} />
                 <Row icon="🎮" label="TUNR Rush" sub="Game on/off, daily goal, points, boosts, traffic" onClick={() => open("rushAdmin")} />
                 <Row icon="📊" label="Insights" onClick={() => open("insights")} />
+                <Row icon="🧾" label="Admin log" sub="Every change an admin made" onClick={() => open("adminLog")} />
                 <Row icon="🚩" label="Community reports" onClick={() => open("reports")} />
                 <Row icon="🧹" label="Moderation queue" onClick={() => open("moderation")} />
                 <Row icon="📋" label="Listing requests" onClick={() => open("listings")} />
@@ -513,6 +516,8 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
           <Insights />
         </Body>
       );
+    case "adminLog":
+      return <AdminLog />;
     case "reports":
       return <CommunityReports onToast={onToast} onOpenLink={onFollow} />;
     case "moderation":
