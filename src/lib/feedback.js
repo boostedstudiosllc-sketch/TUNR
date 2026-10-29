@@ -83,7 +83,7 @@ export const DETAIL_ADDONS = [
   ["Odor / ozone treatment", 35],
   ["Headlight restoration", 40],
 ];
-export const DETAIL_SPONSORS = ["Chemical Guys", "Winter While Details", "Detail Guys"];
+export const DETAIL_SPONSORS = ["Chemical Guys", "Winter White Detail", "Detail Guys"];
 export const DETAIL_SERVICES = [...DETAIL_TIERS.map((t) => t.id), "Not sure yet"];
 
 const DETAIL_COPY = {
