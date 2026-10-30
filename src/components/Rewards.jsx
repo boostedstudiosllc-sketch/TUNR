@@ -46,6 +46,7 @@ import {
   decidePurchase,
 } from "../lib/points.js";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
+import TacoAdmin from "./TacoAdmin.jsx";
 import Leaderboard from "./Leaderboard.jsx";
 import PrintPage from "./PrintPage.jsx";
 
@@ -68,7 +69,7 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
   const [rewards, setRewards] = useState([]);
   const [claims, setClaims] = useState([]);
   const [history, setHistory] = useState([]);
-  const [rates, setRates] = useState({ points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1, receipt_points: 10, photo_points: 25, starter_photo_points: 5, starter_car_points: 10, starter_alerts_points: 5 });
+  const [rates, setRates] = useState({ points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1, receipt_points: 10, photo_points: 25, starter_photo_points: 5, starter_car_points: 10, starter_alerts_points: 5, taco_points: 5, scratch_on: true });
   const [streak, setStreak] = useState(null);
   const [showBoard, setShowBoard] = useState(false);
   const [error, setError] = useState("");
@@ -1205,6 +1206,16 @@ export function PurchasesAdmin({ onToast }) {
               </Field>
             ))}
           </div>
+          <div style={{ display: "flex", gap: 10, marginTop: 8, alignItems: "flex-end" }}>
+            <Field name="TACO TUESDAY WIN">
+              <input style={field} inputMode="numeric" maxLength={2} value={rates.taco_points ?? 5} onChange={(e) => setRates((r) => ({ ...r, taco_points: e.target.value.replace(/\D/g, "") }))} />
+            </Field>
+            <Field name="SCRATCH CARDS">
+              <button type="button" aria-pressed={rates.scratch_on !== false} onClick={() => setRates((r) => ({ ...r, scratch_on: r.scratch_on === false }))} style={{ ...field, cursor: "pointer", fontWeight: 800, color: rates.scratch_on !== false ? "#10B981" : "var(--a-f87171)" }}>
+                {rates.scratch_on !== false ? "ON" : "OFF"}
+              </button>
+            </Field>
+          </div>
           <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
             <Field name="INVITE POINTS">
               <input style={field} inputMode="numeric" maxLength={2} value={rates.referral_points ?? 1} onChange={(e) => setRates((r) => ({ ...r, referral_points: e.target.value.replace(/\D/g, "") }))} />
@@ -1223,6 +1234,9 @@ export function PurchasesAdmin({ onToast }) {
           <button disabled={busy} onClick={saveRates} style={{ ...quietButton, marginTop: 8 }}>SAVE RATES</button>
         </div>
       )}
+
+      <Title>🌮 TACO TUESDAY</Title>
+      <TacoAdmin onToast={onToast} />
 
       <Title>RECENT PURCHASE POINTS</Title>
       {rows && rows.length === 0 && <div style={muted}>None yet.</div>}
