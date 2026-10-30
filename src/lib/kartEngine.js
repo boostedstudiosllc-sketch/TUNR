@@ -15,6 +15,7 @@
 // slower when far ahead). Pure logic, so the game and the tests share it.
 
 import { buildTrack, locate, pointAt, speedProfile, crossLine, STEP, TRACK_W, KERB_W, DIFFICULTY } from "./f1Engine.js";
+import { noteReport, followReports } from "./remoteMotion.js";
 
 export { STEP, TRACK_W, DIFFICULTY };
 export { standings, placeOf, lapClock, outline, mph } from "./f1Engine.js";
@@ -112,7 +113,9 @@ export const RIVALS = [
   { name: "TORQUE", color: "#F97316", accent: "#111827", skill: 0.82 },
 ];
 
-export function newKartRace(track, { laps = 3, rivals = 5, seed = 1, difficulty = "medium", color = "#0080F0" } = {}) {
+// slot: your grid spot (default: the back). Racing a friend, the two of you
+// take spots 0 and 1 with no rivals.
+export function newKartRace(track, { laps = 3, rivals = 5, seed = 1, difficulty = "medium", color = "#0080F0", slot: mySlot = null } = {}) {
   let r = seed % 2147483647 || 1;
   const rand = () => (r = (r * 16807) % 2147483647) / 2147483647;
   const pace = DIFFICULTY[difficulty] || 1;
@@ -120,7 +123,7 @@ export function newKartRace(track, { laps = 3, rivals = 5, seed = 1, difficulty 
   const pads = padSpots(track);
   const obstacles = placeObstacles(track, pads, rand);
   // The grid: two by two behind the line, you at the back.
-  const slot = (i) => ({ back: 6 + Math.floor(i / 2) * 6 + (i % 2) * 2.5, side: i % 2 ? -2.3 : 2.3 });
+  const slot = gridSlot;
   const cars = [];
   RIVALS.slice(0, rivals).forEach((rv, i) => {
     const sl = slot(i);
@@ -147,7 +150,7 @@ export function newKartRace(track, { laps = 3, rivals = 5, seed = 1, difficulty 
       hitT: -9,
     });
   });
-  const me = slot(rivals);
+  const me = slot(mySlot == null ? rivals : mySlot);
   const p = pointAt(track, track.L - me.back, me.side);
   const player = {
     ai: false,
@@ -189,6 +192,42 @@ export function newKartRace(track, { laps = 3, rivals = 5, seed = 1, difficulty 
   };
   cars.push(player);
   return { track, laps, difficulty, profile, pads, obstacles, cars, player, time: -3, state: "countdown", events: [] };
+}
+
+function gridSlot(i) {
+  return { back: 6 + Math.floor(i / 2) * 6 + (i % 2) * 2.5, side: i % 2 ? -2.3 : 2.3 };
+}
+
+// Racing a friend: their kart, placed and moved by their phone's reports.
+export function addRemoteKart(race, { name, color = "#F472B6", slot = 1 }) {
+  const g = gridSlot(slot);
+  const p = pointAt(race.track, race.track.L - g.back, g.side);
+  const car = { remote: true, ai: false, name, color, x: p.x, z: p.z, heading: p.heading, speed: 0, steer: 0, yawOff: 0, idx: p.i, s: race.track.L - g.back, side: g.side, lap: -1, finished: null, drifting: false, driftLevel: -1, boost: 0, boostKind: null, out: null };
+  race.cars.push(car);
+  return car;
+}
+
+const REPORTED = ["speed", "steer", "yawOff", "s", "idx", "lap", "side", "driftLevel", "boost"];
+
+// What this phone reports about its kart, a dozen times a second.
+export const kartReport = (race) => {
+  const p = race.player;
+  const r = { t: race.time, x: p.x, z: p.z, heading: p.heading, finished: p.finished, drifting: p.drifting, boostKind: p.boostKind };
+  for (const k of REPORTED) r[k] = p[k];
+  return r;
+};
+
+// A report from the other phone. `out` ("left") if they've gone.
+export function applyRemoteKart(car, r) {
+  if (r.out) {
+    car.out = r.out;
+    return;
+  }
+  for (const k of REPORTED) if (typeof r[k] === "number") car[k] = r[k];
+  if ([r.t, r.x, r.z, r.heading].every((v) => typeof v === "number")) noteReport(car, r);
+  car.drifting = Boolean(r.drifting);
+  car.boostKind = r.boostKind || null;
+  if (r.finished != null) car.finished = r.finished;
 }
 
 // A boost of some kind. A weaker one doesn't cut a stronger one short.
@@ -474,6 +513,10 @@ export function tickKartRace(race, input, dt = STEP) {
     else return race;
   }
   for (const c of race.cars) {
+    if (c.remote) {
+      followReports(c, race.time, dt);
+      continue;
+    }
     if (c.ai) tickRival(race, c, dt);
     else tickPlayer(race, c, input, dt);
   }

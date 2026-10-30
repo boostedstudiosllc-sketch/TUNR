@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { buildKartTrack, newKartRace, tickKartRace, STEP, standings, placeOf, lapClock, mph, outline, loadKartBests, saveKartBest, NITRO } from "../lib/kartEngine.js";
+import { buildKartTrack, newKartRace, tickKartRace, STEP, standings, placeOf, lapClock, mph, outline, loadKartBests, saveKartBest, NITRO, addRemoteKart, applyRemoteKart, kartReport } from "../lib/kartEngine.js";
+import FriendRoom from "./FriendRoom.jsx";
+import { REPORT_MS } from "../lib/remoteMotion.js";
+import { sharedGame } from "../lib/gameRooms.js";
 import { KART_TRACKS } from "../lib/kartTracks.js";
 import { RushAudio } from "../lib/rushAudio.js";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
@@ -46,7 +49,7 @@ function savePrefs(p) {
 // for a mini-turbo and Boosted tokens, and spend 3 tokens on NITRO. Boost
 // pads on the track; obstacles scattered at random each race. Free play;
 // fastest lap and best finish per track are kept on this phone.
-export default function KartGame({ onClose, user = null }) {
+export default function KartGame({ onClose, user = null, onNeedAccount }) {
   // Your kart can wear the paint of a car in your garage.
   const garage = useGarageCar(user, "karts");
   const [prefs, setPrefs] = useState(loadPrefs);
@@ -59,6 +62,16 @@ export default function KartGame({ onClose, user = null }) {
   const [sound, setSound] = useState({ music: true, sfx: true });
   const audio = useRef(null);
   const def = KART_TRACKS.find((t) => t.id === trackId) || null;
+  // Racing a friend (opens straight there from a shared room link).
+  const [friend, setFriend] = useState(() => {
+    try {
+      return sharedGame() === "karts";
+    } catch (e) {
+      console.warn("Couldn't read the shared room:", e.message);
+      return false;
+    }
+  });
+  const [friendTrack, setFriendTrack] = useState(KART_TRACKS[0].id);
 
   useEffect(() => {
     audio.current = new RushAudio();
@@ -67,11 +80,11 @@ export default function KartGame({ onClose, user = null }) {
   }, []);
 
   useEffect(() => {
-    if (def) return undefined;
+    if (def || friend) return undefined;
     const onKey = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [def, onClose]);
+  }, [def, friend, onClose]);
 
   const setPref = (patch) =>
     setPrefs((p) => {
@@ -106,6 +119,73 @@ export default function KartGame({ onClose, user = null }) {
   }
 
   const iconBtn = { ...quietButton, width: 44, height: 44, padding: 0, fontSize: 17 };
+
+  if (friend) {
+    const opts = { track: friendTrack, laps: prefs.laps };
+    return (
+      <div role="dialog" aria-label="Boosted Karts: race a friend" style={{ position: "fixed", inset: 0, zIndex: 410, background: "#0A0A0A", color: "#F0F0F0", display: "flex", flexDirection: "column", fontFamily: "'Barlow Condensed', sans-serif", paddingTop: "calc(8px + env(safe-area-inset-top))" }}>
+        <FriendRoom
+          game="karts"
+          title="RACE A FRIEND"
+          intro="Live on the same kart track, from your own phones: just the two of you, no rivals. Drifts, nitro and boost pads all count; you can't bump each other. Each phone times its own race."
+          user={user}
+          look={{ color: kartColor }}
+          audio={audio}
+          options={opts}
+          describe={(o) => `${KART_TRACKS.find((t) => t.id === o.track)?.name || "a track"} · ${o.laps} ${o.laps === 1 ? "lap" : "laps"}`}
+          settings={
+            <div style={{ display: "flex", gap: 6, overflowX: "auto", padding: "8px 0 2px" }}>
+              {KART_TRACKS.map((t) => (
+                <button key={t.id} onClick={() => setFriendTrack(t.id)} aria-pressed={friendTrack === t.id} style={{ ...chip, flex: "0 0 auto", padding: "6px 8px", display: "flex", flexDirection: "column", alignItems: "center", ...(friendTrack === t.id ? chipOn : {}) }}>
+                  <TrackShape def={t} size={44} color={friendTrack === t.id ? "#fff" : "#9AA4B2"} />
+                  <span style={{ fontSize: 11 }}>{t.name}</span>
+                </button>
+              ))}
+            </div>
+          }
+          onExit={() => setFriend(false)}
+          onNeedAccount={onNeedAccount}
+          renderPlay={({ start, room, hooks, opponent, isHost, onDone, onQuit }) => {
+            const o = start.opts || opts;
+            const tdef = KART_TRACKS.find((t) => t.id === o.track) || KART_TRACKS[0];
+            return (
+              <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
+                <KartRace
+                  key={start.round}
+                  def={tdef}
+                  laps={o.laps}
+                  difficulty="medium"
+                  color={kartColor}
+                  pedal={prefs.gas === "pedal"}
+                  guide={prefs.guide}
+                  audio={audio}
+                  sound={sound}
+                  onToggle={toggle}
+                  remote={{ round: start.round, seed: start.seed, isHost, opponent, room, hooks, onDone }}
+                  onFinish={() => {}}
+                  onQuit={onQuit}
+                  onFail={(why) => {
+                    setError(why);
+                    onQuit();
+                  }}
+                />
+              </div>
+            );
+          }}
+          renderResult={(r, opp) => (
+            <div style={{ padding: 14, borderRadius: 14, background: r.won ? "linear-gradient(135deg, rgba(34,197,94,0.18), #15181e)" : "#15181e", border: `1px solid ${r.won ? "#16A34A" : "#2A2E36"}`, textAlign: "center" }}>
+              <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1.5, color: r.won ? "#4ADE80" : "#F87171" }}>{r.won ? "🏆 WIN" : "LOSS"}</div>
+              <div style={{ fontSize: 30, fontWeight: 900 }}>{r.won ? `You beat @${opp?.name || "your friend"}` : `@${opp?.name || "Your friend"} won`}</div>
+              <div style={{ ...muted }}>
+                {r.track} · you {r.mine != null ? lapClock(r.mine) : "DNF"} · them {r.theirs != null ? lapClock(r.theirs) : r.out ? "left" : "DNF"}
+                {r.bestLap ? ` · your best lap ${lapClock(r.bestLap)}` : ""}
+              </div>
+            </div>
+          )}
+        />
+      </div>
+    );
+  }
 
   return (
     <div role="dialog" aria-label="Boosted Karts" style={{ position: "fixed", inset: 0, zIndex: 410, background: "#0A0A0A", color: "#F0F0F0", display: "flex", flexDirection: "column", fontFamily: "'Barlow Condensed', sans-serif" }}>
@@ -198,6 +278,9 @@ export default function KartGame({ onClose, user = null }) {
                 ))}
               </div>
               <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>The best way round, on the track: green is fine, yellow ease off, red brake.</div>
+              <button className="action-btn" onClick={() => setFriend(true)} style={{ ...bigButton, marginTop: 14, background: "linear-gradient(135deg, #DB2777, #7C3AED)", color: "#fff", fontSize: 17, letterSpacing: 2 }}>
+                👥 RACE A FRIEND · LIVE
+              </button>
               <div style={{ ...label, marginTop: 14 }}>PICK A TRACK</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 8 }}>
                 {KART_TRACKS.map((t) => {
@@ -286,7 +369,9 @@ export default function KartGame({ onClose, user = null }) {
 }
 
 // The race: the 3D view, the numbers on top, and the controls.
-function KartRace({ def, laps, difficulty, color, pedal = false, guide = true, audio, sound, onToggle, onFinish, onQuit, onFail }) {
+// remote (racing a friend): { round, seed, isHost, opponent, room, hooks,
+// onDone }: no rivals, their kart from their phone's reports.
+function KartRace({ def, laps, difficulty, color, pedal = false, guide = true, audio, sound, onToggle, onFinish, onQuit, onFail, remote = null }) {
   const wrap = useRef(null);
   const canvas = useRef(null);
   const mapRef = useRef(null);
@@ -309,7 +394,18 @@ function KartRace({ def, laps, difficulty, color, pedal = false, guide = true, a
     let gone = false;
     let ro = null;
     const track = buildKartTrack(def);
-    const race = newKartRace(track, { laps, difficulty, color, seed: Date.now() % 100000 });
+    const race = remote
+      ? newKartRace(track, { laps, difficulty, color, seed: remote.seed, rivals: 0, slot: remote.isHost ? 0 : 1 })
+      : newKartRace(track, { laps, difficulty, color, seed: Date.now() % 100000 });
+    const them = remote ? addRemoteKart(race, { name: remote.opponent.name, color: remote.opponent.look?.color && remote.opponent.look.color !== color ? remote.opponent.look.color : "#F472B6", slot: remote.isHost ? 1 : 0 }) : null;
+    if (remote) {
+      const mine = (p) => p?.round === remote.round;
+      remote.hooks.current = {
+        pos: (p) => mine(p) && applyRemoteKart(them, p),
+        bye: () => applyRemoteKart(them, { out: "left" }),
+      };
+    }
+    let lastSent = 0;
     // For the browser checks: lets a test jump to the end of the race.
     if (import.meta.env.DEV) window.__kartRace = race;
     const mctx = mapRef.current.getContext("2d");
@@ -360,7 +456,8 @@ function KartRace({ def, laps, difficulty, color, pedal = false, guide = true, a
           raf = requestAnimationFrame(loop);
           const dt = Math.min(0.05, last ? (now - last) / 1000 : 0);
           last = now;
-          if (!live.current.paused) {
+          // Against a friend the clock never stops (theirs doesn't).
+          if (!live.current.paused || remote) {
             acc += dt;
             while (acc >= STEP) {
               // A tap quicker than a frame still counts.
@@ -435,7 +532,18 @@ function KartRace({ def, laps, difficulty, color, pedal = false, guide = true, a
               mctx.stroke();
             }
           }
-          if (race.state === "finished" && !told && race.time - p.finished > 1.2) {
+          if (remote && now - lastSent > REPORT_MS) {
+            lastSent = now;
+            Promise.resolve(remote.room?.send("pos", { round: remote.round, ...kartReport(race) })).catch((e) => console.warn("Couldn't reach the other phone:", e.message));
+          }
+          // Against a friend: over once you're both through, they've gone, or
+          // 30 seconds after you finish.
+          if (remote && race.state === "finished" && !told && race.time - p.finished > 1.2 && (them.finished != null || them.out || race.time - p.finished > 30)) {
+            told = true;
+            a?.squeal(0);
+            const won = them.finished == null || p.finished < them.finished;
+            remote.onDone({ won, track: def.name, mine: p.finished, theirs: them.finished, out: them.out, bestLap: p.lapTimes.length ? Math.min(...p.lapTimes) : null });
+          } else if (!remote && race.state === "finished" && !told && race.time - p.finished > 1.2) {
             told = true;
             a?.squeal(0);
             const order = standings(race).map((c) => ({ name: c.name, color: c.color, me: !c.ai }));

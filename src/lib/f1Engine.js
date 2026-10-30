@@ -9,6 +9,8 @@
 // Meters and seconds. The ground is x (east) and z (south); heading 0 faces
 // -z (north) and grows turning left, like three.js's rotation.y.
 
+import { noteReport, followReports } from "./remoteMotion.js";
+
 export const STEP = 1 / 120;
 export const TRACK_W = 12;
 export const KERB_W = 1.3;
@@ -219,7 +221,9 @@ export function coinSpots(track, count = COIN.perLap) {
     });
 }
 
-export function newRace(track, { laps = 3, rivals = 3, seed = 1, difficulty = "medium", car = "formula" } = {}) {
+// slot: your grid spot (default: the back, behind the rivals). Racing a
+// friend, the two of you take spots 0 and 1 with no rivals.
+export function newRace(track, { laps = 3, rivals = 3, seed = 1, difficulty = "medium", car = "formula", slot = null } = {}) {
   const pace = DIFFICULTY[difficulty] || 1;
   const spec = CARS[car] || CARS.formula;
   let r = seed % 2147483647 || 1;
@@ -227,7 +231,7 @@ export function newRace(track, { laps = 3, rivals = 3, seed = 1, difficulty = "m
   const profile = speedProfile(track, spec.grip * 0.92, BRAKE * 0.8, spec.vmax);
   // The grid: two by two behind the line, you at the back.
   const slots = [];
-  for (let i = 0; i <= rivals; i++) slots.push({ back: 8 + i * 9, side: i % 2 ? -2.4 : 2.4 });
+  for (let i = 0; i <= rivals; i++) slots.push(gridSlot(i));
   const cars = [];
   RIVALS.slice(0, rivals).forEach((rv, i) => {
     const slot = slots[i];
@@ -249,7 +253,7 @@ export function newRace(track, { laps = 3, rivals = 3, seed = 1, difficulty = "m
       finished: null,
     });
   });
-  const me = slots[rivals];
+  const me = slot == null ? slots[rivals] : gridSlot(slot);
   const p = pointAt(track, track.L - me.back, me.side);
   const player = {
     ai: false,
@@ -279,6 +283,36 @@ export function newRace(track, { laps = 3, rivals = 3, seed = 1, difficulty = "m
   };
   cars.push(player);
   return { track, laps, difficulty, car: CARS[car] ? car : "formula", spec, profile, cars, player, coins: coinSpots(track), time: -3, state: "countdown", events: [] };
+}
+
+function gridSlot(i) {
+  return { back: 8 + i * 9, side: i % 2 ? -2.4 : 2.4 };
+}
+
+// Racing a friend: their car, placed and moved by their phone's reports.
+export function addRemoteCar(race, { name, color = "#F472B6", look = null, slot = 1 }) {
+  const g = gridSlot(slot);
+  const p = pointAt(race.track, race.track.L - g.back, g.side);
+  const car = { remote: true, ai: false, name, color, look, x: p.x, z: p.z, heading: p.heading, speed: 0, steer: 0, idx: p.i, s: race.track.L - g.back, side: g.side, lap: -1, finished: null, out: null };
+  race.cars.push(car);
+  return car;
+}
+
+// What this phone reports about its car, a dozen times a second.
+export const reportOf = (race) => {
+  const p = race.player;
+  return { t: race.time, x: p.x, z: p.z, heading: p.heading, speed: p.speed, steer: p.steer, s: p.s, idx: p.idx, lap: p.lap, side: p.side, finished: p.finished };
+};
+
+// A report from the other phone. `out` ("left") if they've gone.
+export function applyRemote(car, r) {
+  if (r.out) {
+    car.out = r.out;
+    return;
+  }
+  for (const k of ["speed", "steer", "s", "idx", "lap", "side"]) if (typeof r[k] === "number") car[k] = r[k];
+  if ([r.t, r.x, r.z, r.heading].every((v) => typeof v === "number")) noteReport(car, r);
+  if (r.finished != null) car.finished = r.finished;
 }
 
 export const kmh = (ms) => Math.round(ms * 3.6);
@@ -467,6 +501,10 @@ export function tickRace(race, input, dt = STEP) {
     else return race;
   }
   for (const c of race.cars) {
+    if (c.remote) {
+      followReports(c, race.time, dt);
+      continue;
+    }
     if (c.ai) tickRival(race, c, dt);
     else tickPlayer(race, c, input, dt);
   }

@@ -72,7 +72,11 @@ function kickoffSpots(size) {
   return size === 1 ? [[0, 34]] : [[-12, 32], [12, 38]];
 }
 
-export function newMatch({ size = 1, length = 180, difficulty = "medium", seed = 1 } = {}) {
+// online: playing a friend, 1 v 1. "host" runs the match (you're blue, the
+// orange car is driven by the friend's controls); "guest" is orange and
+// shows the host's match, predicting between its snapshots.
+export function newMatch({ size = 1, length = 180, difficulty = "medium", seed = 1, online = null } = {}) {
+  if (online) size = 1;
   const cars = [];
   for (const team of [0, 1]) {
     for (let k = 0; k < size; k++) {
@@ -103,13 +107,23 @@ export function newMatch({ size = 1, length = 180, difficulty = "medium", seed =
       });
     }
   }
+  if (online) {
+    const [mine, theirs] = online === "host" ? [cars[0], cars[1]] : [cars[1], cars[0]];
+    mine.me = true;
+    mine.ai = null;
+    theirs.me = false;
+    theirs.ai = null;
+    theirs.remote = true;
+    theirs.input = {};
+  }
   const match = {
+    online,
     size,
     length,
     difficulty,
     level: AI_LEVELS[difficulty] || AI_LEVELS.medium,
     cars,
-    player: cars[0],
+    player: online === "guest" ? cars[1] : cars[0],
     ball: { x: 0, y: BALL.r, z: 0, vx: 0, vy: 0, vz: 0, spin: 0 },
     pads: PADS.map((p) => ({ ...p, back: 0 })),
     score: [0, 0],
@@ -519,6 +533,8 @@ export function tickMatch(match, input, dt = STEP) {
   for (const p of match.pads) p.back = Math.max(0, p.back - dt);
 
   if (match.state === "kickoff") {
+    // The guest waits for the host's go.
+    if (match.online === "guest") return match;
     match.stateT -= dt;
     if (match.stateT > 0) return match;
     match.state = "play";
@@ -527,12 +543,18 @@ export function tickMatch(match, input, dt = STEP) {
   if (match.state === "over") return match;
 
   for (const c of match.cars) {
-    const ctl = c.ai ? aiInput(match, c, dt) : match.state === "goal" ? {} : input;
+    const ctl = c.ai ? aiInput(match, c, dt) : match.state === "goal" ? {} : c.remote ? c.input || {} : input;
+    if (c.me && match.online) c.lastInput = { steer: ctl.steer, throttle: ctl.throttle, boost: ctl.boost, jump: ctl.jump };
     tickCar(match, c, ctl, dt);
   }
+  // A friend's jump tap counts once.
+  for (const c of match.cars) if (c.remote && c.input) c.input.jumpTap = false;
   bumpCars(match);
   for (const c of match.cars) hitBall(match, c);
   tickBall(match, dt);
+  // The guest only predicts movement; goals, the clock and the end are the
+  // host's to call, and come in its snapshots.
+  if (match.online === "guest") return match;
 
   if (match.state === "goal") {
     match.stateT -= dt;
@@ -574,6 +596,71 @@ export function tickMatch(match, input, dt = STEP) {
     }
   }
   return match;
+}
+
+// ---------- playing a friend ----------
+
+const CAR_FIELDS = ["x", "y", "z", "vx", "vy", "vz", "heading", "speed", "steer", "boost", "jumpT", "flipT", "hitT"];
+const CAR_FLAGS = ["onGround", "boosting", "canFlip", "jumpHeld"];
+
+// The host's match, a few times a second: everything the guest needs.
+export function snapshot(match) {
+  const r2 = (v) => Math.round(v * 1000) / 1000;
+  return {
+    t: r2(match.time),
+    cars: match.cars.map((c) => {
+      const o = {};
+      for (const k of CAR_FIELDS) o[k] = r2(c[k]);
+      for (const k of CAR_FLAGS) o[k] = c[k] ? 1 : 0;
+      o.flipDir = c.flipDir;
+      o.input = c.remote ? c.input : c.lastInput || null;
+      return o;
+    }),
+    ball: Object.fromEntries(["x", "y", "z", "vx", "vy", "vz", "spin"].map((k) => [k, r2(match.ball[k])])),
+    score: match.score,
+    clock: r2(match.clock),
+    overtime: match.overtime,
+    state: match.state,
+    stateT: r2(match.stateT),
+    pads: match.pads.map((p) => r2(p.back)),
+  };
+}
+
+// The guest takes the host's snapshot. Your own car is eased toward it
+// (snapping it would make it jerk back by the lag every time) unless it's
+// far off; everything else is replaced. Returns events for the screen
+// (goal, go, overtime, over) worked out from what changed.
+export function applySnapshot(match, snap) {
+  const events = [];
+  const seen = (match.seen ||= { score: [0, 0], state: "kickoff", overtime: false });
+  if (snap.score[0] !== seen.score[0] || snap.score[1] !== seen.score[1]) {
+    const team = snap.score[0] > seen.score[0] ? 0 : 1;
+    events.push({ kind: "goal", team, by: null });
+  }
+  if (seen.state === "kickoff" && snap.state === "play") events.push({ kind: "go" });
+  if (!seen.overtime && snap.overtime) events.push({ kind: "overtime" });
+  if (snap.state === "over" && seen.state !== "over") events.push({ kind: "over" });
+  match.seen = { score: [...snap.score], state: snap.state, overtime: snap.overtime };
+  snap.cars.forEach((s, k) => {
+    const c = match.cars[k];
+    if (!c) return;
+    const mine = c === match.player;
+    const off = Math.hypot(c.x - s.x, c.z - s.z);
+    const k2 = mine && off < 8 && snap.state === "play" ? 0.35 : 1;
+    for (const f of CAR_FIELDS) c[f] = c[f] + (s[f] - c[f]) * (f === "heading" ? 1 : k2);
+    if (mine && k2 < 1) c.heading = s.heading + Math.atan2(Math.sin(c.heading - s.heading), Math.cos(c.heading - s.heading)) * 0.65;
+    for (const f of CAR_FLAGS) c[f] = Boolean(s[f]);
+    c.flipDir = s.flipDir || c.flipDir;
+    if (c.remote) c.input = s.input || {};
+  });
+  Object.assign(match.ball, snap.ball);
+  match.score = [...snap.score];
+  match.clock = snap.clock;
+  match.overtime = snap.overtime;
+  match.state = snap.state;
+  match.stateT = snap.stateT;
+  snap.pads.forEach((b, k) => match.pads[k] && (match.pads[k].back = b));
+  return events;
 }
 
 export const clockText = (s) => {

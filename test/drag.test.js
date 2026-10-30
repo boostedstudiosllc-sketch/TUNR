@@ -140,7 +140,7 @@ test("drag two-player: if the other phone goes quiet, you win once through", () 
   assert.equal(r.result.rivalOut, "left");
 });
 
-import { cleanCode, newRoomCode, hostOf, quickRoomCode } from "../src/lib/dragRooms.js";
+import { cleanCode, newRoomCode, hostOf, quickRoomCode, takeSharedRoom, JOIN_KEY } from "../src/lib/gameRooms.js";
 
 test("drag rooms: codes and who hosts", () => {
   assert.match(newRoomCode(), /^[A-HJKMNP-Z2-9]{4}$/);
@@ -148,4 +148,13 @@ test("drag rooms: codes and who hosts", () => {
   assert.equal(hostOf([{ id: "b" }, { id: "a" }]), "a");
   assert.equal(quickRoomCode("bbbb-2", "aaaa-1"), quickRoomCode("aaaa-1", "bbbb-2"));
   assert.ok(quickRoomCode("aaaa-1", "bbbb-2").length > 4);
+});
+
+test("shared room links: only the game they're for picks them up", () => {
+  const store = new Map();
+  const storage = { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v), removeItem: (k) => store.delete(k) };
+  storage.setItem(JOIN_KEY, "karts:ABCD");
+  assert.equal(takeSharedRoom("drag", storage), null);
+  assert.equal(takeSharedRoom("karts", storage), "ABCD");
+  assert.equal(takeSharedRoom("karts", storage), null);
 });

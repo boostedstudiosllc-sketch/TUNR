@@ -5,7 +5,8 @@ import { lookOf, DEFAULT_LOOK } from "../lib/rushEngine.js";
 import { muted, bigButton, quietButton } from "./Sheet.jsx";
 import { GarageRow, useGarageCar } from "./Showroom.jsx";
 import DragFriend from "./DragFriend.jsx";
-import { JOIN_KEY } from "../lib/dragRooms.js";
+import { REPORT_MS } from "../lib/remoteMotion.js";
+import { sharedGame } from "../lib/gameRooms.js";
 
 // Drag Race: a quarter mile against five rivals in turn. Launch on the
 // green, shift in the green, one shot of nitro. Free play; your times and
@@ -22,7 +23,7 @@ export default function DragRace({ onClose, user = null, onNeedAccount }) {
   // Racing a friend; opens straight there from a shared room link.
   const [friend, setFriend] = useState(() => {
     try {
-      return Boolean(sessionStorage.getItem(JOIN_KEY));
+      return sharedGame() === "drag";
     } catch (e) {
       console.warn("Couldn't read the shared race code:", e.message);
       return false;
@@ -271,13 +272,13 @@ export function DragRun({ look, rivalIndex = 0, audio, onDone, onQuit, remote = 
       if (!live.current.paused || remote) tick(race, dt);
       if (remote) {
         const me = race.me;
-        if (now - lastSent > 80 && race.phase !== "done" && me.finishAt == null) {
+        if (now - lastSent > REPORT_MS && race.phase !== "done" && me.finishAt == null) {
           lastSent = now;
-          report(() => remote.room.pos({ round: remote.round, t: race.t, x: me.x, v: me.v, nitro: me.nitroOn }));
+          report(() => remote.room.send("pos", { round: remote.round, t: race.t, x: me.x, v: me.v, nitro: me.nitroOn }));
         }
         if (!sentDone && (me.finishAt != null || race.phase === "done")) {
           sentDone = true;
-          report(() => remote.room.done({ round: remote.round, report: race.phase === "done" ? myReport(race) : { finishAt: me.finishAt, launchedAt: me.launchedAt, trap: me.trap } }));
+          report(() => remote.room.send("done", { round: remote.round, report: race.phase === "done" ? myReport(race) : { finishAt: me.finishAt, launchedAt: me.launchedAt, trap: me.trap } }));
         }
       }
       for (const ev of race.events.splice(0)) {

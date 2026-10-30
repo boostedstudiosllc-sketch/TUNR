@@ -1,14 +1,15 @@
-// Drag Race against a friend: two phones in a room, over Supabase Realtime
-// (broadcast + presence; no tables, nothing to set up). A room has a short
-// code to share; Quick match pairs whoever is waiting in the lobby.
+// Playing a friend, live: two phones in a room, over Supabase Realtime
+// (broadcast + presence; no tables, nothing to set up). Every Arcade game
+// with a multiplayer mode uses this: a room has a short code to share, and
+// Quick match pairs whoever is waiting in that game's lobby.
 //
-// Messages in a room: presence { id, name, look, ready }, "start" { seed,
-// round } from the host (the lower id), "pos" { t, x, v, nitro } a dozen
-// times a second, and "done" { round, report } at the end.
+// In a room: presence { id, name, look, ready, ... } and messages
+// { e: event, p: payload } ("start" from the host, then whatever the game
+// sends: positions, inputs, snapshots, "done").
 
 import { supabase } from "./supabase.js";
-import { JOIN_KEY, newRoomCode, cleanCode, hostOf, quickRoomCode } from "./dragRooms.js";
-export { JOIN_KEY, newRoomCode, cleanCode, hostOf };
+import { newRoomCode, cleanCode, hostOf, quickRoomCode, JOIN_KEY } from "./gameRooms.js";
+export { newRoomCode, cleanCode, hostOf, JOIN_KEY };
 
 // For testing without Supabase: localStorage "tunr.fakeNet" = "1" in
 // development uses the browser's BroadcastChannel between tabs, or, when a
@@ -64,7 +65,7 @@ function supabaseTransport(name, key) {
     const state = channel.presenceState();
     handlers.presence?.(Object.values(state).map((list) => list[list.length - 1]));
   });
-  for (const event of ["start", "pos", "done", "bye"]) channel.on("broadcast", { event }, ({ payload }) => handlers[event]?.(payload));
+  channel.on("broadcast", { event: "m" }, ({ payload }) => handlers.m?.(payload));
   const ready = new Promise((ok, fail) => {
     channel.subscribe((status, err) => {
       if (status === "SUBSCRIBED") ok();
@@ -88,32 +89,28 @@ function transport(name, key) {
     console.warn("Couldn't read the test network setting:", e.message);
   }
   if (fake) return fakeTransport(name, key);
-  if (!supabase) throw new Error("Racing a friend needs the internet connection to TUNR.");
+  if (!supabase) throw new Error("Playing a friend needs the internet connection to TUNR.");
   return supabaseTransport(name, key);
 }
 
-// Joins a room. `me`: { id, name, look }. Handlers: onPeers(list of
-// everyone in the room, you included), onStart, onPos, onDone, onBye.
-export async function joinRoom(code, me, { onPeers, onStart, onPos, onDone, onBye }) {
-  const t = transport(`drag-room-${code}`, me.id);
+// Joins a game's room. `me`: { id, name, look }. onPeers(everyone in the
+// room, you included); onMessage(event, payload) for everything sent.
+export async function joinRoom(game, code, me, { onPeers, onMessage }) {
+  const t = transport(`${game}-room-${code}`, me.id);
   let state = { ...me, ready: false, joinedAt: Date.now() };
   t.on("presence", (list) => onPeers?.(list.filter(Boolean)));
-  t.on("start", (p) => onStart?.(p));
-  t.on("pos", (p) => onPos?.(p));
-  t.on("done", (p) => onDone?.(p));
-  t.on("bye", (p) => onBye?.(p));
+  t.on("m", (m) => m && onMessage?.(m.e, m.p));
   await t.ready;
   await t.track(state);
+  const send = (e, p) => t.send("m", { e, p });
   return {
     code,
-    setReady: (ready) => t.track((state = { ...state, ready })),
-    setLook: (look) => t.track((state = { ...state, look })),
-    start: (payload) => t.send("start", payload),
-    pos: (payload) => t.send("pos", payload),
-    done: (payload) => t.send("done", payload),
+    // Change your presence: ready, look, or anything the game shows (opts).
+    set: (patch) => t.track((state = { ...state, ...patch })),
+    send,
     leave: async () => {
       try {
-        await t.send("bye", { id: me.id });
+        await send("bye", { id: me.id });
       } catch (e) {
         console.warn("Couldn't say goodbye to the room:", e.message);
       }
@@ -125,8 +122,8 @@ export async function joinRoom(code, me, { onPeers, onStart, onPos, onDone, onBy
 // Quick match: wait in the lobby until someone else is there. Everyone
 // sorts the lobby the same way and pairs it off in twos, so both players
 // pick the same room. Calls onMatch(code, otherPlayer); returns cancel().
-export async function quickMatch(me, onMatch) {
-  const t = transport("drag-lobby", me.id);
+export async function quickMatch(game, me, onMatch) {
+  const t = transport(`${game}-lobby`, me.id);
   let done = false;
   t.on("presence", (list) => {
     if (done) return;

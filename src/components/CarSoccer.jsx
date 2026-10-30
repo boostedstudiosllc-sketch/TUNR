@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { newMatch, tickMatch, STEP, clockText, loadRecord, saveRecord, MATCH_LENGTHS, TEAM_COLORS } from "../lib/soccerEngine.js";
+import { newMatch, tickMatch, STEP, clockText, loadRecord, saveRecord, MATCH_LENGTHS, TEAM_COLORS, snapshot, applySnapshot } from "../lib/soccerEngine.js";
+import FriendRoom from "./FriendRoom.jsx";
+import { sharedGame } from "../lib/gameRooms.js";
 import { RushAudio } from "../lib/rushAudio.js";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import { chip, chipOn } from "./DriftKing.jsx";
@@ -47,7 +49,7 @@ function savePrefs(p) {
 // (tap again in the air to flip into the ball), brake to back up. Boost pads
 // round the floor refill the meter. Free play; your wins, losses and goals
 // are kept on this phone.
-export default function CarSoccer({ onClose, user = null }) {
+export default function CarSoccer({ onClose, user = null, onNeedAccount }) {
   // Play in your own car from your garage, or the Turbo Ball battle car.
   const garage = useGarageCar(user, "ball");
   const [prefs, setPrefs] = useState(loadPrefs);
@@ -58,6 +60,15 @@ export default function CarSoccer({ onClose, user = null }) {
   const [error, setError] = useState("");
   const [sound, setSound] = useState({ music: true, sfx: true });
   const audio = useRef(null);
+  // Playing a friend (opens straight there from a shared room link).
+  const [friend, setFriend] = useState(() => {
+    try {
+      return sharedGame() === "ball";
+    } catch (e) {
+      console.warn("Couldn't read the shared room:", e.message);
+      return false;
+    }
+  });
 
   useEffect(() => {
     audio.current = new RushAudio();
@@ -66,11 +77,11 @@ export default function CarSoccer({ onClose, user = null }) {
   }, []);
 
   useEffect(() => {
-    if (playing) return undefined;
+    if (playing || friend) return undefined;
     const onKey = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [playing, onClose]);
+  }, [playing, friend, onClose]);
 
   const setPref = (patch) =>
     setPrefs((p) => {
@@ -105,6 +116,71 @@ export default function CarSoccer({ onClose, user = null }) {
   }
 
   const iconBtn = { ...quietButton, width: 44, height: 44, padding: 0, fontSize: 17 };
+
+  if (friend) {
+    const myLook = garage.car ? lookOf(garage.car) : null;
+    return (
+      <div role="dialog" aria-label="Turbo Ball: play a friend" style={{ position: "fixed", inset: 0, zIndex: 410, background: "#0A0A0A", color: "#F0F0F0", display: "flex", flexDirection: "column", fontFamily: "'Barlow Condensed', sans-serif", paddingTop: "calc(8px + env(safe-area-inset-top))" }}>
+        <FriendRoom
+          game="ball"
+          title="PLAY A FRIEND"
+          intro="Live 1 v 1 car soccer from your own phones. The host's phone runs the match (blue); the other player is orange. Best on a good connection."
+          user={user}
+          look={myLook}
+          audio={audio}
+          options={{ length: prefs.length }}
+          describe={(o) => `${Math.round(o.length / 60)} minute match`}
+          settings={
+            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+              {MATCH_LENGTHS.map((sec) => (
+                <button key={sec} onClick={() => setPref({ length: sec })} style={{ ...chip, ...(prefs.length === sec ? chipOn : {}) }}>
+                  {sec / 60} MIN
+                </button>
+              ))}
+            </div>
+          }
+          onExit={() => setFriend(false)}
+          onNeedAccount={onNeedAccount}
+          renderPlay={({ start, room, hooks, opponent, isHost, onDone, onQuit }) => (
+            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
+              <Match
+                key={start.round}
+                size={1}
+                length={start.opts?.length || prefs.length}
+                difficulty="medium"
+                ballCam={prefs.ballCam}
+                myLook={myLook}
+                pedal={prefs.gas === "pedal"}
+                onBallCam={(on) => setPref({ ballCam: on })}
+                audio={audio}
+                sound={sound}
+                onToggle={toggle}
+                remote={{ round: start.round, seed: start.seed, isHost, opponent, room, hooks, onDone }}
+                onFinish={() => {}}
+                onQuit={onQuit}
+                onFail={(why) => {
+                  setError(why);
+                  onQuit();
+                }}
+              />
+            </div>
+          )}
+          renderResult={(r, opp) => (
+            <div style={{ padding: 14, borderRadius: 14, background: r.won ? "linear-gradient(135deg, rgba(34,197,94,0.18), #15181e)" : "#15181e", border: `1px solid ${r.won ? "#16A34A" : "#2A2E36"}`, textAlign: "center" }}>
+              <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1.5, color: r.won ? "#4ADE80" : r.draw ? "#FACC15" : "#F87171" }}>{r.won ? "🏆 WIN" : r.draw ? "DRAW" : "LOSS"}</div>
+              <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1.05 }}>
+                <span style={{ color: TEAM_COLORS[0] }}>{r.score[0]}</span> – <span style={{ color: TEAM_COLORS[1] }}>{r.score[1]}</span>
+              </div>
+              <div style={{ ...muted }}>
+                You were {r.myTeam === 0 ? "blue" : "orange"} vs @{opp?.name || "your friend"}
+                {r.forfeit ? " · they left the match" : ""}
+              </div>
+            </div>
+          )}
+        />
+      </div>
+    );
+  }
 
   return (
     <div role="dialog" aria-label="Turbo Ball" style={{ position: "fixed", inset: 0, zIndex: 410, background: "#0A0A0A", color: "#F0F0F0", display: "flex", flexDirection: "column", fontFamily: "'Barlow Condensed', sans-serif" }}>
@@ -184,6 +260,9 @@ export default function CarSoccer({ onClose, user = null }) {
               <button className="action-btn" onClick={start} style={{ ...bigButton, marginTop: 18, padding: "16px 0", fontSize: 18 }}>
                 ⚽ PLAY
               </button>
+              <button className="action-btn" onClick={() => setFriend(true)} style={{ ...bigButton, marginTop: 10, background: "linear-gradient(135deg, #DB2777, #7C3AED)", color: "#fff", fontSize: 17, letterSpacing: 2 }}>
+                👥 PLAY A FRIEND · LIVE
+              </button>
               <div style={{ textAlign: "center", marginTop: 10, fontSize: 14, fontWeight: 800, color: "#FACC15" }}>
                 {record.wins + record.losses > 0
                   ? `Your record: ${record.wins} ${record.wins === 1 ? "win" : "wins"} · ${record.losses} ${record.losses === 1 ? "loss" : "losses"} · ${record.goals} ${record.goals === 1 ? "goal" : "goals"}`
@@ -250,7 +329,10 @@ export default function CarSoccer({ onClose, user = null }) {
 }
 
 // The match: the 3D view, the scoreboard, and the controls.
-function Match({ size, length, difficulty, ballCam, myLook = null, pedal = false, onBallCam, audio, sound, onToggle, onFinish, onQuit, onFail }) {
+// remote (playing a friend): { round, seed, isHost, opponent, room, hooks,
+// onDone }. The host runs the match and sends snapshots; the guest sends
+// its controls, predicts, and follows the snapshots.
+function Match({ size, length, difficulty, ballCam, myLook = null, pedal = false, onBallCam, audio, sound, onToggle, onFinish, onQuit, onFail, remote = null }) {
   const wrap = useRef(null);
   const canvas = useRef(null);
   const hud = useRef({});
@@ -272,7 +354,31 @@ function Match({ size, length, difficulty, ballCam, myLook = null, pedal = false
     let raf = 0;
     let gone = false;
     let ro = null;
-    const match = newMatch({ size, length, difficulty, seed: Date.now() % 100000 });
+    const match = newMatch({ size, length, difficulty, seed: remote ? remote.seed : Date.now() % 100000, online: remote ? (remote.isHost ? "host" : "guest") : null });
+    const them = remote ? match.cars.find((c) => c.remote) : null;
+    let pendingSnap = null;
+    let theyLeft = false;
+    if (them) {
+      them.look = remote.opponent.look;
+      them.name = remote.opponent.name;
+      const mine = (p) => p?.round === remote.round;
+      remote.hooks.current = remote.isHost
+        ? {
+            input: (p) => {
+              if (!mine(p)) return;
+              const tap = them.input?.jumpTap || p.ctl?.jumpTap;
+              them.input = { ...p.ctl, jumpTap: tap };
+            },
+            bye: () => (theyLeft = true),
+          }
+        : {
+            snap: (p) => mine(p) && (pendingSnap = p),
+            bye: () => (theyLeft = true),
+          };
+    }
+    let lastSent = 0;
+    let lastCtl = "";
+    const send0 = (e, p) => Promise.resolve(remote?.room?.send(e, { round: remote.round, ...p })).catch((err) => console.warn("Couldn't reach the other phone:", err.message));
     // For the browser checks: lets a test reach into the match.
     if (import.meta.env.DEV) window.__ballMatch = match;
     const keys = { ArrowLeft: "left", a: "left", ArrowRight: "right", d: "right", ArrowDown: "brake", s: "brake", Shift: "boost", ArrowUp: "boost", w: "boost", " ": "jump", g: "gas" };
@@ -322,7 +428,9 @@ function Match({ size, length, difficulty, ballCam, myLook = null, pedal = false
           last = now;
           const i = input.current;
           const ctl = { steer: (i.left ? 1 : 0) - (i.right ? 1 : 0), throttle: i.brake ? -1 : pedalRef.current ? (i.gas ? 1 : 0) : 1, boost: i.boost, jump: i.jump };
-          if (!live.current.paused) {
+          // Playing a friend the clock never stops.
+          const jumpTapped = i.jumpTap;
+          if (!live.current.paused || remote) {
             acc += dt;
             while (acc >= STEP) {
               // A tap quicker than a frame still counts.
@@ -330,6 +438,29 @@ function Match({ size, length, difficulty, ballCam, myLook = null, pedal = false
               tickMatch(match, ctl);
               i.jumpTap = false;
               acc -= STEP;
+            }
+          }
+          if (remote) {
+            const send = (e, p) => Promise.resolve(remote.room?.send(e, { round: remote.round, ...p })).catch((err) => console.warn("Couldn't reach the other phone:", err.message));
+            if (remote.isHost) {
+              // The match, ten times a second.
+              if (now - lastSent > 100) {
+                lastSent = now;
+                send("snap", snapshot(match));
+              }
+            } else {
+              if (pendingSnap) {
+                match.events.push(...applySnapshot(match, pendingSnap));
+                pendingSnap = null;
+              }
+              // Your controls: when they change (a jump at once), and twice a
+              // second regardless.
+              const key = JSON.stringify([ctl.steer, ctl.throttle, ctl.boost, ctl.jump]);
+              if (jumpTapped || key !== lastCtl || now - lastSent > 500) {
+                lastCtl = key;
+                lastSent = now;
+                send("input", { ctl: { steer: ctl.steer, throttle: ctl.throttle, boost: ctl.boost, jump: ctl.jump, jumpTap: jumpTapped } });
+              }
             }
           }
           const h = hud.current;
@@ -341,7 +472,7 @@ function Match({ size, length, difficulty, ballCam, myLook = null, pedal = false
               a?.boost();
               if (e.by === match.player) myGoals++;
               if (h.banner) {
-                h.banner.textContent = e.team === 0 ? (e.by === match.player ? "⚽ GOAL! YOU SCORED" : "⚽ GOAL!") : "THEY SCORED";
+                h.banner.textContent = e.team === match.player.team ? (e.by === match.player ? "⚽ GOAL! YOU SCORED" : "⚽ GOAL!") : "THEY SCORED";
                 h.banner.style.color = TEAM_COLORS[e.team];
               }
               banner = 2.6;
@@ -372,7 +503,13 @@ function Match({ size, length, difficulty, ballCam, myLook = null, pedal = false
             if (h.boostAmt) h.boostAmt.textContent = String(Math.round(p.boost));
             if (h.boostBtn) h.boostBtn.style.background = `conic-gradient(#FFB020 ${p.boost * 3.6}deg, rgba(10,14,30,0.55) 0)`;
           }
-          if (match.state === "over" && !told) {
+          if (remote && !told && (match.state === "over" || theyLeft)) {
+            told = true;
+            if (remote.isHost) send0("snap", snapshot(match));
+            const mineT = match.player.team;
+            const s = match.score;
+            remote.onDone({ score: [...s], myTeam: mineT, won: theyLeft || s[mineT] > s[1 - mineT], draw: !theyLeft && s[0] === s[1], forfeit: theyLeft });
+          } else if (!remote && match.state === "over" && !told) {
             told = true;
             cb.current.onFinish({ score: [...match.score], myGoals, size, difficulty, overtime: match.overtime });
           }

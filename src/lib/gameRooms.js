@@ -1,7 +1,19 @@
-// Drag Race rooms: codes and who hosts (no network here, so it's testable).
+// Rooms for playing a friend: codes and who hosts (no network here, so
+// it's testable).
 
-// A room code from a shared link (?drag=CODE), waiting for Drag Race to open.
-export const JOIN_KEY = "tunr.drag.join";
+// A shared room link (?play=<game>&room=CODE) waiting for its game to open:
+// "<game>:<CODE>".
+export const JOIN_KEY = "tunr.play.join";
+
+// The room code waiting for this game, if any (and forget it).
+export function takeSharedRoom(game, storage = globalThis.sessionStorage) {
+  const v = storage?.getItem(JOIN_KEY) || "";
+  const [g, code] = v.split(":");
+  if (g !== game || !code) return null;
+  storage.removeItem(JOIN_KEY);
+  return code;
+}
+export const sharedGame = (storage = globalThis.sessionStorage) => (storage?.getItem(JOIN_KEY) || "").split(":")[0] || null;
 
 const LETTERS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 export const newRoomCode = () => Array.from({ length: 4 }, () => LETTERS[Math.floor(Math.random() * LETTERS.length)]).join("");

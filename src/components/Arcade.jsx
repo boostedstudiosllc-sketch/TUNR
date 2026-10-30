@@ -20,10 +20,10 @@ import { muted, quietButton } from "./Sheet.jsx";
 // the rest are free play.
 const GAMES = [
   { id: "rush", icon: "🏁", title: "TUNR Rush", blurb: "Your car, real traffic. Up to +3 points a day.", art: "linear-gradient(145deg, #0b3d91 0%, #0080F0 55%, #38bdf8 100%)", glow: "rgba(0,128,240,0.55)", tag: "+3" },
-  { id: "drift", icon: "🏎️", title: "Drift King", blurb: "22 circuits, 4 car types, drift the corners.", art: "linear-gradient(145deg, #450a0a 0%, #dc2626 55%, #fb923c 100%)", glow: "rgba(220,38,38,0.5)" },
-  { id: "karts", icon: "🛞", title: "Boosted Karts", blurb: "Drift for turbos, nitro, boost pads.", art: "linear-gradient(145deg, #3b0764 0%, #9333ea 55%, #f472b6 100%)", glow: "rgba(147,51,234,0.5)" },
-  { id: "ball", icon: "⚽", title: "Turbo Ball", blurb: "Car soccer: boost, jump, flip.", art: "linear-gradient(145deg, #052e16 0%, #16a34a 55%, #a3e635 100%)", glow: "rgba(22,163,74,0.5)" },
-  { id: "guess", icon: "🔍", title: "Guess the Car", blurb: "Blurry photo, four answers. Daily points.", art: "linear-gradient(145deg, #082f49 0%, #0284c7 50%, #a5f3fc 100%)", glow: "rgba(2,132,199,0.5)", tag: "+3" },
+  { id: "drift", icon: "🏎️", title: "Drift King", blurb: "22 circuits, 4 car types. Race a friend live.", art: "linear-gradient(145deg, #450a0a 0%, #dc2626 55%, #fb923c 100%)", glow: "rgba(220,38,38,0.5)" },
+  { id: "karts", icon: "🛞", title: "Boosted Karts", blurb: "Drift for turbos, nitro. Race a friend live.", art: "linear-gradient(145deg, #3b0764 0%, #9333ea 55%, #f472b6 100%)", glow: "rgba(147,51,234,0.5)" },
+  { id: "ball", icon: "⚽", title: "Turbo Ball", blurb: "Car soccer. 1 v 1 a friend live.", art: "linear-gradient(145deg, #052e16 0%, #16a34a 55%, #a3e635 100%)", glow: "rgba(22,163,74,0.5)" },
+  { id: "guess", icon: "🔍", title: "Guess the Car", blurb: "Daily points, or quiz a friend live.", art: "linear-gradient(145deg, #082f49 0%, #0284c7 50%, #a5f3fc 100%)", glow: "rgba(2,132,199,0.5)", tag: "+3" },
   { id: "drag", icon: "🚦", title: "Drag Race", blurb: "Quarter mile. Race the ladder or a friend, live.", art: "linear-gradient(145deg, #0c0a09 0%, #16a34a 50%, #facc15 100%)", glow: "rgba(22,163,74,0.5)", tag: "NEW" },
   { id: "egg", icon: "🥚", title: "Egg Haul", blurb: "Hills with an egg on your roof.", art: "linear-gradient(145deg, #7c2d12 0%, #f97316 50%, #fde047 100%)", glow: "rgba(249,115,22,0.5)" },
   { id: "park", icon: "🅿️", title: "Park Up", blurb: "Squeeze into the spot. No scratches.", art: "linear-gradient(145deg, #1e293b 0%, #475569 55%, #facc15 100%)", glow: "rgba(250,204,21,0.4)" },
@@ -98,9 +98,9 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
     );
   }
   if (open === "park") return <ParkUp user={user} onClose={() => setOpen(null)} allAccess={allAccess} />;
-  if (open === "drift") return <DriftKing user={user} onClose={() => setOpen(null)} />;
-  if (open === "karts") return <KartGame user={user} onClose={() => setOpen(null)} />;
-  if (open === "ball") return <CarSoccer user={user} onClose={() => setOpen(null)} />;
+  if (open === "drift") return <DriftKing user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
+  if (open === "karts") return <KartGame user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
+  if (open === "ball") return <CarSoccer user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
   if (open === "egg") return <EggHaul user={user} onClose={() => setOpen(null)} />;
   if (open === "drag") return <DragRace user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
   if (open === "guess") return <GuessCar user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;

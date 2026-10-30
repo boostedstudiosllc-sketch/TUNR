@@ -666,7 +666,11 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false, 
   // The cars.
   const meshes = race.cars.map((c) => {
     let m;
-    if (c.ai) m = buildCar(race.car, c.color, c.accent);
+    if (c.remote) {
+      // A friend's car: their own garage car if they have one.
+      m = c.look ? buildRoadCar({ ...c.look, plate: String(c.name || "").toUpperCase().slice(0, 7), sport: true }) : buildCar(race.car, c.color, "#F5F5F5");
+      m.traverse((o) => o.isMesh && (o.castShadow = true));
+    } else if (c.ai) m = buildCar(race.car, c.color, c.accent);
     else if (playerLook) {
       m = buildRoadCar({ ...playerLook, plate: "TUNR", sport: true });
       m.traverse((o) => o.isMesh && (o.castShadow = true));

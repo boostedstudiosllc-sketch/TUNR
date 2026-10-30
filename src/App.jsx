@@ -69,7 +69,7 @@ import { recordSignIn } from "./lib/activity.js";
 import { CAR_PARAM } from "./lib/buildpage.js";
 import BuildPage from "./components/BuildPage.jsx";
 import PhotoOfWeek from "./components/PhotoOfWeek.jsx";
-import { JOIN_KEY } from "./lib/dragRooms.js";
+import { JOIN_KEY } from "./lib/gameRooms.js";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "✨ Showcase", "⭐ Points", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -146,21 +146,23 @@ export default function App() {
   // A game to start ("play:rush:<car id>" from the garage's DRIVE button).
   const [launch, setLaunch] = useState(null);
 
-  // A friend's Drag Race room link (?drag=CODE): into the Arcade, that room.
+  // A friend's game room link (?play=<game>&room=CODE, or the older
+  // ?drag=CODE): into the Arcade, that game, that room.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const code = params.get("drag");
-    if (!code) return;
+    const game = params.get("play") || (params.get("drag") ? "drag" : null);
+    const code = params.get("room") || params.get("drag");
+    if (!game || !code) return;
     try {
-      sessionStorage.setItem(JOIN_KEY, code);
+      sessionStorage.setItem(JOIN_KEY, `${game}:${code}`);
     } catch (e) {
-      showToast(`Couldn't open that race room. (${e.message})`);
+      showToast(`Couldn't open that game room. (${e.message})`);
       return;
     }
-    params.delete("drag");
+    for (const k of ["play", "room", "drag"]) params.delete(k);
     window.history.replaceState(null, "", `${window.location.pathname}${params.size ? `?${params}` : ""}`);
     setTab("perks");
-    setLaunch({ game: "drag", vehicle: null });
+    setLaunch({ game, vehicle: null });
   }, []);
 
   // Ticks so the "starts in" countdowns stay honest while the app is open.

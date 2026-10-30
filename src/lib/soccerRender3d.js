@@ -381,7 +381,8 @@ export function createSoccerScene(canvas, match, { lowPower = false, ballCam = t
   scene.add(spot);
 
   const cars = match.cars.map((c) => {
-    const m = c.me && myLook ? buildYourCar(myLook) : buildBallCar(c.color);
+    // Your car, a friend's own car (online), or a battle car.
+    const m = c.me && myLook ? buildYourCar(myLook) : c.look ? buildYourCar(c.look) : buildBallCar(c.color);
     scene.add(m);
     return m;
   });
