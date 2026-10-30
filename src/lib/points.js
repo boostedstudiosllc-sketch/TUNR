@@ -11,7 +11,9 @@ import { friendlyWriteError, withReason } from "./errors.js";
 // database side is ready for when it opens.
 export const SHOP_OPEN = false;
 
-export const POINTS = { checkin: 10, rsvpBonus: 1, profile: 10, car: 10, alerts: 5 };
+// Setup steps' points are admin settings now (points_settings.starter_*,
+// 102), sent back by claimStarterPoints() as `pays`.
+export const POINTS = { checkin: 10, rsvpBonus: 1 };
 export const REDEEM_RULES = { accountDays: 14, checkins: 2 };
 
 function need() {
@@ -247,7 +249,7 @@ const REASON_LABELS = {
   referral_bonus: "A friend you brought checked in",
   welcome_bonus: "Welcome bonus: your first meet",
   game_bonus: "TUNR Rush daily drive",
-  starter_profile: "Finished your profile",
+  starter_profile: "Added a profile photo",
   starter_car: "Added your car",
   starter_alerts: "Turned on alerts",
   purchase: "Boosted purchase",
@@ -380,11 +382,11 @@ export const STORES = [
 ];
 
 export async function loadPointsSettings() {
-  const fallback = { points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1, receipt_points: 10, photo_points: 25 };
+  const fallback = { points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1, receipt_points: 10, photo_points: 25, starter_photo_points: 5, starter_car_points: 10, starter_alerts_points: 5 };
   if (!supabase) return fallback;
   const { data, error } = await supabase
     .from("points_settings")
-    .select("points_per_dollar, member_bonus, referral_points, welcome_points, receipt_points, photo_points")
+    .select("points_per_dollar, member_bonus, referral_points, welcome_points, receipt_points, photo_points, starter_photo_points, starter_car_points, starter_alerts_points")
     .maybeSingle();
   if (error) throw new Error(withReason("Couldn't load the points rates.", error));
   return data || fallback;
@@ -458,6 +460,9 @@ export async function savePointsSettings(settings) {
       welcome_points: Number(settings.welcome_points),
       receipt_points: Number(settings.receipt_points ?? 10),
       photo_points: Number(settings.photo_points ?? 25),
+      starter_photo_points: Number(settings.starter_photo_points ?? 5),
+      starter_car_points: Number(settings.starter_car_points ?? 10),
+      starter_alerts_points: Number(settings.starter_alerts_points ?? 5),
       updated_at: new Date().toISOString(),
     })
     .eq("id", true);

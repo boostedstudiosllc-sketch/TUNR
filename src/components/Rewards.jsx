@@ -68,7 +68,7 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
   const [rewards, setRewards] = useState([]);
   const [claims, setClaims] = useState([]);
   const [history, setHistory] = useState([]);
-  const [rates, setRates] = useState({ points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1, receipt_points: 10, photo_points: 25 });
+  const [rates, setRates] = useState({ points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1, receipt_points: 10, photo_points: 25, starter_photo_points: 5, starter_car_points: 10, starter_alerts_points: 5 });
   const [streak, setStreak] = useState(null);
   const [showBoard, setShowBoard] = useState(false);
   const [error, setError] = useState("");
@@ -225,9 +225,15 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
           pts="BONUS"
         />
         <div style={{ ...label, marginTop: 12 }}>GETTING STARTED (ONE TIME)</div>
-        <EarnRow icon="👤" text="Profile photo, username and bio" pts={`+${POINTS.profile}`} done={starter?.profile} />
-        <EarnRow icon="🚗" text="Add your car to your garage" pts={`+${POINTS.car}`} done={starter?.car} />
-        <EarnRow icon="🔔" text="Turn on alerts on your phone" pts={`+${POINTS.alerts}`} done={starter?.alerts} />
+        {[
+          ["📸", "Add a profile photo", starter?.pays?.photo ?? rates.starter_photo_points, starter?.photo],
+          ["🚗", "Add your car to your garage", starter?.pays?.car ?? rates.starter_car_points, starter?.car],
+          ["🔔", "Turn on alerts on your phone", starter?.pays?.alerts ?? rates.starter_alerts_points, starter?.alerts],
+        ]
+          .filter(([, , pts]) => pts > 0)
+          .map(([icon, text, pts, done]) => (
+            <EarnRow key={text} icon={icon} text={text} pts={`+${pts}`} done={done} />
+          ))}
         {starter && !starter.confirmed && (
           <div style={{ ...muted, color: "var(--a-f87171)", fontSize: 12.5, marginTop: 8 }}>
             Confirm your email to start earning points.
@@ -1186,6 +1192,18 @@ export function PurchasesAdmin({ onToast }) {
             <Field name="PHOTO OF THE WEEK">
               <input style={field} inputMode="numeric" maxLength={3} value={rates.photo_points ?? 25} onChange={(e) => setRates((r) => ({ ...r, photo_points: e.target.value.replace(/\D/g, "") }))} />
             </Field>
+          </div>
+          <div style={{ ...muted, fontSize: 12, marginTop: 10 }}>Setup steps (one time each; 0 = no points, like a bank's "activate your card"):</div>
+          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+            {[
+              ["starter_photo_points", "PROFILE PHOTO", 5],
+              ["starter_car_points", "ADD A CAR", 10],
+              ["starter_alerts_points", "ALERTS ON", 5],
+            ].map(([k, name, def]) => (
+              <Field key={k} name={name}>
+                <input style={field} inputMode="numeric" maxLength={2} value={rates[k] ?? def} onChange={(e) => setRates((r) => ({ ...r, [k]: e.target.value.replace(/\D/g, "") }))} />
+              </Field>
+            ))}
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
             <Field name="INVITE POINTS">

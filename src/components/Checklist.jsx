@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { claimStarterPoints, claimHostBadges, claimPoints, loadMyStreak, loadPointsSettings, loadPointsSince, loadMyPoints, loadUnclaimed, POINTS, STREAK_MILESTONES, CLAIM_HINT } from "../lib/points.js";
+import { claimStarterPoints, claimHostBadges, claimPoints, loadMyStreak, loadPointsSettings, loadPointsSince, loadMyPoints, loadUnclaimed, STREAK_MILESTONES, CLAIM_HINT } from "../lib/points.js";
 import { loadMyGame } from "../lib/rush.js";
 import { loadProfile } from "../lib/store.js";
 import { openInvites } from "../lib/invites.js";
@@ -23,7 +23,7 @@ const TASK_REASONS = {
   rush: ["game_bonus"],
   streak: ["streak_bonus"],
   friends: ["referral_bonus"],
-  profile: ["starter_profile"],
+  photo: ["starter_profile"],
   car: ["starter_car"],
   alerts: ["starter_alerts"],
   member: ["member_bonus"],
@@ -39,6 +39,21 @@ const HOST_STEPS = [
   [25, 50],
 ];
 const sum = (rows) => rows.reduce((n, r) => n + r.delta, 0);
+
+function setupStep(id, icon, title, text, pts, done) {
+  return { group: "SETUP", setup: true, id, icon, title, text, pts: pts > 0 ? `+${pts}` : "", done: Boolean(done), go: () => go("tab:profile") };
+}
+
+// Setup steps someone's hidden with ✕ (on this phone).
+const HIDDEN_KEY = "tunr.setup.hidden";
+function loadHidden() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) || "[]"));
+  } catch (e) {
+    console.warn("Couldn't read hidden setup steps:", e.message);
+    return new Set();
+  }
+}
 
 function hostTask(hosted) {
   const step = HOST_STEPS.find(([at]) => hosted < at);
@@ -76,6 +91,7 @@ async function loadTasks(user) {
     loadTodaysCar().catch(() => null),
   ]);
   const today = DAY(now);
+  const pays = starter?.pays || { photo: rates.starter_photo_points ?? 5, car: rates.starter_car_points ?? 10, alerts: rates.starter_alerts_points ?? 5 };
   const todays = (reason) => recent.some((r) => r.reason === reason && DAY(r.at) === today);
   const referrals = recent.filter((r) => r.reason === "referral_bonus").length;
   const next = STREAK_MILESTONES.find(([w]) => w > (streak?.current || 0));
@@ -142,13 +158,16 @@ async function loadTasks(user) {
     },
     // For good.
     hostTask(host?.hosted || 0),
-    { group: "GETTING STARTED", id: "email", icon: "✉️", title: "Confirm your email", text: "Tap the link we emailed you. Points start after this.", pts: "", done: Boolean(starter?.confirmed), go: null },
-    { group: "GETTING STARTED", id: "profile", icon: "👤", title: "Profile photo, username and bio", text: "Profile → Edit profile.", pts: `+${POINTS.profile}`, done: Boolean(starter?.profile), go: () => go("tab:profile") },
-    { group: "GETTING STARTED", id: "car", icon: "🚗", title: "Add your car", text: "Profile → Garage → + Add car.", pts: `+${POINTS.car}`, done: Boolean(starter?.car), go: () => go("tab:profile") },
-    { group: "GETTING STARTED", id: "alerts", icon: "🔔", title: "Turn on alerts", text: "Profile → Alerts, on this phone.", pts: `+${POINTS.alerts}`, done: Boolean(starter?.alerts), go: () => go("tab:profile") },
+    // Setup: steps to get going, like a bank's "activate your card". Some
+    // pay a little (admin-set; 0 = none), most pay nothing.
+    { group: "SETUP", setup: true, id: "email", icon: "✉️", title: "Confirm your email", text: "Tap the link we emailed you. Points start after this.", pts: "", done: Boolean(starter?.confirmed), go: null },
+    { group: "SETUP", setup: true, id: "details", icon: "👤", title: "Pick a username and write a bio", text: "Profile → Edit profile. So people know who you are.", pts: "", done: Boolean(starter?.details), go: () => go("tab:profile") },
+    setupStep("photo", "📸", "Add a profile photo", "Profile → Edit profile.", pays.photo, starter?.photo),
+    setupStep("car", "🚗", "Add your car", "Profile → Garage → + Add car.", pays.car, starter?.car),
+    setupStep("alerts", "🔔", "Turn on alerts", "Profile → Alerts, on this phone.", pays.alerts, starter?.alerts),
   ];
   if (rates.member_bonus > 0) {
-    tasks.push({ group: "GETTING STARTED", id: "member", icon: "💎", title: "Become a TUNR member", text: "Member discounts at Atlanta shops, plus a one-time bonus.", pts: `+${rates.member_bonus}`, done: Boolean(profile?.isMember), go: () => go("tab:perks") });
+    tasks.push({ group: "ONE TIME", id: "member", icon: "💎", title: "Become a TUNR member", text: "Member discounts at Atlanta shops, plus a one-time bonus.", pts: `+${rates.member_bonus}`, done: Boolean(profile?.isMember), go: () => go("tab:perks") });
   }
   // Each task's waiting points, so it shows CLAIM.
   for (const t of tasks) t.claim = unclaimed.filter((u) => (TASK_REASONS[t.id] || []).includes(u.reason));
@@ -158,6 +177,8 @@ async function loadTasks(user) {
 export default function Checklist({ user, onToast }) {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState(null); // null: picked for you
+  const [hidden, setHidden] = useState(loadHidden);
   const [error, setError] = useState("");
   const [claiming, setClaiming] = useState(false);
   const latest = useRef(0);
@@ -218,9 +239,24 @@ export default function Checklist({ user, onToast }) {
   }
 
   if (!user) return null;
-  const left = data ? data.tasks.filter((t) => !t.done && t.group !== "THIS MONTH").length : 0;
+  const visible = data ? data.tasks.filter((t) => !(t.setup && hidden.has(t.id) && !t.done)) : [];
+  const left = visible.filter((t) => !t.done && t.group !== "THIS MONTH").length;
   const waiting = data ? data.unclaimed.length : 0;
-  const groups = data ? [...new Set(data.tasks.map((t) => t.group))] : [];
+  const setupLeft = visible.filter((t) => t.setup && !t.done).length;
+  // Two tabs, like a bank app's: Setup (steps, mostly no points) and Earn.
+  // Opens on Setup while two or more steps are left (a new account), then Earn.
+  const shownTab = tab || (setupLeft >= 2 ? "setup" : "earn");
+  const groups = [...new Set(visible.filter((t) => Boolean(t.setup) === (shownTab === "setup")).map((t) => t.group))];
+  const hide = (id) =>
+    setHidden((h) => {
+      const next = new Set([...h, id]);
+      try {
+        localStorage.setItem(HIDDEN_KEY, JSON.stringify([...next]));
+      } catch (e) {
+        onToast?.(`Couldn't hide that step on this phone. (${e.message})`);
+      }
+      return next;
+    });
 
   return (
     <>
@@ -298,8 +334,46 @@ export default function Checklist({ user, onToast }) {
             </div>
           )}
           {!data && !error && <div style={{ ...muted, marginTop: 12 }}>Loading…</div>}
+          {data && (
+            <div role="tablist" aria-label="Checklist" style={{ display: "flex", gap: 6, marginTop: 14 }}>
+              {[
+                ["earn", "⭐ EARN POINTS"],
+                ["setup", `SETUP${setupLeft ? ` · ${setupLeft}` : " ✓"}`],
+              ].map(([id, name]) => (
+                <button
+                  key={id}
+                  role="tab"
+                  aria-selected={shownTab === id}
+                  onClick={() => setTab(id)}
+                  style={{ padding: "8px 14px", borderRadius: 999, border: `1.5px solid ${shownTab === id ? "var(--n-f0f0f0)" : "var(--n-2a2f3a)"}`, background: "transparent", color: shownTab === id ? "var(--n-f0f0f0)" : "var(--n-8a94a3)", fontSize: 13, fontWeight: 900, letterSpacing: 1, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" }}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          )}
+          {data && shownTab === "setup" && (
+            <div style={{ ...muted, fontSize: 12.5, marginTop: 6 }}>
+              {setupLeft ? "Steps to get set up. A few pay a little; the rest just help. ✕ hides one you don't want." : "All set up."}
+              {hidden.size > 0 && (
+                <button
+                  onClick={() => {
+                    setHidden(new Set());
+                    try {
+                      localStorage.removeItem(HIDDEN_KEY);
+                    } catch (e) {
+                      onToast?.(`Couldn't show the hidden steps. (${e.message})`);
+                    }
+                  }}
+                  style={{ background: "none", border: "none", color: "var(--a-3cabfd)", fontWeight: 800, cursor: "pointer", padding: "0 0 0 6px", fontSize: 12.5 }}
+                >
+                  Show hidden ({hidden.size})
+                </button>
+              )}
+            </div>
+          )}
           {groups.map((g) => {
-            const list = data.tasks.filter((t) => t.group === g);
+            const list = visible.filter((t) => t.group === g);
             const done = list.filter((t) => t.done).length;
             return (
               <div key={g} style={{ marginTop: 14 }}>
@@ -314,6 +388,7 @@ export default function Checklist({ user, onToast }) {
                     <Task
                       key={t.id}
                       task={t}
+                      onHide={t.setup && !t.done && t.id !== "email" ? () => hide(t.id) : null}
                       onClaim={() => claim(t.claim)}
                       onGo={() => {
                         setOpen(false);
@@ -345,7 +420,7 @@ const claimBtn = (big) => ({
   boxShadow: big ? "0 4px 14px rgba(34,197,94,0.35)" : "none",
 });
 
-function Task({ task, onGo, onClaim }) {
+function Task({ task, onGo, onClaim, onHide = null }) {
   const [have, need] = task.progress || [];
   return (
     <div
@@ -397,6 +472,11 @@ function Task({ task, onGo, onClaim }) {
           </button>
         ) : null}
       </span>
+      {onHide && (
+        <button onClick={onHide} aria-label={`Hide "${task.title}"`} style={{ alignSelf: "flex-start", background: "none", border: "none", color: "var(--n-8a94a3)", fontSize: 17, lineHeight: 1, padding: "2px 2px 6px 4px", cursor: "pointer" }}>
+          ✕
+        </button>
+      )}
     </div>
   );
 }
