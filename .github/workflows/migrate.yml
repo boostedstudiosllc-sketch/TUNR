@@ -11,7 +11,9 @@ on:
       - claude/tunr-car-meet-app-f9dqlh
     paths:
       - "supabase/migrations/**"
+      - "supabase/tests/**"
       - "scripts/migrate.sh"
+      - "scripts/db-test.sh"
       - ".github/workflows/migrate.yml"
   workflow_dispatch:
     inputs:
@@ -29,7 +31,31 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # The policy tests (scripts/db-test.sh) build the schema in a throwaway
+  # Postgres and check who can do what. A failure stops the migration from
+  # reaching the real database.
+  policy-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Run policy tests
+        env:
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: bash scripts/db-test.sh
+
   migrate:
+    needs: policy-tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

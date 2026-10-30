@@ -16,6 +16,14 @@ Written October 2026 from the code on branch `claude/tunr-car-meet-app-f9dqlh`. 
 
 ---
 
+## Start here (for the next developer)
+
+1. Read section 2 (architecture) and the **Security model** in section 5. The one idea to keep: the anon key is public, so every rule lives in the database (RLS, triggers, `security definer` functions), never only in the UI.
+2. Run the two test suites (section 6): `npm test` for app logic, `npm run test:db` for database rules. Both must pass before you push.
+3. Changing the database = a new numbered file in `supabase/migrations/` plus a test in `supabase/tests/`. Pushing applies it to production (after the policy tests pass).
+4. Follow `CLAUDE.md`: errors that say what went wrong, theme colours (`npm run theme`), plain summaries for the owner.
+5. Each feature has a row in the inventory (section 1) or a note in section 10 naming its files and tables. Each migration and most `src/lib` modules open with a comment saying what they're for.
+
 ## Contents
 
 1. [What TUNR is](#1-what-tunr-is)
@@ -27,6 +35,7 @@ Written October 2026 from the code on branch `claude/tunr-car-meet-app-f9dqlh`. 
 7. [Conventions](#7-conventions)
 8. [Turning TUNR into an iOS/Android app](#8-turning-tunr-into-an-iosandroid-app)
 9. [Known gaps and backlog](#9-known-gaps-and-backlog)
+10. [Feature notes](#10-feature-notes)
 
 ---
 
@@ -92,21 +101,25 @@ api/                      Vercel serverless functions (each file is a route)
   confirm-email.js  daily.js  hosts.js  join.js  push.js  read-flyer.js  reminders.js
 docs/                     email-templates.md (Supabase email setup), this file
 public/                   icons, manifest.webmanifest, sw.js
-scripts/migrate.sh        applies pending SQL migrations (used by CI)
+scripts/                  migrate.sh (applies pending migrations, used by CI),
+                          db-test.sh (database policy tests), theme-colors.mjs
+                          (npm run theme), track/level builders
 src/
   App.jsx                 tabs, top-level state, deep links (?open=, /m/, /join, /hosts)
-  components/             61 screen and sheet components (Sheet.jsx = bottom sheet)
+  components/             ~100 screen and sheet components (Sheet.jsx = bottom sheet)
   data/events.js          seed meets, used only when Supabase isn't configured
   lib/                    data layer and pure helpers (see below)
-supabase/migrations/      001…051 numbered SQL files (append-only)
+supabase/migrations/      001…104 numbered SQL files (append-only)
+supabase/tests/           database policy tests (*.test.sql) + a Supabase stand-in
 test/                     node:test unit tests (no database needed)
-.github/workflows/migrate.yml   auto-applies migrations on push
+.github/workflows/        migrate.yml (policy tests, then migrations, on push),
+                          instagram.yml (Instagram import every 2 hours)
 vercel.json               rewrites, function timeouts, cron
 ```
 
 Key `src/lib` modules: `supabase.js` (the client), `store.js` (most reads and writes: events, RSVPs, profile, auth, uploads, moderation), `community.js` (forums and clubs), `linkups.js`, `alerts.js` (inbox, settings, Web Push), `account.js` (email confirmation state, `useAccount()`), `errors.js` (error wording), `dates.js` (recurrence and time zones), `geo.js` / `geocode.js`, `emailCheck.js`, `image.js` (shrinking images before upload), `phash.js` (flyer fingerprint).
 
-Size: about 16,500 lines of JSX, 3,600 of `src/lib`, 1,000 of `api/`, and 7,800 of SQL.
+Size (Oct 2026): about 60,000 lines of JSX, 17,000 of `src/lib`, 1,800 of `api/`, and 16,000 of SQL. Games are the bulk: each has a pure engine in `src/lib/*Engine.js` (tested in `test/`) and a renderer (`*Render3d.js` / `*Draw.js`).
 
 ### How data flows
 
@@ -123,7 +136,8 @@ Browser (React)
 
 Vercel Cron (daily, 13:00 UTC) ─► /api/daily ─► reminders + confirm-later emails
                                               + deletions + push delivery
-GitHub push touching supabase/migrations ─► Action ─► scripts/migrate.sh ─► Postgres
+GitHub push touching supabase/ ─► Action ─► scripts/db-test.sh (throwaway Postgres)
+                                          └─ passes ─► scripts/migrate.sh ─► Supabase
 ```
 
 Without `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` the app runs in "guest mode": seed meets plus RSVPs stored only on the device.
@@ -205,7 +219,7 @@ These settings live outside the repo. Changing them can break sign-up, email or 
 ### How migrations ship
 
 - Files live in `supabase/migrations/NNN_description.sql`, zero-padded and applied in filename order.
-- `.github/workflows/migrate.yml` runs `scripts/migrate.sh` on any push to `main` or `claude/tunr-car-meet-app-f9dqlh` that touches `supabase/migrations/**`, the script or the workflow. It can also be run by hand, with an optional `baseline` input for a database where early files were pasted in by hand. Runs are serialized (`concurrency: supabase-migrations`).
+- `.github/workflows/migrate.yml` runs on any push to `main` or `claude/tunr-car-meet-app-f9dqlh` that touches `supabase/migrations/**`, `supabase/tests/**`, the scripts or the workflow. First the **policy tests** (`scripts/db-test.sh`, against a throwaway Postgres in the runner); only if they pass, `scripts/migrate.sh` against the real database. It can also be run by hand, with an optional `baseline` input for a database where early files were pasted in by hand. Runs are serialized (`concurrency: supabase-migrations`).
 - `migrate.sh` records applied files in `public.schema_migrations`. Each file runs in **one transaction together with its tracking row**, so a failing file leaves nothing half-applied and isn't marked done. Afterwards it prints what the DB considers applied.
 - **There's no staging database.** A pushed migration goes straight to production. Test first (see below).
 
@@ -240,13 +254,16 @@ The working assumption, repeated in the migration headers: **the anon key is pub
   - *Guards* that pin columns the server controls, so a client can't set its own `is_admin`, `is_member`, Day 1 number, terms fields, `verified` badge or `hidden` flag. Verification codes are generated on the server.
   - `a_require_confirmed_email`, named with an `a_` prefix so it fires first, on chat, posting, linkups, verification, photos and forums/clubs.
   - *Notification triggers*, which queue alerts.
-- **Storage:** public read. `vehicle-photos`, `avatars` and `meet-photos` only accept writes inside the uploader's `<uid>/` folder. `event-photos` only checks the bucket (see gaps).
+- **Storage:** public read. Every bucket only accepts writes inside the uploader's `<uid>/` folder (`event-photos` since 104). URLs saved in the database are checked the same way: `avatar_url_ok` (profile photos), `listing_photo_ok` (marketplace).
 - **Server keys:** the service role key is used only in `api/_lib/push.js` and its callers. `read-flyer` deliberately uses the caller's JWT so RLS and the flyer rate limit apply.
 
 ### Testing a migration safely
 
-1. Best: a second Supabase project as **staging**. Run `SUPABASE_DB_URL='<staging session-pooler URI>' ./scripts/migrate.sh` (needs `psql`).
-2. Or run the Supabase stack locally: `supabase start` with the Supabase CLI and Docker, then point `SUPABASE_DB_URL` at the local Postgres it prints. Plain Postgres won't work, because the migrations depend on Supabase's `auth` and `storage` schemas, the `anon`/`authenticated`/`service_role` roles and the `supabase_realtime` publication. There's no `supabase/config.toml` in the repo yet.
+1. **Policy tests** (`npm run test:db`, needs any Postgres 15+ you can create databases on, chosen with `PGHOST`/`PGUSER`/`PGPASSWORD`). It builds every migration into a throwaway database on top of `supabase/tests/_supabase_stub.sql` (a small stand-in for Supabase's `auth.uid()`, `storage` schema, roles and realtime publication), then runs each `supabase/tests/*.test.sql`. CI runs the same thing before any migration reaches production.
+   - A test signs in as made-up users and checks what they can and can't do: `tests.user('sam')`, `tests.login(tests.id('sam'))`, `tests.eq(...)`, `tests.fails($$ sql $$, 'error_marker', 'label')`, `tests.blocked_by_rls(...)`. The helpers are documented at the top of `supabase/tests/_helpers.sql`. Each file is one transaction that's rolled back.
+   - Today: `core` (no self-promotion to admin/member, others' profiles, meets, blocks, storage folders), `marketplace` (listing rules, removed listings, private chats, blocking, sold parts), `points` (nothing pays twice: spin, setup steps, host badges, Guess the Car, photo votes; no self-paid points; locked garage parts; Guess the Car answers stay hidden).
+   - Add a test with every new table, policy or points function. Write the test first when fixing a hole: 104 fixed three found this way.
+2. Before a risky change, a second Supabase project as **staging**: `SUPABASE_DB_URL='<staging session-pooler URI>' ./scripts/migrate.sh` (needs `psql`).
 3. Check as a normal user, not just in the SQL editor (which runs as `postgres` and skips RLS): try the action through the app or REST with an anon or user token.
 
 ---
@@ -257,14 +274,15 @@ The working assumption, repeated in the migration headers: **the anon key is pub
 npm install
 cp .env.example .env.local      # fill in the three VITE_ values (or leave empty for guest mode)
 npm run dev                     # Vite dev server, front end only
-npm test                        # node --test "test/*.test.js" (96 tests today, no DB or network)
+npm test                        # node --test "test/*.test.js" (198 tests today, no DB or network)
+npm run test:db                 # database policy tests (needs a local Postgres, see section 5)
 npm run build                   # outputs dist/
 npm run preview                 # serves dist/
 ```
 
 - `npm run dev` doesn't run `api/`. To exercise the flyer reader, push or the email routes locally, use `vercel dev` (Vercel CLI, with the env vars pulled using `vercel env pull`).
 - Use Node 22 LTS. The test script relies on Node's built-in glob support for `--test` (Node 21+).
-- Tests cover pure logic and the API handlers with injected `fetch` and `web-push` stand-ins: dates and recurrence, geo, geocode judging, flyer normalization, Gemini handling, push delivery, the confirm-later email schedule, error wording, email typo checks, passcodes, claims and photographer links. **CI doesn't run tests.** The only workflow applies migrations.
+- Tests cover pure logic and the API handlers with injected `fetch` and `web-push` stand-ins: dates and recurrence, geo, geocode judging, flyer normalization, Gemini handling, push delivery, the confirm-later email schedule, error wording, email typo checks, passcodes, claims and photographer links. CI runs the database policy tests (before migrations); it doesn't run `npm test` or the build yet. Modules that import `supabase.js` can't be loaded by node tests, so game and maths logic lives in separate pure modules (`*Engine.js`, `gameRooms.js`, `wrappedSlides.js`, `remoteMotion.js`, `weather.js`) that can.
 - **Deploy:** Vercel builds from GitHub automatically (it detects Vite: `npm run build`, output `dist`). The functions in `api/` deploy with it. Migrations deploy separately through the GitHub Action, so land the migration before or together with the code that needs it.
 - `README.md` is partly out of date. It describes the early localStorage prototype and pasting `001_init.sql` by hand. This document replaces it.
 
@@ -399,7 +417,7 @@ Main drivers: how smooth auth deep linking goes (the most fiddly part), whether 
 - **On my way / Open in Waze:** share that you're heading to a meet or linkup (an ETA, possibly live location; see 8.E), and a Waze button beside the Google Maps directions (`directionsUrl()` in `src/lib/geo.js`).
 - **Custom alert sound when the app is closed:** required for the native app; see section 8, checklist H.
 - **Open the shop:** set `SHOP_OPEN = true` in `src/lib/points.js` when merch launches. For automatic purchase points with no manual checking, an **Etsy** shop (Etsy collects sales tax) can be read daily through the Etsy Open API v3 (receipts include the buyer email) to award points by matching TUNR account emails; or connect Square webhooks if the owner sells on Square.
-- **Instagram auto-import** of flyers and meets: blocked until a Meta developer app is created and passes Meta's app review (Instagram's API only works through an approved app). Flyers are currently added by hand or through the flyer reader.
+- **Instagram import, switched on:** built (see the inventory row), waiting on the owner adding `INSTAGRAM_ACCESS_TOKEN` (plus `FACEBOOK_APP_ID` / `FACEBOOK_APP_SECRET` for the Facebook-linked token) in Vercel. Hosts' accounts are added to `instagram_sources` by an admin; they must be public Business or Creator accounts for Business Discovery to read them. Possible next step: a host self-serve sign-up (enter your @, prove it's yours with a code in your bio, which Business Discovery can read).
 - **Linkups on the map:** the Map tab shows meets and forum photo spots, not linkups.
 - **Club members-only linkups:** linkups are public or private, with no club scoping.
 - **Own domain, and Resend for email:** the site runs on a `vercel.app` address, and email goes through Gmail SMTP (about 500 a day). A domain with Resend (or similar) and SPF/DKIM improves delivery, and it's needed for clean universal links.
@@ -407,20 +425,23 @@ Main drivers: how smooth auth deep linking goes (the most fiddly part), whether 
 - **Membership billing:** `is_member` and the members-only perk logic exist, but there's no payments integration (see 3.1.1 above).
 
 **Technical debt and hardening found while writing this**
-- The `event-photos` storage insert policy (003) only checks the bucket, not the `<uid>/` folder (unlike `meet-photos` and `vehicle-photos`). `read-flyer` checks the folder on its own. Tighten it in a new migration.
 - No staging environment: migrations apply straight to production on push.
-- CI doesn't run `npm test` or `npm run build`. Add a workflow.
+- CI doesn't run `npm test` or `npm run build` (it does run the database policy tests). Add a workflow.
 - The `api/` routes have no CORS headers (needed for native, see 8.B).
 - There are no public `/privacy` and `/terms` URLs (needed for the store listings).
 - `README.md` is out of date (see section 6). The header comment in `030_flyers.sql` still says "Claude" reads flyers. It's Gemini now (`api/_lib/gemini.js`).
 - Mapbox GL and the fonts load from CDNs at runtime.
 - The app is Atlanta-centric: times are shown in `America/New_York`, the header says "ATLANTA, GA", and geocoding is biased toward Atlanta. Expanding to other regions needs a pass over `src/lib/dates.js`, `App.jsx` and `geocode.js`.
 
-## All access (081)
+## 10. Feature notes
+
+Newer features, one note each, roughly in the order they were built. Numbers in brackets are the migration.
+
+### All access (081)
 
 `profiles.all_access` gives one account every paid and locked feature: membership (`is_member()` says yes, so member perks open), the invite unlocks (more cars, clubs, flair), rewards without the account-age, check-in, spend and email rules (points and stock still apply), and, in the app, all TUNR Rush scenery and Park Up levels (`loadAllAccess()` in `store.js`). Set for boostedstudiosllc@gmail.com by the migration; a guard means it can only be changed from the SQL editor (`update public.profiles set all_access = true where id = '<uuid>'`).
 
-## Points checklist
+### Points checklist
 
 The 📋 button in the header (`Checklist.jsx`) lists every way to earn points as tasks (today: check in, stay to the end, TUNR Rush; this week: the streak; this month: referrals; getting started: email, profile, car, alerts, membership) with done marks, progress bars and a GO button to where you do it. The yellow badge counts what's left. Opening it pays any getting-started points due (`claim_starter_points`), like the Rewards sheet does.
 
@@ -464,7 +485,7 @@ Message budget: Supabase's free plan allows about 2 million Realtime messages a 
 
 **Claiming points (083)**: earned points wait until claimed, Hay Day style. `point_ledger.claimed_at` is null while waiting (a BEFORE INSERT trigger, `point_ledger_hold`, sets it for every positive row except `refund` / `admin_adjust`). Balances count claimed rows only: the migration rewrote every function that does `sum(delta), 0) [into v_x] from public.point_ledger where` to add `claimed_at is not null and`, so **new code must get a balance from `points_balance(uid)` (084), never its own sum**. Voiding a check-in deletes its unclaimed points and revokes the claimed ones (084). Dedupe and done checks still see waiting rows. `claim_points(p_ids bigint[] | null)` claims some or all. The checklist shows READY TO CLAIM (CLAIM ALL / per row) and CLAIM on each task; the badge turns green with the waiting total. Anything that earns points calls `pointsEarned()` (`tunr:points` event) so the badge refreshes; earn toasts say to claim in 📋. Leaderboards and streaks count points when earned.
 
-## Your garage in every game
+### Your garage in every game
 
 **How-to videos**: each garage car (row link and the 3D garage INFO tab) links to CarCareKiosk's free repair videos for that make/model/year (`repairLink` in `Showroom.jsx`, `carcarekiosk.com/videos/Make/Model/Year`).
 
@@ -488,13 +509,13 @@ Each Arcade game has a "Your garage" row (`GarageRow` / `useGarageCar` in `Showr
 - **Boosted Karts**: your kart wears your car's paint.
 The 3D garage's DRIVE IN TUNR RUSH and "Or play it in" buttons open a game with that car picked (`play:<game>:<car id>`).
 
-## Real cars in 3D: body and brand
+### Real cars in 3D: body and brand
 
 - **Body**: until someone picks one in Style, a car's body (coupe, sedan, hatch, SUV, truck) comes from its make and model, chassis codes included (`guessBody` in `rushEngine.js`; "540i (G30)" → sedan, "M4 (F82)" → coupe, "F-150" → truck). `test/f1.test.js` checks 38 real cars. The add-a-car form says which body it will be and has a paint picker (saved to `game_color`).
 - **Brand**: `brandOf(make)` picks a front end in `rush3d.js` `buildFront`: simple shapes that read as the brand (BMW twin grille and ring lights, Audi rings, Mercedes star, Subaru hood scoop, Jeep slots, MINI round lights, Genesis crest and so on), not copies of any real car. Every 3D car now has headlights, a grille and amber side markers. Car cards show the front three-quarters.
 - 082 adds 27 more makes (Jeep, Ram, GMC, Cadillac, Volvo, Land Rover, MINI and others).
 
-## First open: welcome page, then terms for new accounts
+### First open: welcome page, then terms for new accounts
 
 Someone new (not signed in, nothing agreed on this device) sees `Welcome.jsx`: Continue with Google (when Google is on), Sign up with email, Log in, or Continue as guest. A guest agrees with the line by the guest button (`saveTosAccepted(null, "guest_welcome")`, kept on the device only). Accounts agree on the full terms screen: right after signing up, and again only when `TOS_VERSION` changes; it has a "Don't agree? Sign out" way out. The device's record of agreement now notes which account agreed (`userId`), so a guest's agreement never counts for a new account (`hasAcceptedCurrentTos(userId)`, `syncTosToAccount`). The sign-up form no longer counts as agreeing. Phone sign-in isn't offered: it needs a paid SMS provider in Supabase, and accounts depend on a confirmed email (unconfirmed ones are removed after 7 days), so phone-only accounts would need those rules changed first.
 

@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test \"test/*.test.js\"",
-    "theme": "node scripts/theme-colors.mjs"
+    "theme": "node scripts/theme-colors.mjs",
+    "test:db": "bash scripts/db-test.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
