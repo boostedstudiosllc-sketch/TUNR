@@ -7,12 +7,14 @@ import CarSoccer from "./CarSoccer.jsx";
 import EggHaul from "./EggHaul.jsx";
 import DragRace from "./DragRace.jsx";
 import GuessCar from "./GuessCar.jsx";
+import CarStack from "./CarStack.jsx";
 import { LEVELS as PARK_LEVELS, loadProgress } from "../lib/parkEngine.js";
 import { loadBests as loadDriftBests } from "../lib/f1Engine.js";
 import { loadKartBests } from "../lib/kartEngine.js";
 import { loadRecord as loadBallRecord } from "../lib/soccerEngine.js";
 import { loadEggBest } from "../lib/eggEngine.js";
 import { loadDragProgress, RIVALS } from "../lib/dragEngine.js";
+import { loadStackBest } from "../lib/stackEngine.js";
 import { loadAllAccess } from "../lib/store.js";
 import { muted, quietButton } from "./Sheet.jsx";
 
@@ -23,8 +25,9 @@ const GAMES = [
   { id: "drift", icon: "🏎️", title: "Drift King", blurb: "22 circuits, 4 car types. Race a friend live.", art: "linear-gradient(145deg, #450a0a 0%, #dc2626 55%, #fb923c 100%)", glow: "rgba(220,38,38,0.5)" },
   { id: "karts", icon: "🛞", title: "Boosted Karts", blurb: "Drift for turbos, nitro. Race a friend live.", art: "linear-gradient(145deg, #3b0764 0%, #9333ea 55%, #f472b6 100%)", glow: "rgba(147,51,234,0.5)" },
   { id: "ball", icon: "⚽", title: "Turbo Ball", blurb: "Car soccer. 1 v 1 a friend live.", art: "linear-gradient(145deg, #052e16 0%, #16a34a 55%, #a3e635 100%)", glow: "rgba(22,163,74,0.5)" },
+  { id: "stack", icon: "🏗️", title: "Car Stack", blurb: "Drop cars from the crane. Build it tall.", art: "linear-gradient(145deg, #0c4a6e 0%, #38bdf8 50%, #fde047 100%)", glow: "rgba(56,189,248,0.5)", tag: "NEW" },
   { id: "guess", icon: "🔍", title: "Guess the Car", blurb: "Daily points, or quiz a friend live.", art: "linear-gradient(145deg, #082f49 0%, #0284c7 50%, #a5f3fc 100%)", glow: "rgba(2,132,199,0.5)", tag: "+3" },
-  { id: "drag", icon: "🚦", title: "Drag Race", blurb: "Quarter mile. Race the ladder or a friend, live.", art: "linear-gradient(145deg, #0c0a09 0%, #16a34a 50%, #facc15 100%)", glow: "rgba(22,163,74,0.5)", tag: "NEW" },
+  { id: "drag", icon: "🚦", title: "Drag Race", blurb: "Quarter mile. Race the ladder or a friend, live.", art: "linear-gradient(145deg, #0c0a09 0%, #16a34a 50%, #facc15 100%)", glow: "rgba(22,163,74,0.5)" },
   { id: "egg", icon: "🥚", title: "Egg Haul", blurb: "Hills with an egg on your roof.", art: "linear-gradient(145deg, #7c2d12 0%, #f97316 50%, #fde047 100%)", glow: "rgba(249,115,22,0.5)" },
   { id: "park", icon: "🅿️", title: "Park Up", blurb: "Squeeze into the spot. No scratches.", art: "linear-gradient(145deg, #1e293b 0%, #475569 55%, #facc15 100%)", glow: "rgba(250,204,21,0.4)" },
 ];
@@ -48,6 +51,7 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
   const [ballRecord, setBallRecord] = useState(null);
   const [eggBest, setEggBest] = useState(0);
   const [drag, setDrag] = useState(null);
+  const [stackBest, setStackBest] = useState(null);
   // All access (the operator's account): every level open.
   const [allAccess, setAllAccess] = useState(false);
   useEffect(() => {
@@ -64,6 +68,7 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
     setBallRecord(loadBallRecord());
     setEggBest(loadEggBest());
     setDrag(loadDragProgress());
+    setStackBest(loadStackBest());
   }, [open]);
 
   useEffect(() => {
@@ -84,6 +89,7 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
       drag: drag?.bestEt ? `${drag.beaten}/${RIVALS.length} · ${drag.bestEt.toFixed(2)}s` : "",
       rush: "Daily points",
       guess: "Daily points",
+      stack: stackBest?.floors ? `🏗️ ${stackBest.floors} high` : "",
     })[id] || "";
 
   if (open === "rush") {
@@ -103,6 +109,7 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
   if (open === "ball") return <CarSoccer user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
   if (open === "egg") return <EggHaul user={user} onClose={() => setOpen(null)} />;
   if (open === "drag") return <DragRace user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
+  if (open === "stack") return <CarStack user={user} onClose={() => setOpen(null)} />;
   if (open === "guess") return <GuessCar user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
 
   return (
