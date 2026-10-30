@@ -205,7 +205,7 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
     });
   }
 
-  const card = { marginTop: 12, padding: 14, borderRadius: 14, background: "var(--n-13161c)", border: "1px solid var(--n-232833)" };
+  const card = { marginTop: 12, padding: 14, borderRadius: 14, background: "#13161c", border: "1px solid #232833" };
   return (
     <div style={{ flex: 1, overflowY: "auto" }}>
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "0 16px calc(28px + env(safe-area-inset-bottom))", boxSizing: "border-box" }}>
@@ -214,7 +214,7 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
         </button>
         <div style={{ fontSize: 22, fontWeight: 900, marginTop: 10 }}>👥 {title}</div>
         {error && (
-          <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 6 }}>
+          <div role="alert" style={{ ...muted, color: "#f87171", marginTop: 6 }}>
             {error}
           </div>
         )}
@@ -224,12 +224,12 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
             <div style={{ ...muted, marginTop: 4 }}>{intro} No points, just bragging rights.</div>
             {!user && <div style={{ ...muted, marginTop: 8, color: "#FACC15" }}>Sign in to play other people.</div>}
             {settings}
-            {options && describe && <div style={{ ...muted, marginTop: 8, color: "var(--n-cbd5e1)" }}>Your room plays: {describe(options)}</div>}
+            {options && describe && <div style={{ ...muted, marginTop: 8, color: "#cbd5e1" }}>Your room plays: {describe(options)}</div>}
             <button className="action-btn" onClick={() => enter(newRoomCode())} style={{ ...bigButton, marginTop: 14, background: "#FACC15", color: "#111" }}>
               + MAKE A ROOM
             </button>
             <div style={card}>
-              <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.5, color: "var(--n-8a94a3)" }}>GOT A CODE?</div>
+              <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.5, color: "#8a94a3" }}>GOT A CODE?</div>
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -261,7 +261,7 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
           <>
             {result && <div style={{ marginTop: 12 }}>{renderResult(result, opponent || start?.opponent)}</div>}
             <div style={{ ...card, textAlign: "center" }}>
-              <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.5, color: "var(--n-8a94a3)" }}>ROOM CODE</div>
+              <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.5, color: "#8a94a3" }}>ROOM CODE</div>
               <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: 10, lineHeight: 1.1 }}>{code.length > 4 ? "QUICK" : code}</div>
               {code.length === 4 && (
                 <button onClick={share} style={{ ...quietButton, marginTop: 6, padding: "9px 16px", fontSize: 14 }}>
@@ -270,22 +270,22 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
               )}
             </div>
             {full ? (
-              <div style={{ ...card, color: "var(--a-f87171)" }}>This room already has two players. Make your own room, or try another code.</div>
+              <div style={{ ...card, color: "#f87171" }}>This room already has two players. Make your own room, or try another code.</div>
             ) : (
               <div style={card}>
                 {players.map((p) => (
                   <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
-                    <span style={{ width: 12, height: 12, borderRadius: "50%", background: p.look?.color || "var(--n-888888)", flexShrink: 0 }} />
+                    <span style={{ width: 12, height: 12, borderRadius: "50%", background: p.look?.color || "#888888", flexShrink: 0 }} />
                     <span style={{ flex: 1, fontSize: 17, fontWeight: 900 }}>
                       @{p.name}
                       {p.id === user.id ? " (you)" : ""}
-                      {p.id === host ? <span style={{ fontSize: 11, color: "var(--n-8a94a3)", marginLeft: 6 }}>HOST</span> : null}
+                      {p.id === host ? <span style={{ fontSize: 11, color: "#8a94a3", marginLeft: 6 }}>HOST</span> : null}
                     </span>
-                    <span style={{ fontSize: 13, fontWeight: 900, color: p.ready ? "var(--a-4ade80)" : "var(--n-8a94a3)" }}>{p.ready ? "✓ READY" : "NOT READY"}</span>
+                    <span style={{ fontSize: 13, fontWeight: 900, color: p.ready ? "#4ade80" : "#8a94a3" }}>{p.ready ? "✓ READY" : "NOT READY"}</span>
                   </div>
                 ))}
                 {players.length < 2 && <div style={{ ...muted, marginTop: 4 }}>Waiting for your friend to join…</div>}
-                {hostOpts && describe && <div style={{ ...muted, marginTop: 6, color: "var(--n-cbd5e1)" }}>Playing: {describe(hostOpts)}{host !== user.id ? " (the host's pick)" : ""}</div>}
+                {hostOpts && describe && <div style={{ ...muted, marginTop: 6, color: "#cbd5e1" }}>Playing: {describe(hostOpts)}{host !== user.id ? " (the host's pick)" : ""}</div>}
               </div>
             )}
             {!full && settings && (host === user.id || players.length < 2) && !ready && <div style={{ marginTop: 6 }}>{settings}</div>}
