@@ -36,6 +36,7 @@ const WHAT = {
   sticker_orders: "Sticker order",
   sticker_settings: "Sticker settings",
   listing_requests: "Listing request",
+  listings: "Part for sale",
 };
 const VERB = { INSERT: "added", UPDATE: "changed", DELETE: "removed" };
 // For something added or removed, the few fields that say what it was.

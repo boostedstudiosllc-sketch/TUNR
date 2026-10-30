@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { loadCommunityReports, resolveCommunityReport, ago } from "../lib/community.js";
 
-const TYPE = { post: "📝 Post", comment: "💬 Comment", forum: "🗂 Forum", club: "🏁 Club", profile: "👤 Profile" };
+const TYPE = { post: "📝 Post", comment: "💬 Comment", forum: "🗂 Forum", club: "🏁 Club", profile: "👤 Profile", listing: "🛒 Part for sale" };
 
 // Admins: reported forum posts, comments, forums and clubs. Remove hides it;
 // dismiss clears the report.
