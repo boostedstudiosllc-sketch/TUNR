@@ -12,6 +12,7 @@ const BUY_ERRORS = {
   not_found: "That card isn't available.",
   sold_out: "Sold out today. Back tomorrow.",
   daily_limit: "That's 10 cards today. Come back tomorrow.",
+  free_used: "You've used this week's free card. A new one comes Monday.",
 };
 
 // { on, balance, played_today, max_per_day, cards, recent }
@@ -22,10 +23,10 @@ export async function loadScratchShop() {
   return data;
 }
 
-// { prize, cost, balance }
-export async function buyScratch(cardId) {
+// { prize, cost, balance }. free: this week's free card (106_free_scratch_card.sql).
+export async function buyScratch(cardId, free = false) {
   if (!supabase) throw new Error("Scratch cards need an internet connection to TUNR.");
-  const { data, error } = await supabase.rpc("buy_scratch", { p_card: cardId });
+  const { data, error } = await supabase.rpc("buy_scratch", { p_card: cardId, p_free: free });
   if (error) throw new Error(withReason("Couldn't buy that card.", error));
   if (data?.status === "ok") return data;
   if (data?.status === "not_enough") throw new Error(`You need ${data.cost} points; you have ${data.balance}.`);

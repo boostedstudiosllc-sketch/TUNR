@@ -40,6 +40,16 @@ select tests.eq((public.buy_scratch('turbo'))->>'status', 'daily_limit', 'the 11
 
 select tests.login(tests.id('broke'));
 select tests.eq((public.buy_scratch('turbo'))->>'status', 'not_enough', 'you need the points to play');
+-- One free card a week, no points needed: always a Tune-Up.
+create temp table freebie as select public.buy_scratch('supercharged', true) r;
+select tests.eq((select r->>'status' from freebie), 'ok', 'the weekly free card needs no points');
+select tests.ok((select (r->>'prize')::int between 1 and 5 and (r->>'cost')::int = 0 from freebie), 'it''s a Tune-Up (1-5), whatever card was asked for');
+select tests.eq((public.buy_scratch('tuneup', true))->>'status', 'free_used', 'only one free card a week');
+select tests.eq(((public.scratch_shop())->>'free_used')::boolean, true, 'the shop shows it''s been used');
+select tests.logout();
+select tests.eq(public.points_balance(tests.id('broke')), (select (r->>'prize')::int from freebie), 'the free win is in the balance, nothing spent');
+select tests.eq((select count(*) from public.point_ledger where user_id = tests.id('broke') and reason = 'scratch_buy')::int, 0, 'no charge for the free card');
+select tests.login(tests.id('broke'));
 select tests.login(tests.id('newbie'));
 select tests.eq((public.buy_scratch('turbo'))->>'status', 'unconfirmed', 'unconfirmed users can''t play');
 select tests.login(tests.id('boss'));

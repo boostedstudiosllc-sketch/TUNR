@@ -45,7 +45,7 @@ export default function ScratchCards({ user, onNeedAccount, onToast }) {
             SCRATCH <span style={{ color: "var(--a-c084fc)" }}>CARDS</span>
           </span>
           <span style={{ display: "block", fontSize: 12.5, color: "var(--a-c4a5e0)", fontFamily: "'Barlow', sans-serif" }}>
-            2, 5 or 10 points a card. Win up to 20.
+            A free card every week, or 2, 5 or 10 points a card. Win up to 20.
           </span>
         </span>
         <span aria-hidden="true" style={{ fontSize: 20, color: "var(--a-c4a5e0)" }}>›</span>
@@ -70,11 +70,11 @@ function ScratchShop({ onClose, onToast }) {
     refresh();
   }, []);
 
-  const play = async (card) => {
-    setBusy(card.id);
+  const play = async (card, free = false) => {
+    setBusy(free ? "free" : card.id);
     setError("");
     try {
-      const r = await buyScratch(card.id);
+      const r = await buyScratch(card.id, free);
       setPlaying({ card, prize: r.prize, balance: r.balance });
     } catch (e) {
       setError(e.message);
@@ -108,6 +108,7 @@ function ScratchShop({ onClose, onToast }) {
       )}
       {error && <div role="alert" style={{ marginTop: 10, fontSize: 13, color: "var(--a-f87171)", fontWeight: 700 }}>{error}</div>}
       {shop && !shop.on && <div style={{ ...muted, marginTop: 12 }}>Scratch cards are closed right now.</div>}
+      {shop?.on && <FreeCard shop={shop} busy={busy} left={left} onPlay={(card) => play(card, true)} />}
 
       {shop?.on &&
         shop.cards.map((c) => {
@@ -156,12 +157,40 @@ function ScratchShop({ onClose, onToast }) {
       )}
       <div style={{ ...muted, fontSize: 11.5, marginTop: 12 }}>
         Just for fun. The odds shown are the real odds and the same for everyone; the server picks each prize. Winnings go straight into your balance.
-        Points aren't cash. Up to 10 cards a day. One day each week the Tune-Up card sells out.
+        One free Tune-Up card every week (a new one each Monday), no points needed. Points aren't cash. Up to 10 cards a day. One day each week the Tune-Up card sells out.
       </div>
       <button onClick={onClose} style={{ ...quietButton, marginTop: 12 }}>
         CLOSE
       </button>
     </Sheet>
+  );
+}
+
+// This week's free card (a Tune-Up, same odds), or when the next one comes.
+function FreeCard({ shop, busy, left, onPlay }) {
+  const card = shop.cards.find((c) => c.id === shop.free_card);
+  if (!card) return null;
+  const next = new Date(shop.free_next_at).toLocaleDateString("en-US", { weekday: "long", timeZone: "America/New_York" });
+  return (
+    <div style={{ marginTop: 12, padding: "12px 14px", borderRadius: 14, border: `1px dashed ${shop.free_used ? "var(--n-2a2a2a)" : "#C084FC"}`, background: "var(--n-140a1c)", display: "flex", alignItems: "center", gap: 12 }}>
+      <span aria-hidden="true" style={{ fontSize: 28 }}>🎁</span>
+      <div style={{ flex: 1, fontFamily: "'Barlow Condensed', sans-serif" }}>
+        <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: 0.5, color: "var(--n-f0f0f0)" }}>FREE CARD THIS WEEK</div>
+        <div style={{ fontSize: 13, color: "var(--a-c4a5e0)", fontFamily: "'Barlow', sans-serif" }}>
+          {shop.free_used ? `Used. Your next free card comes ${next}.` : `A ${card.name} on us: win 1–5 points, no points needed.`}
+        </div>
+      </div>
+      {!shop.free_used && (
+        <button
+          className="action-btn"
+          disabled={Boolean(busy) || left <= 0}
+          onClick={() => onPlay(card)}
+          style={{ ...bigButton, width: "auto", padding: "10px 14px", fontSize: 13, background: "#9333EA", opacity: busy || left <= 0 ? 0.6 : 1 }}
+        >
+          {busy === "free" ? "…" : "SCRATCH FREE"}
+        </button>
+      )}
+    </div>
   );
 }
 
