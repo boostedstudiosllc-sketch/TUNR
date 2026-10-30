@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { newStack, tick, drop, floors, hookX, LIVES, WHY, loadStackBest, saveStackBest } from "../lib/stackEngine.js";
 import { RushAudio } from "../lib/rushAudio.js";
+import TrackButton from "./TrackButton.jsx";
 import { lookOf } from "../lib/rushEngine.js";
 import { muted, bigButton, quietButton } from "./Sheet.jsx";
 import { GarageRow, useGarageCar } from "./Showroom.jsx";
@@ -19,7 +20,7 @@ export default function CarStack({ onClose, user = null }) {
   const audio = useRef(null);
 
   useEffect(() => {
-    audio.current = new RushAudio();
+    audio.current = new RushAudio({ game: "stack" });
     setSound(audio.current.prefs);
     return () => audio.current?.dispose();
   }, []);
@@ -63,6 +64,7 @@ export default function CarStack({ onClose, user = null }) {
             <button onClick={() => toggle("music")} aria-label={sound.music ? "Turn music off" : "Turn music on"} style={{ ...iconBtn, opacity: sound.music ? 1 : 0.4 }}>
               🎵
             </button>
+            <TrackButton audio={audio} style={iconBtn} />
             <button onClick={() => toggle("sfx")} aria-label={sound.sfx ? "Turn sound effects off" : "Turn sound effects on"} style={iconBtn}>
               {sound.sfx ? "🔊" : "🔇"}
             </button>

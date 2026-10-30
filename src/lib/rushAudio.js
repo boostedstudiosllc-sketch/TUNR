@@ -1,8 +1,10 @@
-// TUNR Rush sound, made live in the browser with Web Audio: no audio files,
-// so there's nothing to license. Laid-back "elevator" lounge music (an
-// original bossa loop), an engine that follows your speed, and the boost:
-// turbo spool and whistle, exhaust pops and burbles, and a blow-off valve
-// when it runs out.
+import { SONGS, SONG_ORDER, GAME_SONG, stepEvents, stepSeconds } from "./gameMusic.js";
+
+// Game sound for every TUNR game, made live in the browser with Web Audio:
+// no audio files, so there's nothing to license. Upbeat original music (the
+// songs are in gameMusic.js; each game has its own, and "next track" moves
+// through the rest), an engine that follows your speed, and the boost: turbo
+// spool and whistle, exhaust pops and burbles, and a blow-off valve.
 
 const PREFS_KEY = "tunr.rush.sound";
 
@@ -25,36 +27,20 @@ function saveSoundPrefs(prefs) {
 }
 
 const hz = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
-
-// Eight bars of lounge changes: chord tones for the keys and a bass root.
-const CHORDS = [
-  { root: 36, notes: [60, 64, 67, 71] }, // Cmaj7
-  { root: 45, notes: [60, 64, 67, 69] }, // Am7
-  { root: 38, notes: [60, 62, 65, 69] }, // Dm7
-  { root: 43, notes: [59, 62, 65, 67] }, // G7
-  { root: 41, notes: [60, 64, 65, 69] }, // Fmaj7
-  { root: 40, notes: [59, 62, 64, 67] }, // Em7
-  { root: 38, notes: [60, 62, 65, 69] }, // Dm7
-  { root: 43, notes: [59, 62, 65, 67] }, // G7
-];
-// Vibraphone melody, per bar in eighth notes: an index into the chord's
-// tones (an octave up), or null to rest.
-const MELODY = [
-  [3, null, null, 2, null, 1, null, null],
-  [null, null, 2, null, 3, null, null, null],
-  [3, null, 2, null, 1, null, 0, null],
-  [null, null, null, 1, null, 2, 3, null],
-  [3, null, null, 2, null, 3, null, null],
-  [null, 2, null, 1, null, null, 0, null],
-  [1, null, 2, null, 3, null, 2, null],
-  [null, null, 1, null, null, null, null, null],
-];
-const COMP = [0, 3, 6]; // where the keys hit in each bar (bossa push)
-const EIGHTH = 60 / 96 / 2; // 96 beats a minute
+const SONG_KEY = "tunr.music.song."; // + game: the track picked for that game
 
 export class RushAudio {
-  constructor() {
+  // game: which game's track to play (GAME_SONG in gameMusic.js).
+  constructor({ game = "rush" } = {}) {
     this.prefs = loadSoundPrefs();
+    this.game = game;
+    let saved = null;
+    try {
+      saved = localStorage.getItem(SONG_KEY + game);
+    } catch (e) {
+      console.warn("Couldn't read the music pick:", e.message);
+    }
+    this.songId = SONGS[saved] ? saved : GAME_SONG[game] || "nightdrive";
     this.ctx = null;
     this.timer = 0;
     this.step = 0;
@@ -71,24 +57,29 @@ export class RushAudio {
     if (!this.ctx) {
       const Ctx = window.AudioContext || window.webkitAudioContext;
       if (!Ctx) return false;
-      const ctx = new Ctx();
-      this.ctx = ctx;
-      const comp = ctx.createDynamicsCompressor();
-      comp.connect(ctx.destination);
-      this.music = ctx.createGain();
-      this.music.gain.value = this.prefs.music ? 0.2 : 0;
-      this.music.connect(comp);
-      this.sfx = ctx.createGain();
-      this.sfx.gain.value = this.prefs.sfx ? 0.55 : 0;
-      this.sfx.connect(comp);
-      const len = ctx.sampleRate;
-      this.noise = ctx.createBuffer(1, len, ctx.sampleRate);
-      const data = this.noise.getChannelData(0);
-      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+      this.setup(new Ctx());
       document.addEventListener("visibilitychange", this.onVisibility);
     }
     if (this.ctx.state === "suspended") this.ctx.resume();
     return true;
+  }
+
+  // The mixer (music and effects buses into a compressor) on a context: the
+  // phone's speakers, or an OfflineAudioContext to render a preview.
+  setup(ctx) {
+    this.ctx = ctx;
+    const comp = ctx.createDynamicsCompressor();
+    comp.connect(ctx.destination);
+    this.music = ctx.createGain();
+    this.music.gain.value = this.prefs.music ? 0.2 : 0;
+    this.music.connect(comp);
+    this.sfx = ctx.createGain();
+    this.sfx.gain.value = this.prefs.sfx ? 0.55 : 0;
+    this.sfx.connect(comp);
+    const len = ctx.sampleRate;
+    this.noise = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = this.noise.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
   }
 
   setMusic(on) {
@@ -117,108 +108,160 @@ export class RushAudio {
 
   // ---------- music ----------
 
+  get song() {
+    return SONGS[this.songId];
+  }
+
   startMusic() {
     if (!this.ctx || this.timer) return;
     this.next = this.ctx.currentTime + 0.1;
     this.timer = setInterval(() => {
+      const dt = stepSeconds(this.song);
       while (this.next < this.ctx.currentTime + 0.3) {
-        this.playStep(this.step, this.next);
+        this.playStep(this.step, this.next, dt);
         this.step += 1;
-        this.next += EIGHTH;
+        this.next += dt;
       }
-    }, 60);
+    }, 50);
   }
 
-  playStep(n, t) {
-    const pos = n % 8;
-    const bar = Math.floor(n / 8) % CHORDS.length;
-    const chord = CHORDS[bar];
-    // Bass: root on 1, a push before 3, the fifth on 3.
-    if (pos === 0) this.bass(hz(chord.root), t, EIGHTH * 2.6);
-    if (pos === 3) this.bass(hz(chord.root), t, EIGHTH * 0.8);
-    if (pos === 4) this.bass(hz(chord.root + 7), t, EIGHTH * 2.6);
-    // Keys.
-    if (COMP.includes(pos)) for (const m of chord.notes) this.keys(hz(m), t, EIGHTH * 1.6);
-    // Vibes.
-    const mel = MELODY[bar][pos];
-    if (mel !== null) this.vibes(hz(chord.notes[mel] + 12), t);
-    // Shaker on every eighth, a touch louder off the beat.
-    this.tick(t, pos % 2 ? 0.05 : 0.025);
+  stopMusic() {
+    clearInterval(this.timer);
+    this.timer = null;
   }
 
-  bass(f, t, dur) {
+  // Switches to the next song (from its intro), remembered for this game.
+  // Returns its { name, style }.
+  nextSong() {
+    this.songId = SONG_ORDER[(SONG_ORDER.indexOf(this.songId) + 1) % SONG_ORDER.length];
+    this.step = 0;
+    try {
+      localStorage.setItem(SONG_KEY + this.game, this.songId);
+    } catch (e) {
+      console.warn("Couldn't save the music pick:", e.message);
+    }
+    return { name: this.song.name, style: this.song.style };
+  }
+
+  playStep(n, t, dt) {
+    for (const e of stepEvents(this.song, n)) {
+      const dur = e.steps * dt;
+      if (e.inst === "kick") this.kick(t);
+      else if (e.inst === "snare") this.snare(t);
+      else if (e.inst === "clap") this.clap(t);
+      else if (e.inst === "hat") this.hat(t, 0.05, 0.12 * e.vel);
+      else if (e.inst === "ohat") this.hat(t, 0.16, 0.1 * e.vel);
+      else if (e.inst === "shaker") this.hat(t, 0.03, 0.05 * e.vel);
+      else if (e.inst === "bass") this.bass(e.sound, hz(e.midi), t, dur);
+      else if (e.inst === "lead") this.lead(e.sound, hz(e.midi), t, dur);
+      else if (e.inst === "arp") this.pluck(hz(e.midi), t, dt * 0.9, 0.07);
+      else if (e.inst === "stab") for (const m of e.notes) this.pluck(hz(m), t, dt * 1.6, 0.05, "sawtooth");
+    }
+  }
+
+  kick(t) {
+    this.thump(t, 150, 45, 0.28, 0.9, this.music);
+  }
+
+  snare(t) {
+    this.noiseBurst({ t, dur: 0.16, type: "highpass", freq: 1800, level: 0.35, out: this.music });
+    this.thump(t, 220, 160, 0.08, 0.25, this.music);
+  }
+
+  clap(t) {
+    for (const d of [0, 0.012, 0.024]) this.noiseBurst({ t: t + d, dur: 0.09, type: "bandpass", freq: 1500, q: 1.5, level: 0.3, out: this.music });
+  }
+
+  hat(t, dur, level) {
+    this.noiseBurst({ t, dur, type: "highpass", freq: 8000, level, attack: 0.001, out: this.music });
+  }
+
+  // saw / square: a filtered synth bass. 808: a deep sine with a slide down.
+  bass(sound, f, t, dur) {
     const ctx = this.ctx;
     const o = ctx.createOscillator();
-    o.type = "triangle";
-    o.frequency.value = f;
-    const lp = ctx.createBiquadFilter();
-    lp.type = "lowpass";
-    lp.frequency.value = 500;
     const g = ctx.createGain();
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.55, t + 0.015);
-    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    o.connect(lp).connect(g).connect(this.music);
+    if (sound === "808") {
+      o.type = "sine";
+      o.frequency.setValueAtTime(f * 1.5, t);
+      o.frequency.exponentialRampToValueAtTime(f, t + 0.06);
+      g.gain.setValueAtTime(0.9, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.connect(g).connect(this.music);
+    } else {
+      o.type = sound === "square" ? "square" : "sawtooth";
+      o.frequency.value = f;
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.Q.value = 6;
+      lp.frequency.setValueAtTime(1400, t);
+      lp.frequency.exponentialRampToValueAtTime(220, t + dur);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.35, t + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.connect(lp).connect(g).connect(this.music);
+    }
     o.start(t);
     o.stop(t + dur + 0.05);
   }
 
-  // A soft electric piano: a sine with a quieter octave on top.
-  keys(f, t, dur) {
+  // The tune: two detuned saws or squares, or an 808-style cowbell (phonk).
+  lead(sound, f, t, dur) {
     const ctx = this.ctx;
     const g = ctx.createGain();
+    if (sound === "cowbell") {
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = f * 2;
+      bp.Q.value = 3;
+      g.gain.setValueAtTime(0.32, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      bp.connect(g).connect(this.music);
+      for (const mult of [2, 2.97]) {
+        const o = ctx.createOscillator();
+        o.type = "square";
+        o.frequency.value = f * mult;
+        o.connect(bp);
+        o.start(t);
+        o.stop(t + 0.32);
+      }
+      return;
+    }
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = sound === "square" ? 3200 : 4200;
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.07, t + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.02, t + dur * 0.6);
-    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    g.connect(this.music);
-    for (const [mult, level] of [
-      [1, 1],
-      [2, 0.25],
-    ]) {
+    g.gain.linearRampToValueAtTime(0.09, t + 0.01);
+    g.gain.setValueAtTime(0.09, t + Math.max(0.02, dur * 0.7));
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur + 0.08);
+    lp.connect(g).connect(this.music);
+    for (const detune of [-7, 7]) {
       const o = ctx.createOscillator();
-      o.frequency.value = f * mult;
-      const lvl = ctx.createGain();
-      lvl.gain.value = level;
-      o.connect(lvl).connect(g);
+      o.type = sound === "square" ? "square" : "sawtooth";
+      o.frequency.value = f;
+      o.detune.value = detune;
+      o.connect(lp);
       o.start(t);
-      o.stop(t + dur + 0.05);
+      o.stop(t + dur + 0.1);
     }
   }
 
-  // Vibraphone: a sine with a slow tremolo and a long ring.
-  vibes(f, t) {
+  // Short plucked synth note (arpeggios and chord stabs).
+  pluck(f, t, dur, level, type = "square") {
     const ctx = this.ctx;
     const o = ctx.createOscillator();
+    o.type = type;
     o.frequency.value = f;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.16, t + 0.005);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
-    const trem = ctx.createOscillator();
-    trem.frequency.value = 5.5;
-    const depth = ctx.createGain();
-    depth.gain.value = 0.05;
-    trem.connect(depth).connect(g.gain);
-    o.connect(g).connect(this.music);
-    o.start(t);
-    trem.start(t);
-    o.stop(t + 1.5);
-    trem.stop(t + 1.5);
-  }
-
-  tick(t, level) {
-    const ctx = this.ctx;
-    const src = ctx.createBufferSource();
-    src.buffer = this.noise;
-    const bp = ctx.createBiquadFilter();
-    bp.type = "highpass";
-    bp.frequency.value = 7000;
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(3500, t);
+    lp.frequency.exponentialRampToValueAtTime(600, t + dur);
     const g = ctx.createGain();
     g.gain.setValueAtTime(level, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
-    src.connect(bp).connect(g).connect(this.music);
-    src.start(t, Math.random() * 0.5, 0.06);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(lp).connect(g).connect(this.music);
+    o.start(t);
+    o.stop(t + dur + 0.02);
   }
 
   // ---------- engine ----------
@@ -276,7 +319,7 @@ export class RushAudio {
 
   // ---------- effects ----------
 
-  noiseBurst({ t, dur, type = "bandpass", freq, endFreq = freq, q = 1, level = 0.5, attack = 0.003 }) {
+  noiseBurst({ t, dur, type = "bandpass", freq, endFreq = freq, q = 1, level = 0.5, attack = 0.003, out = this.sfx }) {
     const ctx = this.ctx;
     const src = ctx.createBufferSource();
     src.buffer = this.noise;
@@ -289,11 +332,11 @@ export class RushAudio {
     g.gain.setValueAtTime(0, t);
     g.gain.linearRampToValueAtTime(level, t + attack);
     g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    src.connect(f).connect(g).connect(this.sfx);
+    src.connect(f).connect(g).connect(out);
     src.start(t, Math.random() * 0.4, dur + 0.05);
   }
 
-  thump(t, from, to, dur, level) {
+  thump(t, from, to, dur, level, out = this.sfx) {
     const ctx = this.ctx;
     const o = ctx.createOscillator();
     o.frequency.setValueAtTime(from, t);
@@ -301,7 +344,7 @@ export class RushAudio {
     const g = ctx.createGain();
     g.gain.setValueAtTime(level, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    o.connect(g).connect(this.sfx);
+    o.connect(g).connect(out);
     o.start(t);
     o.stop(t + dur + 0.02);
   }

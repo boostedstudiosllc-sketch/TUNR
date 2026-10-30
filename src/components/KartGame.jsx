@@ -5,6 +5,7 @@ import { REPORT_MS } from "../lib/remoteMotion.js";
 import { sharedGame } from "../lib/gameRooms.js";
 import { KART_TRACKS } from "../lib/kartTracks.js";
 import { RushAudio } from "../lib/rushAudio.js";
+import TrackButton from "./TrackButton.jsx";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import { TrackShape, ordinal, chip, chipOn } from "./DriftKing.jsx";
 import { usePortrait, useLandscapeLock } from "./Sideways.jsx";
@@ -74,7 +75,7 @@ export default function KartGame({ onClose, user = null, onNeedAccount }) {
   const [friendTrack, setFriendTrack] = useState(KART_TRACKS[0].id);
 
   useEffect(() => {
-    audio.current = new RushAudio();
+    audio.current = new RushAudio({ game: "karts" });
     setSound(audio.current.prefs);
     return () => audio.current?.dispose();
   }, []);
@@ -198,6 +199,7 @@ export default function KartGame({ onClose, user = null, onNeedAccount }) {
             <button onClick={() => toggle("music")} aria-label={sound.music ? "Turn music off" : "Turn music on"} style={{ ...iconBtn, opacity: sound.music ? 1 : 0.4 }}>
               🎵
             </button>
+            <TrackButton audio={audio} style={iconBtn} />
             <button onClick={() => toggle("sfx")} aria-label={sound.sfx ? "Turn sound effects off" : "Turn sound effects on"} style={iconBtn}>
               {sound.sfx ? "🔊" : "🔇"}
             </button>

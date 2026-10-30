@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { newRace, tick, tap, nitro, treeLights, remoteSample, remoteDone, myReport, RIVALS, WHY, REDLINE, SHIFT_ZONE, GOOD_ZONE, RATIOS, QUARTER, reactionWord, loadDragProgress, saveDragResult } from "../lib/dragEngine.js";
 import { RushAudio } from "../lib/rushAudio.js";
+import TrackButton from "./TrackButton.jsx";
 import { lookOf, DEFAULT_LOOK } from "../lib/rushEngine.js";
 import { muted, bigButton, quietButton } from "./Sheet.jsx";
 import { GarageRow, useGarageCar } from "./Showroom.jsx";
@@ -35,7 +36,7 @@ export default function DragRace({ onClose, user = null, onNeedAccount }) {
   const audio = useRef(null);
 
   useEffect(() => {
-    audio.current = new RushAudio();
+    audio.current = new RushAudio({ game: "drag" });
     setSound(audio.current.prefs);
     return () => audio.current?.dispose();
   }, []);
@@ -52,15 +53,17 @@ export default function DragRace({ onClose, user = null, onNeedAccount }) {
     setResult(null);
     setRacing(true);
     setRound((r) => r + 1);
-    audio.current?.unlock();
+    if (audio.current?.unlock() && audio.current.prefs.music) audio.current.startMusic();
   }
 
   function toggle(kind) {
     const a = audio.current;
     if (!a) return;
     const on = !sound[kind];
-    if (kind === "music") a.setMusic(on);
-    else a.setSfx(on);
+    if (kind === "music") {
+      a.setMusic(on);
+      if (on && a.unlock()) a.startMusic();
+    } else a.setSfx(on);
     setSound((s) => ({ ...s, [kind]: on }));
   }
 
@@ -97,6 +100,10 @@ export default function DragRace({ onClose, user = null, onNeedAccount }) {
             <div style={{ flex: 1, fontSize: 25, fontWeight: 900, letterSpacing: 1 }}>
               🚦 DRAG <span style={{ color: "#0080F0" }}>RACE</span>
             </div>
+            <button onClick={() => toggle("music")} aria-label={sound.music ? "Turn music off" : "Turn music on"} style={{ ...iconBtn, opacity: sound.music ? 1 : 0.4 }}>
+              🎵
+            </button>
+            <TrackButton audio={audio} style={iconBtn} />
             <button onClick={() => toggle("sfx")} aria-label={sound.sfx ? "Turn sound effects off" : "Turn sound effects on"} style={iconBtn}>
               {sound.sfx ? "🔊" : "🔇"}
             </button>

@@ -3,6 +3,7 @@ import { newMatch, tickMatch, STEP, clockText, loadRecord, saveRecord, MATCH_LEN
 import FriendRoom from "./FriendRoom.jsx";
 import { sharedGame } from "../lib/gameRooms.js";
 import { RushAudio } from "../lib/rushAudio.js";
+import TrackButton from "./TrackButton.jsx";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import { chip, chipOn } from "./DriftKing.jsx";
 import { GarageRow, useGarageCar, carName } from "./Showroom.jsx";
@@ -71,7 +72,7 @@ export default function CarSoccer({ onClose, user = null, onNeedAccount }) {
   });
 
   useEffect(() => {
-    audio.current = new RushAudio();
+    audio.current = new RushAudio({ game: "ball" });
     setSound(audio.current.prefs);
     return () => audio.current?.dispose();
   }, []);
@@ -193,6 +194,7 @@ export default function CarSoccer({ onClose, user = null, onNeedAccount }) {
             <button onClick={() => toggle("music")} aria-label={sound.music ? "Turn music off" : "Turn music on"} style={{ ...iconBtn, opacity: sound.music ? 1 : 0.4 }}>
               🎵
             </button>
+            <TrackButton audio={audio} style={iconBtn} />
             <button onClick={() => toggle("sfx")} aria-label={sound.sfx ? "Turn sound effects off" : "Turn sound effects on"} style={iconBtn}>
               {sound.sfx ? "🔊" : "🔇"}
             </button>

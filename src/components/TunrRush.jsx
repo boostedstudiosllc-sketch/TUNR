@@ -31,6 +31,7 @@ import {
 } from "../lib/rush.js";
 import { loadMyPoints, pointsEarned, CLAIM_HINT } from "../lib/points.js";
 import { RushAudio, loadSoundPrefs } from "../lib/rushAudio.js";
+import TrackButton from "./TrackButton.jsx";
 import { loadVehicles, loadProfile } from "../lib/store.js";
 import { Avatar } from "./EditProfile.jsx";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
@@ -106,14 +107,14 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount, startV
 
   // Sound can only start from a tap, so it begins with the first START.
   function play() {
-    if (!audio.current) audio.current = new RushAudio();
+    if (!audio.current) audio.current = new RushAudio({ game: "rush" });
     if (audio.current.unlock()) audio.current.startMusic();
     setScreen("play");
   }
   function toggle(kind) {
     const next = { ...sound, [kind]: !sound[kind] };
     setSound(next);
-    if (!audio.current) audio.current = new RushAudio();
+    if (!audio.current) audio.current = new RushAudio({ game: "rush" });
     if (kind === "music") audio.current.setMusic(next.music);
     else audio.current.setSfx(next.sfx);
   }
@@ -289,7 +290,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount, startV
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 1 }}>
+          <div style={{ fontSize: "clamp(20px, 6.2vw, 26px)", fontWeight: 900, letterSpacing: 1, whiteSpace: "nowrap" }}>
             🎮 TUNR <span style={{ color: "#0080F0" }}>RUSH</span>
           </div>
           <div style={{ display: "flex", gap: 6 }}>
@@ -301,6 +302,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount, startV
             >
               🎵
             </button>
+            <TrackButton audio={audio} ensure={() => (audio.current = new RushAudio({ game: "rush" }))} style={{ ...quietButton, width: 44, height: 44, padding: 0, fontSize: 17 }} />
             <button
               onClick={() => toggle("sfx")}
               aria-label={sound.sfx ? "Turn sound effects off" : "Turn sound effects on"}
