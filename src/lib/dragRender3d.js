@@ -261,7 +261,10 @@ export function createDrag3D(canvas, { me, rival }) {
   const tree = buildTree(scene);
 
   const mine = buildCar({ ...me, sport: true });
-  const theirs = buildCar({ color: rival.color, body: rival.body, spoiler: "wing", rims: "black", height: "lowered", sport: true, plate: rival.plate || "" });
+  // A friend's car is their own garage car; a computer rival gets a racer look.
+  const theirs = rival.look
+    ? buildCar({ ...rival.look, sport: true, plate: rival.plate || "" })
+    : buildCar({ color: rival.color, body: rival.body, spoiler: "wing", rims: "black", height: "lowered", sport: true, plate: rival.plate || "" });
   mine.position.x = -LANE;
   theirs.position.x = LANE;
   scene.add(mine, theirs);

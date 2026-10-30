@@ -49,7 +49,9 @@ function newDriver() {
   return { x: 0, v: 0, gear: 0, rpm: IDLE, launchedAt: null, shifts: [], nitroLeft: NITRO_SECONDS, nitroOn: false, nitroUsed: false, sixtyAt: null, finishAt: null, trap: 0, limiter: 0, shiftLag: 0 };
 }
 
-export function newRace(rivalIndex = 0, seed = 1) {
+// `remote`: a two-player race; the other car is another phone's, fed in
+// by remoteSample() and remoteDone() instead of driven by the computer.
+export function newRace(rivalIndex = 0, seed = 1, { remote = false } = {}) {
   const rand = seeded(seed);
   const rival = RIVALS[Math.max(0, Math.min(RIVALS.length - 1, rivalIndex))];
   // The rival's plan for this race: reaction, and a shift point per gear.
@@ -58,7 +60,55 @@ export function newRace(rivalIndex = 0, seed = 1) {
     shifts: RATIOS.slice(1).map(() => rival.shiftAt + (rand() * 2 - 1) * rival.wobble),
     nitroAt: rival.nitroAt,
   };
-  return { t: 0, rival, plan, phase: "tree", me: newDriver(), them: newDriver(), result: null, events: [], foul: false };
+  return { t: 0, rival, plan, phase: "tree", me: newDriver(), them: newDriver(), result: null, events: [], foul: false, remote: remote ? { samples: [], out: null, doneAt: null } : null };
+}
+
+// Two-player races. Each phone runs its own tree and its own car, and
+// both clocks count from that phone's start, so the times compare fairly
+// whatever the network lag. The other car is drawn from its last reports.
+
+// A position report from the other phone: { t, x, v, nitro }.
+export function remoteSample(race, s) {
+  const r = race.remote;
+  if (!r || typeof s?.t !== "number") return;
+  r.samples.push(s);
+  if (r.samples.length > 30) r.samples.shift();
+}
+
+// The other phone's race is over: { finishAt, launchedAt, trap } or
+// { out: "red" | "asleep" | "left" }.
+export function remoteDone(race, d) {
+  const r = race.remote;
+  if (!r) return;
+  const them = race.them;
+  if (d?.out) {
+    r.out = d.out;
+  } else if (typeof d?.finishAt === "number") {
+    them.finishAt = d.finishAt;
+    them.launchedAt = d.launchedAt ?? them.launchedAt;
+    them.trap = d.trap || 0;
+    them.x = Math.max(them.x, QUARTER);
+  }
+  r.doneAt = race.t;
+}
+
+// What this phone tells the other one about its race.
+export const myReport = (race) => {
+  const me = race.me;
+  if (race.result?.why === "red" || race.result?.why === "asleep") return { out: race.result.why };
+  return { finishAt: me.finishAt, launchedAt: me.launchedAt, trap: me.trap };
+};
+
+function followRemote(race) {
+  const them = race.them;
+  const last = race.remote.samples[race.remote.samples.length - 1];
+  if (!last || them.finishAt != null) return;
+  // Carry it on from the last report, so it doesn't stutter between them.
+  const ahead = Math.max(0, Math.min(0.5, race.t - last.t));
+  them.x = Math.min(QUARTER - 0.01, last.x + last.v * ahead);
+  them.v = last.v;
+  them.nitroOn = Boolean(last.nitro);
+  if (them.launchedAt == null && last.x > 0) them.launchedAt = last.t;
 }
 
 // Which lights are on: ambers lit so far, green, or red (jumped).
@@ -172,11 +222,20 @@ export function step(race, dt = STEP) {
   if (race.phase === "done") return;
   race.t += dt;
   if (race.phase === "tree" && race.t >= GREEN_AT) race.phase = "race";
-  rivalBrain(race);
+  if (race.remote) followRemote(race);
+  else rivalBrain(race);
   drive(race, race.me, dt);
-  drive(race, race.them, dt);
+  if (!race.remote) drive(race, race.them, dt);
   // Sat at the line too long: it counts as a lost race.
   if (race.me.launchedAt == null && race.t > GREEN_AT + 3) finish(race, "asleep");
+  if (race.remote) {
+    // Two players: done once both are through, or the other one is out
+    // (red light, never left, gone) and you're through. If they never
+    // report, you win after 15 seconds.
+    const me = race.me;
+    if (me.finishAt != null && (race.them.finishAt != null || race.remote.out || race.t - me.finishAt > 15)) finish(race);
+    return;
+  }
   if (race.me.finishAt != null && race.them.finishAt != null) finish(race);
   // Once one car is through, don't wait forever for the other.
   else if ((race.me.finishAt ?? race.them.finishAt) != null && race.t - (race.me.finishAt ?? race.them.finishAt) > 6) finish(race);
@@ -213,6 +272,7 @@ function finish(race, why = null) {
     margin: me.finishAt != null && them.finishAt != null ? Math.abs(them.finishAt - me.finishAt) : null,
     shifts: me.shifts,
     perfect: me.shifts.filter((s) => s.quality === "perfect").length,
+    rivalOut: race.remote?.out || (race.remote && them.finishAt == null && me.finishAt != null ? "left" : null),
   };
   race.events.push({ type: "done", won });
 }

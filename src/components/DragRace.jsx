@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { newRace, tick, tap, nitro, treeLights, RIVALS, WHY, REDLINE, SHIFT_ZONE, GOOD_ZONE, RATIOS, QUARTER, reactionWord, loadDragProgress, saveDragResult } from "../lib/dragEngine.js";
+import { newRace, tick, tap, nitro, treeLights, remoteSample, remoteDone, myReport, RIVALS, WHY, REDLINE, SHIFT_ZONE, GOOD_ZONE, RATIOS, QUARTER, reactionWord, loadDragProgress, saveDragResult } from "../lib/dragEngine.js";
 import { RushAudio } from "../lib/rushAudio.js";
 import { lookOf, DEFAULT_LOOK } from "../lib/rushEngine.js";
 import { muted, bigButton, quietButton } from "./Sheet.jsx";
 import { GarageRow, useGarageCar } from "./Showroom.jsx";
+import DragFriend from "./DragFriend.jsx";
+import { JOIN_KEY } from "../lib/dragRooms.js";
 
 // Drag Race: a quarter mile against five rivals in turn. Launch on the
 // green, shift in the green, one shot of nitro. Free play; your times and
@@ -11,12 +13,21 @@ import { GarageRow, useGarageCar } from "./Showroom.jsx";
 
 const fmt = (n, d = 3) => (n == null ? "—" : n.toFixed(d));
 
-export default function DragRace({ onClose, user = null }) {
+export default function DragRace({ onClose, user = null, onNeedAccount }) {
   const garage = useGarageCar(user, "drag");
   const look = garage.car ? lookOf(garage.car) : { ...DEFAULT_LOOK, spoiler: "wing" };
   const [progress, setProgress] = useState(loadDragProgress);
   const [rival, setRival] = useState(() => Math.min(loadDragProgress().beaten, RIVALS.length - 1));
   const [racing, setRacing] = useState(false);
+  // Racing a friend; opens straight there from a shared room link.
+  const [friend, setFriend] = useState(() => {
+    try {
+      return Boolean(sessionStorage.getItem(JOIN_KEY));
+    } catch (e) {
+      console.warn("Couldn't read the shared race code:", e.message);
+      return false;
+    }
+  });
   const [round, setRound] = useState(0);
   const [result, setResult] = useState(null);
   const [sound, setSound] = useState({ music: true, sfx: true });
@@ -29,11 +40,11 @@ export default function DragRace({ onClose, user = null }) {
   }, []);
 
   useEffect(() => {
-    if (racing) return undefined;
+    if (racing || friend) return undefined;
     const onKey = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [racing, onClose]);
+  }, [racing, friend, onClose]);
 
   function start(i = rival) {
     setRival(i);
@@ -57,7 +68,12 @@ export default function DragRace({ onClose, user = null }) {
 
   return (
     <div role="dialog" aria-label="Drag Race" style={{ position: "fixed", inset: 0, zIndex: 410, background: "#0A0A0A", color: "#F0F0F0", display: "flex", flexDirection: "column", fontFamily: "'Barlow Condensed', sans-serif" }}>
-      {racing ? (
+      {friend ? (
+        <>
+          <div style={{ height: "calc(8px + env(safe-area-inset-top))" }} />
+          <DragFriend user={user} look={look} audio={audio} onExit={() => setFriend(false)} onNeedAccount={onNeedAccount} />
+        </>
+      ) : racing ? (
         <DragRun
           key={round}
           look={look}
@@ -143,6 +159,9 @@ export default function DragRace({ onClose, user = null }) {
               <button className="action-btn" onClick={() => start(nextRival ?? rival)} style={{ ...bigButton, marginTop: 14, background: "#FACC15", color: "#111", fontSize: 20, letterSpacing: 2 }}>
                 {nextRival != null ? `▶ NEXT: ${RIVALS[nextRival].name.toUpperCase()}` : result ? "▶ RACE AGAIN" : `▶ RACE ${RIVALS[rival].name.toUpperCase()}`}
               </button>
+              <button className="action-btn" onClick={() => setFriend(true)} style={{ ...bigButton, marginTop: 10, background: "linear-gradient(135deg, #DB2777, #7C3AED)", color: "#fff", fontSize: 18, letterSpacing: 2 }}>
+                👥 RACE A FRIEND · LIVE
+              </button>
               {progress.beaten >= RIVALS.length && <div style={{ ...muted, textAlign: "center", marginTop: 8, color: "#FACC15" }}>🏆 You beat the whole ladder. Now chase a quicker ET.</div>}
             </div>
           </div>
@@ -152,7 +171,7 @@ export default function DragRace({ onClose, user = null }) {
   );
 }
 
-function ResultCard({ result, rival }) {
+export function ResultCard({ result, rival }) {
   const rows = [
     ["REACTION", result.reaction != null ? `${fmt(result.reaction)}s` : "—", reactionWord(result.reaction)],
     ["60 FT", result.sixty ? `${fmt(result.sixty)}s` : "—"],
@@ -164,7 +183,7 @@ function ResultCard({ result, rival }) {
     <div style={{ padding: 14, borderRadius: 14, background: result.won ? "linear-gradient(135deg, rgba(34,197,94,0.18), #15181e)" : "#15181e", border: `1px solid ${result.won ? "#16A34A" : "#2A2E36"}` }}>
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1.5, color: result.won ? "#4ADE80" : "#F87171" }}>{result.won ? "🏁 WIN" : result.why === "red" ? "🔴 RED LIGHT" : "LOSS"}</div>
-        <div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1.05 }}>{result.won ? `You beat ${rival.name}` : WHY[result.why]}</div>
+        <div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1.05 }}>{result.won ? `You beat ${rival.name}` : result.why === "lost" ? `Lost to ${rival.name}` : WHY[result.why]}</div>
         {result.margin != null && <div style={{ ...muted, marginTop: 2 }}>{result.won ? "by" : "lost by"} {fmt(result.margin)}s</div>}
       </div>
       <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4 }}>
@@ -180,7 +199,10 @@ function ResultCard({ result, rival }) {
   );
 }
 
-function DragRun({ look, rivalIndex, audio, onDone, onQuit }) {
+// One race. `remote` (racing a friend): { seed, round, opponent: { name,
+// look }, room, hooks }: the other car comes from the room, and this phone
+// reports its own as it goes.
+export function DragRun({ look, rivalIndex = 0, audio, onDone, onQuit, remote = null }) {
   const wrap = useRef(null);
   const canvas = useRef(null);
   const raceRef = useRef(null);
@@ -196,10 +218,21 @@ function DragRun({ look, rivalIndex, audio, onDone, onQuit }) {
   const [nitroLeft, setNitroLeft] = useState(true);
 
   useEffect(() => {
-    const race = newRace(rivalIndex, (Date.now() % 100000) + 7);
+    const race = remote ? newRace(0, remote.seed, { remote: true }) : newRace(rivalIndex, (Date.now() % 100000) + 7);
     raceRef.current = race;
     if (import.meta.env.DEV) window.__drag = race;
     const r = RIVALS[rivalIndex];
+    let lastSent = 0;
+    let sentDone = false;
+    if (remote) {
+      const mine = (p) => p?.round === remote.round;
+      remote.hooks.current = {
+        pos: (p) => mine(p) && remoteSample(race, p),
+        done: (p) => mine(p) && remoteDone(race, p.report),
+        bye: () => remoteDone(race, { out: "left" }),
+      };
+    }
+    const report = (fn) => Promise.resolve(fn()).catch((e) => console.warn("Couldn't reach the other phone:", e.message));
     let view;
     let raf = 0;
     let last = 0;
@@ -209,7 +242,10 @@ function DragRun({ look, rivalIndex, audio, onDone, onQuit }) {
     import("../lib/dragRender3d.js")
       .then((m) => {
         if (disposed) return;
-        view = m.createDrag3D(canvas.current, { me: { ...look, plate: "TUNR" }, rival: { color: r.color, body: r.body, plate: r.name.split(" ")[0].toUpperCase().slice(0, 7) } });
+        const rival = remote
+          ? { look: remote.opponent.look, plate: String(remote.opponent.name || "").toUpperCase().slice(0, 7) }
+          : { color: r.color, body: r.body, plate: r.name.split(" ")[0].toUpperCase().slice(0, 7) };
+        view = m.createDrag3D(canvas.current, { me: { ...look, plate: "TUNR" }, rival });
         raf = requestAnimationFrame(frame);
       })
       .catch((e) => setError(`Couldn't start the 3D strip. (${e.message})`));
@@ -231,7 +267,19 @@ function DragRun({ look, rivalIndex, audio, onDone, onQuit }) {
         el.dataset.w = `${w}x${h}`;
         view.resize(w, h);
       }
-      if (!live.current.paused) tick(race, dt);
+      // Against a friend the clock never stops (the other phone's doesn't).
+      if (!live.current.paused || remote) tick(race, dt);
+      if (remote) {
+        const me = race.me;
+        if (now - lastSent > 80 && race.phase !== "done" && me.finishAt == null) {
+          lastSent = now;
+          report(() => remote.room.pos({ round: remote.round, t: race.t, x: me.x, v: me.v, nitro: me.nitroOn }));
+        }
+        if (!sentDone && (me.finishAt != null || race.phase === "done")) {
+          sentDone = true;
+          report(() => remote.room.done({ round: remote.round, report: race.phase === "done" ? myReport(race) : { finishAt: me.finishAt, launchedAt: me.launchedAt, trap: me.trap } }));
+        }
+      }
       for (const ev of race.events.splice(0)) {
         if (ev.type === "red") {
           say("RED LIGHT", "#F87171");
@@ -296,6 +344,7 @@ function DragRun({ look, rivalIndex, audio, onDone, onQuit }) {
     window.addEventListener("keydown", onKey);
     return () => {
       disposed = true;
+      if (remote) remote.hooks.current = {};
       cancelAnimationFrame(raf);
       window.removeEventListener("keydown", onKey);
       view?.dispose();
@@ -341,7 +390,7 @@ function DragRun({ look, rivalIndex, audio, onDone, onQuit }) {
             <div ref={(el) => (hud.current.bar = el)} style={{ height: "100%", width: 0, background: "#0080F0" }} />
           </div>
           <div style={{ height: 5, borderRadius: 3, background: "rgba(255,255,255,0.12)", overflow: "hidden", marginTop: 4 }}>
-            <div ref={(el) => (hud.current.bar2 = el)} style={{ height: "100%", width: 0, background: RIVALS[rivalIndex].color }} />
+            <div ref={(el) => (hud.current.bar2 = el)} style={{ height: "100%", width: 0, background: remote ? "#F472B6" : RIVALS[rivalIndex].color }} />
           </div>
         </div>
         <button onClick={() => setPaused(true)} aria-label="Pause" style={{ ...quietButton, width: 44, height: 44, padding: 0, fontSize: 16, background: "rgba(0,0,0,0.5)" }}>

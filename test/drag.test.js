@@ -79,3 +79,73 @@ test("drag: shift grades and the torque curve", () => {
   }
   assert.ok(r.me.x >= QUARTER && r.them.x >= QUARTER);
 });
+
+import { remoteSample, remoteDone, myReport } from "../src/lib/dragEngine.js";
+
+// Two phones, each with its own race: A is quicker. Each feeds the other its
+// reports, as the room would.
+function duel(aRt, bRt, { bOut = null } = {}) {
+  const A = newRace(0, 5, { remote: true });
+  const B = newRace(0, 5, { remote: true });
+  const drive = (r, rt) => {
+    if (r.me.launchedAt == null && r.t >= GREEN_AT + rt) tap(r);
+    else if (r.me.launchedAt != null && r.me.rpm >= 7200 && r.me.gear < 4 && r.me.shiftLag <= 0) tap(r);
+  };
+  let aSent = false;
+  let bSent = false;
+  for (let i = 0; i < 120 * 40 && (A.phase !== "done" || B.phase !== "done"); i++) {
+    if (A.phase !== "done") (drive(A, aRt), step(A));
+    if (B.phase !== "done") {
+      if (bOut === "red" && B.t >= 1.5 && B.me.launchedAt == null) tap(B);
+      else if (!bOut) drive(B, bRt);
+      step(B);
+    }
+    if (i % 10 === 0) {
+      remoteSample(B, { t: A.t, x: A.me.x, v: A.me.v });
+      remoteSample(A, { t: B.t, x: B.me.x, v: B.me.v });
+    }
+    if (!aSent && (A.me.finishAt != null || A.phase === "done")) (aSent = true), remoteDone(B, myReport(A));
+    if (!bSent && (B.me.finishAt != null || B.phase === "done")) (bSent = true), remoteDone(A, myReport(B));
+  }
+  return [A.result, B.result];
+}
+
+test("drag two-player: both phones agree who won", () => {
+  const [a, b] = duel(0.12, 0.3);
+  assert.equal(a.won, true);
+  assert.equal(b.won, false);
+  assert.ok(a.margin > 0.1 && Math.abs(a.margin - b.margin) < 1e-9);
+});
+
+test("drag two-player: a red light loses, and the other car is shown from reports", () => {
+  const [a, b] = duel(0.2, 0, { bOut: "red" });
+  assert.equal(b.why, "red");
+  assert.equal(a.won, true);
+  assert.equal(a.rivalOut, "red");
+  const r = newRace(0, 1, { remote: true });
+  remoteSample(r, { t: 3, x: 10, v: 20 });
+  r.t = 3.1;
+  step(r);
+  assert.ok(r.them.x > 10 && r.them.x < 13);
+});
+
+test("drag two-player: if the other phone goes quiet, you win once through", () => {
+  const r = newRace(0, 2, { remote: true });
+  while (r.phase !== "done") {
+    if (r.me.launchedAt == null && r.t >= GREEN_AT + 0.2) tap(r);
+    else if (r.me.launchedAt != null && r.me.rpm >= 7200 && r.me.gear < 4 && r.me.shiftLag <= 0) tap(r);
+    step(r);
+  }
+  assert.equal(r.result.won, true);
+  assert.equal(r.result.rivalOut, "left");
+});
+
+import { cleanCode, newRoomCode, hostOf, quickRoomCode } from "../src/lib/dragRooms.js";
+
+test("drag rooms: codes and who hosts", () => {
+  assert.match(newRoomCode(), /^[A-HJKMNP-Z2-9]{4}$/);
+  assert.equal(cleanCode(" ab-c1d9 "), "ABC1");
+  assert.equal(hostOf([{ id: "b" }, { id: "a" }]), "a");
+  assert.equal(quickRoomCode("bbbb-2", "aaaa-1"), quickRoomCode("aaaa-1", "bbbb-2"));
+  assert.ok(quickRoomCode("aaaa-1", "bbbb-2").length > 4);
+});
