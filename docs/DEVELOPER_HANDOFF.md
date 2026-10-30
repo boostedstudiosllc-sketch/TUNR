@@ -363,9 +363,13 @@ From `CLAUDE.md`, the rules every change follows:
 - **Optional:** sync the clip to the account (a private `alert-sounds/<uid>/` storage bucket with own-folder policies, like `avatars` in 044) so it follows the member to a new phone.
 - Add `NSMicrophoneUsageDescription` (iOS) and `RECORD_AUDIO` (Android) for recording in-app.
 
-**I. Where I parked: guess the floor**
-- Today (web): the floor is tapped in (`ParkedCar.jsx`); browsers can't read the pressure sensor.
-- Native: read relative altitude (iOS `CMAltimeter`, Android `Sensor.TYPE_PRESSURE`; a small Capacitor plugin). Note the reading on arriving near the meet or garage (or when the member taps "I'm driving in"), compare when they tap "I parked", and suggest a floor at roughly 3 m a level ("Level 3?", one tap to confirm). It gives a change in height, not the floor number, so keep the confirm step; some budget Android phones have no barometer.
+**I. Where I parked: automatic, in the background (owner requirement)**
+- Today (web): the member opens the app and taps **P** (`ParkedCar.jsx`). A web app can't run in the background, read location while closed, or tell when you've stopped driving.
+- **Goal in the native app (like Google Maps' "parking saved"):** with no app open, notice the member parked, pin the spot, then ask for the floor with a notification.
+- **Detecting "just parked":** iOS `CMMotionActivityManager` (automotive → walking) plus a significant-location or visit update; CarPlay or car Bluetooth disconnecting where available. Android Activity Recognition Transition API (`IN_VEHICLE` exit → `ON_FOOT`), plus car Bluetooth disconnect. Grab one location fix at that moment; no continuous tracking.
+- **The notification:** "🅿️ Parked? Saved your spot. Which floor?" with action buttons (Ground, 1, 2, 3, Other…) and a text reply (iOS `UNTextInputNotificationAction`, Android `RemoteInput`) for floor or spot. Answering saves it without opening the app (same format as `src/lib/parking.js`, kept on the phone). Tapping the notification opens the find view. Also suggest the floor from the barometer (`CMAltimeter` / `TYPE_PRESSURE`: height change since the car stopped moving, about 3 m a level) as the first button.
+- **Permissions and review:** needs "Always" location (iOS `NSLocationAlwaysAndWhenInUseUsageDescription`, Android `ACCESS_BACKGROUND_LOCATION`) and Motion & Fitness / `ACTIVITY_RECOGNITION`. Make it opt-in (a "Remember where I park" switch), explain it before asking, and say in the privacy policy that parking spots stay on the phone. Apple and Google both review background location closely; a clear in-app explanation and the opt-in switch are what they look for.
+- Battery: activity recognition is low-power; never poll GPS.
 
 ### App Store review points
 
