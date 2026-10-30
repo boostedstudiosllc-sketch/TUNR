@@ -55,6 +55,7 @@ import CommunityTab from "./components/CommunityTab.jsx";
 import NotificationBell from "./components/NotificationBell.jsx";
 import RatePrompt from "./components/RatePrompt.jsx";
 import Checklist from "./components/Checklist.jsx";
+import ParkedCar from "./components/ParkedCar.jsx";
 import AlertSettings from "./components/AlertSettings.jsx";
 import HomeScreenPrompt from "./components/HomeScreenPrompt.jsx";
 import ConfirmEmailBanner from "./components/ConfirmEmail.jsx";
@@ -733,6 +734,7 @@ export default function App() {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <ParkedCar onToast={showToast} />
         <Checklist user={user} onToast={showToast} />
         <RatePrompt user={user} onToast={showToast} />
         <NotificationBell user={user} onOpenLink={openLink} onToast={showToast} onOpenSettings={() => setShowAlerts(true)} />
@@ -870,6 +872,8 @@ export default function App() {
             style={{
               display: "flex",
               gap: 6,
+              rowGap: 8,
+              flexWrap: "wrap", // the LIST / MONTH toggle drops a line on small phones
               padding: "0 20px 14px",
               alignItems: "center",
             }}

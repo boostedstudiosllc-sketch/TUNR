@@ -29,7 +29,7 @@ const TASK_REASONS = {
   member: ["member_bonus"],
   receipt: ["purchase"],
   host: ["host_bonus"],
-  photo: ["photo_bonus"],
+  photo_week: ["photo_bonus"],
   guess: ["guess_bonus"],
 };
 // Hosting milestones: [meets, points].
@@ -126,7 +126,7 @@ async function loadTasks(user) {
     },
     {
       group: "THIS WEEK",
-      id: "photo",
+      id: "photo_week",
       icon: "📸",
       title: "Vote for Photo of the week",
       text: `Pick the best meet photo posted this week. Post your own shots from meets: the top photo wins +${rates.photo_points ?? 25}.`,

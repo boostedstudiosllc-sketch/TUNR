@@ -16,6 +16,7 @@ import { track, loadGoingHistory } from "../lib/store.js";
 import GoingTicker from "./GoingTicker.jsx";
 import MeetWeather from "./MeetWeather.jsx";
 import { directionsUrl } from "../lib/geo.js";
+import { openParked } from "../lib/parking.js";
 import { GOING_AS, crowdLine } from "../lib/photographer.js";
 import DirectionsIcon from "./DirectionsIcon.jsx";
 
@@ -413,6 +414,28 @@ export default function MeetDetail({
               >
                 📅 CALENDAR
               </a>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openParked({ id: event.id, title: event.title });
+                }}
+                style={{
+                  flex: 1,
+                  padding: "12px 0",
+                  background: "var(--n-111111)",
+                  border: "1px solid var(--n-2a2a2a)",
+                  borderRadius: 10,
+                  color: "var(--n-888888)",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  letterSpacing: 1.5,
+                  fontFamily: "'Barlow Condensed',sans-serif",
+                  cursor: "pointer",
+                }}
+              >
+                🅿️ PARKED
+              </button>
             </div>
           )}
 

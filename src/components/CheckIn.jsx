@@ -12,6 +12,7 @@ import {
 } from "../lib/points.js";
 import { loadProfile } from "../lib/store.js";
 import { askForLocation } from "../lib/location.js";
+import { openParked } from "../lib/parking.js";
 import { useLocationStatus, LocationNotice } from "./LocationAccess.jsx";
 import { field, bigButton, muted, label } from "./Sheet.jsx";
 
@@ -196,6 +197,9 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
         (checkedIn ? (
           <div style={{ marginTop: 12 }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: "#10B981" }}>✓ You're checked in. Enjoy the meet!</div>
+            <button type="button" onClick={() => openParked({ id: event.id, title: event.title })} style={parkButton}>
+              🅿️ SAVE WHERE I PARKED (FLOOR, SPOT)
+            </button>
             {stayed ? (
               <div style={{ marginTop: 6, fontSize: 14, fontWeight: 800, color: "#10B981" }}>🏁 Stayed the whole meet: +1</div>
             ) : (
@@ -283,6 +287,15 @@ const stayButton = {
   background: "var(--n-141414)",
   border: "1px solid #10B981",
   color: "#10B981",
+};
+
+const parkButton = {
+  ...bigButton,
+  marginTop: 10,
+  background: "var(--n-141414)",
+  border: "1px solid #0080F0",
+  color: "var(--a-4da6ff)",
+  fontSize: 12.5,
 };
 
 const chipOn = { borderColor: "#FACC15", color: "#FACC15", background: "rgba(250,204,21,0.1)" };

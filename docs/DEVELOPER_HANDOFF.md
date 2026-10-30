@@ -363,6 +363,10 @@ From `CLAUDE.md`, the rules every change follows:
 - **Optional:** sync the clip to the account (a private `alert-sounds/<uid>/` storage bucket with own-folder policies, like `avatars` in 044) so it follows the member to a new phone.
 - Add `NSMicrophoneUsageDescription` (iOS) and `RECORD_AUDIO` (Android) for recording in-app.
 
+**I. Where I parked: guess the floor**
+- Today (web): the floor is tapped in (`ParkedCar.jsx`); browsers can't read the pressure sensor.
+- Native: read relative altitude (iOS `CMAltimeter`, Android `Sensor.TYPE_PRESSURE`; a small Capacitor plugin). Note the reading on arriving near the meet or garage (or when the member taps "I'm driving in"), compare when they tap "I parked", and suggest a floor at roughly 3 m a level ("Level 3?", one tap to confirm). It gives a change in height, not the floor number, so keep the confirm step; some budget Android phones have no barometer.
+
 ### App Store review points
 
 | Requirement | Status in TUNR |
@@ -519,3 +523,6 @@ The 3D garage's DRIVE IN TUNR RUSH and "Or play it in" buttons open a game with 
 
 Someone new (not signed in, nothing agreed on this device) sees `Welcome.jsx`: Continue with Google (when Google is on), Sign up with email, Log in, or Continue as guest. A guest agrees with the line by the guest button (`saveTosAccepted(null, "guest_welcome")`, kept on the device only). Accounts agree on the full terms screen: right after signing up, and again only when `TOS_VERSION` changes; it has a "Don't agree? Sign out" way out. The device's record of agreement now notes which account agreed (`userId`), so a guest's agreement never counts for a new account (`hasAcceptedCurrentTos(userId)`, `syncTosToAccount`). The sign-up form no longer counts as agreeing. Phone sign-in isn't offered: it needs a paid SMS provider in Supabase, and accounts depend on a confirmed email (unconfirmed ones are removed after 7 days), so phone-only accounts would need those rules changed first.
 
+### Where I parked
+
+The **P** button in the header (`ParkedCar.jsx`, logic in `src/lib/parking.js`, tested in `test/parking.test.js`). Saves one spot on the phone only (localStorage `tunr.parked`, never sent to the server): a map pin if location is allowed, plus what GPS can't tell inside a garage: floor (B3–8, Roof, or typed), spot or section, a photo of the sign (shrunk to about 100 KB; dropped with a warning if the phone is out of room) and a note. The find view shows the floor big, distance from you and walking directions (Google Maps). Also opened from a meet page (🅿️ PARKED) and after a check-in, which tags the meet (`openParked({ id, title })` fires the `tunr:parked` window event). Floor guessing from the pressure sensor needs the native app (section 8, checklist I).
