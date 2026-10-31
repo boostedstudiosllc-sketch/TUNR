@@ -22,9 +22,10 @@ export default function TunrTuesdays({ user, onNeedAccount, onToast }) {
     refresh();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Tuesdays only (Atlanta time); gone the rest of the week.
-  const tuesday = taco ? taco.is_tuesday : new Date().toLocaleDateString("en-US", { weekday: "short", timeZone: "America/New_York" }) === "Tue";
-  if ((!taco && !error) || !tuesday) return null;
+  // Tuesdays only, by TUNR's own clock (the server's, in Atlanta): changing
+  // the phone's date can't bring it up. If it couldn't load, it stays hidden.
+  if (error) console.warn("TUNR Tuesdays:", error);
+  if (!taco?.is_tuesday) return null;
   const pick = taco?.pick;
   const open = pick?.open;
   const mine = pick?.my_choice;

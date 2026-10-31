@@ -122,7 +122,7 @@ export function brandOf(make = "") {
 // picked, comes from the make and model; its brand gives the front end.
 export const lookOf = (v) => ({
   color: v?.game_color || DEFAULT_LOOK.color,
-  body: v?.game_body || (v?.model ? guessBody(v.make, v.model) : DEFAULT_LOOK.body),
+  body: v?.game_body || (v?.model ? guessBody(v.make, [v.model, v.trim].filter(Boolean).join(" ")) : DEFAULT_LOOK.body),
   brand: brandOf(v?.make),
   spoiler: v?.game_spoiler || DEFAULT_LOOK.spoiler,
   rims: v?.game_rims || DEFAULT_LOOK.rims,

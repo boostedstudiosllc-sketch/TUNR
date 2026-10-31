@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import BuildSheetForm, { sheetOf } from "./BuildSheetForm.jsx";
+import { modelsFor } from "../data/carModels.js";
 import {
   loadCarMakes,
   loadVehicles,
@@ -37,7 +39,7 @@ const labelStyle = {
   fontFamily: "'Barlow Condensed', sans-serif",
 };
 
-const EMPTY = { id: null, year: "", make: "", model: "", buildNotes: "", photoUrl: "", paint: "" };
+const EMPTY = { id: null, year: "", make: "", model: "", buildNotes: "", photoUrl: "", paint: "", sheet: sheetOf(null) };
 
 // Your cars. The first one you add becomes your main car automatically; that's
 // the one attached when you RSVP.
@@ -153,6 +155,7 @@ export default function Garage({ user, onToast }) {
       buildNotes: v.build_notes || "",
       photoUrl: v.photo_url || "",
       paint: v.game_color || "",
+      sheet: sheetOf(v),
     });
   }
 
@@ -214,6 +217,7 @@ export default function Garage({ user, onToast }) {
           onClose={() => setShowroom(null)}
           onLook={restyle}
           onEdit={(v) => (setShowroom(null), editDetails(v))}
+          onRefresh={refresh}
           onSticker={(v) => (setShowroom(null), setSticker(v))}
           onMakeMain={makePrimary}
           onAdd={() => (setShowroom(null), startAdding())}
@@ -375,7 +379,8 @@ export default function Garage({ user, onToast }) {
               <select
                 style={{ ...inputStyle, appearance: "none" }}
                 value={editing.make}
-                onChange={(e) => setEditing((d) => ({ ...d, make: e.target.value }))}
+                // A new make clears a model that isn't one of its own.
+                onChange={(e) => setEditing((d) => ({ ...d, make: e.target.value, model: modelsFor(e.target.value).includes(d.model) ? d.model : "" }))}
               >
                 <option value="">Pick one…</option>
                 {makes.map((m) => (
@@ -389,17 +394,30 @@ export default function Garage({ user, onToast }) {
 
           <div>
             <div style={labelStyle}>MODEL</div>
-            <input
-              style={inputStyle}
-              placeholder="M3 (F80)"
-              value={editing.model}
-              onChange={(e) => setEditing((d) => ({ ...d, model: e.target.value }))}
-            />
+            {modelsFor(editing.make).length ? (
+              // Picked from the list for the make (src/data/carModels.js), never typed.
+              <select style={{ ...inputStyle, appearance: "none" }} value={editing.model} onChange={(e) => setEditing((d) => ({ ...d, model: e.target.value }))}>
+                <option value="">Pick the model…</option>
+                {editing.model && !modelsFor(editing.make).includes(editing.model) && <option value={editing.model}>{editing.model} (as saved)</option>}
+                {modelsFor(editing.make).map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            ) : editing.make ? (
+              // "Other": a make we don't have a list for.
+              <input style={inputStyle} placeholder="Model" maxLength={40} value={editing.model} onChange={(e) => setEditing((d) => ({ ...d, model: e.target.value }))} />
+            ) : (
+              <select style={{ ...inputStyle, appearance: "none", opacity: 0.5 }} disabled value="">
+                <option value="">Pick the make first</option>
+              </select>
+            )}
           </div>
 
           {editing.make && editing.model.trim() && (
             <div style={{ fontSize: 11.5, color: "var(--n-7d8796)", marginTop: -4, fontFamily: "'Barlow', sans-serif" }}>
-              In 3D it's a {BODY_NAMES[guessBody(editing.make, editing.model)].toLowerCase()}. Add the chassis code, like 540i (G30), to help. Change it any time in Style.
+              In 3D it's a {BODY_NAMES[guessBody(editing.make, [editing.model, editing.sheet.trim].filter(Boolean).join(" "))].toLowerCase()}. Adding the chassis code (like G30) in Trim below helps. Change it any time in Style.
             </div>
           )}
 
@@ -421,18 +439,18 @@ export default function Garage({ user, onToast }) {
             </div>
           </div>
 
-          <div>
-            <div style={labelStyle}>BUILD NOTES (OPTIONAL)</div>
-            <input
-              style={inputStyle}
-              placeholder="Coilovers, wheels, wrap…"
-              value={editing.buildNotes}
-              onChange={(e) => setEditing((d) => ({ ...d, buildNotes: e.target.value }))}
-            />
-          </div>
+          <BuildSheetForm
+            sheet={editing.sheet}
+            onChange={(sheet) => setEditing((d) => ({ ...d, sheet }))}
+            story={editing.buildNotes}
+            onStory={(buildNotes) => setEditing((d) => ({ ...d, buildNotes }))}
+            labelStyle={labelStyle}
+            inputStyle={inputStyle}
+          />
 
           <div>
-            <div style={labelStyle}>PHOTO (OPTIONAL)</div>
+            <div style={labelStyle}>COVER PHOTO</div>
+            <div style={{ fontSize: 11.5, color: "var(--n-7d8796)", marginBottom: 6, fontFamily: "'Barlow', sans-serif" }}>Add more (up to 24) in your 3D garage → PHOTOS.</div>
             {editing.photoUrl ? (
               <div style={{ position: "relative" }}>
                 <img

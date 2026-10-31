@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import BuildSheetView from "./BuildSheetView.jsx";
+import CarPhotos from "./CarPhotos.jsx";
+import { repairLink } from "../lib/buildSheet.js";
 import { GAME_COLORS, BODIES, SPOILERS, RIMS, HEIGHTS, COLOR_NAMES, BODY_NAMES, SPOILER_NAMES, RIM_NAMES, HEIGHT_NAMES, GLOWS, GLOW_NAMES, DECALS, DECAL_NAMES, DEFAULT_LOOK, lookOf, lookColumns, drawCar } from "../lib/rushEngine.js";
 import { saveGameLook } from "../lib/rush.js";
 import { loadGarageParts, unlockGaragePart, partId } from "../lib/garageParts.js";
@@ -12,13 +15,8 @@ import { loadVehicles } from "../lib/store.js";
 
 const LOW_POWER = typeof navigator !== "undefined" && (navigator.hardwareConcurrency || 8) <= 4;
 const loadShowroom = () => import("../lib/showroom3d.js");
-// CarCareKiosk's free how-to and repair videos for this car (make / model
-// / year; extra bits like "(G30)" dropped). Without a make, their home page.
-export function repairLink(v) {
-  const part = (x) => encodeURIComponent(String(x).replace(/\(.*?\)/g, "").trim().replace(/\s+/g, "_"));
-  const bits = [v?.make, v?.model, v?.year].filter(Boolean).map(part).filter(Boolean);
-  return bits.length ? `https://www.carcarekiosk.com/videos/${bits.join("/")}` : "https://www.carcarekiosk.com/";
-}
+// CarCareKiosk's how-to videos for the exact car (buildSheet.js).
+export { repairLink };
 
 export const carName = (v) => (v ? [v.year, v.make, v.model].filter(Boolean).join(" ") : "TUNR loaner");
 
@@ -416,7 +414,8 @@ export function Tuner({ look, onChange, priceOf = () => 0 }) {
 // Picker mode (a game's garage): `action` = { label, sub, onPick(car or
 // null for the game's own car) } replaces DRIVE and the INFO tab, and
 // `first` = { icon, name, sub, look } adds the game's own car first.
-export function GarageShowroom({ title, cars, startId, plate = "", editable = false, flat = false, first = null, action = null, onClose, onLook, onEdit, onSticker, onMakeMain, onAdd, onDrive }) {
+// onRefresh: the cars changed (a new cover photo); reload them.
+export function GarageShowroom({ title, cars, startId, plate = "", editable = false, flat = false, first = null, action = null, onClose, onLook, onEdit, onSticker, onMakeMain, onAdd, onDrive, onRefresh }) {
   const [selectedId, setSelectedId] = useState(startId || cars.find((c) => c.is_primary)?.id || cars[0]?.id || (first ? "game" : null));
   const [tab, setTab] = useState(editable ? "style" : "info");
   const [games, setGames] = useState(false);
@@ -519,22 +518,12 @@ export function GarageShowroom({ title, cars, startId, plate = "", editable = fa
     </button>
   );
 
+  // BUILD: the build sheet, plus the owner's sticker and main-car buttons.
   const infoPanel = car && (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {car.build_notes ? (
-        <div style={{ fontSize: 13.5, color: "#C9D1DC", fontFamily: "'Barlow', sans-serif", lineHeight: 1.5 }}>{car.build_notes}</div>
-      ) : (
-        <div style={{ fontSize: 13, color: "#7D8796", fontFamily: "'Barlow', sans-serif" }}>No build notes yet.</div>
-      )}
-      {car.photo_url && <img src={car.photo_url} alt={`${carName(car)}, the real thing`} style={{ width: "100%", maxHeight: 160, objectFit: "cover", borderRadius: 12 }} />}
-      <a href={repairLink(car)} target="_blank" rel="noopener noreferrer" style={{ ...glassBtn, display: "block", padding: "10px 0", fontSize: 13, textAlign: "center", textDecoration: "none", color: "#34D399" }}>
-        🔧 HOW-TO & REPAIR VIDEOS
-      </a>
+      <BuildSheetView car={car} editable={editable} onEdit={onEdit} />
       {editable && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          <button className="action-btn" onClick={() => onEdit(car)} style={{ ...glassBtn, flex: 1, padding: "10px 0", fontSize: 13 }}>
-            ✏️ EDIT DETAILS
-          </button>
           <button className="action-btn" onClick={() => onSticker(car)} style={{ ...glassBtn, flex: 1, padding: "10px 0", fontSize: 13, color: "#7FC4FF" }}>
             🔳 QR STICKER
           </button>
@@ -662,10 +651,11 @@ export function GarageShowroom({ title, cars, startId, plate = "", editable = fa
               overflowY: "auto",
             }}
           >
-            {editable && !action && (
+            {!action && !gameCar && (
               <div role="tablist" style={{ display: "flex", gap: 18 }}>
-                {tabBtn("style", "TUNE")}
-                {tabBtn("info", "INFO")}
+                {editable && tabBtn("style", "TUNE")}
+                {tabBtn("info", "BUILD")}
+                {tabBtn("photos", "PHOTOS")}
               </div>
             )}
             {gameCar ? (
@@ -693,6 +683,8 @@ export function GarageShowroom({ title, cars, startId, plate = "", editable = fa
                   </div>
                 )}
               </>
+            ) : tab === "photos" && car ? (
+              <CarPhotos car={car} editable={editable} onChanged={onRefresh} />
             ) : (
               infoPanel
             )}

@@ -3,6 +3,8 @@ import { loadBuildPage, recordCarScan } from "../lib/buildpage.js";
 import { getPerson, followPerson } from "../lib/store.js";
 import { Avatar } from "./EditProfile.jsx";
 import Sheet, { muted, bigButton, quietButton } from "./Sheet.jsx";
+import BuildSheetView from "./BuildSheetView.jsx";
+import CarPhotos from "./CarPhotos.jsx";
 
 // What a "Scan my build" sticker opens: the car, its build notes and its
 // owner. Works for people without an account; they're invited to join.
@@ -73,11 +75,16 @@ export default function BuildPage({ vehicleId, user, onClose, onOpenPerson, onJo
             </div>
           )}
           <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 0.4, marginTop: 12, lineHeight: 1.1 }}>{name}</div>
-          {car.build_notes ? (
-            <div style={{ ...muted, color: "var(--n-dddddd)", marginTop: 8, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{car.build_notes}</div>
-          ) : (
-            <div style={{ ...muted, marginTop: 8 }}>No build notes yet.</div>
-          )}
+          {/* The build sheet and every photo, on a dark card like the 3D garage. */}
+          <div style={{ marginTop: 12, padding: 14, borderRadius: 14, background: "var(--n-0f1116)", border: "1px solid var(--n-232833)" }}>
+            <BuildSheetView car={car} />
+            {car.photos?.length > 1 && (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.8, color: "var(--n-8a94a3)", marginBottom: 6 }}>PHOTOS · {car.photos.length}</div>
+                <CarPhotos car={car} />
+              </div>
+            )}
+          </div>
 
           {owner?.username && (
             <button

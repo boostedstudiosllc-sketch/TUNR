@@ -371,17 +371,43 @@ export async function saveVehicle(vehicle, ownerId) {
     build_notes: cleanOrNull(vehicle.buildNotes),
     photo_url: vehicle.photoUrl || null,
   };
+  // The build sheet (111), when the form has it.
+  if (vehicle.sheet) {
+    const sh = vehicle.sheet;
+    const num = (x) => (x === "" || x == null ? null : Number(x));
+    Object.assign(payload, {
+      nickname: cleanOrNull(sh.nickname),
+      trim: cleanOrNull(sh.trim),
+      engine: cleanOrNull(sh.engine),
+      drivetrain: sh.drivetrain || null,
+      transmission: sh.transmission || null,
+      horsepower: num(sh.horsepower),
+      torque: num(sh.torque),
+      stage: sh.stage || null,
+      mods: (sh.mods || []).map((m) => ({ cat: m.cat, name: cleanForSending(m.name) })),
+      next_up: cleanOrNull(sh.nextUp),
+      owned_since: num(sh.ownedSince),
+    });
+  }
   // Its paint for the 3D garage and the games (the body is worked out from
   // the make and model until someone picks one).
   if (vehicle.paint) payload.game_color = vehicle.paint;
   if (!payload.make) throw new Error("Pick a make.");
-  if (!payload.model) throw new Error("Add the model.");
+  if (!payload.model) throw new Error("Pick the model.");
 
   const query = vehicle.id
     ? supabase.from("vehicles").update(payload).eq("id", vehicle.id)
     : supabase.from("vehicles").insert(payload);
-  const { error } = await query;
+  const { data: saved, error } = await query.select("id").single();
   if (error) throw new Error(friendlyWriteError(error, "Couldn't save that car. Try again."));
+  // A new cover photo also goes in the car's gallery (vehicle_photos, 111).
+  if (payload.photo_url && saved?.id) {
+    const { data: have } = await supabase.from("vehicle_photos").select("id").eq("vehicle_id", saved.id).eq("url", payload.photo_url).limit(1);
+    if (!have?.length) {
+      const { error: e2 } = await supabase.from("vehicle_photos").insert({ vehicle_id: saved.id, url: payload.photo_url, sort: -1 });
+      if (e2) console.warn("Couldn't add the cover to the gallery:", e2.message);
+    }
+  }
 }
 
 export async function deleteVehicle(vehicleId) {
@@ -1473,6 +1499,15 @@ export async function loadProfileCounts(personId) {
   const { data, error } = await supabase.rpc("profile_counts", { p_user: personId });
   if (error) throw new Error(withReason("Couldn't load the profile counts.", error));
   return data;
+}
+
+// Find people by username or name (112). Empty: the most-followed.
+// [{ id, username, display_name, avatar_url, followers, cars, i_follow, follows_me }]
+export async function searchPeople(q = "") {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("search_people", { p_q: q });
+  if (error) throw new Error(withReason("Couldn't search for people.", error));
+  return data || [];
 }
 
 export async function followPerson(personId, userId, following) {

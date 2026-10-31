@@ -19,7 +19,7 @@ import { parse } from "@babel/parser";
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const DARK_ONLY = new Set([
-  "Arcade.jsx", "CarSoccer.jsx", "CarStack.jsx", "DragFriend.jsx", "FriendRoom.jsx", "DragRace.jsx", "DriftKing.jsx", "EggHaul.jsx", "GuessCar.jsx", "InviteSheetGame.jsx", "KartGame.jsx", "MusicButtons.jsx",
+  "Arcade.jsx", "BuildSheetView.jsx", "CarPhotos.jsx", "CarSoccer.jsx", "CarStack.jsx", "DragFriend.jsx", "FriendRoom.jsx", "DragRace.jsx", "DriftKing.jsx", "EggHaul.jsx", "GuessCar.jsx", "InviteSheetGame.jsx", "KartGame.jsx", "MusicButtons.jsx",
   "ParkUp.jsx", "Showroom.jsx", "TrackButton.jsx", "TunrRush.jsx", "Welcome.jsx", "Wrapped.jsx",
 ]);
 const files = [path.join(ROOT, "src/App.jsx"), ...fs.readdirSync(path.join(ROOT, "src/components")).filter((f) => /\.jsx?$/.test(f) && !DARK_ONLY.has(f)).map((f) => path.join(ROOT, "src/components", f))];
