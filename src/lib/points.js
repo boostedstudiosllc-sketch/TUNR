@@ -53,6 +53,8 @@ const REDEEM_COPY = {
   not_found: "That reward isn't available any more.",
   sold_out: "That reward just sold out.",
   limit: "You've already claimed this reward the most times allowed.",
+  bad_address: "Check the mailing address: name, street, city, a 2-letter state and a 5-digit ZIP.",
+  bad_size: "Pick your size.",
 };
 
 export function redeemMessage(result) {
@@ -335,15 +337,16 @@ export async function loadRewards() {
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("rewards")
-    .select("id, title, description, kind, cost, min_spend_cents, how_to_claim, stock, per_person, active, partner_id, partners(name)")
+    .select("id, title, description, kind, cost, min_spend_cents, how_to_claim, stock, per_person, active, ships, sizes, partner_id, partners(name)")
     .order("cost");
   if (error) throw new Error(withReason("Couldn't load rewards.", error));
   return (data || []).map((r) => ({ ...r, partnerName: r.partners?.name || "" }));
 }
 
-export async function redeemReward(rewardId) {
+// ship: { name, line1, line2, city, state, zip, size } for a mailed reward (110).
+export async function redeemReward(rewardId, ship = null) {
   need();
-  const { data, error } = await supabase.rpc("redeem_reward", { p_reward: rewardId });
+  const { data, error } = await supabase.rpc("redeem_reward", { p_reward: rewardId, p_ship: ship });
   if (error) throw new Error(withReason("Couldn't redeem that.", error));
   return data || {};
 }
@@ -352,7 +355,7 @@ export async function loadMyRedemptions(userId) {
   need();
   const { data, error } = await supabase
     .from("reward_redemptions")
-    .select("id, claim_code, status, cost, created_at, rewards(title, how_to_claim, partners(name))")
+    .select("id, claim_code, status, cost, created_at, size, tracking, rewards(title, how_to_claim, ships, partners(name))")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) throw new Error(withReason("Couldn't load your rewards.", error));
@@ -365,6 +368,9 @@ export async function loadMyRedemptions(userId) {
     title: r.rewards?.title || "Reward",
     howToClaim: r.rewards?.how_to_claim || "",
     partnerName: r.rewards?.partners?.name || "",
+    ships: Boolean(r.rewards?.ships),
+    size: r.size || "",
+    tracking: r.tracking || "",
   }));
 }
 
@@ -658,9 +664,10 @@ export async function loadRedemptionQueue(status = "pending") {
   return data || [];
 }
 
-export async function decideRedemption(id, status) {
+// status: "fulfilled" (handed over, or shipped with a tracking number) | "cancelled"
+export async function decideRedemption(id, status, tracking = null) {
   need();
-  const { error } = await supabase.rpc("decide_redemption", { p_id: id, p_status: status });
+  const { error } = await supabase.rpc("decide_redemption", { p_id: id, p_status: status, p_tracking: tracking });
   if (error) throw new Error(friendlyWriteError(error, "Couldn't update that claim."));
 }
 

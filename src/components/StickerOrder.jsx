@@ -9,18 +9,8 @@ import {
   cancelMyStickerOrder,
   ORDER_STATUS,
 } from "../lib/stickerOrders.js";
-import { muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
-
-const ADDRESS_KEY = "tunr.sticker.address";
-const EMPTY = { name: "", line1: "", line2: "", city: "", state: "GA", zip: "" };
-
-function savedAddress() {
-  try {
-    return { ...EMPTY, ...JSON.parse(localStorage.getItem(ADDRESS_KEY) || "{}") };
-  } catch (e) {
-    return EMPTY;
-  }
-}
+import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
+import AddressFields, { loadSavedAddress, rememberAddress } from "./AddressFields.jsx";
 
 // "Get it mailed": the price on the button, then the order form with the
 // price up top, the address, and how to pay. Shown inside the sticker sheet.
@@ -29,7 +19,7 @@ export default function StickerOrder({ vehicle, name, isPublic, onToast }) {
   const [orders, setOrders] = useState([]);
   const [open, setOpen] = useState(false);
   const [balance, setBalance] = useState(null);
-  const [addr, setAddr] = useState(savedAddress);
+  const [addr, setAddr] = useState(loadSavedAddress);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [done, setDone] = useState(null); // the order just placed
@@ -61,7 +51,6 @@ export default function StickerOrder({ vehicle, name, isPublic, onToast }) {
   const points = settings.points_price > 0;
   const orderable = settings.open && (card || points);
   const price = dollars(settings.price_cents);
-  const set = (patch) => setAddr((a) => ({ ...a, ...patch }));
 
   async function place(pay) {
     setError("");
@@ -69,11 +58,7 @@ export default function StickerOrder({ vehicle, name, isPublic, onToast }) {
     try {
       const result = await orderSticker(vehicle.id, pay, addr);
       if (result.status !== "ok") return setError(orderMessage(result));
-      try {
-        localStorage.setItem(ADDRESS_KEY, JSON.stringify(addr));
-      } catch (e) {
-        console.warn("Couldn't remember the address:", e.message);
-      }
+      rememberAddress(addr);
       setDone(result);
       refreshOrders();
     } catch (e) {
@@ -192,31 +177,7 @@ export default function StickerOrder({ vehicle, name, isPublic, onToast }) {
         {settings.blurb} {card ? "Shipping included." : ""}
       </div>
 
-      <div style={{ ...label, marginTop: 14 }}>MAIL IT TO</div>
-      <input style={field} autoComplete="name" placeholder="Full name" maxLength={80} value={addr.name} onChange={(e) => set({ name: e.target.value })} />
-      <input style={{ ...field, marginTop: 6 }} autoComplete="address-line1" placeholder="Street address" maxLength={120} value={addr.line1} onChange={(e) => set({ line1: e.target.value })} />
-      <input style={{ ...field, marginTop: 6 }} autoComplete="address-line2" placeholder="Apt, suite (optional)" maxLength={120} value={addr.line2} onChange={(e) => set({ line2: e.target.value })} />
-      <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-        <input style={{ ...field, flex: 3 }} autoComplete="address-level2" placeholder="City" maxLength={60} value={addr.city} onChange={(e) => set({ city: e.target.value })} />
-        <input
-          style={{ ...field, flex: 1, textTransform: "uppercase" }}
-          autoComplete="address-level1"
-          aria-label="State"
-          placeholder="GA"
-          maxLength={2}
-          value={addr.state}
-          onChange={(e) => set({ state: e.target.value.replace(/[^a-z]/gi, "").toUpperCase() })}
-        />
-        <input
-          style={{ ...field, flex: 2 }}
-          autoComplete="postal-code"
-          inputMode="numeric"
-          placeholder="ZIP"
-          maxLength={10}
-          value={addr.zip}
-          onChange={(e) => set({ zip: e.target.value.replace(/[^0-9-]/g, "") })}
-        />
-      </div>
+      <AddressFields addr={addr} onChange={setAddr} />
 
       {error && <div role="alert" style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
       {card && (

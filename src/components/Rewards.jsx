@@ -47,6 +47,8 @@ import {
 } from "../lib/points.js";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
 import TunrTuesdaysAdmin from "./TunrTuesdaysAdmin.jsx";
+import AddressFields, { loadSavedAddress, rememberAddress } from "./AddressFields.jsx";
+import { loadStickerSettings } from "../lib/stickerOrders.js";
 import Leaderboard from "./Leaderboard.jsx";
 import PrintPage from "./PrintPage.jsx";
 
@@ -75,6 +77,9 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(null);
   const [busy, setBusy] = useState(false);
+  // Mailed rewards: where to send it, and the size if it has sizes.
+  const [ship, setShip] = useState(() => ({ ...loadSavedAddress(), size: "" }));
+  const [sticker, setSticker] = useState(null);
 
   async function refresh() {
     try {
@@ -98,6 +103,12 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
     }
   }
 
+  useEffect(() => {
+    loadStickerSettings()
+      .then(setSticker)
+      .catch((e) => console.warn(e.message));
+  }, []);
+
   // Opening this is when one-time bonuses get checked and paid.
   useEffect(() => {
     let alive = true;
@@ -117,9 +128,10 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
   async function redeem(reward) {
     setBusy(true);
     try {
-      const result = await redeemReward(reward.id);
+      const result = await redeemReward(reward.id, reward.ships ? ship : null);
       if (result.status === "ok") {
-        onToast(`🎁 Claimed! Your code is ${result.claim_code}`);
+        if (reward.ships) rememberAddress(ship);
+        onToast(reward.ships ? `📦 Done! We'll mail your ${reward.title} and send you the tracking number.` : `🎁 Claimed! Your code is ${result.claim_code}`);
         setConfirming(null);
         await refresh();
       } else {
@@ -250,21 +262,50 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
 
       {pending.length > 0 && (
         <>
-          <Title>READY TO COLLECT</Title>
-          {pending.map((c) => (
-            <div key={c.id} style={{ ...card, borderColor: "var(--n-3a3000)" }}>
-              <div style={{ fontSize: 16, fontWeight: 900 }}>{c.title}</div>
-              {c.partnerName && <div style={{ ...muted, fontSize: 12 }}>from {c.partnerName}</div>}
-              <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 5, color: "#FACC15", marginTop: 8 }}>{c.code}</div>
-              <div style={{ ...muted, fontSize: 12.5, marginTop: 4 }}>
-                {c.howToClaim || "Show this code to collect. We'll mark it collected once you have it."}
+          <Title>YOUR REWARDS</Title>
+          {pending.map((c) =>
+            c.ships ? (
+              <div key={c.id} style={{ ...card, borderColor: "var(--n-3a3000)" }}>
+                <div style={{ fontSize: 16, fontWeight: 900 }}>
+                  📦 {c.title}
+                  {c.size ? ` · ${c.size}` : ""}
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#FACC15", marginTop: 6 }}>GETTING IT READY TO MAIL</div>
+                <div style={{ ...muted, fontSize: 12.5, marginTop: 4 }}>You'll get an alert with the tracking number when it ships. Order {c.code}.</div>
               </div>
-            </div>
-          ))}
+            ) : (
+              <div key={c.id} style={{ ...card, borderColor: "var(--n-3a3000)" }}>
+                <div style={{ fontSize: 16, fontWeight: 900 }}>{c.title}</div>
+                {c.partnerName && <div style={{ ...muted, fontSize: 12 }}>from {c.partnerName}</div>}
+                <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 5, color: "#FACC15", marginTop: 8 }}>{c.code}</div>
+                <div style={{ ...muted, fontSize: 12.5, marginTop: 4 }}>
+                  {c.howToClaim || "Show this code to collect. We'll mark it collected once you have it."}
+                </div>
+              </div>
+            )
+          )}
         </>
       )}
 
       <Title>REWARDS</Title>
+      {sticker?.open && sticker.points_price > 0 && (
+        <div style={card}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 10.5, color: "#A08A40", letterSpacing: 1.4, fontWeight: 800 }}>MERCH · MAILED TO YOU</div>
+              <div style={{ fontSize: 17, fontWeight: 900, marginTop: 2 }}>Scan my build sticker</div>
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: "#FACC15", whiteSpace: "nowrap" }}>⭐ {sticker.points_price}</div>
+          </div>
+          <div style={{ ...muted, marginTop: 6 }}>
+            Your car's own QR code on a weatherproof window sticker. Anyone at a meet scans it and your whole build pops up on TUNR. Printed for your car and mailed to you.
+          </div>
+          <button onClick={() => window.dispatchEvent(new CustomEvent("tunr:open", { detail: { link: "tab:profile" } }))} style={{ ...quietButton, marginTop: 10 }}>
+            ORDER FROM MY GARAGE ›
+          </button>
+          <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>Profile → your car → QR sticker → GET IT MAILED.</div>
+        </div>
+      )}
       {rewards.length === 0 ? (
         <div style={{ ...muted, ...card }}>No rewards yet. Keep checking in: they're coming.</div>
       ) : (
@@ -297,14 +338,34 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
                 <div style={{ ...muted, fontSize: 12, marginTop: 4 }}>{r.stock} left</div>
               )}
               {confirming === r.id ? (
-                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                  <button disabled={busy} onClick={() => redeem(r)} style={{ ...bigButton, flex: 1 }}>
-                    {busy ? "…" : `SPEND ${r.cost} POINTS`}
-                  </button>
-                  <button disabled={busy} onClick={() => setConfirming(null)} style={{ ...quietButton, flex: 1 }}>
-                    CANCEL
-                  </button>
-                </div>
+                <>
+                  {r.ships && (
+                    <>
+                      {r.sizes?.length > 0 && (
+                        <>
+                          <div style={{ ...label, marginTop: 12 }}>SIZE</div>
+                          <div style={{ display: "flex", gap: 6 }}>
+                            {r.sizes.map((z) => (
+                              <button key={z} onClick={() => setShip((a) => ({ ...a, size: z }))} aria-pressed={ship.size === z} style={{ ...quietButton, flex: 1, padding: "9px 0", fontSize: 13, ...(ship.size === z ? { borderColor: "#FACC15", color: "#FACC15" } : {}) }}>
+                                {z}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                      <AddressFields addr={ship} onChange={setShip} />
+                      <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>Shipping is included in the points. Mailed in the US.</div>
+                    </>
+                  )}
+                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                    <button disabled={busy} onClick={() => redeem(r)} style={{ ...bigButton, flex: 1 }}>
+                      {busy ? "…" : r.ships ? `MAIL IT · ${r.cost} POINTS` : `SPEND ${r.cost} POINTS`}
+                    </button>
+                    <button disabled={busy} onClick={() => setConfirming(null)} style={{ ...quietButton, flex: 1 }}>
+                      CANCEL
+                    </button>
+                  </div>
+                </>
               ) : (
                 <button
                   disabled={blocked}
@@ -338,7 +399,12 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
             {claims
               .filter((c) => c.status !== "pending")
               .map((c) => (
-                <Line key={c.id} left={c.title} right={c.status === "fulfilled" ? "Collected" : "Cancelled, points back"} />
+                <Line
+                  key={c.id}
+                  left={c.title}
+                  sub={c.ships && c.status === "fulfilled" && c.tracking ? `Tracking ${c.tracking}` : null}
+                  right={c.status === "fulfilled" ? (c.ships ? "Shipped" : "Collected") : "Cancelled, points back"}
+                />
               ))}
           </div>
         </>
@@ -548,10 +614,11 @@ export function RedemptionsAdmin({ onToast }) {
     refresh(status);
   }, [status]);
 
+  const [tracking, setTracking] = useState({});
   async function decide(row, next) {
     try {
-      await decideRedemption(row.id, next);
-      onToast(next === "fulfilled" ? "Marked collected" : `Cancelled, ${row.cost} points returned`);
+      await decideRedemption(row.id, next, row.ships ? tracking[row.id] || null : null);
+      onToast(next === "fulfilled" ? (row.ships ? "Marked shipped; they've been told" : "Marked collected") : `Cancelled, ${row.cost} points returned`);
       refresh();
     } catch (e) {
       onToast(e.message);
@@ -563,7 +630,7 @@ export function RedemptionsAdmin({ onToast }) {
       <div style={{ display: "flex", gap: 6 }}>
         {[
           ["pending", "WAITING"],
-          ["fulfilled", "COLLECTED"],
+          ["fulfilled", "DONE"],
           ["cancelled", "CANCELLED"],
         ].map(([id, name]) => (
           <button key={id} onClick={() => setStatus(id)} style={{ ...quietButton, flex: 1, padding: "10px 0", ...(status === id ? { borderColor: "#0080F0", color: "var(--a-3cabfd)" } : {}) }}>
@@ -577,9 +644,24 @@ export function RedemptionsAdmin({ onToast }) {
         <div key={r.id} style={card}>
           <Line left={r.reward_title} sub={`@${r.username || "deleted"} · ${new Date(r.created_at).toLocaleString()}`} right={`⭐ ${r.cost}`} rightColor="#FACC15" />
           <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 4, color: "#FACC15", marginTop: 6 }}>{r.claim_code}</div>
+          {r.ships && (
+            <div style={{ ...muted, fontSize: 13, marginTop: 6, color: "var(--n-dddddd)", userSelect: "text" }}>
+              {r.size && <div style={{ fontWeight: 800 }}>Size {r.size}</div>}
+              {r.ship_name}
+              <br />
+              {r.line1}
+              {r.line2 ? `, ${r.line2}` : ""}
+              <br />
+              {r.city}, {r.state} {r.zip}
+              {r.tracking && <div style={{ marginTop: 4 }}>Tracking {r.tracking}</div>}
+            </div>
+          )}
+          {r.status === "pending" && r.ships && (
+            <input style={{ ...field, marginTop: 8 }} placeholder="Tracking number (optional)" maxLength={80} value={tracking[r.id] || ""} onChange={(e) => setTracking((t) => ({ ...t, [r.id]: e.target.value }))} />
+          )}
           {r.status === "pending" && (
             <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-              <button onClick={() => decide(r, "fulfilled")} style={{ ...bigButton, flex: 1, padding: "10px 0" }}>HANDED OVER</button>
+              <button onClick={() => decide(r, "fulfilled")} style={{ ...bigButton, flex: 1, padding: "10px 0" }}>{r.ships ? "MARK SHIPPED" : "HANDED OVER"}</button>
               <button onClick={() => decide(r, "cancelled")} style={{ ...quietButton, flex: 1, padding: "10px 0" }}>CANCEL + REFUND</button>
             </div>
           )}
