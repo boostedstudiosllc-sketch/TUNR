@@ -9,6 +9,7 @@ import Garage from "./Garage.jsx";
 import { Badges } from "./Badge.jsx";
 import Connections from "./Connections.jsx";
 import FindPeople from "./FindPeople.jsx";
+import StandingBadge from "./StandingBadge.jsx";
 import EditProfile, { Avatar } from "./EditProfile.jsx";
 import { openInvites } from "../lib/invites.js";
 import SettingsScreen from "./SettingsScreen.jsx";
@@ -287,6 +288,7 @@ function SignedIn({
           {p.city && (
             <div style={{ fontSize: 12.5, color: "var(--n-777777)", marginTop: 2, fontFamily: "'Barlow', sans-serif" }}>📍 {p.city}</div>
           )}
+          {user && <StandingBadge userId={user.id} username={p.username} isMe onToast={onToast} />}
           {p.bio && (
             <div
               style={{

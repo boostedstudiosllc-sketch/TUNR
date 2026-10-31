@@ -17,6 +17,7 @@ import { loadPersonClubs, kindLabel } from "../lib/community.js";
 import { Logo, ReportSheet } from "./CommunityBits.jsx";
 import { Avatar } from "./EditProfile.jsx";
 import { GarageShowroom } from "./Showroom.jsx";
+import StandingBadge from "./StandingBadge.jsx";
 
 // Someone's profile, opened from their name in a meet chat: follow them,
 // see their cars, or block or restrict them.
@@ -136,9 +137,10 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
                   />
                 </div>
                 <div style={{ fontSize: 12, color: "var(--n-777777)", marginTop: 3, fontFamily: "'Barlow', sans-serif" }}>
-                  {[person.city, `joined ${monthYear(person.joined)}`].filter(Boolean).join(" · ")}
-                  {person.follows_me && !isMe && <span style={{ color: "var(--n-999999)" }}> · follows you</span>}
+                  {person.city}
+                  {person.follows_me && !isMe && <span style={{ color: "var(--n-999999)" }}>{person.city ? " · " : ""}follows you</span>}
                 </div>
+                <StandingBadge userId={personId} username={person.username} isMe={isMe} onToast={onToast} />
                 {person.is_photographer && photoPageLink(person.photo_page) && (
                   <a
                     href={photoPageLink(person.photo_page).href}
@@ -427,9 +429,6 @@ function Muted({ children, style }) {
     </div>
   );
 }
-
-const monthYear = (iso) =>
-  iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "";
 
 const roundButton = {
   background: "var(--n-1a1a1a)",
