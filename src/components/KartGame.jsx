@@ -46,7 +46,7 @@ function savePrefs(p) {
 }
 
 // Boosted Karts: kart racing on TUNR's own tracks against five computer
-// karts. The kart drives itself; steer, brake, hold left/right (or DRIFT) through the bends
+// karts. The kart drives itself; steer, brake, hold a drift arrow (↰ ↱) through the bends
 // for a mini-turbo and Boosted tokens, and spend 3 tokens on NITRO. Boost
 // pads on the track; obstacles scattered at random each race. Free play;
 // fastest lap and best finish per track are kept on this phone.
@@ -210,8 +210,8 @@ export default function KartGame({ onClose, user = null, onNeedAccount }) {
           <div style={{ flex: 1, overflowY: "auto" }}>
             <div style={{ maxWidth: 560, margin: "0 auto", padding: "0 16px calc(28px + env(safe-area-inset-bottom))", boxSizing: "border-box" }}>
               <div style={{ ...muted, fontSize: 13.5 }}>
-                Your kart goes by itself: steer on the left, brake on the right. To <strong>drift</strong>, just keep holding left or
-                right through a bend (or hold DRIFT while you turn): the sparks go blue, then orange. Let go for a mini-turbo, and each spark color earns a Boosted token. Three
+                Your kart goes by itself: steer with ◀ ▶ on the left, brake on the right. To <strong>drift</strong>, hold the blue
+                drift arrow (↰ or ↱) for the way the bend goes, right above the steering: the sparks go blue, then orange. Let go for a mini-turbo, and each spark color earns a Boosted token. Three
                 tokens fill the <strong>NITRO</strong>. Hit the blue boost pads, and watch out for barrels, crates, cones and oil.
               </div>
               {error && (
@@ -266,7 +266,7 @@ export default function KartGame({ onClose, user = null, onNeedAccount }) {
                 ))}
               </div>
               <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>
-                {prefs.gas === "pedal" ? "Hold GAS to go. Off the gas, the kart rolls to a stop." : "The kart goes by itself, so one thumb can steer and the other can drift."} Races are played sideways.
+                {prefs.gas === "pedal" ? "Hold GAS to go with your right thumb; steer and drift with your left." : "The kart goes by itself."} Races are played sideways.
               </div>
               <div style={{ ...label, marginTop: 12 }}>GUIDE LINE</div>
               <div style={{ display: "flex", gap: 6 }}>
@@ -378,7 +378,7 @@ function KartRace({ def, laps, difficulty, color, pedal = false, guide = true, a
   const canvas = useRef(null);
   const mapRef = useRef(null);
   const hud = useRef({});
-  const input = useRef({ left: false, right: false, brake: false, drift: false, nitro: false, gas: false });
+  const input = useRef({ left: false, right: false, brake: false, drift: false, driftLeft: false, driftRight: false, nitro: false, gas: false });
   const scene = useRef(null);
   const [paused, setPaused] = useState(false);
   // Raced sideways: held upright, the race is drawn turned on its side, so
@@ -464,7 +464,9 @@ function KartRace({ def, laps, difficulty, color, pedal = false, guide = true, a
             while (acc >= STEP) {
               // A tap quicker than a frame still counts.
               const i = input.current;
-              tickKartRace(race, live.current.pedal ? i : { ...i, gas: undefined });
+              // The drift arrows: drift that way (no hold-to-drift on screen).
+              const drift = { drift: i.drift || i.driftLeft || i.driftRight, driftDir: i.driftLeft ? 1 : i.driftRight ? -1 : 0, autoDrift: false };
+              tickKartRace(race, { ...i, ...drift, gas: live.current.pedal ? i.gas : undefined });
               i.nitroTap = false;
               acc -= STEP;
             }
@@ -654,21 +656,32 @@ function KartRace({ def, laps, difficulty, color, pedal = false, guide = true, a
       </div>
 
       {/* Speed. */}
-      <div style={{ position: "absolute", bottom: "calc(100px + env(safe-area-inset-bottom))", left: "calc(18px + env(safe-area-inset-left))", pointerEvents: "none", zIndex: 2, textShadow: "0 2px 6px #000" }}>
+      <div style={{ position: "absolute", bottom: "calc(176px + env(safe-area-inset-bottom))", left: "calc(18px + env(safe-area-inset-left))", pointerEvents: "none", zIndex: 2, textShadow: "0 2px 6px #000" }}>
         <span ref={(el) => (hud.current.speed = el)} style={{ fontSize: 36, fontWeight: 900, fontVariantNumeric: "tabular-nums" }}>
           0
         </span>
         <span style={{ fontSize: 13, fontWeight: 800, marginLeft: 4, color: "#ccc" }}>MPH</span>
       </div>
 
-      {/* Controls: steer on the left; brake, drift and nitro on the right. */}
-      <div style={{ position: "absolute", bottom: "calc(16px + env(safe-area-inset-bottom))", left: "calc(14px + env(safe-area-inset-left))", display: "flex", gap: 10, zIndex: 2 }}>
-        <button aria-label="Steer left" style={round(74, { fontSize: 28 })} {...hold("left")}>
-          ◀
-        </button>
-        <button aria-label="Steer right" style={round(74, { fontSize: 28 })} {...hold("right")}>
-          ▶
-        </button>
+      {/* Controls: steer and drift on the left (one thumb), so the other
+          thumb can stay on the gas; brake and nitro on the right. */}
+      <div style={{ position: "absolute", bottom: "calc(16px + env(safe-area-inset-bottom))", left: "calc(14px + env(safe-area-inset-left))", display: "flex", flexDirection: "column", gap: 8, zIndex: 2 }}>
+        <div style={{ display: "flex", gap: 10, justifyContent: "space-between" }}>
+          <button aria-label="Drift left (hold through the bend)" style={round(62, { fontSize: 26, background: "rgba(0,128,240,0.35)", border: "2px solid #3CABFD" })} {...hold("driftLeft")}>
+            ↰
+          </button>
+          <button aria-label="Drift right (hold through the bend)" style={round(62, { fontSize: 26, background: "rgba(0,128,240,0.35)", border: "2px solid #3CABFD" })} {...hold("driftRight")}>
+            ↱
+          </button>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button aria-label="Steer left" style={round(74, { fontSize: 28 })} {...hold("left")}>
+            ◀
+          </button>
+          <button aria-label="Steer right" style={round(74, { fontSize: 28 })} {...hold("right")}>
+            ▶
+          </button>
+        </div>
       </div>
       <div style={{ position: "absolute", bottom: "calc(16px + env(safe-area-inset-bottom))", right: "calc(14px + env(safe-area-inset-right))", display: "flex", gap: 10, alignItems: "flex-end", zIndex: 2 }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
@@ -684,9 +697,6 @@ function KartRace({ def, laps, difficulty, color, pedal = false, guide = true, a
             BRAKE
           </button>
         </div>
-        <button aria-label="Drift (hold while you turn)" style={round(96, { fontSize: 17, background: "rgba(0,128,240,0.35)", border: "2px solid #3CABFD" })} {...hold("drift")}>
-          DRIFT
-        </button>
         {pedal && (
           <button
             aria-label="Gas (hold to go)"

@@ -1,10 +1,11 @@
 import { supabase } from "./supabase.js";
 import { withReason, friendlyWriteError } from "./errors.js";
 
-// Taco Tuesday (105_taco_tuesday_scratch_cards.sql): every Tuesday a free
-// MORE-or-LESS pick with a discounted "taco line"; a right pick pays points
+// TUNR Tuesdays (105_taco_tuesday_scratch_cards.sql; it started as "Taco
+// Tuesday", so the database still says taco_*): every Tuesday a free
+// MORE-or-LESS pick with a discounted "TUNR line"; a right pick pays points
 // to claim in the checklist. Made automatically from the biggest meet coming
-// up, unless an admin sets their own (TacoAdmin.jsx).
+// up, unless an admin sets their own (TunrTuesdaysAdmin.jsx).
 
 const PICK_ERRORS = {
   not_signed_in: "Sign in to make your pick.",
@@ -21,12 +22,12 @@ export const lineText = (n) => String(Number(n));
 export async function loadTaco() {
   if (!supabase) return null;
   const { data, error } = await supabase.rpc("taco_today");
-  if (error) throw new Error(withReason("Couldn't load Taco Tuesday.", error));
+  if (error) throw new Error(withReason("Couldn't load TUNR Tuesdays.", error));
   return data;
 }
 
 export async function makeTacoPick(choice) {
-  if (!supabase) throw new Error("Taco Tuesday needs an internet connection to TUNR.");
+  if (!supabase) throw new Error("TUNR Tuesdays needs an internet connection.");
   const { data, error } = await supabase.rpc("taco_pick", { p_choice: choice });
   if (error) throw new Error(withReason("Couldn't save your pick.", error));
   if (data?.status !== "ok") throw new Error(PICK_ERRORS[data?.status] || `Couldn't save your pick. (${data?.status || "no answer"})`);
@@ -37,7 +38,7 @@ export async function makeTacoPick(choice) {
 export async function loadTacoPicks() {
   if (!supabase) return [];
   const { data, error } = await supabase.from("taco_picks").select("*").order("day", { ascending: false }).limit(8);
-  if (error) throw new Error(withReason("Couldn't load the Taco Tuesday picks.", error));
+  if (error) throw new Error(withReason("Couldn't load the TUNR Tuesdays picks.", error));
   return data || [];
 }
 

@@ -163,6 +163,26 @@ test("holding left or right through a bend drifts by itself, no DRIFT button", (
   assert.ok(!r2.player.drifting);
 });
 
+test("the drift arrows: drift one way without steering, and it charges", () => {
+  const ring = [];
+  for (let k = 0; k < 20; k++) ring.push(Math.round(Math.cos((-k * Math.PI) / 10) * 320), Math.round(Math.sin((-k * Math.PI) / 10) * 320));
+  const r = newKartRace(buildKartTrack({ id: "ring", points: ring }), { rivals: 0 });
+  r.obstacles = [];
+  r.pads = [];
+  run(r, {}, 3.2);
+  const q = r.player;
+  const start = pointAt(r.track, 5, 0);
+  Object.assign(q, { x: start.x, z: start.z, heading: start.heading, slide: start.heading, speed: 20, idx: start.i, s: 5, lap: 0 });
+  const arrow = { drift: true, driftDir: 1, autoDrift: false, gas: true };
+  run(r, arrow, 0.05);
+  assert.ok(q.drifting && q.driftDir === 1, "the left drift arrow drifts left");
+  run(r, arrow, DRIFT.blue + 0.2);
+  assert.ok(q.driftLevel >= 1, "and charges");
+  assert.ok(!r.events.some((e) => e.kind === "wall"), "round the bend, not into the wall");
+  run(r, { autoDrift: false, gas: true }, 0.02);
+  assert.ok(!q.drifting && q.boostKind === "mini", "letting go fires the mini-turbo");
+});
+
 test("a boost pad boosts you; a barrel spins you out", () => {
   const t = buildKartTrack(KART_TRACKS[0]);
   const race = newKartRace(t, { rivals: 0 });

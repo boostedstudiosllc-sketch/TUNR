@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { loadTaco, makeTacoPick, lineText } from "../lib/taco.js";
+import { loadTaco, makeTacoPick, lineText } from "../lib/tunrTuesdays.js";
 
-// 🌮 Taco Tuesday on the Perks tab: Tuesday's free MORE-or-LESS pick
-// against a discounted "taco line" (the usual line crossed out next to it),
+// 🏁 TUNR Tuesdays on the Perks tab, on Tuesdays only: the day's free
+// MORE-or-LESS pick against a discounted "TUNR line" (the usual line crossed
+// out next to it). Winners are told by an alert and claim in the checklist,
 // and how last week's went. Rules live in 105_taco_tuesday_scratch_cards.sql.
 
 const go = (link) => window.dispatchEvent(new CustomEvent("tunr:open", { detail: { link } }));
 const dayName = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
 
-export default function TacoTuesday({ user, onNeedAccount, onToast }) {
+export default function TunrTuesdays({ user, onNeedAccount, onToast }) {
   const [taco, setTaco] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -21,7 +22,9 @@ export default function TacoTuesday({ user, onNeedAccount, onToast }) {
     refresh();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!taco && !error) return null;
+  // Tuesdays only (Atlanta time); gone the rest of the week.
+  const tuesday = taco ? taco.is_tuesday : new Date().toLocaleDateString("en-US", { weekday: "short", timeZone: "America/New_York" }) === "Tue";
+  if ((!taco && !error) || !tuesday) return null;
   const pick = taco?.pick;
   const open = pick?.open;
   const mine = pick?.my_choice;
@@ -31,7 +34,7 @@ export default function TacoTuesday({ user, onNeedAccount, onToast }) {
     setBusy(true);
     try {
       await makeTacoPick(choice);
-      onToast?.(`🌮 Locked in: ${choice.toUpperCase()} than ${lineText(pick.taco_line)}. Good luck!`);
+      onToast?.(`🏁 Locked in: ${choice.toUpperCase()} than ${lineText(pick.taco_line)}. Good luck!`);
       await refresh();
     } catch (e) {
       onToast?.(e.message);
@@ -52,13 +55,13 @@ export default function TacoTuesday({ user, onNeedAccount, onToast }) {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span aria-hidden="true" style={{ fontSize: 28 }}>🌮</span>
+        <span aria-hidden="true" style={{ fontSize: 28 }}>🏁</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: 0.5, color: "var(--n-f0f0f0)" }}>
-            TACO <span style={{ color: "#F59E0B" }}>TUESDAY</span>
+            TUNR <span style={{ color: "#F59E0B" }}>TUESDAYS</span>
           </div>
           <div style={{ fontSize: 12.5, color: "var(--a-c9a96b)", fontFamily: "'Barlow', sans-serif" }}>
-            Free every Tuesday: pick MORE or LESS on the taco line. Right pick: +{taco?.points ?? 5} points.
+            Free today: pick MORE or LESS on the TUNR line. Right pick: +{taco?.points ?? 5} points.
           </div>
         </div>
       </div>
@@ -71,7 +74,7 @@ export default function TacoTuesday({ user, onNeedAccount, onToast }) {
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 8 }}>
             <span style={{ fontSize: 15, color: "var(--n-777777)", textDecoration: "line-through" }}>{lineText(pick.line)}</span>
             <span style={{ fontSize: 30, fontWeight: 900, color: "#F59E0B", lineHeight: 1 }}>{lineText(pick.taco_line)}</span>
-            <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.2, color: "#F59E0B", border: "1px solid #F59E0B", borderRadius: 10, padding: "2px 7px" }}>🌮 TACO LINE</span>
+            <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.2, color: "#F59E0B", border: "1px solid #F59E0B", borderRadius: 10, padding: "2px 7px" }}>🏁 TUNR LINE</span>
           </div>
 
           {open && !mine && (
@@ -105,7 +108,7 @@ export default function TacoTuesday({ user, onNeedAccount, onToast }) {
       ) : (
         !error && (
           <div style={{ marginTop: 10, fontSize: 13, color: "var(--a-c9a96b)", fontFamily: "'Barlow', sans-serif" }}>
-            Next pick: {taco.is_tuesday ? "later today" : dayName(taco.next_tuesday)}.
+            Today's pick isn't up yet. Check back later today.
           </div>
         )
       )}

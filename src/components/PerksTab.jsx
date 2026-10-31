@@ -3,7 +3,7 @@ import { loadPerks, recordRedemption, loadProfile, track } from "../lib/store.js
 import { loadMyPoints, hasPendingCard, takePendingCard } from "../lib/points.js";
 import { RewardsSheet } from "./Rewards.jsx";
 import Arcade from "./Arcade.jsx";
-import TacoTuesday from "./TacoTuesday.jsx";
+import TunrTuesdays from "./TunrTuesdays.jsx";
 import ScratchCards from "./ScratchCards.jsx";
 import DetailingRequest from "./DetailingRequest.jsx";
 
@@ -175,7 +175,7 @@ export default function PerksTab({ user, onNeedAccount, onToast, launch = null, 
           </span>
           <span aria-hidden="true" style={{ fontSize: 20, color: "var(--a-7fbff5)" }}>›</span>
         </button>
-        <TacoTuesday user={user} onNeedAccount={onNeedAccount} onToast={onToast} />
+        <TunrTuesdays user={user} onNeedAccount={onNeedAccount} onToast={onToast} />
         <ScratchCards user={user} onNeedAccount={onNeedAccount} onToast={onToast} />
         {playing && (
           <Arcade

@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { muted, label, field, quietButton } from "./Sheet.jsx";
-import { loadTacoPicks, saveTacoPick, setTacoResult, deleteTacoPick, nextTuesday, lineText } from "../lib/taco.js";
+import { loadTacoPicks, saveTacoPick, setTacoResult, deleteTacoPick, nextTuesday, lineText } from "../lib/tunrTuesdays.js";
 
-// Admin → Points: Taco Tuesday. Without anything here, each Tuesday's pick
+// Admin → Points: TUNR Tuesdays. Without anything here, each Tuesday's pick
 // is made automatically from the biggest meet coming up and settles itself.
 // Set your own question for a coming Tuesday, and enter its result after.
 
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
 
-export default function TacoAdmin({ onToast }) {
+export default function TunrTuesdaysAdmin({ onToast }) {
   const [picks, setPicks] = useState(null);
   const [error, setError] = useState("");
   const [draft, setDraft] = useState({ day: nextTuesday(today()), question: "", line: "", taco_line: "" });
@@ -41,7 +41,7 @@ export default function TacoAdmin({ onToast }) {
     if (new Date(`${draft.day}T12:00:00Z`).getUTCDay() !== 2) return onToast("That date isn't a Tuesday.");
     if (draft.question.trim().length < 5) return onToast("Write the question.");
     if (!(Number(draft.taco_line) >= 0) || !(Number(draft.line) >= 0) || draft.line === "" || draft.taco_line === "") return onToast("Fill in both lines (numbers).");
-    run(() => saveTacoPick(draft), "Taco Tuesday pick saved").then(() => setDraft((d) => ({ ...d, question: "", line: "", taco_line: "" })));
+    run(() => saveTacoPick(draft), "TUNR Tuesdays pick saved").then(() => setDraft((d) => ({ ...d, question: "", line: "", taco_line: "" })));
   };
 
   return (
@@ -64,7 +64,7 @@ export default function TacoAdmin({ onToast }) {
             <input style={field} inputMode="decimal" placeholder="40.5" value={draft.line} onChange={(e) => setDraft((d) => ({ ...d, line: e.target.value.replace(/[^\d.]/g, "") }))} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={label}>🌮 TACO LINE</div>
+            <div style={label}>🏁 TUNR LINE</div>
             <input style={field} inputMode="decimal" placeholder="29.5" value={draft.taco_line} onChange={(e) => setDraft((d) => ({ ...d, taco_line: e.target.value.replace(/[^\d.]/g, "") }))} />
           </div>
         </div>
@@ -76,7 +76,7 @@ export default function TacoAdmin({ onToast }) {
       {(picks || []).map((p) => (
         <div key={p.id} style={{ marginTop: 10, background: "var(--n-121212)", border: "1px solid var(--n-222222)", borderRadius: 12, padding: "12px 14px" }}>
           <div style={{ fontSize: 12, color: "var(--n-888888)", fontWeight: 700 }}>
-            {p.day} · {p.stat === "going" ? "automatic" : "yours"} · line {lineText(p.line)} → 🌮 {lineText(p.taco_line)}
+            {p.day} · {p.stat === "going" ? "automatic" : "yours"} · line {lineText(p.line)} → 🏁 {lineText(p.taco_line)}
           </div>
           <div style={{ fontSize: 14.5, fontWeight: 800, marginTop: 4 }}>{p.question}</div>
           <div style={{ ...muted, fontSize: 12.5, marginTop: 4 }}>

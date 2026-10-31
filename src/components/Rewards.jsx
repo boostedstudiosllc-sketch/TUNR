@@ -46,7 +46,7 @@ import {
   decidePurchase,
 } from "../lib/points.js";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
-import TacoAdmin from "./TacoAdmin.jsx";
+import TunrTuesdaysAdmin from "./TunrTuesdaysAdmin.jsx";
 import Leaderboard from "./Leaderboard.jsx";
 import PrintPage from "./PrintPage.jsx";
 
@@ -1207,7 +1207,7 @@ export function PurchasesAdmin({ onToast }) {
             ))}
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 8, alignItems: "flex-end" }}>
-            <Field name="TACO TUESDAY WIN">
+            <Field name="TUNR TUESDAYS WIN">
               <input style={field} inputMode="numeric" maxLength={2} value={rates.taco_points ?? 5} onChange={(e) => setRates((r) => ({ ...r, taco_points: e.target.value.replace(/\D/g, "") }))} />
             </Field>
             <Field name="SCRATCH CARDS">
@@ -1235,8 +1235,8 @@ export function PurchasesAdmin({ onToast }) {
         </div>
       )}
 
-      <Title>🌮 TACO TUESDAY</Title>
-      <TacoAdmin onToast={onToast} />
+      <Title>🏁 TUNR TUESDAYS</Title>
+      <TunrTuesdaysAdmin onToast={onToast} />
 
       <Title>RECENT PURCHASE POINTS</Title>
       {rows && rows.length === 0 && <div style={muted}>None yet.</div>}

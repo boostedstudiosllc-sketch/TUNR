@@ -7,7 +7,7 @@ import Sheet, { sheetTitle, muted } from "./Sheet.jsx";
 import { SpinCard } from "./SpinWheel.jsx";
 import { loadPhotoBallot } from "../lib/photoWeek.js";
 import { loadTodaysCar } from "../lib/guessCar.js";
-import { loadTaco } from "../lib/taco.js";
+import { loadTaco } from "../lib/tunrTuesdays.js";
 
 // The points checklist (the 📋 in the header): every way to earn points as a
 // task, with what's done today, this week and for good, and a GO button to
@@ -117,9 +117,7 @@ async function loadTasks(user) {
       : []),
     // This week.
     ...(taco?.pick?.open
-      ? [{ group: "THIS WEEK", id: "taco", icon: "🌮", title: "Taco Tuesday pick", text: "Perks → Taco Tuesday: MORE or LESS on the taco line. Free.", pts: `+${taco.points}`, done: Boolean(taco.pick.my_choice), go: () => go("tab:perks") }]
-      : taco?.pick?.outcome === "won"
-      ? [{ group: "THIS WEEK", id: "taco", icon: "🌮", title: "Taco Tuesday: you called it", text: "Your pick was right.", pts: `+${taco.points}`, done: true, go: () => go("tab:perks") }]
+      ? [{ group: "THIS WEEK", id: "taco", icon: "🏁", title: "TUNR Tuesdays pick", text: "Perks → TUNR Tuesdays: MORE or LESS on the TUNR line. Free, today only.", pts: `+${taco.points}`, done: Boolean(taco.pick.my_choice), go: () => go("tab:perks") }]
       : []),
     {
       group: "THIS WEEK",

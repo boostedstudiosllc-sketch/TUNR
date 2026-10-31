@@ -101,6 +101,7 @@ select tests.eq((select count(*) from public.point_ledger where user_id = tests.
 select public.taco_today();
 select tests.eq((select count(*) from public.point_ledger where reason = 'taco_bonus')::int, 1, 'settling again doesn''t pay twice');
 select tests.eq((select count(*) from public.notifications where user_id = tests.id('ana') and kind = 'taco_win')::int, 1, 'the winner is told');
+select tests.ok((select title from public.notifications where user_id = tests.id('ana') and kind = 'taco_win') like '%TUNR Tuesdays%', 'the alert says TUNR Tuesdays');
 
 -- The automatic Tuesday pick: the biggest meet in the next week.
 select tests.logout();

@@ -297,10 +297,13 @@ function tickPlayer(race, c, input, dt) {
   // by steering ends when the steering is.
   const autoDrift = input.autoDrift !== false && (c.drifting ? c.autoDrift && c.steerOff < DRIFT.letGo : c.steerHeld >= DRIFT.hold);
   const canDrift = (input.drift || autoDrift) && v > DRIFT.minSpeed && c.surface !== "grass" && c.spin === 0 && !c.finished && !input.brake;
-  if (canDrift && !c.drifting && want !== 0) {
+  // input.driftDir (the drift arrows): which way to drift, without
+  // steering; the steer arrows can still tighten or open it out.
+  const startDir = input.driftDir || want;
+  if (canDrift && !c.drifting && startDir !== 0) {
     c.drifting = true;
     c.autoDrift = !input.drift;
-    c.driftDir = want;
+    c.driftDir = startDir;
     c.charge = 0;
     race.events.push({ kind: "hop" });
   } else if (c.drifting && !canDrift) {

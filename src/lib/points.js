@@ -258,7 +258,7 @@ const REASON_LABELS = {
   host_bonus: "Hosting milestone",
   photo_bonus: "Photo of the week",
   guess_bonus: "Guess the Car",
-  taco_bonus: "Taco Tuesday pick",
+  taco_bonus: "TUNR Tuesdays pick",
   scratch_buy: "Scratch card",
   scratch_win: "Scratch card win",
   redeem: "Redeemed",
