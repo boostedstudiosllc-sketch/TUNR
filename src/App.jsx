@@ -56,6 +56,7 @@ import NotificationBell from "./components/NotificationBell.jsx";
 import RatePrompt from "./components/RatePrompt.jsx";
 import Checklist from "./components/Checklist.jsx";
 import ParkedCar from "./components/ParkedCar.jsx";
+import PeopleStrip from "./components/PeopleStrip.jsx";
 import AlertSettings from "./components/AlertSettings.jsx";
 import HomeScreenPrompt from "./components/HomeScreenPrompt.jsx";
 import ConfirmEmailBanner from "./components/ConfirmEmail.jsx";
@@ -806,7 +807,7 @@ export default function App() {
                 setSearch(e.target.value);
                 if (e.target.value.trim().length === 3) track("search", { q: e.target.value.trim() });
               }}
-              placeholder="Search meets, hosts, places…"
+              placeholder="Search meets, hosts, people, places…"
               style={{
                 width: "100%",
                 background: "var(--n-161616)",
@@ -839,6 +840,7 @@ export default function App() {
               </button>
             )}
           </div>
+          {search && <PeopleStrip user={user} query={search} onFollowed={refreshFollowingPeople} onToast={showToast} />}
           {!search && (
             <PhotoOfWeek
               user={user}

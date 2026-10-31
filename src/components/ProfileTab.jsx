@@ -8,7 +8,6 @@ import AuthForm from "./AuthForm.jsx";
 import Garage from "./Garage.jsx";
 import { Badges } from "./Badge.jsx";
 import Connections from "./Connections.jsx";
-import FindPeople from "./FindPeople.jsx";
 import StandingBadge from "./StandingBadge.jsx";
 import EditProfile, { Avatar } from "./EditProfile.jsx";
 import { openInvites } from "../lib/invites.js";
@@ -111,7 +110,6 @@ function SignedIn({
   // Follower / following counts and badges, and which list is open (null = none).
   const [social, setSocial] = useState(null);
   const [connections, setConnections] = useState(null);
-  const [finding, setFinding] = useState(false);
   const [clubs, setClubs] = useState(null);
   const [clubsError, setClubsError] = useState("");
   const [cohostInvites, setCohostInvites] = useState(0);
@@ -255,14 +253,6 @@ function SignedIn({
             <Stat n={social?.following} label="FOLLOWING" onClick={() => setConnections("following")} />
           </div>
         </div>
-        <button
-          className="action-btn"
-          onClick={() => setFinding(true)}
-          style={{ width: "100%", marginTop: 12, padding: "9px 0", borderRadius: 8, background: "var(--n-141414)", border: "1px solid var(--n-2a2a2a)", color: "var(--n-cccccc)", fontSize: 13, fontWeight: 800, letterSpacing: 1.2, fontFamily: "'Barlow Condensed', sans-serif", cursor: "pointer" }}
-        >
-          🔍 FIND PEOPLE TO FOLLOW
-        </button>
-        {finding && <FindPeople user={user} onClose={() => setFinding(false)} onToast={onToast} />}
 
         {/* Name, badges, city, bio, links */}
         <div style={{ marginTop: 12 }}>

@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import FindPeople from "./FindPeople.jsx";
 import { loadConnections, followPerson, removeFollower, track } from "../lib/store.js";
 
 // Your followers and who you follow. Followers can be removed (they aren't
 // told) or followed back; people you follow can be unfollowed.
 export default function Connections({ user, initial = "followers", onClose, onToast, onOpenPerson, onChanged }) {
   const [tab, setTab] = useState(initial);
+  const [finding, setFinding] = useState(false);
   const [rows, setRows] = useState(null);
   const [busyId, setBusyId] = useState(null);
 
@@ -96,14 +98,27 @@ export default function Connections({ user, initial = "followers", onClose, onTo
           </button>
         </div>
 
+        {/* Finding friends lives here (and in the Discover search), not as its
+            own destination: TUNR is meet-first. */}
+        <div style={{ padding: "0 20px 8px" }}>
+          <button
+            className="action-btn"
+            onClick={() => setFinding(true)}
+            style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "var(--n-141414)", border: "1px solid var(--n-2a2a2a)", color: "var(--n-999999)", fontSize: 14, textAlign: "left", fontFamily: "'Barlow', sans-serif", cursor: "pointer" }}
+          >
+            🔍 Find friends by username
+          </button>
+        </div>
+        {finding && <FindPeople user={user} zIndex={270} onClose={() => (setFinding(false), onChanged?.())} onToast={onToast} />}
+
         <div style={{ flex: 1, overflowY: "auto", padding: "4px 20px 24px" }}>
           {rows === null ? (
             <Muted>Loading…</Muted>
           ) : rows.length === 0 ? (
             <Muted>
               {tab === "followers"
-                ? "No followers yet. People can follow you from your name in a meet chat."
-                : "You're not following anyone yet. Tap a name in a meet chat to see their profile."}
+                ? "No followers yet. People can follow you from your name in a meet chat or by searching your username."
+                : "You're not following anyone yet. Follow hosts and friends to see the meets they post under Following on Discover."}
             </Muted>
           ) : (
             rows.map((r) => (

@@ -5,11 +5,13 @@ import { searchPeople, followPerson } from "../lib/store.js";
 
 // 🔍 Find people to follow: type a username (or part of one) or a name.
 // With nothing typed, the most-followed people on TUNR. Tap someone to open
-// their profile. Opened from your profile and the Community tab.
+// their profile. Opened from Followers / Following (Connections.jsx); the
+// Discover search also finds people (PeopleStrip.jsx). TUNR is meet-first:
+// following someone is how their meets show up under Following.
 
 const openPerson = (id) => window.dispatchEvent(new CustomEvent("tunr:open", { detail: { link: `person:${id}` } }));
 
-export default function FindPeople({ user, onClose, onToast }) {
+export default function FindPeople({ user, onClose, onToast, zIndex }) {
   const [q, setQ] = useState("");
   const [rows, setRows] = useState(null);
   const [error, setError] = useState("");
@@ -41,8 +43,8 @@ export default function FindPeople({ user, onClose, onToast }) {
   };
 
   return (
-    <Sheet onClose={onClose} label="Find people" portal>
-      <div style={sheetTitle}>🔍 FIND PEOPLE</div>
+    <Sheet onClose={onClose} label="Find people" portal zIndex={zIndex}>
+      <div style={sheetTitle}>🔍 FIND FRIENDS</div>
       <input
         autoFocus
         value={q}
