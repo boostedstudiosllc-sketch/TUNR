@@ -46,7 +46,7 @@ function savePrefs(p) {
 }
 
 // Boosted Karts: kart racing on TUNR's own tracks against five computer
-// karts. The kart drives itself; steer, brake, hold DRIFT through the bends
+// karts. The kart drives itself; steer, brake, hold left/right (or DRIFT) through the bends
 // for a mini-turbo and Boosted tokens, and spend 3 tokens on NITRO. Boost
 // pads on the track; obstacles scattered at random each race. Free play;
 // fastest lap and best finish per track are kept on this phone.
@@ -210,8 +210,8 @@ export default function KartGame({ onClose, user = null, onNeedAccount }) {
           <div style={{ flex: 1, overflowY: "auto" }}>
             <div style={{ maxWidth: 560, margin: "0 auto", padding: "0 16px calc(28px + env(safe-area-inset-bottom))", boxSizing: "border-box" }}>
               <div style={{ ...muted, fontSize: 13.5 }}>
-                Your kart goes by itself: steer on the left, brake on the right. Hold <strong>DRIFT</strong> while you turn through a
-                bend: the sparks go blue, then orange. Let go for a mini-turbo, and each spark color earns a Boosted token. Three
+                Your kart goes by itself: steer on the left, brake on the right. To <strong>drift</strong>, just keep holding left or
+                right through a bend (or hold DRIFT while you turn): the sparks go blue, then orange. Let go for a mini-turbo, and each spark color earns a Boosted token. Three
                 tokens fill the <strong>NITRO</strong>. Hit the blue boost pads, and watch out for barrels, crates, cones and oil.
               </div>
               {error && (

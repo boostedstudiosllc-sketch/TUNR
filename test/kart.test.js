@@ -123,6 +123,46 @@ test("drifting charges a mini-turbo and banks tokens; 3 tokens buy a nitro", () 
   assert.ok(NITRO.cost === 3 && NITRO.max >= 6);
 });
 
+test("holding left or right through a bend drifts by itself, no DRIFT button", () => {
+  const ring = [];
+  for (let k = 0; k < 20; k++) ring.push(Math.round(Math.cos((-k * Math.PI) / 10) * 320), Math.round(Math.sin((-k * Math.PI) / 10) * 320));
+  const r = newKartRace(buildKartTrack({ id: "ring", points: ring }), { rivals: 0 });
+  r.obstacles = [];
+  r.pads = [];
+  run(r, {}, 3.2);
+  const q = r.player;
+  const start = pointAt(r.track, 5, 0);
+  Object.assign(q, { x: start.x, z: start.z, heading: start.heading, slide: start.heading, speed: 20, idx: start.i, s: 5, lap: 0 });
+  // A tap of steering is just steering.
+  run(r, { left: true }, DRIFT.hold * 0.5);
+  assert.ok(!q.drifting, "a short steer isn't a drift");
+  run(r, {}, 0.1);
+  // Keep holding left: it drifts. Steering either way keeps it going (left
+  // tightens, right opens it out) and it charges.
+  run(r, { left: true }, DRIFT.hold + 0.05);
+  assert.ok(q.drifting, "holding left drifts");
+  run(r, (x) => {
+    const want = x.track.heading[x.player.idx] - (x.player.side - 1) * 0.08;
+    const tighten = angleDiff(want, x.player.heading) > 0;
+    return { left: tighten, right: !tighten };
+  }, DRIFT.blue * 1.6 + 0.3); // charging is slower while opening it out
+  assert.ok(q.drifting, "still drifting while steering");
+  assert.ok(q.driftLevel >= 1);
+  run(r, { left: true }, 0.01);
+  run(r, {}, 0.05);
+  assert.ok(q.drifting, "a quick re-grip doesn't end it");
+  run(r, {}, DRIFT.letGo + 0.05);
+  assert.ok(!q.drifting);
+  assert.ok(q.tokens >= 1 && q.boostKind === "mini", "letting go fires the mini-turbo");
+  // Turned off (input.autoDrift false), holding steer is plain steering.
+  const r2 = newKartRace(buildKartTrack({ id: "ring", points: ring }), { rivals: 0 });
+  r2.obstacles = [];
+  run(r2, {}, 3.2);
+  Object.assign(r2.player, { x: start.x, z: start.z, heading: start.heading, slide: start.heading, speed: 20, idx: start.i, s: 5, lap: 0 });
+  run(r2, { left: true, autoDrift: false }, 1);
+  assert.ok(!r2.player.drifting);
+});
+
 test("a boost pad boosts you; a barrel spins you out", () => {
   const t = buildKartTrack(KART_TRACKS[0]);
   const race = newKartRace(t, { rivals: 0 });

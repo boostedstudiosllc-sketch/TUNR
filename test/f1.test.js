@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildTrack, newRace, tickRace, pointAt, locate, speedProfile, placeOf, standings, lapClock, TRACK_W, DIFFICULTY, CARS, COIN } from "../src/lib/f1Engine.js";
+import { buildTrack, newRace, tickRace, pointAt, locate, speedProfile, placeOf, standings, lapClock, TRACK_W, DIFFICULTY, CARS, COIN, addRemoteCar } from "../src/lib/f1Engine.js";
 import { TRACKS } from "../src/lib/f1Tracks.js";
 
 const angleDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
@@ -166,4 +166,30 @@ test("a real car's body style comes from its make and model", async () => {
   // A saved body wins over the guess.
   assert.equal(lookOf({ make: "BMW", model: "G30", game_body: "coupe" }).body, "coupe");
   assert.equal(lookOf({ make: "BMW", model: "G30" }).body, "sedan");
+});
+
+test("racing a friend: three rivals too, doing the same thing on both phones", () => {
+  const t = buildTrack(TRACKS[0]);
+  const host = newRace(t, { seed: 4242, slot: 0, laps: 1 });
+  const guest = newRace(t, { seed: 4242, slot: 1, laps: 1 });
+  const them = addRemoteCar(host, { name: "guest", slot: 1 });
+  addRemoteCar(guest, { name: "host", slot: 0 });
+  const rivals = (r) => r.cars.filter((c) => c.ai);
+  assert.equal(rivals(host).length, 3);
+  assert.equal(host.cars.length, 5, "a full grid: 3 rivals and the two of you");
+  // The two of you start behind the rivals, in each other's spots.
+  const lastRival = Math.min(...rivals(host).map((c) => c.s));
+  assert.ok(host.player.s < lastRival && them.s < lastRival);
+  assert.ok(Math.abs(host.player.s - guest.cars.find((c) => c.remote).s) < 1e-9);
+  // Both phones run the same rivals (sitting still on the grid, the two of
+  // you don't touch them).
+  for (let i = 0; i < 120 * 12; i++) {
+    tickRace(host, { brake: true });
+    tickRace(guest, { brake: true });
+  }
+  rivals(host).forEach((c, k) => {
+    const o = rivals(guest)[k];
+    assert.ok(Math.abs(c.s - o.s) < 1e-6 && Math.abs(c.x - o.x) < 1e-6, `${c.name} matches`);
+  });
+  assert.ok(rivals(host)[0].s > 0 || rivals(host)[0].lap >= 0, "the rivals are racing");
 });

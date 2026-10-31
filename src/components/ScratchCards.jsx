@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import Sheet, { sheetTitle, muted, bigButton, quietButton } from "./Sheet.jsx";
 import { loadScratchShop, buyScratch } from "../lib/scratch.js";
-import { oddsRows, chanceUpTo, prizeRange, pctText } from "../lib/scratchOdds.js";
 import { drawFoil, rub, rubbedOff } from "../lib/scratchCanvas.js";
 
 // 🎟️ Scratch cards on the Perks tab: spend points on a card, scratch it
 // with your finger, win points straight into your balance. The server picks
-// the prize (buy_scratch in 105_taco_tuesday_scratch_cards.sql); the odds
-// shown are read from the same table it uses.
+// the prize (buy_scratch in 105_taco_tuesday_scratch_cards.sql). Players see
+// each card's top prize, not the odds (the owner's call; the odds are in
+// scratch_cards, admins only (108), with the maths in src/lib/scratchOdds.js
+// if they're ever needed, e.g. for an app store that requires showing them).
 
 const LOOKS = {
   tuneup: { from: "var(--n-065f46)", to: "#10B981", icon: "🔧" },
@@ -59,7 +60,6 @@ function ScratchShop({ onClose, onToast }) {
   const [shop, setShop] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
-  const [odds, setOdds] = useState(null);
   const [playing, setPlaying] = useState(null); // { card, prize }
 
   const refresh = () =>
@@ -112,11 +112,9 @@ function ScratchShop({ onClose, onToast }) {
 
       {shop?.on &&
         shop.cards.map((c) => {
-          const [lo, hi] = prizeRange(c);
           const L = look(c.id);
           const short = (shop.balance ?? 0) < c.cost;
           const blocked = c.sold_out || short || left <= 0;
-          const usual = c.cost <= 2 ? 2 : c.cost <= 5 ? 5 : 11;
           return (
             <div key={c.id} style={{ marginTop: 12, borderRadius: 14, overflow: "hidden", border: "1px solid var(--n-2a2a2a)", position: "relative" }}>
               <div style={{ padding: "14px 16px", background: `linear-gradient(135deg, ${L.from}, ${L.to})`, color: "var(--n-ffffff)", display: "flex", alignItems: "center", gap: 12 }}>
@@ -124,7 +122,7 @@ function ScratchShop({ onClose, onToast }) {
                 <div style={{ flex: 1, fontFamily: "'Barlow Condensed', sans-serif" }}>
                   <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: 0.5 }}>{c.name.toUpperCase()}</div>
                   <div style={{ fontSize: 13, opacity: 0.9 }}>
-                    Win {lo}–{hi} points · {pctText(chanceUpTo(c, usual))} chance of {lo === usual ? usual : `${lo}–${usual}`}
+                    Win up to {c.top} points
                   </div>
                 </div>
                 <div style={{ textAlign: "right", fontFamily: "'Barlow Condensed', sans-serif" }}>
@@ -133,19 +131,15 @@ function ScratchShop({ onClose, onToast }) {
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, padding: 10, background: "var(--n-111111)" }}>
-                <button onClick={() => setOdds(odds === c.id ? null : c.id)} style={{ ...quietButton, flex: 1, padding: "10px 0", fontSize: 12.5 }}>
-                  {odds === c.id ? "HIDE ODDS" : "ODDS"}
-                </button>
                 <button
                   className="action-btn"
                   disabled={blocked || Boolean(busy)}
                   onClick={() => play(c)}
-                  style={{ ...bigButton, flex: 2, padding: "10px 0", fontSize: 13, background: blocked ? "var(--n-2a2a2a)" : L.to, color: blocked ? "var(--n-888888)" : "var(--n-ffffff)", opacity: busy && busy !== c.id ? 0.6 : 1 }}
+                  style={{ ...bigButton, flex: 1, padding: "10px 0", fontSize: 13, background: blocked ? "var(--n-2a2a2a)" : L.to, color: blocked ? "var(--n-888888)" : "var(--n-ffffff)", opacity: busy && busy !== c.id ? 0.6 : 1 }}
                 >
                   {c.sold_out ? "SOLD OUT TODAY" : busy === c.id ? "…" : short ? `NEED ${c.cost} POINTS` : `PLAY · ${c.cost} PTS`}
                 </button>
               </div>
-              {odds === c.id && <OddsTable card={c} />}
             </div>
           );
         })}
@@ -156,7 +150,7 @@ function ScratchShop({ onClose, onToast }) {
         </div>
       )}
       <div style={{ ...muted, fontSize: 11.5, marginTop: 12 }}>
-        Just for fun. The odds shown are the real odds and the same for everyone; the server picks each prize. Winnings go straight into your balance.
+        Just for fun. Every card always wins something, and the prize is picked fairly by TUNR, the same way for everyone. Winnings go straight into your balance.
         One free Tune-Up card every week (a new one each Monday), no points needed. Points aren't cash. Up to 10 cards a day. One day each week the Tune-Up card sells out.
       </div>
       <button onClick={onClose} style={{ ...quietButton, marginTop: 12 }}>
@@ -177,7 +171,7 @@ function FreeCard({ shop, busy, left, onPlay }) {
       <div style={{ flex: 1, fontFamily: "'Barlow Condensed', sans-serif" }}>
         <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: 0.5, color: "var(--n-f0f0f0)" }}>FREE CARD THIS WEEK</div>
         <div style={{ fontSize: 13, color: "var(--a-c4a5e0)", fontFamily: "'Barlow', sans-serif" }}>
-          {shop.free_used ? `Used. Your next free card comes ${next}.` : `A ${card.name} on us: win 1–5 points, no points needed.`}
+          {shop.free_used ? `Used. Your next free card comes ${next}.` : `A ${card.name} on us: win up to ${card.top} points, no points needed.`}
         </div>
       </div>
       {!shop.free_used && (
@@ -190,18 +184,6 @@ function FreeCard({ shop, busy, left, onPlay }) {
           {busy === "free" ? "…" : "SCRATCH FREE"}
         </button>
       )}
-    </div>
-  );
-}
-
-function OddsTable({ card }) {
-  return (
-    <div style={{ padding: "6px 14px 12px", background: "var(--n-111111)", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(70px, 1fr))", gap: 6 }}>
-      {oddsRows(card).map((r) => (
-        <div key={r.prize} style={{ fontSize: 12, color: "var(--n-cccccc)", fontFamily: "'Barlow', sans-serif", padding: "4px 6px", borderRadius: 6, background: "var(--n-161616)", textAlign: "center" }}>
-          <b>+{r.prize}</b> <span style={{ color: "var(--n-888888)" }}>{pctText(r.pct)}</span>
-        </div>
-      ))}
     </div>
   );
 }

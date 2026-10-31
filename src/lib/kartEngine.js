@@ -24,7 +24,10 @@ export const KART = { length: 2.1, width: 1.4, vmax: 30, accel: 15, brake: 28, g
 const OFF_MAX = 14; // top speed off the track
 const WALL_ROOM = 2.6; // tyre walls close by the track
 const GRIP = 10; // how fast sideways sliding dies away (gripping)
-export const DRIFT = { minSpeed: 9, blue: 0.9, orange: 2.0, turn: 1.25, angle: 0.4, mini: [0, 0.6, 1.1], speed: 7, accel: 2 };
+// hold: seconds of steering one way (at speed) before a drift starts by
+// itself; letGo: how long you can be off the steering mid-drift (a quick
+// re-grip) before it ends.
+export const DRIFT = { minSpeed: 9, blue: 0.9, orange: 2.0, turn: 1.25, angle: 0.4, mini: [0, 0.6, 1.1], speed: 7, accel: 2, hold: 0.3, letGo: 0.12 };
 export const NITRO = { cost: 3, max: 6, seconds: 2.5, speed: 12, accel: 2.6 };
 export const PAD = { seconds: 1.0, speed: 9, accel: 2.2, length: 5, width: 4 };
 export const OBSTACLES = { barrel: 0.9, crate: 1.0, cone: 0.5, oil: 1.8 }; // radius (m)
@@ -284,11 +287,19 @@ function tickPlayer(race, c, input, dt) {
   if (v > top) v -= Math.min(v - top, (c.surface === "grass" ? 20 : 5) * dt);
   if (c.surface === "kerb") v -= Math.sign(v) * dt;
 
-  // Drifting: starts with a hop when you hold DRIFT and turn at speed;
-  // charges while you hold it; letting go fires the mini-turbo.
-  const canDrift = input.drift && v > DRIFT.minSpeed && c.surface !== "grass" && c.spin === 0 && !c.finished && !input.brake;
+  // Drifting: starts with a hop when you hold left or right through a bend
+  // at speed (or hold DRIFT and turn); charges while you hold it; letting go
+  // fires the mini-turbo.
+  c.steerHeld = want !== 0 && want === c.lastWant ? (c.steerHeld || 0) + dt : 0;
+  c.steerOff = want === 0 ? (c.steerOff || 0) + dt : 0;
+  c.lastWant = want;
+  // A drift started with the DRIFT button ends when it's let go; one started
+  // by steering ends when the steering is.
+  const autoDrift = input.autoDrift !== false && (c.drifting ? c.autoDrift && c.steerOff < DRIFT.letGo : c.steerHeld >= DRIFT.hold);
+  const canDrift = (input.drift || autoDrift) && v > DRIFT.minSpeed && c.surface !== "grass" && c.spin === 0 && !c.finished && !input.brake;
   if (canDrift && !c.drifting && want !== 0) {
     c.drifting = true;
+    c.autoDrift = !input.drift;
     c.driftDir = want;
     c.charge = 0;
     race.events.push({ kind: "hop" });
@@ -301,6 +312,7 @@ function tickPlayer(race, c, input, dt) {
     }
     c.drifting = false;
     c.charge = 0;
+    c.steerHeld = 0; // the next drift needs a fresh hold
   }
   if (c.drifting) c.charge += dt * (want === c.driftDir ? 1.3 : want === 0 ? 1 : 0.7);
   c.driftLevel = !c.drifting ? 0 : c.charge >= DRIFT.orange ? 2 : c.charge >= DRIFT.blue ? 1 : 0;

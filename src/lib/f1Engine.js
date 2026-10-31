@@ -253,7 +253,8 @@ export function newRace(track, { laps = 3, rivals = 3, seed = 1, difficulty = "m
       finished: null,
     });
   });
-  const me = slot == null ? slots[rivals] : gridSlot(slot);
+  // Racing a friend (slot 0 or 1): the two of you start behind the rivals.
+  const me = slot == null ? slots[rivals] : gridSlot(rivals + slot);
   const p = pointAt(track, track.L - me.back, me.side);
   const player = {
     ai: false,
@@ -282,7 +283,9 @@ export function newRace(track, { laps = 3, rivals = 3, seed = 1, difficulty = "m
     wrongWay: 0,
   };
   cars.push(player);
-  return { track, laps, difficulty, car: CARS[car] ? car : "formula", spec, profile, cars, player, coins: coinSpots(track), time: -3, state: "countdown", events: [] };
+  // rand: the race's own random numbers, so two phones racing each other
+  // (same seed) see the rivals do the same things.
+  return { track, laps, difficulty, car: CARS[car] ? car : "formula", spec, profile, cars, player, rivals, rand, coins: coinSpots(track), time: -3, state: "countdown", events: [] };
 }
 
 function gridSlot(i) {
@@ -290,8 +293,9 @@ function gridSlot(i) {
 }
 
 // Racing a friend: their car, placed and moved by their phone's reports.
+// slot: theirs (0 or 1), behind the rivals like yours.
 export function addRemoteCar(race, { name, color = "#F472B6", look = null, slot = 1 }) {
-  const g = gridSlot(slot);
+  const g = gridSlot((race.rivals || 0) + slot);
   const p = pointAt(race.track, race.track.L - g.back, g.side);
   const car = { remote: true, ai: false, name, color, look, x: p.x, z: p.z, heading: p.heading, speed: 0, steer: 0, idx: p.i, s: race.track.L - g.back, side: g.side, lap: -1, finished: null, out: null };
   race.cars.push(car);
@@ -460,7 +464,7 @@ function tickRival(race, c, dt) {
   if (c.finished) c.v = Math.max(0, c.v - 8 * dt);
   else c.v = c.v < vt ? Math.min(vt, c.v + race.spec.accel * 1.05 * dt * (c.v < 20 ? 1.4 : 1)) : Math.max(vt, c.v - BRAKE * 0.85 * dt);
   // Wander to a new line now and then; tuck in for bends unless passing.
-  if (!front && Math.abs(c.lane - c.laneGoal) < 0.1 && Math.random() < dt * 0.15) c.laneGoal = (Math.random() - 0.5) * 6;
+  if (!front && Math.abs(c.lane - c.laneGoal) < 0.1 && race.rand() < dt * 0.15) c.laneGoal = (race.rand() - 0.5) * 6;
   const goal = Math.abs(t.k[c.idx]) > 0.02 && !front ? c.laneGoal * 0.3 : c.laneGoal;
   c.lane += Math.max(-dt * 2.2, Math.min(dt * 2.2, goal - c.lane));
   const prevS = c.s;

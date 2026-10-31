@@ -12,8 +12,12 @@ insert into public.point_ledger (user_id, delta, reason, note) values (tests.id(
 
 -- ---------- scratch cards ----------
 select tests.login(tests.id('ana'));
-select tests.eq((select count(*) from public.scratch_cards)::int, 3, 'three scratch cards');
+select tests.eq((select count(*) from public.scratch_cards)::int, 0, 'players can''t read the odds table');
+select tests.eq(jsonb_array_length((public.scratch_shop())->'cards'), 3, 'the shop lists three cards');
+select tests.ok(not ((public.scratch_shop())->'cards'->0 ? 'weights') and ((public.scratch_shop())->'cards'->0 ? 'top'), 'the shop sends each card''s top prize, not its odds');
+select tests.logout();
 select tests.ok((select bool_and((select sum(w) from unnest(weights) w) = 1000) from public.scratch_cards), 'each card''s odds add up to 1,000');
+select tests.login(tests.id('ana'));
 create temp table play as select public.buy_scratch('turbo') r;
 select tests.eq((select r->>'status' from play), 'ok', 'a card can be bought');
 select tests.ok((select (r->>'prize')::int between 1 and 10 from play), 'a Turbo card pays 1-10');

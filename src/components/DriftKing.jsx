@@ -150,7 +150,7 @@ export default function DriftKing({ onClose, user = null, onNeedAccount }) {
         <FriendRoom
           game="drift"
           title="RACE A FRIEND"
-          intro="Live on the same circuit, from your own phones: just the two of you, no rivals. You can't crash into each other. Each phone times its own race."
+          intro="Live on the same circuit, from your own phones, with three computer rivals for a full race. You can't crash into each other. Each phone times its own race."
           user={user}
           look={myLook}
           audio={audio}
@@ -204,6 +204,7 @@ export default function DriftKing({ onClose, user = null, onNeedAccount }) {
               <div style={{ fontSize: 30, fontWeight: 900 }}>{r.won ? `You beat @${opp?.name || "your friend"}` : `@${opp?.name || "Your friend"} won`}</div>
               <div style={{ ...muted }}>
                 {r.track} · you {r.mine != null ? lapClock(r.mine) : "DNF"} · them {r.theirs != null ? lapClock(r.theirs) : r.out ? "left" : "DNF"}
+                {r.place ? ` · you finished P${r.place} of ${r.field}` : ""}
                 {r.bestLap ? ` · your best lap ${lapClock(r.bestLap)}` : ""}
               </div>
             </div>
@@ -381,7 +382,7 @@ export default function DriftKing({ onClose, user = null, onNeedAccount }) {
 
 // The race: the 3D view, the numbers on top, and the controls.
 // remote (racing a friend): { round, seed, isHost, opponent, room, hooks,
-// onDone }: no rivals, their car from their phone's reports.
+// onDone }: the usual rivals plus their car, moved by their phone's reports.
 function RaceScreen({ def, laps, difficulty, car, playerLook = null, view, onView, guide, onGuide, audio, sound, onToggle, onFinish, onQuit, onFail, remote = null }) {
   const wrap = useRef(null);
   const canvas = useRef(null);
@@ -411,7 +412,7 @@ function RaceScreen({ def, laps, difficulty, car, playerLook = null, view, onVie
     let ro = null;
     const track = buildTrack(def);
     const race = remote
-      ? newRace(track, { laps, difficulty, car, seed: remote.seed, rivals: 0, slot: remote.isHost ? 0 : 1 })
+      ? newRace(track, { laps, difficulty, car, seed: remote.seed, slot: remote.isHost ? 0 : 1 })
       : newRace(track, { laps, difficulty, car, seed: Date.now() % 100000 });
     const them = remote ? addRemoteCar(race, { name: remote.opponent.name, look: remote.opponent.look, slot: remote.isHost ? 1 : 0 }) : null;
     if (remote) {
@@ -549,7 +550,7 @@ function RaceScreen({ def, laps, difficulty, car, playerLook = null, view, onVie
             told = true;
             a?.squeal(0);
             const won = them.finished == null || p.finished < them.finished;
-            remote.onDone({ won, track: def.name, mine: p.finished, theirs: them.finished, out: them.out, bestLap: p.lapTimes.length ? Math.min(...p.lapTimes) : null });
+            remote.onDone({ won, track: def.name, mine: p.finished, theirs: them.finished, out: them.out, place: placeOf(race), field: race.cars.length, bestLap: p.lapTimes.length ? Math.min(...p.lapTimes) : null });
           } else if (!remote && race.state === "finished" && !told && race.time - p.finished > 1.2) {
             told = true;
             a?.squeal(0);

@@ -29,11 +29,11 @@ function loadPrefs() {
       length: MATCH_LENGTHS.includes(p.length) ? p.length : 180,
       difficulty: LEVELS.some(([d]) => d === p.difficulty) ? p.difficulty : "medium",
       ballCam: p.ballCam !== false,
-      gas: p.gas === "pedal" ? "pedal" : "auto",
+      gas: p.gas === "auto" ? "auto" : "pedal", // the gas pedal unless you've picked Automatic
     };
   } catch (e) {
     console.warn("Couldn't read Turbo Ball settings:", e.message);
-    return { size: 1, length: 180, difficulty: "medium", ballCam: true, gas: "auto" };
+    return { size: 1, length: 180, difficulty: "medium", ballCam: true, gas: "pedal" };
   }
 }
 
@@ -205,8 +205,8 @@ export default function CarSoccer({ onClose, user = null, onNeedAccount }) {
           <div style={{ flex: 1, overflowY: "auto" }}>
             <div style={{ maxWidth: 560, margin: "0 auto", padding: "0 16px calc(28px + env(safe-area-inset-bottom))", boxSizing: "border-box" }}>
               <div style={{ ...muted, fontSize: 13.5 }}>
-                Car soccer. Knock the ball into the orange goal. Your car drives itself: steer on the left; boost, jump and brake on
-                the right. Tap <strong>JUMP</strong> again in the air to flip into the ball for a harder hit. Drive over the glowing
+                Car soccer. Knock the ball into the orange goal. Steer on the left. On the right, hold the gas pedal and slide your thumb up it to boost; jump and brake sit
+                beside it. Tap <strong>JUMP</strong> again in the air to flip into the ball for a harder hit. Drive over the glowing
                 pads to refill your boost.
               </div>
               {error && (
@@ -257,7 +257,7 @@ export default function CarSoccer({ onClose, user = null, onNeedAccount }) {
                 ))}
               </div>
               <div style={{ ...muted, fontSize: 12.5, marginTop: 5 }}>
-                {prefs.gas === "pedal" ? "Hold GAS to drive. BOOST still works on its own." : "Your car drives itself; brake to stop or back up."}
+                {prefs.gas === "pedal" ? "Hold the pedal to drive; slide your thumb up it to BOOST. One thumb does both." : "Your car drives itself; brake to stop or back up."}
               </div>
               <button className="action-btn" onClick={start} style={{ ...bigButton, marginTop: 18, padding: "16px 0", fontSize: 18 }}>
                 ⚽ PLAY
@@ -429,7 +429,7 @@ function Match({ size, length, difficulty, ballCam, myLook = null, pedal = false
           const dt = Math.min(0.05, last ? (now - last) / 1000 : 0);
           last = now;
           const i = input.current;
-          const ctl = { steer: (i.left ? 1 : 0) - (i.right ? 1 : 0), throttle: i.brake ? -1 : pedalRef.current ? (i.gas ? 1 : 0) : 1, boost: i.boost, jump: i.jump };
+          const ctl = { steer: (i.left ? 1 : 0) - (i.right ? 1 : 0), throttle: i.brake ? -1 : pedalRef.current ? (i.gas || i.boost ? 1 : 0) : 1, boost: i.boost, jump: i.jump };
           // Playing a friend the clock never stops.
           const jumpTapped = i.jumpTap;
           if (!live.current.paused || remote) {
@@ -545,6 +545,32 @@ function Match({ size, length, difficulty, ballCam, myLook = null, pedal = false
     onLostPointerCapture: () => (input.current[key] = false),
     onContextMenu: (e) => e.preventDefault(),
   });
+  // The gas pedal: hold the lower part to drive, slide up into the top part
+  // to boost as well (one thumb, no second button to reach for).
+  const pedalZone = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const boost = e.clientY < r.top + r.height * 0.45;
+    input.current.gas = true;
+    input.current.boost = boost;
+    if (hud.current.pedalBoost) hud.current.pedalBoost.style.opacity = boost ? 1 : 0.55;
+  };
+  const pedalOff = () => {
+    input.current.gas = false;
+    input.current.boost = false;
+    if (hud.current.pedalBoost) hud.current.pedalBoost.style.opacity = 0.55;
+  };
+  const pedalHold = {
+    onPointerDown: (e) => {
+      e.preventDefault();
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+      pedalZone(e);
+    },
+    onPointerMove: (e) => input.current.gas && pedalZone(e), // only while it's held
+    onPointerUp: pedalOff,
+    onPointerCancel: pedalOff,
+    onLostPointerCapture: pedalOff,
+    onContextMenu: (e) => e.preventDefault(),
+  };
   const round = (s, extra) => ({
     width: s,
     height: s,
@@ -615,23 +641,36 @@ function Match({ size, length, difficulty, ballCam, myLook = null, pedal = false
             BRAKE
           </button>
         </div>
-        {pedal && (
+        {pedal ? (
           <button
-            aria-label="Gas (hold to drive)"
-            style={round(60, { width: 60, height: 104, borderRadius: 12, fontSize: 12, display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 8, background: "repeating-linear-gradient(180deg, #2b2b2b 0 10px, #1a1a1a 10px 16px)" })}
-            {...hold("gas")}
+            aria-label="Gas pedal: hold to drive, slide up to boost"
+            style={round(92, { width: 92, height: 172, borderRadius: 16, padding: 0, display: "flex", flexDirection: "column", overflow: "hidden", border: "2px solid #FFB020" })}
+            {...pedalHold}
           >
-            GAS
+            <span
+              ref={(el) => {
+                hud.current.pedalBoost = el;
+                hud.current.boostBtn = el;
+              }}
+              style={{ flex: "0 0 45%", width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", opacity: 0.55, borderBottom: "2px solid rgba(255,176,32,0.6)", background: "conic-gradient(#FFB020 120deg, rgba(10,14,30,0.55) 0)" }}
+            >
+              <span ref={(el) => (hud.current.boostAmt = el)} style={{ fontSize: 22, lineHeight: 1, textShadow: "0 1px 4px #000" }}>
+                33
+              </span>
+              <span style={{ fontSize: 11, color: "#FFE2A8", textShadow: "0 1px 4px #000" }}>▲ BOOST</span>
+            </span>
+            <span style={{ flex: 1, width: "100%", display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 10, fontSize: 13, background: "repeating-linear-gradient(180deg, #2b2b2b 0 10px, #1a1a1a 10px 16px)" }}>GAS</span>
+          </button>
+        ) : (
+          <button ref={(el) => (hud.current.boostBtn = el)} aria-label="Boost (hold)" style={round(92, { fontSize: 15, padding: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "2px solid #FFB020" })} {...hold("boost")}>
+            <span style={{ background: "rgba(10,14,30,0.85)", borderRadius: "50%", width: 72, height: 72, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+              <span ref={(el) => (hud.current.boostAmt = el)} style={{ fontSize: 24, lineHeight: 1 }}>
+                33
+              </span>
+              <span style={{ fontSize: 11, color: "#FFB020" }}>BOOST</span>
+            </span>
           </button>
         )}
-        <button ref={(el) => (hud.current.boostBtn = el)} aria-label="Boost (hold)" style={round(92, { fontSize: 15, padding: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "2px solid #FFB020" })} {...hold("boost")}>
-          <span style={{ background: "rgba(10,14,30,0.85)", borderRadius: "50%", width: 72, height: 72, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-            <span ref={(el) => (hud.current.boostAmt = el)} style={{ fontSize: 24, lineHeight: 1 }}>
-              33
-            </span>
-            <span style={{ fontSize: 11, color: "#FFB020" }}>BOOST</span>
-          </span>
-        </button>
       </div>
 
       {paused && (
