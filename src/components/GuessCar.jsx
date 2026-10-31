@@ -3,6 +3,8 @@ import { loadTodaysCar, guessCar, loadPracticeCar, loadMyGuesses } from "../lib/
 import { muted, bigButton, quietButton } from "./Sheet.jsx";
 import FriendRoom from "./FriendRoom.jsx";
 import { sharedGame } from "../lib/gameRooms.js";
+import { RushAudio } from "../lib/rushAudio.js";
+import MusicButtons from "./MusicButtons.jsx";
 
 // Guess the Car: a blurred photo sharpens over 20 seconds; pick the make
 // and model from four. Today's car is the same for everyone and pays 1–3
@@ -63,6 +65,13 @@ export default function GuessCar({ onClose, user = null, onNeedAccount }) {
   const [error, setError] = useState("");
   const [round, setRound] = useState(null); // { mode: "today" | "practice", car }
   const [practiceScore, setPracticeScore] = useState({ right: 0, played: 0 });
+  // Music (the game's own track), from the first tap that starts a round.
+  const audio = useRef(null);
+  if (!audio.current) audio.current = new RushAudio({ game: "guess" });
+  useEffect(() => () => audio.current?.dispose(), []);
+  const music = () => {
+    if (audio.current.unlock() && audio.current.prefs.music) audio.current.startMusic();
+  };
   // Playing a friend (opens straight there from a shared room link).
   const [friend, setFriend] = useState(() => {
     try {
@@ -94,6 +103,7 @@ export default function GuessCar({ onClose, user = null, onNeedAccount }) {
 
   async function practice() {
     setError("");
+    music();
     try {
       let car = today?.pool > 0 ? await loadPracticeCar(seen.current.slice(-20)) : null;
       if (car?.key) seen.current.push(car.key);
@@ -106,6 +116,7 @@ export default function GuessCar({ onClose, user = null, onNeedAccount }) {
 
   function playToday() {
     if (!user) return onNeedAccount?.();
+    music();
     setRound({ mode: "today", car: today, id: Date.now() });
   }
 
@@ -118,6 +129,7 @@ export default function GuessCar({ onClose, user = null, onNeedAccount }) {
           title="QUIZ A FRIEND"
           intro={`The same ${DUEL_CARS} cars on both phones. Right answers score up to 100, more the quicker you are. Most points wins.`}
           user={user}
+          audio={audio}
           onExit={() => setFriend(false)}
           onNeedAccount={onNeedAccount}
           prepare={duelCars}
@@ -141,9 +153,10 @@ export default function GuessCar({ onClose, user = null, onNeedAccount }) {
   return (
     <div role="dialog" aria-label="Guess the Car" style={{ position: "fixed", inset: 0, zIndex: 410, background: "#0A0A0A", color: "#F0F0F0", display: "flex", flexDirection: "column", fontFamily: "'Barlow Condensed', sans-serif" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "calc(8px + env(safe-area-inset-top)) 12px 8px", maxWidth: 560, width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
-        <div style={{ flex: 1, fontSize: 25, fontWeight: 900, letterSpacing: 1 }}>
+        <div style={{ flex: 1, minWidth: 0, fontSize: "clamp(18px, 5.6vw, 25px)", fontWeight: 900, letterSpacing: 1, whiteSpace: "nowrap" }}>
           🔍 GUESS THE <span style={{ color: "#0080F0" }}>CAR</span>
         </div>
+        <MusicButtons audio={audio} style={{ ...quietButton, width: 40, height: 40, padding: 0, fontSize: 16 }} />
         <button onClick={round ? () => setRound(null) : onClose} aria-label={round ? "Back" : "Close the game"} style={{ ...quietButton, width: 44, height: 44, padding: 0, fontSize: 18 }}>
           {round ? "←" : "✕"}
         </button>

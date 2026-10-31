@@ -270,6 +270,98 @@ export function buildSportsCar(type, color, accent = "#F5F5F5") {
   return g;
 }
 
+// The first-person view: what you see from the driver's seat, fixed to the
+// camera (which looks down -z). The dashboard and gauges along the bottom, a
+// steering wheel that turns with you, the windshield pillars and roof edge,
+// the mirror, and the front of the hood in your car's paint. Your own car's
+// body is hidden in this view, so you're never looking at its inside.
+function buildCockpit(color) {
+  const g = new THREE.Group();
+  const dash = new THREE.MeshStandardMaterial({ color: 0x15171c, roughness: 0.85, metalness: 0.1 });
+  const trim = new THREE.MeshStandardMaterial({ color: 0x24272e, roughness: 0.6, metalness: 0.3 });
+  const paint = new THREE.MeshStandardMaterial({ color, metalness: 0.6, roughness: 0.3 });
+  const glow = new THREE.MeshBasicMaterial({ color: 0x0080f0 });
+  const red = new THREE.MeshBasicMaterial({ color: 0xff3b30 });
+
+  // The hood, sloping away below the windshield.
+  const hood = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.06, 2.2), paint);
+  hood.position.set(0, -0.92, -2.3);
+  hood.rotation.x = 0.06;
+  g.add(hood);
+  // Dashboard: a long padded top with a lip, and a binnacle behind the wheel.
+  const top = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.12, 0.7), dash);
+  top.position.set(0, -0.5, -1.0);
+  top.rotation.x = 0.12;
+  const face = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.5, 0.1), dash);
+  face.position.set(0, -0.78, -0.68);
+  const binnacle = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.1, 0.3), trim);
+  binnacle.position.set(0, -0.42, -0.86);
+  g.add(top, face, binnacle);
+  // Two gauge rings with needles, behind the wheel.
+  for (const x of [-0.14, 0.14]) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.008, 6, 24), glow);
+    ring.position.set(x, -0.47, -0.84);
+    const needle = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.06, 0.004), red);
+    needle.position.set(x, -0.47, -0.835);
+    needle.geometry.translate(0, 0.03, 0);
+    g.add(ring, needle);
+    (g.userData.needles ||= []).push(needle);
+  }
+  // Steering wheel: rim, three spokes, a hub. `spin` turns with the
+  // steering inside the tilted `wheel`.
+  const wheel = new THREE.Group();
+  const spin = new THREE.Group();
+  spin.add(new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.028, 10, 36), trim));
+  for (const a of [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3]) {
+    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.2, 0.02), trim);
+    spoke.geometry.translate(0, -0.1, 0);
+    spoke.rotation.z = a + Math.PI;
+    spin.add(spoke);
+  }
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.04, 16), dash);
+  hub.rotation.x = Math.PI / 2;
+  const mark = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.01), glow);
+  mark.position.set(0, 0.2, 0.02);
+  spin.add(hub, mark);
+  wheel.add(spin);
+  wheel.position.set(0, -0.5, -0.62);
+  wheel.rotation.x = -0.32;
+  g.add(wheel);
+  // Windshield pillars and the roof edge; placed for the screen's shape.
+  // Unit-sized, then scaled to the screen in updateCockpit.
+  const pillarL = new THREE.Mesh(new THREE.BoxGeometry(1, 2.4, 0.1), dash);
+  const pillarR = pillarL.clone();
+  pillarL.rotation.z = -0.12;
+  pillarR.rotation.z = 0.12;
+  const header = new THREE.Mesh(new THREE.BoxGeometry(4, 1, 0.3), dash);
+  const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.09, 0.04), trim);
+  g.add(pillarL, pillarR, header, mirror);
+  g.userData = { ...g.userData, spin, wheel, pillarL, pillarR, header, mirror };
+  return g;
+}
+
+// Fits the cockpit to the screen and moves the wheel and gauges.
+function updateCockpit(g, camera, steer, speed, vmax) {
+  const d = 0.9; // pillars sit this far ahead of the eyes
+  const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * d;
+  const halfW = halfH * camera.aspect;
+  const { spin, wheel, pillarL, pillarR, header, mirror, needles } = g.userData;
+  // Thin pillars at the very edges and a thin roof line, so the windshield
+  // fills the screen; a smaller wheel on a tall phone screen.
+  const pw = halfW * 0.09;
+  pillarL.scale.x = pillarR.scale.x = pw;
+  pillarL.position.set(-halfW - pw * 0.2, 0, -d);
+  pillarR.position.set(halfW + pw * 0.2, 0, -d);
+  header.scale.y = halfH * 0.07;
+  header.position.set(0, halfH * 0.99, -d);
+  mirror.position.set(0, halfH * 0.84, -d + 0.05);
+  wheel.scale.setScalar(Math.max(0.55, Math.min(1, camera.aspect * 1.25)));
+  spin.rotation.z = steer * 1.6;
+  const frac = Math.min(1, Math.abs(speed) / vmax);
+  needles[0].rotation.z = 2.2 - frac * 4.4;
+  needles[1].rotation.z = 2.2 - Math.min(1, 0.3 + ((frac * 7) % 1) * 0.7) * 4.4; // revs climb through each gear
+}
+
 export const buildCar = (type, color, accent) => (type === "formula" ? buildF1Car(color, accent) : buildSportsCar(type, color, accent));
 
 // ---------- the circuit ----------
@@ -720,7 +812,11 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false, 
 
   const updateGuide = (race) => drawGuide(guideMesh, track, guideOff, race, BRAKE);
 
-  const camera = new THREE.PerspectiveCamera(60, 1, 0.12, 3000);
+  const camera = new THREE.PerspectiveCamera(60, 1, 0.05, 3000);
+  scene.add(camera); // so the cockpit, fixed to it, is drawn
+  const cockpit = buildCockpit(playerLook?.color || "#0080F0");
+  cockpit.visible = false;
+  camera.add(cockpit);
   let mode = view;
   const cam = { x: race.player.x, y: 5, z: race.player.z, h: race.player.heading };
 
@@ -728,7 +824,10 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false, 
     mode = v;
     // Hide the driver and cabin from inside; your own road car has none to hide.
     if (me.userData.driver) me.userData.driver.visible = v !== "cockpit";
-    if (me.userData.steeringWheel) me.userData.steeringWheel.visible = v === "cockpit";
+    if (me.userData.steeringWheel) me.userData.steeringWheel.visible = false;
+    // From the driver's seat your own car is hidden; the cockpit stands in.
+    me.visible = v !== "cockpit";
+    cockpit.visible = v === "cockpit";
   }
   setView(view);
 
@@ -802,11 +901,13 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false, 
     // Camera.
     const [fx, fz] = fwd(p.heading);
     if (mode === "cockpit") {
-      // At the driver's eyes, looking down the nose.
-      camera.fov = 70;
+      // In the driver's seat, looking out through the windshield, with a
+      // touch of shake at speed.
+      camera.fov = 72 + Math.min(8, Math.abs(p.speed) * 0.08) + (boosting ? 6 : 0);
       camera.up.set(0, 1, 0);
-      camera.position.set(p.x + fx * 0.45, eyeY, p.z + fz * 0.45);
-      camera.lookAt(p.x + fx * 22, eyeY - 0.55, p.z + fz * 22);
+      const shake = Math.min(1, Math.abs(p.speed) / 60) * 0.012;
+      camera.position.set(p.x - fx * 0.15, eyeY + (Math.random() - 0.5) * shake, p.z - fz * 0.15);
+      camera.lookAt(p.x + fx * 30, eyeY - 0.35, p.z + fz * 30);
     } else if (mode === "top") {
       // High and behind, tipped forward: you see well down the road, the
       // way arcade taxi games do. Pulls back a little with speed.
@@ -833,6 +934,7 @@ export function createF1Scene(canvas, race, { view = "chase", lowPower = false, 
     fovNow += (camera.fov - fovNow) * Math.min(1, dt * 5 || 1);
     camera.fov = fovNow;
     camera.updateProjectionMatrix();
+    if (mode === "cockpit") updateCockpit(cockpit, camera, p.steer || 0, p.speed, 80);
     sun.target.position.set(p.x, 0, p.z);
     sun.position.set(p.x + 40, 80, p.z + 25);
     renderer.render(scene, camera);

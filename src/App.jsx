@@ -521,6 +521,19 @@ export default function App() {
       // "tab:perks" and the like, from pages inside Settings.
       setSelected(null);
       setTab(id);
+    } else if (type === "room") {
+      // A friend's invite to an Arcade game room ("room:<game>:<code>").
+      const code = String(link).split(":")[2] || "";
+      try {
+        sessionStorage.setItem(JOIN_KEY, `${id}:${code}`);
+      } catch (e) {
+        showToast(`Couldn't open that game room. (${e.message})`);
+        return;
+      }
+      setSelected(null);
+      setPersonView(null);
+      setTab("perks");
+      setLaunch({ game: id, vehicle: null });
     } else if (type === "play") {
       // Straight into an Arcade game, in a particular car.
       setSelected(null);
@@ -1546,6 +1559,9 @@ function GlobalStyles() {
       @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap');
       * { box-sizing: border-box; margin: 0; padding: 0; }
       ::-webkit-scrollbar { width: 0; height: 0; }
+      /* Games: holding a button steers, it never selects text or opens the copy menu. */
+      .tunr-game, .tunr-game * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+      .tunr-game input, .tunr-game textarea { -webkit-user-select: text; user-select: text; }
       @keyframes fadeSlideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
       @keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
       @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(14px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }

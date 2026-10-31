@@ -3,6 +3,7 @@ import { joinRoom, quickMatch, newRoomCode, cleanCode, hostOf } from "../lib/gam
 import { takeSharedRoom } from "../lib/gameRooms.js";
 import { loadProfile } from "../lib/store.js";
 import { muted, bigButton, quietButton, field } from "./Sheet.jsx";
+import InviteSheetGame from "./InviteSheetGame.jsx";
 
 // Playing a friend, live, in any Arcade game that has it: make a room and
 // share its code (or the link), join one with a code, or Quick match with
@@ -30,6 +31,10 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
   const [start, setStart] = useState(null);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [inviting, setInviting] = useState(false);
+  // Invites sent from this room, shown as pending until they join:
+  // [{ id, name, kind: "tunr" | "link" }].
+  const [invited, setInvited] = useState([]);
   const room = useRef(null);
   const peersNow = useRef([]);
   const hooks = useRef({});
@@ -73,10 +78,18 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
     room.current?.set({ look, opts: options }).catch((e) => console.warn(e.message));
   }, [JSON.stringify(look), JSON.stringify(options)]);
 
+  // The game's music plays in the room and through the game (it can only
+  // start from a tap, so it begins when you make, join or match a room).
+  const music = () => {
+    const a = audio?.current;
+    if (a?.unlock() && a.prefs.music) a.startMusic();
+  };
+
   async function enter(roomCode) {
     if (!user) return onNeedAccount?.();
     if (!roomCode || roomCode.length < 4) return setError("Room codes are 4 letters or numbers.");
     setError("");
+    music();
     await room.current?.leave();
     try {
       room.current = await joinRoom(game, roomCode, me, {
@@ -87,6 +100,7 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
         onMessage: (e, p) => (e === "start" ? begin(p) : hooks.current[e]?.(p)),
       });
       await room.current.set({ opts: options });
+      if (roomCode !== code) setInvited([]);
       setCode(roomCode);
       setReady(false);
       setResult(null);
@@ -100,6 +114,7 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
   async function search() {
     if (!user) return onNeedAccount?.();
     setError("");
+    music();
     setStage("searching");
     try {
       cancelSearch.current = await quickMatch(game, me, (roomCode) => {
@@ -117,6 +132,8 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
   const players = [...peers].sort((a, b) => a.joinedAt - b.joinedAt).slice(0, 2);
   const full = peers.length > 2 && !players.some((p) => p.id === user?.id);
   const host = players.length === 2 ? hostOf(players) : null;
+  // Invites still out (gone once that person, or anyone for a link, joins).
+  const pending = invited.filter((p) => (p.kind === "link" ? players.length < 2 : !peers.some((x) => x.id === p.id)));
   const hostOpts = players.find((p) => p.id === host)?.opts;
 
   function begin(p) {
@@ -126,7 +143,7 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
     setResult(null);
     setStart({ ...p, opponent: { id: opp?.id, name: opp?.name || "your friend", look: opp?.look || null }, isHost: hostOf(peersNow.current.slice(0, 2)) === user.id });
     setStage("play");
-    audio?.current?.unlock();
+    music();
   }
 
   // Both ready: the host starts the game for both phones.
@@ -170,6 +187,8 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
         await navigator.clipboard.writeText(`${text}: ${url}`);
         setCopied(true);
       }
+      setInvited((list) => (list.some((p) => p.kind === "link") ? list : [...list, { id: "link", name: "Room link", kind: "link" }]));
+      setInviting(false);
     } catch (e) {
       if (e.name !== "AbortError") setError(`Couldn't share the room. (${e.message})`);
     }
@@ -181,6 +200,7 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
     await room.current?.leave();
     room.current = null;
     setPeers([]);
+    setInvited([]);
     setStage("menu");
   }
 
@@ -264,7 +284,7 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
               <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.5, color: "#8a94a3" }}>ROOM CODE</div>
               <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: 10, lineHeight: 1.1 }}>{code.length > 4 ? "QUICK" : code}</div>
               {code.length === 4 && (
-                <button onClick={share} style={{ ...quietButton, marginTop: 6, padding: "9px 16px", fontSize: 14 }}>
+                <button onClick={() => setInviting(true)} style={{ ...quietButton, marginTop: 6, padding: "9px 16px", fontSize: 14 }}>
                   {copied ? "✓ LINK COPIED" : "📤 SEND TO A FRIEND"}
                 </button>
               )}
@@ -284,7 +304,19 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
                     <span style={{ fontSize: 13, fontWeight: 900, color: p.ready ? "#4ade80" : "#8a94a3" }}>{p.ready ? "✓ READY" : "NOT READY"}</span>
                   </div>
                 ))}
-                {players.length < 2 && <div style={{ ...muted, marginTop: 4 }}>Waiting for your friend to join…</div>}
+                {players.length < 2 &&
+                  pending.map((p) => (
+                    <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", opacity: 0.85 }}>
+                      <span aria-hidden="true" style={{ width: 12, textAlign: "center", flexShrink: 0 }}>{p.kind === "link" ? "📤" : "⏳"}</span>
+                      <span style={{ flex: 1, fontSize: 16, fontWeight: 900, color: "#cbd5e1" }}>{p.kind === "link" ? "Room link sent" : `@${p.name}`}</span>
+                      <span style={{ fontSize: 13, fontWeight: 900, color: "#FACC15" }}>{p.kind === "link" ? "WAITING" : "INVITED · PENDING"}</span>
+                    </div>
+                  ))}
+                {players.length < 2 && (
+                  <div style={{ ...muted, marginTop: 4 }}>
+                    {pending.length ? "They'll show up here when they join. Keep this screen open." : "Waiting for your friend to join… Tap SEND TO A FRIEND to invite someone."}
+                  </div>
+                )}
                 {hostOpts && describe && <div style={{ ...muted, marginTop: 6, color: "#cbd5e1" }}>Playing: {describe(hostOpts)}{host !== user.id ? " (the host's pick)" : ""}</div>}
               </div>
             )}
@@ -295,6 +327,16 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
               </button>
             )}
             <div style={{ ...muted, fontSize: 12, marginTop: 8, textAlign: "center" }}>When you're both ready, it starts on both phones.</div>
+            {inviting && (
+              <InviteSheetGame
+                game={game}
+                code={code}
+                invited={invited}
+                onInvited={(p) => setInvited((list) => (list.some((x) => x.id === p.id) ? list : [...list, p]))}
+                onShareLink={share}
+                onClose={() => setInviting(false)}
+              />
+            )}
           </>
         )}
       </div>

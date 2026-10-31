@@ -153,6 +153,8 @@ export const GAME_SONG = {
   karts: "cruise",
   stack: "cruise",
   egg: "cruise",
+  park: "cruise",
+  guess: "turbo",
 };
 
 export const INTRO_BARS = 2;

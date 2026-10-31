@@ -20,6 +20,7 @@ import {
   drawControls,
 } from "../lib/parkDraw.js";
 import { RushAudio } from "../lib/rushAudio.js";
+import MusicButtons from "./MusicButtons.jsx";
 import { muted, bigButton, quietButton } from "./Sheet.jsx";
 import { GarageRow, useGarageCar, carName } from "./Showroom.jsx";
 
@@ -67,7 +68,7 @@ export default function ParkUp({ onClose, allAccess = false, user = null }) {
   const level = LEVELS[index];
 
   useEffect(() => {
-    audio.current = new RushAudio();
+    audio.current = new RushAudio({ game: "park" });
     setSfxOn(audio.current.prefs.sfx);
     return () => audio.current?.dispose();
   }, []);
@@ -88,7 +89,7 @@ export default function ParkUp({ onClose, allAccess = false, user = null }) {
     setPaused(false);
     setRound((r) => r + 1);
     setScreen("play");
-    audio.current?.unlock();
+    if (audio.current?.unlock() && audio.current.prefs.music) audio.current.startMusic();
   }
 
   function finished(g) {
@@ -178,6 +179,7 @@ export default function ParkUp({ onClose, allAccess = false, user = null }) {
             <Stars n={starsFor(level, hud.time)} size={14} />
           </div>
         )}
+        <MusicButtons audio={audio} style={{ ...quietButton, width: 44, height: 44, padding: 0, fontSize: 17 }} />
         <button
           onClick={() => {
             const on = !sfxOn;

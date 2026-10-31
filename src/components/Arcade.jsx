@@ -92,28 +92,25 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
       stack: stackBest?.floors ? `🏗️ ${stackBest.floors} high` : "",
     })[id] || "";
 
-  if (open === "rush") {
-    return (
-      <TunrRush
-        user={user}
-        startVehicle={startVehicle}
-        onClose={() => setOpen(null)}
-        onToast={onToast}
-        onNeedAccount={onNeedAccount}
-      />
-    );
-  }
-  if (open === "park") return <ParkUp user={user} onClose={() => setOpen(null)} allAccess={allAccess} />;
-  if (open === "drift") return <DriftKing user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
-  if (open === "karts") return <KartGame user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
-  if (open === "ball") return <CarSoccer user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
-  if (open === "egg") return <EggHaul user={user} onClose={() => setOpen(null)} />;
-  if (open === "drag") return <DragRace user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
-  if (open === "stack") return <CarStack user={user} onClose={() => setOpen(null)} />;
-  if (open === "guess") return <GuessCar user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
+  const game = (() => {
+    if (open === "rush") return <TunrRush user={user} startVehicle={startVehicle} onClose={() => setOpen(null)} onToast={onToast} onNeedAccount={onNeedAccount} />;
+    if (open === "park") return <ParkUp user={user} onClose={() => setOpen(null)} allAccess={allAccess} />;
+    if (open === "drift") return <DriftKing user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
+    if (open === "karts") return <KartGame user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
+    if (open === "ball") return <CarSoccer user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
+    if (open === "egg") return <EggHaul user={user} onClose={() => setOpen(null)} />;
+    if (open === "drag") return <DragRace user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
+    if (open === "stack") return <CarStack user={user} onClose={() => setOpen(null)} />;
+    if (open === "guess") return <GuessCar user={user} onClose={() => setOpen(null)} onNeedAccount={onNeedAccount} />;
+    return null;
+  })();
+  // tunr-game: holding a pedal or steering button never selects text or
+  // pops up the copy menu (style in App.jsx).
+  if (game) return <div className="tunr-game">{game}</div>;
 
   return (
     <div
+      className="tunr-game"
       role="dialog"
       aria-label="TUNR Arcade"
       style={{
