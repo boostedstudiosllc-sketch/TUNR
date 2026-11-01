@@ -2,6 +2,7 @@
 // alerts (Web Push) for this device.
 import { supabase } from "./supabase.js";
 import { withReason, errorReason } from "./errors.js";
+import { setupChanged } from "./setupSignal.js";
 
 // ---------- this device ----------
 
@@ -105,6 +106,7 @@ export async function enablePush() {
     p_auth: json.keys?.auth || "",
   });
   if (error) throw new Error(withReason("Couldn't save this device for alerts.", error));
+  setupChanged();
   return true;
 }
 

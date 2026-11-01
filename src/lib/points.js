@@ -5,6 +5,7 @@
 import { supabase } from "./supabase.js";
 import { compressImage } from "./image.js";
 import { friendlyWriteError, withReason } from "./errors.js";
+import { receiptKind } from "./receiptFile.js";
 
 // The Boosted shop isn't open yet. While false, buying, points cards and
 // missing-points reports are hidden and the app says "coming soon"; the
@@ -516,22 +517,22 @@ const RECEIPT_COPY = {
   bad_business: "Pick which Boosted business it's from.",
   bad_order: "Add the receipt or invoice number (3 to 60 characters).",
   bad_amount: "Add the amount you paid, between $1 and $10,000.",
-  need_receipt: "Add a photo of the receipt or invoice.",
+  need_receipt: "Add the receipt or invoice: a photo or a PDF.",
   rate_limited: "One receipt a day. Send the next one tomorrow.",
   duplicate: "That receipt number has already been sent. Each receipt counts once.",
 };
 
-// A photo of a receipt or invoice from any Boosted business, for points once
+// A photo (camera or photo library) or PDF of a receipt or invoice from any Boosted business, for points once
 // TUNR checks it. The photo is private (only you and TUNR's admins see it).
 export async function submitReceipt({ userId, business, orderRef, amountCents, file }) {
   need();
   if (!userId) throw new Error("Sign in to send a receipt.");
-  if (!file) throw new Error(RECEIPT_COPY.need_receipt);
-  if (!file.type.startsWith("image/")) throw new Error("Pick a photo of the receipt (an image file).");
-  const small = await compressImage(file, { maxDim: 1800 });
-  const path = `${userId}/${Date.now()}.jpg`;
-  const up = await supabase.storage.from("receipts").upload(path, small, { contentType: "image/jpeg", upsert: false });
-  if (up.error) throw new Error(withReason("Couldn't upload the receipt photo.", up.error));
+  const kind = receiptKind(file);
+  if (kind.error) throw new Error(kind.error);
+  const body = kind.kind === "image" ? await compressImage(file, { maxDim: 1800 }) : file;
+  const path = `${userId}/${Date.now()}.${kind.ext}`;
+  const up = await supabase.storage.from("receipts").upload(path, body, { contentType: kind.contentType, upsert: false });
+  if (up.error) throw new Error(withReason(`Couldn't upload the receipt ${kind.kind === "pdf" ? "PDF" : "photo"}.`, up.error));
   const { data, error } = await supabase.rpc("submit_receipt", { p_business: business, p_order_ref: orderRef.trim(), p_amount_cents: amountCents, p_receipt_path: path });
   if (error) throw new Error(withReason("Couldn't send your receipt.", error));
   if (data?.status !== "ok") throw new Error(RECEIPT_COPY[data?.status] || `Couldn't send your receipt. (${data?.status})`);

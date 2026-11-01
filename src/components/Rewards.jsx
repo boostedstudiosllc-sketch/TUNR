@@ -50,6 +50,7 @@ import TunrTuesdaysAdmin from "./TunrTuesdaysAdmin.jsx";
 import AddressFields, { loadSavedAddress, rememberAddress } from "./AddressFields.jsx";
 import { loadStickerSettings } from "../lib/stickerOrders.js";
 import Leaderboard from "./Leaderboard.jsx";
+import { receiptKind, RECEIPT_ACCEPT } from "../lib/receiptFile.js";
 import PrintPage from "./PrintPage.jsx";
 
 const KIND_LABELS = { merch: "MERCH", discount: "DISCOUNT", experience: "EXPERIENCE", other: "REWARD" };
@@ -816,10 +817,36 @@ function ReceiptForm({ user, points, onToast }) {
             <input style={{ ...field, flex: 2 }} placeholder="Receipt / invoice #" maxLength={60} value={orderRef} onChange={(e) => setOrderRef(e.target.value)} />
             <input style={{ ...field, flex: 1 }} placeholder="$ paid" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.$]/g, ""))} />
           </div>
-          <label style={{ display: "block", marginTop: 10, padding: "14px 12px", borderRadius: 10, border: "1px dashed var(--n-3a4250)", textAlign: "center", color: file ? "var(--a-86efac)" : "var(--n-9aa4b2)", fontSize: 13.5, fontWeight: 800, cursor: "pointer" }}>
-            {file ? `📎 ${file.name}` : "📷 Add a photo of the receipt"}
-            <input type="file" accept="image/*" capture="environment" onChange={(e) => setFile(e.target.files?.[0] || null)} style={{ display: "none" }} />
-          </label>
+          {file && (
+            <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 10, border: "1px solid #166534", color: "var(--a-86efac)", fontSize: 13.5, fontWeight: 800, overflowWrap: "anywhere" }}>
+              {receiptKind(file).kind === "pdf" ? "📄" : "🖼️"} {file.name}
+            </div>
+          )}
+          {/* Two ways in: the camera, or a photo / PDF already on the phone. */}
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            {[
+              ["📷 TAKE PHOTO", "📷 RETAKE", { accept: "image/*", capture: "environment" }],
+              ["🖼️ PHOTO OR FILE", "🖼️ PICK ANOTHER", { accept: RECEIPT_ACCEPT }],
+            ].map(([name, again, attrs]) => (
+              <label key={name} style={{ flex: 1, padding: "13px 6px", borderRadius: 10, border: "1px dashed var(--n-3a4250)", textAlign: "center", color: "var(--n-9aa4b2)", fontSize: 13.5, fontWeight: 800, cursor: "pointer" }}>
+                {file ? again : name}
+                <input
+                  type="file"
+                  {...attrs}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] || null;
+                    e.target.value = "";
+                    if (!f) return;
+                    const k = receiptKind(f);
+                    setError(k.error || "");
+                    if (!k.error) setFile(f);
+                  }}
+                  style={{ display: "none" }}
+                />
+              </label>
+            ))}
+          </div>
+          <div style={{ ...muted, fontSize: 11.5, marginTop: 4 }}>A photo from your camera roll, a screenshot or a PDF invoice all work.</div>
           <div style={{ ...muted, fontSize: 12.5, marginTop: 6 }}>
             <b style={{ color: "#FACC15" }}>⭐ {points}</b> points once it's checked. One receipt a day.
           </div>

@@ -8,6 +8,7 @@ import { SpinCard } from "./SpinWheel.jsx";
 import { loadPhotoBallot } from "../lib/photoWeek.js";
 import { loadTodaysCar } from "../lib/guessCar.js";
 import { loadTaco } from "../lib/tunrTuesdays.js";
+import { SETUP_EVENT } from "../lib/setupSignal.js";
 
 // The points checklist (the 📋 in the header): every way to earn points as a
 // task, with what's done today, this week and for good, and a GO button to
@@ -80,8 +81,10 @@ async function loadTasks(user) {
     console.warn(e.message);
     return null;
   });
-  const [starter, streak, rates, recent, game, profile, points, unclaimed, ballot, carToday, taco] = await Promise.all([
-    claimStarterPoints(),
+  // Setup steps are paid before the waiting points are loaded, so a step
+  // just done shows CLAIM now (not on the next open).
+  const starter = await claimStarterPoints();
+  const [streak, rates, recent, game, profile, points, unclaimed, ballot, carToday, taco] = await Promise.all([
     loadMyStreak(),
     loadPointsSettings(),
     loadPointsSince(user.id, monthStart),
@@ -222,10 +225,14 @@ export default function Checklist({ user, onToast }) {
     // New points anywhere in the app (or coming back to it) update the badge.
     const again = () => refreshWaiting();
     const onShow = () => document.visibilityState === "visible" && refreshWaiting();
+    // A setup step done (photo, car, alerts): pay it and show CLAIM.
+    const setup = () => refresh();
     window.addEventListener("tunr:points", again);
+    window.addEventListener(SETUP_EVENT, setup);
     document.addEventListener("visibilitychange", onShow);
     return () => {
       window.removeEventListener("tunr:points", again);
+      window.removeEventListener(SETUP_EVENT, setup);
       document.removeEventListener("visibilitychange", onShow);
     };
   }, [user?.id]);

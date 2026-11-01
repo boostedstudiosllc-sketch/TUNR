@@ -14,6 +14,7 @@ import { normalizePasscode } from "./passcode.js";
 import { kickPush } from "./alerts.js";
 import { compressImage } from "./image.js";
 import { passwordProblem } from "./passwordRules.js";
+import { setupChanged } from "./setupSignal.js";
 
 const RSVP_KEY = "tunr.rsvps.v1";
 const SUBMITTED_KEY = "tunr.submitted.v1";
@@ -408,6 +409,7 @@ export async function saveVehicle(vehicle, ownerId) {
       if (e2) console.warn("Couldn't add the cover to the gallery:", e2.message);
     }
   }
+  setupChanged(); // "Add your car" on the points checklist
 }
 
 export async function deleteVehicle(vehicleId) {
@@ -536,6 +538,7 @@ export async function saveProfile(profile, userId = null) {
       if (error.code === "23505") throw new Error("That username is taken — pick another.");
       throw new Error(friendlyWriteError(error, "Couldn't save your profile."));
     }
+    if (profile.avatarUrl) setupChanged();
     return profile;
   }
   write(PROFILE_KEY, profile);

@@ -29,6 +29,11 @@ insert into public.vehicles (owner_id, make, model) values (tests.id('ana'), 'Ho
 select tests.login(tests.id('ana'));
 select tests.eq(((public.claim_starter_points())->>'added')::int, 15, 'photo (5) and car (10) pay; username and bio pay nothing');
 select tests.eq(((public.claim_starter_points())->>'added')::int, 0, 'setup points are paid once');
+select tests.eq((select count(*) from public.point_ledger where user_id = tests.id('ana') and reason in ('starter_profile', 'starter_car') and claimed_at is null)::int, 2,
+  'setup points wait in the checklist for CLAIM');
+select tests.ok(((public.claim_points(null))->>'claimed')::int >= 15, 'CLAIM adds the setup points');
+select tests.eq((select count(*) from public.point_ledger where user_id = tests.id('ana') and reason in ('starter_profile', 'starter_car') and claimed_at is null)::int, 0,
+  'nothing from setup is left to claim');
 
 -- ---------- host badges ----------
 select tests.logout();
