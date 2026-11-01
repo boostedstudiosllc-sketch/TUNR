@@ -9,7 +9,8 @@
 #
 # Needs a Postgres 15+ server you can create databases on, picked with the
 # usual PG* variables, e.g.  PGHOST=localhost PGUSER=postgres PGPASSWORD=postgres
-# (GitHub runs it on every push: .github/workflows/db-tests.yml).
+# (GitHub runs it before each migration: .github/workflows/migrate.yml.
+# For a local server made for you: npm run test:db:local.)
 # Never point it at the real Supabase database: it creates and drops its own.
 
 set -euo pipefail

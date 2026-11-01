@@ -19,7 +19,7 @@ Written October 2026 from the code on branch `claude/tunr-car-meet-app-f9dqlh`. 
 ## Start here (for the next developer)
 
 1. Read section 2 (architecture) and the **Security model** in section 5. The one idea to keep: the anon key is public, so every rule lives in the database (RLS, triggers, `security definer` functions), never only in the UI.
-2. Run the two test suites (section 6): `npm test` for app logic, `npm run test:db` for database rules. Both must pass before you push.
+2. Run the two test suites (section 6): `npm test` for app logic, `npm run test:db` (or `npm run test:db:local`, which starts a local Postgres for you) for database rules. Both must pass before you push. If you work with Claude Code, the **test gate** does this for you: see "Tests move with the code" in section 6.
 3. Changing the database = a new numbered file in `supabase/migrations/` plus a test in `supabase/tests/`. Pushing applies it to production (after the policy tests pass).
 4. Follow `CLAUDE.md`: errors that say what went wrong, theme colours (`npm run theme`), plain summaries for the owner.
 5. Each feature has a row in the inventory (section 1) or a note in section 10 naming its files and tables. Each migration and most `src/lib` modules open with a comment saying what they're for.
@@ -276,13 +276,18 @@ cp .env.example .env.local      # fill in the three VITE_ values (or leave empty
 npm run dev                     # Vite dev server, front end only
 npm test                        # node --test "test/*.test.js" (198 tests today, no DB or network)
 npm run test:db                 # database policy tests (needs a local Postgres, see section 5)
+npm run test:db:local           # same, starting (or creating) a local Postgres first
 npm run build                   # outputs dist/
 npm run preview                 # serves dist/
 ```
 
 - `npm run dev` doesn't run `api/`. To exercise the flyer reader, push or the email routes locally, use `vercel dev` (Vercel CLI, with the env vars pulled using `vercel env pull`).
 - Use Node 22 LTS. The test script relies on Node's built-in glob support for `--test` (Node 21+).
-- Tests cover pure logic and the API handlers with injected `fetch` and `web-push` stand-ins: dates and recurrence, geo, geocode judging, flyer normalization, Gemini handling, push delivery, the confirm-later email schedule, error wording, email typo checks, passcodes, claims and photographer links. CI runs the database policy tests (before migrations); it doesn't run `npm test` or the build yet. Modules that import `supabase.js` can't be loaded by node tests, so game and maths logic lives in separate pure modules (`*Engine.js`, `gameRooms.js`, `wrappedSlides.js`, `remoteMotion.js`, `weather.js`) that can.
+- Tests cover pure logic and the API handlers with injected `fetch` and `web-push` stand-ins: dates and recurrence, geo, geocode judging, flyer normalization, Gemini handling, push delivery, the confirm-later email schedule, error wording, email typo checks, passcodes, claims and photographer links. CI runs `npm test` and the build on every push and pull request (`.github/workflows/tests.yml`), and the database policy tests before each migration (`migrate.yml`). Modules that import `supabase.js` can't be loaded by node tests, so game and maths logic lives in separate pure modules (`*Engine.js`, `gameRooms.js`, `wrappedSlides.js`, `remoteMotion.js`, `weather.js`) that can.
+- **Tests move with the code.** Every change updates the tests that cover it (rule in `CLAUDE.md`). Three pieces keep that automatic:
+  - `.claude/agents/test-guardian.md`: a Claude Code agent that reads the change, writes or updates the policy tests (`supabase/tests`) and unit tests (`test/`), runs all suites and the build, and reports.
+  - `scripts/test-gate.sh`: the test gate, run by Claude Code at the end of every turn (Stop hook in `.claude/settings.json`; a SessionStart hook records where the session began, in `.git/tunr-test-base`). If a migration changed without a policy test, logic in `src/lib`/`src/data`/`api` changed without a unit test, or `npm test` / the policy tests fail, it sends the turn back with "use the test-guardian agent". A missing-test note can be waved off once with a reason (copy or style changes); failing tests can't (after 3 tries it lets go and says so).
+  - `.github/workflows/tests.yml`: the same unit tests and build on GitHub, so a break shows a red X even when the change didn't come through Claude Code.
 - **Deploy:** Vercel builds from GitHub automatically (it detects Vite: `npm run build`, output `dist`). The functions in `api/` deploy with it. Migrations deploy separately through the GitHub Action, so land the migration before or together with the code that needs it.
 - `README.md` is partly out of date. It describes the early localStorage prototype and pasting `001_init.sql` by hand. This document replaces it.
 

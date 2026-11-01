@@ -1,0 +1,25 @@
+name: Tests
+
+# Every push and pull request: the unit tests and a production build, so a
+# broken change shows a red X on GitHub before (and even if) Vercel deploys it.
+# The database policy tests run in migrate.yml, ahead of each migration.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unit-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: Build
+        run: npm run build
