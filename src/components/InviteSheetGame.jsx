@@ -5,7 +5,9 @@ import { inviteToGame, loadInviteFriends, findPlayer } from "../lib/gameInvites.
 // "Send to a friend" in a game room: invite someone on TUNR (they get an
 // alert that opens the room) or share the link outside the app.
 // onInvited({ id, name, kind: "tunr" | "link" }) adds them as pending.
-export default function InviteSheetGame({ game, code, invited, onInvited, onShareLink, onClose }) {
+// Convoys reuse it: invite(person) sends their invite instead, and title /
+// what say "SEND CONVOY …" and "this convoy".
+export default function InviteSheetGame({ game, code, invited, onInvited, onShareLink, onClose, invite = null, title = null, what = "this room" }) {
   const [friends, setFriends] = useState(null);
   const [error, setError] = useState("");
   const [typed, setTyped] = useState("");
@@ -21,7 +23,7 @@ export default function InviteSheetGame({ game, code, invited, onInvited, onShar
     setBusy(person.id);
     setError("");
     try {
-      await inviteToGame(person.id, game, code);
+      await (invite ? invite(person) : inviteToGame(person.id, game, code));
       onInvited({ ...person, kind: "tunr" });
     } catch (e) {
       setError(e.message);
@@ -49,14 +51,14 @@ export default function InviteSheetGame({ game, code, invited, onInvited, onShar
         style={{ width: "100%", maxWidth: 560, maxHeight: "80vh", overflowY: "auto", background: "#121417", borderTop: "1px solid #2a2a2a", borderRadius: "18px 18px 0 0", padding: "16px 16px calc(20px + env(safe-area-inset-bottom))", boxSizing: "border-box" }}
       >
         <div style={{ display: "flex", alignItems: "center" }}>
-          <div style={{ flex: 1, fontSize: 20, fontWeight: 900 }}>SEND ROOM {code}</div>
+          <div style={{ flex: 1, fontSize: 20, fontWeight: 900 }}>{title || `SEND ROOM ${code}`}</div>
           <button onClick={onClose} aria-label="Close" style={{ ...quietButton, width: 36, height: 36, padding: 0 }}>
             ✕
           </button>
         </div>
 
         <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.5, color: "#8a94a3", marginTop: 12 }}>ON TUNR</div>
-        <div style={{ ...muted, fontSize: 12.5 }}>They get an alert that opens this room.</div>
+        <div style={{ ...muted, fontSize: 12.5 }}>They get an alert that opens {what}.</div>
         <form onSubmit={byName} style={{ display: "flex", gap: 8, marginTop: 8 }}>
           <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="@username" autoCapitalize="none" aria-label="Username" style={{ ...field, flex: 1 }} />
           <button type="submit" disabled={!typed.trim() || Boolean(busy)} style={{ ...bigButton, width: 96, marginTop: 0, padding: "10px 0", fontSize: 13 }}>
@@ -87,7 +89,7 @@ export default function InviteSheetGame({ game, code, invited, onInvited, onShar
         ))}
 
         <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.5, color: "#8a94a3", marginTop: 16 }}>OUTSIDE TUNR</div>
-        <div style={{ ...muted, fontSize: 12.5 }}>Text, Instagram, anywhere: a link straight into this room.</div>
+        <div style={{ ...muted, fontSize: 12.5 }}>Text, Instagram, anywhere: a link straight into {what}.</div>
         <button onClick={onShareLink} style={{ ...quietButton, marginTop: 8, padding: "12px 0", fontSize: 14 }}>
           📤 SHARE THE LINK
         </button>

@@ -22,6 +22,7 @@ import { useAccount } from "../lib/account.js";
 import { ConfirmToChat } from "./ConfirmEmail.jsx";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton, Chip } from "./Sheet.jsx";
 import DirectionsIcon from "./DirectionsIcon.jsx";
+import { startConvoy, openConvoy } from "../lib/convoy.js";
 
 const AS_TEXT = { car: "🚗", photographer: "📸", both: "🚗📸" };
 
@@ -149,6 +150,21 @@ export default function LinkupDetail({ linkup, user, miles, onClose, onChanged, 
               >
                 <DirectionsIcon size={15} /> DIRECTIONS
               </a>
+            )}
+            {(role === "host" || role === "in") && (
+              <button
+                disabled={busy}
+                onClick={() =>
+                  act(async () => {
+                    const { id } = await startConvoy(null, linkup.id);
+                    openConvoy(id);
+                    onClose();
+                  })
+                }
+                style={{ ...quietButton, marginTop: 8, padding: "10px 0", fontSize: 13 }}
+              >
+                🚗 {linkup.kind === "cruise" ? "ROLL OUT TOGETHER" : "DRIVE THERE TOGETHER"} · LIVE CONVOY MAP
+              </button>
             )}
           </>
         )}

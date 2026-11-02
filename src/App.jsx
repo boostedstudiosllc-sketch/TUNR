@@ -72,6 +72,8 @@ import { CAR_PARAM } from "./lib/buildpage.js";
 import BuildPage from "./components/BuildPage.jsx";
 import PhotoOfWeek from "./components/PhotoOfWeek.jsx";
 import { JOIN_KEY } from "./lib/gameRooms.js";
+import Convoy from "./components/Convoy.jsx";
+import { joinConvoy, CONVOY_KEY, OPEN_EVENT as CONVOY_OPEN } from "./lib/convoy.js";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "✨ Showcase", "⭐ Points", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -147,6 +149,47 @@ export default function App() {
   const [locating, setLocating] = useState(false);
   // A game to start ("play:rush:<car id>" from the garage's DRIVE button).
   const [launch, setLaunch] = useState(null);
+  // The convoy you're in (Convoy.jsx). It stays mounted while minimised so
+  // your location keeps sharing as you use the rest of the app.
+  const [convoyId, setConvoyId] = useState(() => {
+    try {
+      return localStorage.getItem(CONVOY_KEY) || null;
+    } catch (e) {
+      console.warn(`Couldn't read the convoy on this phone. (${e.message})`);
+      return null;
+    }
+  });
+  const [convoyOpen, setConvoyOpen] = useState(false);
+  useEffect(() => {
+    const open = (e) => {
+      const id = e.detail?.id;
+      if (!id) return;
+      try {
+        localStorage.setItem(CONVOY_KEY, id);
+      } catch (err) {
+        console.warn(`Couldn't remember the convoy on this phone. (${err.message})`);
+      }
+      setConvoyId(id);
+      setConvoyOpen(true);
+    };
+    window.addEventListener(CONVOY_OPEN, open);
+    return () => window.removeEventListener(CONVOY_OPEN, open);
+  }, []);
+  // A convoy code from a link (?convoy=CODE) or an invite alert ("convoy:CODE").
+  const [convoyCode, setConvoyCode] = useState(() => (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("convoy")) || null);
+  useEffect(() => {
+    if (!convoyCode || !user) return;
+    const code = convoyCode;
+    setConvoyCode(null);
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("convoy")) {
+      params.delete("convoy");
+      window.history.replaceState(null, "", `${window.location.pathname}${params.size ? `?${params}` : ""}`);
+    }
+    joinConvoy(code)
+      .then(({ id }) => window.dispatchEvent(new CustomEvent(CONVOY_OPEN, { detail: { id } })))
+      .catch((e) => showToast(e.message));
+  }, [convoyCode, user]);
 
   // A friend's game room link (?play=<game>&room=CODE, or the older
   // ?drag=CODE): into the Arcade, that game, that room.
@@ -518,6 +561,8 @@ export default function App() {
       setCommunityOpen({ type, id });
     } else if (type === "person") {
       setPersonView(id);
+    } else if (type === "convoy") {
+      setConvoyCode(id);
     } else if (type === "tab") {
       // "tab:perks" and the like, from pages inside Settings.
       setSelected(null);
@@ -1439,6 +1484,30 @@ export default function App() {
           onOpenPerson={setPersonView}
           onJoined={refreshEvents}
         />
+      )}
+
+      {convoyId && user && (
+        <Convoy
+          key={convoyId}
+          id={convoyId}
+          user={user}
+          hidden={!convoyOpen}
+          onMinimize={() => setConvoyOpen(false)}
+          onClosed={() => {
+            setConvoyOpen(false);
+            setConvoyId(null);
+          }}
+          onToast={showToast}
+        />
+      )}
+      {convoyId && user && !convoyOpen && (
+        <button
+          onClick={() => setConvoyOpen(true)}
+          aria-label="Open your convoy"
+          style={{ position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: "calc(74px + env(safe-area-inset-bottom))", zIndex: 150, padding: "9px 16px", borderRadius: 999, border: "1px solid #10B981", background: "var(--n-0b1a13)", color: "#34D399", fontSize: 14, fontWeight: 900, letterSpacing: 1, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", boxShadow: "0 6px 20px rgba(0,0,0,0.4)" }}
+        >
+          🚗 CONVOY · OPEN MAP
+        </button>
       )}
 
       {personView && (

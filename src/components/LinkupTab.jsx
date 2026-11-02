@@ -7,12 +7,14 @@ import { Badges } from "./Badge.jsx";
 import LinkupForm from "./LinkupForm.jsx";
 import LinkupDetail from "./LinkupDetail.jsx";
 import LinkupTerms from "./LinkupTerms.jsx";
+import ConvoyHub from "./ConvoyHub.jsx";
 import { muted, bigButton, quietButton } from "./Sheet.jsx";
 import { useAccount } from "../lib/account.js";
 
 // Linkups: who's heading out today or tomorrow, and starting your own.
 export default function LinkupTab({ user, position, openId, onOpened, onNeedAccount, onToast, onOpenPerson, onShowTerms, onOpenAlerts }) {
   const [linkups, setLinkups] = useState(null);
+  const [convoyHub, setConvoyHub] = useState(false);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [openLinkup, setOpenLinkup] = useState(null);
@@ -92,6 +94,12 @@ export default function LinkupTab({ user, position, openId, onOpened, onNeedAcco
           ⚡ START A LINKUP
         </button>
       )}
+      {!unconfirmed && (
+        <button onClick={() => setConvoyHub(true)} style={{ ...quietButton, marginTop: 8, padding: "12px 0", fontSize: 14 }}>
+          🚗 CONVOY: DRIVE TOGETHER, SEE EACH OTHER ON THE MAP
+        </button>
+      )}
+      {convoyHub && <ConvoyHub onClose={() => setConvoyHub(false)} />}
       {!home && (
         <button onClick={onOpenAlerts} style={{ ...quietButton, marginTop: 8, padding: "10px 0", fontSize: 12 }}>
           🔔 GET ALERTED WHEN ONE STARTS NEAR YOU
