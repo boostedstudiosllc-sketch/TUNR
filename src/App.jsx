@@ -1558,7 +1558,7 @@ function EmptyState({ title, sub }) {
 function GlobalStyles() {
   return (
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap');
       * { box-sizing: border-box; margin: 0; padding: 0; }
       ::-webkit-scrollbar { width: 0; height: 0; }
       /* Games: holding a button steers, it never selects text or opens the copy menu. */

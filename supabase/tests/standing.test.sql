@@ -32,4 +32,15 @@ select tests.logout();
 update public.profiles set city = 'Macon, GA' where id = tests.id('atl29');
 select tests.eq((public.profile_standing(tests.id('atl29')))->>'area', 'TUNR', 'a city with few members is ranked across TUNR');
 
+-- Your own counts for the time slip (114), never anyone else's.
+select tests.login(tests.id('atl3'));
+select tests.eq(((public.my_activity())->>'checkins')::int, 3, 'my_activity counts your check-ins');
+select tests.eq(((public.my_activity())->>'hosted')::int, 0, 'and meets you hosted (none yet)');
+select tests.eq(public.my_activity() ?& array['checkins', 'hosted', 'photos', 'linkups', 'posts'], true, 'every row of the slip is there');
+select tests.login(tests.id('newbie'));
+select tests.eq(((public.my_activity())->>'checkins')::int, 0, 'someone else only ever sees their own counts');
+select tests.login(null);
+select tests.fails($$ select public.my_activity() $$, 'permission denied', 'signed out, there is nothing to count');
+select tests.logout();
+
 rollback;
