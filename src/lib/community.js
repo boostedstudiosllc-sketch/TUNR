@@ -132,6 +132,7 @@ export async function createPost(draft, userId) {
     place: draft.tag === "spot" ? (draft.place || "").trim() || null : null,
     lat: draft.tag === "spot" ? draft.lat ?? null : null,
     lng: draft.tag === "spot" ? draft.lng ?? null : null,
+    ...(draft.tag === "spot" ? { spot_vibes: draft.vibes || [], spot_best_time: draft.bestTime || null, spot_security: draft.security || null } : {}),
   });
   if (error) throw new Error(friendlyWriteError(error, "Couldn't post that."));
   return id;

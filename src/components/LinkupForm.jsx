@@ -30,7 +30,9 @@ function startsLine(start) {
 }
 
 // Starting a linkup: what, when, where, and who can see the spot.
-export default function LinkupForm({ user, onClose, onPosted, onToast }) {
+// initial: fields to start with, e.g. a photo spot's name and pin
+// ({ kind, place, lat, lng, note }) from PhotoSpots' SHOOT HERE.
+export default function LinkupForm({ user, onClose, onPosted, onToast, initial = null }) {
   const [draft, setDraft] = useState(() => ({
     kind: "photos",
     when: defaultPick().day,
@@ -43,9 +45,12 @@ export default function LinkupForm({ user, onClose, onPosted, onToast }) {
     note: "",
     visibility: "public",
     goingAs: "car",
+    ...(initial || {}),
   }));
-  // Coordinates came from the phone, not from looking up the typed name.
-  const [fromGps, setFromGps] = useState(false);
+  // Coordinates came from the phone (or the photo spot's pin), not from
+  // looking up the typed name.
+  const [fromGps, setFromGps] = useState(initial?.lat != null);
+  const atSpot = initial?.lat != null && draft.lat === initial.lat && draft.lng === initial.lng;
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const set = (patch) => setDraft((d) => ({ ...d, ...patch }));
@@ -166,7 +171,7 @@ export default function LinkupForm({ user, onClose, onPosted, onToast }) {
         }}
       />
       <button disabled={busy === "gps"} onClick={hereNow} style={{ ...quietButton, marginTop: 8, padding: "10px 0" }}>
-        {busy === "gps" ? "FINDING YOU…" : fromGps ? `📍 USING WHERE YOU ARE${draft.area ? ` · ${draft.area.toUpperCase()}` : ""}` : "📍 I'M HERE NOW"}
+        {busy === "gps" ? "FINDING YOU…" : fromGps && atSpot ? "📍 PINNED AT THE PHOTO SPOT" : fromGps ? `📍 USING WHERE YOU ARE${draft.area ? ` · ${draft.area.toUpperCase()}` : ""}` : "📍 I'M HERE NOW"}
       </button>
 
       <div style={{ ...label, marginTop: 16 }}>THE PLAN (OPTIONAL)</div>

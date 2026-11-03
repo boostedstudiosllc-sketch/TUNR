@@ -14,6 +14,7 @@ import { useAccount } from "../lib/account.js";
 import { VoteBox, Author, ReportSheet } from "./CommunityBits.jsx";
 import Sheet, { muted, field, bigButton } from "./Sheet.jsx";
 import DirectionsIcon from "./DirectionsIcon.jsx";
+import { SpotFacts } from "./PhotoSpots.jsx";
 
 // One post: the post, votes, comments with replies, and the answer that
 // solved it. Mods can pin, lock and remove.
@@ -176,6 +177,7 @@ export default function PostView({ postId, user, onClose, onToast, onNeedAccount
         </div>
       )}
 
+      {post.tag === "spot" && <SpotFacts spot={post} />}
       {post.tag === "spot" && post.lat != null && (
         <a
           href={`https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${post.lat},${post.lng}`}

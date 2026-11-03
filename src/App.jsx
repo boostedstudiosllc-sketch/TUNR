@@ -73,6 +73,8 @@ import BuildPage from "./components/BuildPage.jsx";
 import PhotoOfWeek from "./components/PhotoOfWeek.jsx";
 import { JOIN_KEY } from "./lib/gameRooms.js";
 import Convoy from "./components/Convoy.jsx";
+import PhotoSpots from "./components/PhotoSpots.jsx";
+import { OPEN_EVENT as SPOTS_OPEN } from "./lib/photoSpots.js";
 import { joinConvoy, CONVOY_KEY, OPEN_EVENT as CONVOY_OPEN } from "./lib/convoy.js";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "✨ Showcase", "⭐ Points", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
@@ -160,6 +162,13 @@ export default function App() {
     }
   });
   const [convoyOpen, setConvoyOpen] = useState(false);
+  // Photo spots: the discover screen (PhotoSpots.jsx), opened from anywhere.
+  const [spotsOpen, setSpotsOpen] = useState(false);
+  useEffect(() => {
+    const open = () => setSpotsOpen(true);
+    window.addEventListener(SPOTS_OPEN, open);
+    return () => window.removeEventListener(SPOTS_OPEN, open);
+  }, []);
   useEffect(() => {
     const open = (e) => {
       const id = e.detail?.id;
@@ -896,6 +905,19 @@ export default function App() {
               }}
             />
           )}
+          {!search && (
+            <button
+              onClick={() => setSpotsOpen(true)}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, marginTop: 10, padding: "12px 14px", borderRadius: 12, border: "1px solid var(--n-1f2a3a)", background: "linear-gradient(135deg, var(--n-0b1e3f), var(--n-111111))", color: "var(--n-f0f0f0)", textAlign: "left", cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" }}
+            >
+              <span aria-hidden="true" style={{ fontSize: 28 }}>📸</span>
+              <span style={{ flex: 1 }}>
+                <span style={{ display: "block", fontSize: 17, fontWeight: 900, letterSpacing: 0.5 }}>PHOTO SPOTS</span>
+                <span style={{ display: "block", fontSize: 12.5, color: "var(--n-9aa4b2)", fontFamily: "'Barlow', sans-serif" }}>Where to shoot your car: bridges, rooftops, murals, night lights</span>
+              </span>
+              <span aria-hidden="true" style={{ fontSize: 20, color: "var(--n-9aa4b2)" }}>›</span>
+            </button>
+          )}
           <div
             style={{
               display: "flex",
@@ -1155,7 +1177,10 @@ export default function App() {
               }}
               style={{ accentColor: "#38BDF8" }}
             />
-            📸 Show photo spots from the forums
+            📸 Show photo spots
+            <button onClick={(e) => (e.preventDefault(), setSpotsOpen(true))} style={{ marginLeft: "auto", background: "none", border: "none", color: "var(--a-3cabfd)", fontWeight: 800, fontSize: 12.5, cursor: "pointer", padding: 0 }}>
+              Browse all ›
+            </button>
           </label>
           <MapView
             events={mapEvents}
@@ -1486,6 +1511,19 @@ export default function App() {
         />
       )}
 
+      {spotsOpen && (
+        <PhotoSpots
+          user={user}
+          onClose={() => setSpotsOpen(false)}
+          onToast={showToast}
+          onShowTerms={() => setShowTerms(true)}
+          onNeedAccount={() => {
+            setSpotsOpen(false);
+            setTab("profile");
+            showToast("Create a free account first");
+          }}
+        />
+      )}
       {convoyId && user && (
         <Convoy
           key={convoyId}

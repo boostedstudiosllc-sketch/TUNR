@@ -5,13 +5,18 @@ import { compressImage } from "../lib/image.js";
 import { currentPosition } from "../lib/alerts.js";
 import { geocodeLocation, reverseGeocode } from "../lib/geocode.js";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton, Chip } from "./Sheet.jsx";
+import { VIBES, BEST_TIMES, SECURITY, MAX_VIBES, toggleVibe } from "../lib/spotRules.js";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 // A new post in a forum. Photo-spot posts can carry a map pin.
-export default function PostForm({ forum, forums = [], user, onClose, onPosted, onToast }) {
+export default function PostForm({ forum, forums = [], user, onClose, onPosted, onToast, initialTag = "discussion" }) {
   const [forumId, setForumId] = useState(forum?.id || "");
-  const [tag, setTag] = useState("discussion");
+  const [tag, setTag] = useState(initialTag);
+  // Photo spots: the kind of shot, the best time, how security is (116).
+  const [vibes, setVibes] = useState([]);
+  const [bestTime, setBestTime] = useState(null);
+  const [security, setSecurity] = useState(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [photos, setPhotos] = useState([]);
@@ -65,7 +70,8 @@ export default function PostForm({ forum, forums = [], user, onClose, onPosted, 
         if (found.status === "none") throw new Error(`Couldn't find “${place.trim()}” on the map. Add the street or city, or tap “I'm here”.`);
         spot = { lat: found.lat, lng: found.lng };
       }
-      const id = await createPost({ forumId, tag, title, body, photoUrls: photos, place, lat: spot?.lat, lng: spot?.lng }, user.id);
+      if (tag === "spot" && !spot) throw new Error("Pin the spot: type where it is, or tap “I'm here”.");
+      const id = await createPost({ forumId, tag, title, body, photoUrls: photos, place, lat: spot?.lat, lng: spot?.lng, vibes, bestTime, security }, user.id);
       onToast("Posted");
       onPosted(id);
     } catch (e) {
@@ -140,7 +146,40 @@ export default function PostForm({ forum, forums = [], user, onClose, onPosted, 
           <button disabled={busy === "gps"} onClick={hereNow} style={{ ...quietButton, marginTop: 8, padding: "10px 0" }}>
             {busy === "gps" ? "FINDING YOU…" : pin ? "📍 PINNED WHERE YOU ARE" : "📍 I'M HERE"}
           </button>
-          <div style={{ ...muted, fontSize: 11.5, marginTop: 4 }}>Shows on the map's Photo spots layer. Public places only — no one's home.</div>
+          <div style={{ ...muted, fontSize: 11.5, marginTop: 4 }}>Shows in Photo spots and on the map. Public places only — no one's home.</div>
+
+          <div style={{ ...label, marginTop: 14 }}>
+            WHAT KIND OF SHOT ({vibes.length}/{MAX_VIBES})
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {VIBES.map(([id, icon, name]) => (
+              <span key={id} style={{ flex: "0 0 auto" }}>
+                <Chip active={vibes.includes(id)} onClick={() => setVibes((v) => toggleVibe(v, id))}>
+                  {icon} {name}
+                </Chip>
+              </span>
+            ))}
+          </div>
+          <div style={{ ...label, marginTop: 14 }}>BEST TIME TO GO</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {BEST_TIMES.map(([id, icon, name]) => (
+              <span key={id} style={{ flex: "0 0 auto" }}>
+                <Chip active={bestTime === id} onClick={() => setBestTime((t) => (t === id ? null : id))}>
+                  {icon} {name}
+                </Chip>
+              </span>
+            ))}
+          </div>
+          <div style={{ ...label, marginTop: 14 }}>SECURITY</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {SECURITY.map(([id, icon, name, blurb]) => (
+              <span key={id} style={{ flex: "0 0 auto" }} title={blurb}>
+                <Chip active={security === id} onClick={() => setSecurity((s) => (s === id ? null : id))}>
+                  {icon} {name}
+                </Chip>
+              </span>
+            ))}
+          </div>
         </>
       )}
 
