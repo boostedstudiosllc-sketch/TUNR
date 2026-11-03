@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
 import { compressImage } from "../lib/image.js";
-import { FLOORS, OPEN_EVENT, floorName, parkedSummary, makeSpot, loadSpot, saveSpot, clearSpot, walkUrl, distanceText, savedAgo } from "../lib/parking.js";
+import { FLOORS, OPEN_EVENT, CHANGED_EVENT, floorName, parkedSummary, makeSpot, loadSpot, saveSpot, clearSpot, walkUrl, distanceText, savedAgo } from "../lib/parking.js";
 
 // The 🅿️ in the header: save where you parked (map pin + floor, spot, photo,
 // note) and find it again. Rules and storage are in src/lib/parking.js.
@@ -38,8 +38,13 @@ export default function ParkedCar({ onToast }) {
       setEditing(!loadSpot() || Boolean(e.detail?.meet));
       setOpen(true);
     };
+    const onChanged = () => setSpot(loadSpot());
     window.addEventListener(OPEN_EVENT, onOpen);
-    return () => window.removeEventListener(OPEN_EVENT, onOpen);
+    window.addEventListener(CHANGED_EVENT, onChanged);
+    return () => {
+      window.removeEventListener(OPEN_EVENT, onOpen);
+      window.removeEventListener(CHANGED_EVENT, onChanged);
+    };
   }, []);
 
   const show = () => {

@@ -1590,7 +1590,8 @@ export default function App() {
             borderRadius: 10,
             fontSize: 13,
             fontWeight: 600,
-            zIndex: 400,
+            // Above full-screen views like the convoy map (470).
+            zIndex: 520,
             boxShadow: "0 8px 30px rgba(0,0,0,0.5)",
             maxWidth: 380,
             textAlign: "center",

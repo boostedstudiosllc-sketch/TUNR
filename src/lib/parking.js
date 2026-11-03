@@ -11,6 +11,7 @@ import { haversineMiles } from "./geo.js";
 
 export const PARKED_KEY = "tunr.parked";
 export const OPEN_EVENT = "tunr:parked"; // window event: open the 🅿️ sheet; detail { meet: { id, title } }
+export const CHANGED_EVENT = "tunr:parked-changed"; // window event: the spot was saved elsewhere (a convoy noticed you parked)
 
 // Floor buttons, bottom to top. Anything else goes in "Other".
 export const FLOORS = ["B3", "B2", "B1", "G", "1", "2", "3", "4", "5", "6", "7", "8", "Roof"];

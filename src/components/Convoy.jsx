@@ -3,6 +3,8 @@ import { loadConvoy, watchConvoy, sharePosition, stopSharing, leaveConvoy, endCo
 import { convoyMembers, behindLine, shouldSend, fromCoords, boundsOf, radar } from "../lib/convoyMath.js";
 import { formatMiles } from "../lib/geo.js";
 import { loadMapbox } from "../lib/mapboxLoader.js";
+import { newParkWatch, noteFix } from "../lib/driveEnd.js";
+import { makeSpot, loadSpot, saveSpot, clearSpot, CHANGED_EVENT, OPEN_EVENT as OPEN_PARKING } from "../lib/parking.js";
 import InviteSheetGame from "./InviteSheetGame.jsx";
 
 // A convoy, live (115_convoys.sql): everyone in it on a map, moving. Each
@@ -31,6 +33,10 @@ export default function Convoy({ id, user, hidden = false, onMinimize, onClosed,
   const watchRef = useRef(null);
   const lastSent = useRef(null);
   const wakeRef = useRef(null);
+  // Noticing you've parked at the end of the drive (driveEnd.js).
+  const parkWatch = useRef(newParkWatch());
+  const autoPark = useRef(null); // { prev }: the spot before, to put back
+  const [parkNote, setParkNote] = useState(""); // shown in the convoy screen
 
   // Load, then follow live changes (and poll in case the live link drops).
   useEffect(() => {
@@ -81,6 +87,9 @@ export default function Convoy({ id, user, hidden = false, onMinimize, onClosed,
         const p = fromCoords(pos.coords);
         if (!p) return;
         setMyPos(p);
+        const r = noteFix(parkWatch.current, { ...p, at: Date.now() });
+        parkWatch.current = r.watch;
+        if (r.event) parkEvent(r.event);
         if (shouldSend(lastSent.current, p, Date.now())) {
           lastSent.current = { ...p, sentAt: Date.now() };
           sharePosition(id, p).catch((e) => setError(e.message));
@@ -98,6 +107,33 @@ export default function Convoy({ id, user, hidden = false, onMinimize, onClosed,
       .then((w) => (wakeRef.current = w))
       .catch((e) => console.warn(`Screen may sleep during the convoy. (${e.message})`));
   }
+  // Parked: save where the car stopped (only on this phone, like the 🅿️
+  // button). Drove off again within 3 minutes: it wasn't parking, so put
+  // back what was there.
+  function parkEvent(event) {
+    const changed = () => window.dispatchEvent(new CustomEvent(CHANGED_EVENT));
+    try {
+      if (event.type === "parked") {
+        const prev = loadSpot();
+        // A spot saved by hand in the last 10 minutes wins.
+        if (prev && !autoPark.current && Date.now() - prev.savedAt < 10 * 60 * 1000) return;
+        saveSpot(makeSpot(event.spot));
+        autoPark.current = { prev };
+        changed();
+        setParkNote("🅿️ Looks like you parked. Saved where you stopped.");
+      } else if (event.type === "drove_off" && autoPark.current) {
+        const { prev } = autoPark.current;
+        autoPark.current = null;
+        if (prev) saveSpot(prev);
+        else clearSpot();
+        changed();
+        setParkNote("Moving again, so that stop wasn't parking. Spot not kept.");
+      }
+    } catch (e) {
+      onToast?.(e.message);
+    }
+  }
+
   function end(tellServer = true) {
     if (watchRef.current != null) navigator.geolocation?.clearWatch(watchRef.current);
     watchRef.current = null;
@@ -193,6 +229,26 @@ export default function Convoy({ id, user, hidden = false, onMinimize, onClosed,
           {error && (
             <div role="alert" style={{ margin: "8px 12px 0", padding: "8px 10px", borderRadius: 8, background: "rgba(248,113,113,0.12)", color: "#FCA5A5", fontSize: 13, fontFamily: "'Barlow', sans-serif" }}>
               {error}
+            </div>
+          )}
+          {parkNote && (
+            <div role="status" style={{ margin: "8px 12px 0", padding: "8px 10px", borderRadius: 8, background: "rgba(16,185,129,0.14)", color: "#34D399", fontSize: 14, fontWeight: 800, display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ flex: 1 }}>{parkNote}</span>
+              {autoPark.current && (
+                <button
+                  onClick={() => {
+                    setParkNote("");
+                    onMinimize();
+                    window.dispatchEvent(new CustomEvent(OPEN_PARKING, { detail: {} }));
+                  }}
+                  style={btn("#10B981", "#04210F", { padding: "6px 10px", fontSize: 12.5 })}
+                >
+                  ADD FLOOR
+                </button>
+              )}
+              <button onClick={() => setParkNote("")} aria-label="Dismiss" style={btn("transparent", "#34D399", { padding: "4px 6px" })}>
+                ✕
+              </button>
             </div>
           )}
           {behind && (
