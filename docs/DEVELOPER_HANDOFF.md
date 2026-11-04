@@ -439,7 +439,6 @@ Main drivers: how smooth auth deep linking goes (the most fiddly part), whether 
 
 **Technical debt and hardening found while writing this**
 - No staging environment: migrations apply straight to production on push.
-- CI doesn't run `npm test` or `npm run build` (it does run the database policy tests). Add a workflow.
 - The `api/` routes have no CORS headers (needed for native, see 8.B).
 - There are no public `/privacy` and `/terms` URLs (needed for the store listings).
 - `README.md` is out of date (see section 6). The header comment in `030_flyers.sql` still says "Claude" reads flyers. It's Gemini now (`api/_lib/gemini.js`).
