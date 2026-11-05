@@ -245,6 +245,7 @@ export async function loadWrapped(year) {
 }
 
 const REASON_LABELS = {
+  daily_bonus: "Daily Pit Stop",
   checkin: "Checked in",
   rsvp_bonus: "Said you'd go, and showed up",
   stay_bonus: "Stayed the whole meet",
@@ -392,11 +393,11 @@ export const STORES = [
 ];
 
 export async function loadPointsSettings() {
-  const fallback = { points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1, receipt_points: 10, photo_points: 25, starter_photo_points: 5, starter_car_points: 10, starter_alerts_points: 5, taco_points: 5, scratch_on: true };
+  const fallback = { points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1, receipt_points: 10, photo_points: 25, starter_photo_points: 5, starter_car_points: 10, starter_alerts_points: 5, taco_points: 5, scratch_on: true, daily_points: 1, daily_streak_bonus: 5 };
   if (!supabase) return fallback;
   const { data, error } = await supabase
     .from("points_settings")
-    .select("points_per_dollar, member_bonus, referral_points, welcome_points, receipt_points, photo_points, starter_photo_points, starter_car_points, starter_alerts_points, taco_points, scratch_on")
+    .select("points_per_dollar, member_bonus, referral_points, welcome_points, receipt_points, photo_points, starter_photo_points, starter_car_points, starter_alerts_points, taco_points, scratch_on, daily_points, daily_streak_bonus")
     .maybeSingle();
   if (error) throw new Error(withReason("Couldn't load the points rates.", error));
   return data || fallback;
@@ -475,6 +476,8 @@ export async function savePointsSettings(settings) {
       starter_alerts_points: Number(settings.starter_alerts_points ?? 5),
       taco_points: Number(settings.taco_points ?? 5),
       scratch_on: settings.scratch_on !== false,
+      daily_points: Number(settings.daily_points ?? 1),
+      daily_streak_bonus: Number(settings.daily_streak_bonus ?? 5),
       updated_at: new Date().toISOString(),
     })
     .eq("id", true);

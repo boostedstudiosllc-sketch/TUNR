@@ -339,6 +339,12 @@ export default function SettingsScreen({
                 onClick={onOpenAlerts}
               />
               <Row icon="🔊" label="Alert sound" sub="Make your car's exhaust your alert sound" onClick={() => open("alertSound")} />
+              <Row
+                icon="📲"
+                label="Setup & permissions"
+                sub="Location, home screen, alerts, motion, Daily Pit Stop"
+                onClick={() => window.dispatchEvent(new CustomEvent("tunr:setup-tour"))}
+              />
             </Section>
 
             <Section title="ACTIVITY">

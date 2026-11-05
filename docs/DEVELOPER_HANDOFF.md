@@ -376,6 +376,9 @@ From `CLAUDE.md`, the rules every change follows:
 - **Permissions and review:** needs "Always" location (iOS `NSLocationAlwaysAndWhenInUseUsageDescription`, Android `ACCESS_BACKGROUND_LOCATION`) and Motion & Fitness / `ACTIVITY_RECOGNITION`. Make it opt-in (a "Remember where I park" switch), explain it before asking, and say in the privacy policy that parking spots stay on the phone. Apple and Google both review background location closely; a clear in-app explanation and the opt-in switch are what they look for.
 - Battery: activity recognition is low-power; never poll GPS.
 
+**J. Home screen widgets (owner requirement)**
+- A web app can't add widgets. In the native app: iOS WidgetKit and Android App Widgets showing the next meet you're going to (with a countdown), your Daily Pit Stop streak and points, and a tap-to-open "Where I parked". Read the same data the app does; refresh on a timeline (a few times an hour), not live.
+
 ### App Store review points
 
 | Requirement | Status in TUNR |
@@ -577,6 +580,12 @@ Rewards are mailed, never picked up at meets. `rewards.ships` (and `sizes`, e.g.
   - **Product decision (Oct 2026): TUNR is meet-first, not a general social network.** Following exists to make meets better: you follow hosts and friends so their meets show under Following on Discover. So people search is not its own destination. It lives in the one Discover search box ("Search meets, hosts, people, places…", people shown above the meets by `PeopleStrip.jsx`) and as "Find friends" inside Followers / Following (`Connections.jsx` → `FindPeople.jsx`), the way Beli, Strava and Instagram place it.
   - Deliberately not built: a social feed, and "people you may know" from meet attendance. Who's going to a meet stays private (attendee lists show make and model only), and suggestions from attendance would undo that.
 - **Device clock:** nothing that pays points or unlocks anything uses the phone's date; TUNR Tuesdays, the spin, Guess the Car, scratch cards and the weekly free card all use the server's clock (Atlanta time).
+
+### First-run setup screens and the Daily Pit Stop (117)
+
+**Setup screens** (`SetupTour.jsx`, always dark; which screens in `src/lib/setupSteps.js`, tested in `test/setupSteps.test.js`): one thing per screen with a progress bar, a big button and NOT NOW ("you can turn it on anytime in Profile → ⚙️ Settings → Setup & permissions"). In order: **location** (asks the browser), **home screen** (iPhone: the Share → Add to Home Screen steps; Android Chrome: its own Install prompt, captured from `beforeinstallprompt`; skipped when already opened from the home screen or on a computer), **alerts** (`enablePush`; on an iPhone in Safari it explains alerts need the home screen first), **motion** (iPhones only, `DeviceOrientationEvent.requestPermission`; stored as `tunr.motion`), then the **Daily Pit Stop** (claim day 1). Things already on are skipped. It opens by itself once per phone for accounts made in the last 7 days (`tunr.setup.v1`); Settings → **Setup & permissions** opens every screen, showing ✓ for what's on. Motion is used for one thing: the convoy map's arrow follows the phone's compass while you're stopped or GPS gives no heading (`src/lib/compass.js`, `pickHeading`). Real home screen widgets need the native app (section 8).
+
+**Daily Pit Stop** (`117_daily_pit_stop.sql`, `PitStop.jsx`, `src/lib/pitStop.js`, week row in `pitStopRules.js`): claim once per Atlanta day for `points_settings.daily_points` (1; 0 switches it off), with a streak and `daily_streak_bonus` (5) on every 7th day in a row; a missed day starts over. Points go straight into the balance (reason `daily_bonus`). It pops up once a day when there's something to claim (`tunr.pitstop.shown`), is a TODAY task in the 📋 checklist, and is the last setup screen. Admins set both amounts in Admin → Purchases → RATES. Named "Pit Stop" so it's never confused with checking in at a meet. Tests: `supabase/tests/pit_stop.test.sql`.
 
 ### Photo spots: where to shoot cars (116)
 

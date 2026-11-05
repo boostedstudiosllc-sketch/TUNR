@@ -4,6 +4,8 @@ import { convoyMembers, behindLine, shouldSend, fromCoords, boundsOf, radar } fr
 import { formatMiles } from "../lib/geo.js";
 import { loadMapbox } from "../lib/mapboxLoader.js";
 import { newParkWatch, noteFix } from "../lib/driveEnd.js";
+import { compassHeading, pickHeading } from "../lib/compass.js";
+import { MOTION_KEY } from "../lib/setupSteps.js";
 import { makeSpot, loadSpot, saveSpot, clearSpot, CHANGED_EVENT, OPEN_EVENT as OPEN_PARKING } from "../lib/parking.js";
 import InviteSheetGame from "./InviteSheetGame.jsx";
 
@@ -36,6 +38,9 @@ export default function Convoy({ id, user, hidden = false, onMinimize, onClosed,
   // Noticing you've parked at the end of the drive (driveEnd.js).
   const parkWatch = useRef(newParkWatch());
   const autoPark = useRef(null); // { prev }: the spot before, to put back
+  // The phone's compass, for your arrow while you're stopped (compass.js).
+  const compass = useRef(null);
+  const stopCompass = useRef(null);
   const [parkNote, setParkNote] = useState(""); // shown in the convoy screen
 
   // Load, then follow live changes (and poll in case the live link drops).
@@ -86,6 +91,7 @@ export default function Convoy({ id, user, hidden = false, onMinimize, onClosed,
       (pos) => {
         const p = fromCoords(pos.coords);
         if (!p) return;
+        p.heading = pickHeading(p.heading, p.speedMph, compass.current);
         setMyPos(p);
         const r = noteFix(parkWatch.current, { ...p, at: Date.now() });
         parkWatch.current = r.watch;
@@ -101,6 +107,19 @@ export default function Convoy({ id, user, hidden = false, onMinimize, onClosed,
       },
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
     );
+    // The compass: iPhones need motion allowed first (Setup & permissions).
+    let motionOk = typeof window.DeviceOrientationEvent?.requestPermission !== "function";
+    try {
+      motionOk ||= localStorage.getItem(MOTION_KEY) === "granted";
+    } catch (e) {
+      console.warn(e.message);
+    }
+    if (motionOk && "DeviceOrientationEvent" in window) {
+      const kind = "ondeviceorientationabsolute" in window ? "deviceorientationabsolute" : "deviceorientation";
+      const onTurn = (e) => (compass.current = compassHeading(e));
+      window.addEventListener(kind, onTurn);
+      stopCompass.current = () => window.removeEventListener(kind, onTurn);
+    }
     // Keep the screen on while sharing (where the phone allows it).
     navigator.wakeLock
       ?.request("screen")
@@ -138,6 +157,9 @@ export default function Convoy({ id, user, hidden = false, onMinimize, onClosed,
     if (watchRef.current != null) navigator.geolocation?.clearWatch(watchRef.current);
     watchRef.current = null;
     lastSent.current = null;
+    stopCompass.current?.();
+    stopCompass.current = null;
+    compass.current = null;
     setSharing(false);
     wakeRef.current?.release?.().catch((e) => console.warn(e.message));
     wakeRef.current = null;

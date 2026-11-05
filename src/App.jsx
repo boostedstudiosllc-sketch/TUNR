@@ -74,6 +74,10 @@ import PhotoOfWeek from "./components/PhotoOfWeek.jsx";
 import { JOIN_KEY } from "./lib/gameRooms.js";
 import Convoy from "./components/Convoy.jsx";
 import PhotoSpots from "./components/PhotoSpots.jsx";
+import SetupTour from "./components/SetupTour.jsx";
+import PitStopPopup from "./components/PitStop.jsx";
+import { SETUP_KEY, OPEN_EVENT as SETUP_OPEN, shouldAutoShow } from "./lib/setupSteps.js";
+import { loadPitStop, OPEN_EVENT as PIT_OPEN, SHOWN_KEY as PIT_SHOWN, atlToday } from "./lib/pitStop.js";
 import { OPEN_EVENT as SPOTS_OPEN } from "./lib/photoSpots.js";
 import { joinConvoy, CONVOY_KEY, OPEN_EVENT as CONVOY_OPEN } from "./lib/convoy.js";
 
@@ -162,6 +166,49 @@ export default function App() {
     }
   });
   const [convoyOpen, setConvoyOpen] = useState(false);
+  // First-run setup screens (SetupTour.jsx): by themselves once for a new
+  // account on this phone; every screen from Settings → Setup & permissions.
+  const [setupTour, setSetupTour] = useState(null); // null | "auto" | "all"
+  useEffect(() => {
+    const open = () => setSetupTour("all");
+    window.addEventListener(SETUP_OPEN, open);
+    return () => window.removeEventListener(SETUP_OPEN, open);
+  }, []);
+  useEffect(() => {
+    if (!user || accountTos !== true) return;
+    let seen = true;
+    try {
+      seen = localStorage.getItem(SETUP_KEY) === "1";
+    } catch (e) {
+      console.warn(`Couldn't read the setup state on this phone. (${e.message})`);
+    }
+    if (shouldAutoShow({ seen, createdAt: user.created_at })) setSetupTour("auto");
+  }, [user?.id, accountTos]);
+  // The Daily Pit Stop pops up once a day, when there's a point to claim.
+  const [pitStop, setPitStop] = useState(null); // its status, while showing
+  const showPitStop = (force) =>
+    loadPitStop()
+      .then((s) => {
+        if (s?.on && (force || !s.today_done)) setPitStop(s);
+      })
+      .catch((e) => (force ? showToast(e.message) : console.warn(e.message)));
+  useEffect(() => {
+    const open = () => showPitStop(true);
+    window.addEventListener(PIT_OPEN, open);
+    return () => window.removeEventListener(PIT_OPEN, open);
+  }, []);
+  useEffect(() => {
+    if (!user || accountTos !== true || setupTour) return;
+    try {
+      if (localStorage.getItem(PIT_SHOWN) === atlToday()) return;
+      localStorage.setItem(PIT_SHOWN, atlToday());
+    } catch (e) {
+      console.warn(`Couldn't remember today's Pit Stop on this phone. (${e.message})`);
+      return;
+    }
+    showPitStop(false);
+  }, [user?.id, accountTos, setupTour]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Photo spots: the discover screen (PhotoSpots.jsx), opened from anywhere.
   const [spotsOpen, setSpotsOpen] = useState(false);
   useEffect(() => {
@@ -1511,6 +1558,8 @@ export default function App() {
         />
       )}
 
+      {setupTour && user && <SetupTour all={setupTour === "all"} onDone={() => (setSetupTour(null), setPitStop(null))} onToast={showToast} />}
+      {pitStop && !setupTour && <PitStopPopup status={pitStop} onClose={() => setPitStop(null)} onToast={showToast} />}
       {spotsOpen && (
         <PhotoSpots
           user={user}

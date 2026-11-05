@@ -72,7 +72,7 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
   const [rewards, setRewards] = useState([]);
   const [claims, setClaims] = useState([]);
   const [history, setHistory] = useState([]);
-  const [rates, setRates] = useState({ points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1, receipt_points: 10, photo_points: 25, starter_photo_points: 5, starter_car_points: 10, starter_alerts_points: 5, taco_points: 5, scratch_on: true });
+  const [rates, setRates] = useState({ points_per_dollar: 1, member_bonus: 50, referral_points: 5, welcome_points: 1, receipt_points: 10, photo_points: 25, starter_photo_points: 5, starter_car_points: 10, starter_alerts_points: 5, taco_points: 5, scratch_on: true, daily_points: 1, daily_streak_bonus: 5 });
   const [streak, setStreak] = useState(null);
   const [showBoard, setShowBoard] = useState(false);
   const [error, setError] = useState("");
@@ -1314,6 +1314,14 @@ export function PurchasesAdmin({ onToast }) {
                 <input style={field} inputMode="numeric" maxLength={2} value={rates[k] ?? def} onChange={(e) => setRates((r) => ({ ...r, [k]: e.target.value.replace(/\D/g, "") }))} />
               </Field>
             ))}
+          </div>
+          <div style={{ display: "flex", gap: 10, marginTop: 8, alignItems: "flex-end" }}>
+            <Field name="DAILY PIT STOP (0 = OFF)">
+              <input style={field} inputMode="numeric" maxLength={2} value={rates.daily_points ?? 1} onChange={(e) => setRates((r) => ({ ...r, daily_points: e.target.value.replace(/\D/g, "") }))} />
+            </Field>
+            <Field name="7-DAY BONUS">
+              <input style={field} inputMode="numeric" maxLength={2} value={rates.daily_streak_bonus ?? 5} onChange={(e) => setRates((r) => ({ ...r, daily_streak_bonus: e.target.value.replace(/\D/g, "") }))} />
+            </Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 8, alignItems: "flex-end" }}>
             <Field name="TUNR TUESDAYS WIN">

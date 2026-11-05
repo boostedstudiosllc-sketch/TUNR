@@ -9,6 +9,7 @@ import { loadPhotoBallot } from "../lib/photoWeek.js";
 import { loadTodaysCar } from "../lib/guessCar.js";
 import { loadTaco } from "../lib/tunrTuesdays.js";
 import { SETUP_EVENT } from "../lib/setupSignal.js";
+import { loadPitStop, openPitStop } from "../lib/pitStop.js";
 
 // The points checklist (the 📋 in the header): every way to earn points as a
 // task, with what's done today, this week and for good, and a GO button to
@@ -34,6 +35,7 @@ const TASK_REASONS = {
   photo_week: ["photo_bonus"],
   guess: ["guess_bonus"],
   taco: ["taco_bonus"],
+  pitstop: ["daily_bonus"],
 };
 // Hosting milestones: [meets, points].
 const HOST_STEPS = [
@@ -84,7 +86,7 @@ async function loadTasks(user) {
   // Setup steps are paid before the waiting points are loaded, so a step
   // just done shows CLAIM now (not on the next open).
   const starter = await claimStarterPoints();
-  const [streak, rates, recent, game, profile, points, unclaimed, ballot, carToday, taco] = await Promise.all([
+  const [streak, rates, recent, game, profile, points, unclaimed, ballot, carToday, taco, pit] = await Promise.all([
     loadMyStreak(),
     loadPointsSettings(),
     loadPointsSince(user.id, monthStart),
@@ -95,6 +97,7 @@ async function loadTasks(user) {
     loadPhotoBallot().catch(() => null),
     loadTodaysCar().catch(() => null),
     loadTaco().catch(() => null),
+    loadPitStop().catch(() => null),
   ]);
   const today = DAY(now);
   const pays = starter?.pays || { photo: rates.starter_photo_points ?? 5, car: rates.starter_car_points ?? 10, alerts: rates.starter_alerts_points ?? 5 };
@@ -103,6 +106,9 @@ async function loadTasks(user) {
   const next = STREAK_MILESTONES.find(([w]) => w > (streak?.current || 0));
   const tasks = [
     // Today.
+    ...(pit?.on
+      ? [{ group: "TODAY", id: "pitstop", icon: "🏁", title: "Daily Pit Stop", text: pit.streak ? `${pit.streak}-day streak. Every 7th day in a row pays a bonus.` : "Claim a point every day you open TUNR.", pts: `+${pit.daily_points}`, done: Boolean(pit.today_done), go: () => openPitStop() }]
+      : []),
     { group: "TODAY", id: "checkin", icon: "📍", title: "Check in at a meet", text: "At the meet, during it. Boosted meets pay more.", pts: "+1–10", done: todays("checkin"), go: () => go("tab:discover") },
     { group: "TODAY", id: "stay", icon: "🏁", title: "Stay to the end", text: "Check in again near the end of a meet you arrived at early.", pts: "+1", done: todays("stay_bonus"), go: () => go("tab:discover") },
     {
