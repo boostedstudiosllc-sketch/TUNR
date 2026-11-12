@@ -50,6 +50,17 @@ select tests.blocked_by_rls($$ insert into public.convoy_positions (convoy_id, u
 select tests.login(null);
 select tests.fails($$ select public.convoy_state((select (r->>'id')::uuid from cv)) $$, 'permission denied', 'signed out, nothing');
 
+-- ---------- voice (118): only members may use the voice channel ----------
+select tests.login(tests.id('rider'));
+select tests.eq(public.convoy_voice_topic_ok('convoy-voice:' || (select r->>'id' from cv)), true, 'a member may use the convoy''s voice channel');
+select tests.eq(public.convoy_voice_topic_ok('convoy-voice:not-a-uuid'), false, 'a made-up channel name is refused');
+select tests.eq(public.convoy_voice_topic_ok('room:' || (select r->>'id' from cv)), false, 'only convoy voice channels');
+select tests.eq(public.convoy_voice_topic_ok(null), false, 'no channel, no');
+select tests.login(tests.id('stranger'));
+select tests.eq(public.convoy_voice_topic_ok('convoy-voice:' || (select r->>'id' from cv)), false, 'someone outside the convoy may not listen in');
+select tests.login(null);
+select tests.fails($$ select public.convoy_voice_topic_ok('convoy-voice:' || (select r->>'id' from cv)) $$, 'permission denied', 'signed out, no voice');
+
 -- ---------- stop sharing, leave ----------
 select tests.login(tests.id('rider'));
 select public.stop_sharing((select (r->>'id')::uuid from cv));
@@ -78,6 +89,7 @@ select public.end_convoy((select (r->>'id')::uuid from cv));
 select tests.eq((select count(*) from public.convoy_positions)::int, 0, 'ending it wipes every position');
 select tests.eq((public.join_convoy((select r->>'code' from cv)))->>'status', 'not_found', 'and nobody can join an ended convoy');
 select tests.eq((public.share_position((select (r->>'id')::uuid from cv), 33.78, -84.39))->>'status', 'not_in_convoy', 'or share into it');
+select tests.eq(public.convoy_voice_topic_ok('convoy-voice:' || (select r->>'id' from cv)), false, 'or talk on its voice channel once it ended');
 
 -- ---------- from a linkup ----------
 select tests.logout();

@@ -6,6 +6,8 @@ import { loadMapbox } from "../lib/mapboxLoader.js";
 import { newParkWatch, noteFix } from "../lib/driveEnd.js";
 import { compassHeading, pickHeading } from "../lib/compass.js";
 import { MOTION_KEY } from "../lib/setupSteps.js";
+import { joinVoice } from "../lib/voice.js";
+import { MAX_VOICE } from "../lib/voiceMath.js";
 import { makeSpot, loadSpot, saveSpot, clearSpot, CHANGED_EVENT, OPEN_EVENT as OPEN_PARKING } from "../lib/parking.js";
 import InviteSheetGame from "./InviteSheetGame.jsx";
 
@@ -31,6 +33,26 @@ export default function Convoy({ id, user, hidden = false, onMinimize, onClosed,
   const [myPos, setMyPos] = useState(null);
   const [safety, setSafety] = useState(false);
   const [inviting, setInviting] = useState(false);
+  // Voice chat (voice.js): null, "joining", or the live call's state.
+  const [voice, setVoice] = useState(null);
+  const call = useRef(null);
+  const joinTalk = async () => {
+    setError("");
+    setVoice("joining");
+    try {
+      const me = state?.members.find((m) => m.user_id === user?.id);
+      call.current = await joinVoice(id, { id: user.id, name: me?.username || "driver" }, (v) => setVoice(v));
+    } catch (e) {
+      setVoice(null);
+      setError(e.message);
+    }
+  };
+  const leaveTalk = () => {
+    call.current?.leave();
+    call.current = null;
+    setVoice(null);
+  };
+  useEffect(() => () => call.current?.leave(), [id]);
   const [invited, setInvited] = useState([]);
   const watchRef = useRef(null);
   const lastSent = useRef(null);
@@ -183,6 +205,7 @@ export default function Convoy({ id, user, hidden = false, onMinimize, onClosed,
     if (!window.confirm(asLeader ? "End the convoy for everyone? Everyone's location is wiped." : "Leave the convoy? Your location stops showing.")) return;
     try {
       end(false);
+      leaveTalk();
       await (asLeader ? endConvoy(id) : leaveConvoy(id));
       try {
         localStorage.removeItem(CONVOY_KEY);
@@ -283,6 +306,28 @@ export default function Convoy({ id, user, hidden = false, onMinimize, onClosed,
             <button onClick={toggleSharing} disabled={!state} style={btn(sharing ? "rgba(16,185,129,0.16)" : "#0080F0", sharing ? "#34D399" : "#fff", { padding: "14px 0", fontSize: 17, border: sharing ? "1px solid #10B981" : "none" })}>
               {sharing ? "● SHARING MY LOCATION · TAP TO STOP" : "📍 SHARE MY LOCATION"}
             </button>
+            {!voice ? (
+              <button onClick={joinTalk} disabled={!state} style={btn("rgba(167,139,250,0.14)", "#C4B5FD", { padding: "12px 0", fontSize: 16, border: "1px solid rgba(167,139,250,0.45)" })}>
+                🎙️ JOIN VOICE · TALK TO THE CONVOY
+              </button>
+            ) : voice === "joining" ? (
+              <button disabled style={btn("rgba(167,139,250,0.14)", "#C4B5FD", { padding: "12px 0", fontSize: 16 })}>
+                🎙️ CONNECTING…
+              </button>
+            ) : (
+              <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+                <button
+                  onClick={() => call.current?.setMuted(!voice.me.muted)}
+                  aria-pressed={voice.me.muted}
+                  style={btn(voice.me.muted ? "rgba(248,113,113,0.16)" : voice.me.talking ? "#7C3AED" : "rgba(167,139,250,0.2)", voice.me.muted ? "#F87171" : "#fff", { flex: 1, padding: "12px 0", fontSize: 16, border: `1px solid ${voice.me.muted ? "#F87171" : "#7C3AED"}` })}
+                >
+                  {voice.full ? `VOICE IS FULL (${MAX_VOICE})` : voice.me.muted ? "🔇 MUTED · TAP TO TALK" : `🎙️ LIVE · ${voice.people.length + 1} IN VOICE · TAP TO MUTE`}
+                </button>
+                <button onClick={leaveTalk} aria-label="Leave voice" style={btn("rgba(255,255,255,0.08)", "#C9D1DC", { padding: "0 14px" })}>
+                  ✕
+                </button>
+              </div>
+            )}
             <div style={{ overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
               {members.map((m) => (
                 <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 2px", borderBottom: "1px solid #1C2026", opacity: m.live ? 1 : 0.6 }}>
@@ -291,6 +336,7 @@ export default function Convoy({ id, user, hidden = false, onMinimize, onClosed,
                     <span style={{ display: "block", fontSize: 16, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {m.leader && "👑 "}@{m.name}
                       {m.me && <span style={{ color: "#8A94A3", fontWeight: 700 }}> (you)</span>}
+                      <VoiceBadge v={voice && typeof voice === "object" ? (m.me ? { ...voice.me, status: "connected" } : voice.people.find((p) => p.id === m.id)) : null} />
                     </span>
                     <span style={{ display: "block", fontSize: 12.5, color: "#8A94A3", fontFamily: "'Barlow', sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {[m.car, m.live ? null : m.seen].filter(Boolean).join(" · ") || (m.live ? "On the map" : "")}
@@ -473,10 +519,10 @@ function Radar({ members }) {
         </text>
         {centre && (
           <>
-            <text x={size / 2 + (size / 2) * 0.425 + 3} y={size / 2 - 4} fill="#4ADE80" fontSize="11" fontFamily="Barlow Condensed">
+            <text x={size / 2 + (size / 2) * 0.425 - 3} y={size / 2 - 4} fill="#4ADE80" fontSize="11" textAnchor="end" fontFamily="Barlow Condensed">
               {miles / 2} mi
             </text>
-            <text x={size / 2 + (size / 2) * 0.85 + 3} y={size / 2 - 4} fill="#4ADE80" fontSize="11" fontFamily="Barlow Condensed">
+            <text x={size / 2 + (size / 2) * 0.85 - 3} y={size / 2 - 4} fill="#4ADE80" fontSize="11" textAnchor="end" fontFamily="Barlow Condensed">
               {miles} mi
             </text>
           </>
@@ -499,5 +545,18 @@ function Radar({ members }) {
         )}
       </svg>
     </div>
+  );
+}
+
+// In voice: 🔊 while talking, 🔇 muted, 🎙️ listening, … still connecting,
+// ⚠️ when their network won't connect.
+function VoiceBadge({ v }) {
+  if (!v) return null;
+  const [icon, color, label] =
+    v.status === "failed" ? ["⚠️", "#FACC15", "can't connect to their network"] : v.status !== "connected" ? ["…", "#8A94A3", "connecting"] : v.muted ? ["🔇", "#F87171", "muted"] : v.talking ? ["🔊", "#A78BFA", "talking"] : ["🎙️", "#8A94A3", "in voice"];
+  return (
+    <span title={label} aria-label={label} style={{ marginLeft: 6, color, fontSize: 14, animation: v.talking && !v.muted ? "pulse 0.8s ease-in-out infinite" : "none" }}>
+      {icon}
+    </span>
   );
 }

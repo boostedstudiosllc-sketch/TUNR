@@ -58,8 +58,9 @@ function fakeTransport(name, key) {
   };
 }
 
-function supabaseTransport(name, key) {
-  const channel = supabase.channel(name, { config: { broadcast: { self: false }, presence: { key } } });
+function supabaseTransport(name, key, opts = {}) {
+  // private: only people the database allows may join (Realtime Authorization; convoy voice, 118).
+  const channel = supabase.channel(name, { config: { broadcast: { self: false }, presence: { key }, ...(opts.private ? { private: true } : {}) } });
   const handlers = {};
   channel.on("presence", { event: "sync" }, () => {
     const state = channel.presenceState();
@@ -69,7 +70,7 @@ function supabaseTransport(name, key) {
   const ready = new Promise((ok, fail) => {
     channel.subscribe((status, err) => {
       if (status === "SUBSCRIBED") ok();
-      else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") fail(new Error(`Couldn't connect to the race. (${err?.message || status.toLowerCase().replace("_", " ")})`));
+      else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") fail(new Error(`${opts.what || "Couldn't connect to the race."} (${err?.message || status.toLowerCase().replace("_", " ")})`));
     });
   });
   return {
@@ -81,7 +82,7 @@ function supabaseTransport(name, key) {
   };
 }
 
-function transport(name, key) {
+function transport(name, key, opts = {}) {
   let fake = false;
   try {
     fake = import.meta.env?.DEV && localStorage.getItem("tunr.fakeNet") === "1";
@@ -90,8 +91,12 @@ function transport(name, key) {
   }
   if (fake) return fakeTransport(name, key);
   if (!supabase) throw new Error("Playing a friend needs the internet connection to TUNR.");
-  return supabaseTransport(name, key);
+  return supabaseTransport(name, key, opts);
 }
+
+// A live channel for anything else (convoy voice): { ready, on, track, send, close }.
+// opts: { private, what (the start of the error if it can't connect) }.
+export const openChannel = (name, key, opts) => transport(name, key, opts);
 
 // Joins a game's room. `me`: { id, name, look }. onPeers(everyone in the
 // room, you included); onMessage(event, payload) for everything sent.
