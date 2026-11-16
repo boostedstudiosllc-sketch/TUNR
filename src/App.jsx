@@ -72,6 +72,7 @@ import { CAR_PARAM } from "./lib/buildpage.js";
 import BuildPage from "./components/BuildPage.jsx";
 import PhotoOfWeek from "./components/PhotoOfWeek.jsx";
 import { JOIN_KEY } from "./lib/gameRooms.js";
+import { saveSnapshot, loadSnapshot, offlineLine } from "./lib/offline.js";
 import Convoy from "./components/Convoy.jsx";
 import PhotoSpots from "./components/PhotoSpots.jsx";
 import SetupTour from "./components/SetupTour.jsx";
@@ -357,6 +358,21 @@ export default function App() {
     return unsubscribe;
   }, []);
 
+  // Offline: the banner, and the meets saved from the last good load
+  // (src/lib/offline.js). Games and the parked-car card need no network.
+  const [online, setOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine !== false));
+  const [savedMeetsAt, setSavedMeetsAt] = useState(null); // when showing saved meets
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
+
   // Has this account agreed to the current terms (here or on another device)?
   useEffect(() => {
     if (!user) {
@@ -366,11 +382,13 @@ export default function App() {
     const here = hasAcceptedCurrentTos(user.id);
     setAccountTos(here ? true : null);
     let alive = true;
-    syncTosToAccount(user).then((ok) => alive && setAccountTos(ok || here));
+    // null: couldn't reach TUNR to check (offline). Don't block the app with
+    // the terms for that; this runs again when the phone is back online.
+    syncTosToAccount(user).then((ok) => alive && setAccountTos(ok === null ? (here ? true : null) : ok || here));
     return () => {
       alive = false;
     };
-  }, [user?.id]);
+  }, [user?.id, online]);
 
   // Confirmed yet? Arriving from the emailed link confirms it right here.
   useEffect(() => {
@@ -421,22 +439,54 @@ export default function App() {
     });
   }, []);
 
-  // Load events + rsvps whenever the signed-in user changes
+  // Load events + rsvps whenever the signed-in user changes (or the phone
+  // comes back online). A failed part never empties the list: with no
+  // network, the last saved meets show instead, marked as saved.
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    Promise.all([
-      loadEvents(user?.id || null),
-      loadRsvps(user?.id || null),
-      loadFollows(user?.id || null),
-      loadGoingAs(user?.id || null),
-    ])
+    const uid = user?.id || null;
+    const failed = Symbol("failed");
+    // A phone that knows it's offline goes straight to the saved meets
+    // (the network library would otherwise keep retrying for a while).
+    if (!online) {
+      const saved = loadSnapshot(window.localStorage, uid);
+      if (saved) {
+        setEvents(saved.events);
+        setRsvps(saved.rsvps || {});
+        setFollows(saved.follows || []);
+        setGoingAs(saved.goingAs || {});
+        setSavedMeetsAt(saved.at);
+      }
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+    // A bad connection gets 10 seconds before the saved meets show.
+    const soft = (p) =>
+      Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error("timed out")), 10000))]).catch((e) => (console.warn(e.message), failed));
+    Promise.all([soft(loadEvents(uid)), soft(loadRsvps(uid)), soft(loadFollows(uid)), soft(loadGoingAs(uid))])
       .then(([evts, r, f, g]) => {
         if (cancelled) return;
-        setEvents(evts);
-        setRsvps(r);
-        setFollows(f);
-        setGoingAs(g);
+        const fresh = evts !== failed && !evts.offline;
+        const saved = fresh ? null : loadSnapshot(window.localStorage, uid);
+        if (saved) {
+          setEvents(saved.events);
+          setRsvps(r !== failed && Object.keys(r).length ? r : saved.rsvps || {});
+          setFollows(f !== failed && f.length ? f : saved.follows || []);
+          setGoingAs(g !== failed && Object.keys(g).length ? g : saved.goingAs || {});
+          setSavedMeetsAt(saved.at);
+          return;
+        }
+        setSavedMeetsAt(null);
+        setEvents(evts === failed ? [] : evts);
+        if (r !== failed) setRsvps(r);
+        if (f !== failed) setFollows(f);
+        if (g !== failed) setGoingAs(g);
+        if (fresh && r !== failed && f !== failed && g !== failed) {
+          saveSnapshot(window.localStorage, uid, { events: evts, rsvps: r, follows: f, goingAs: g });
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -444,7 +494,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user?.id, online]);
 
   // Meets matching the chosen filter and search, past ones included (the
   // calendar shows earlier days of the month); the list drops those.
@@ -879,6 +929,19 @@ export default function App() {
         </div>
       </div>
 
+      {/* Every tab: no signal, or meets from the last good load. */}
+      {offlineLine({ online, savedAt: savedMeetsAt }) && (
+        <div role="status" style={{ margin: "0 20px 10px", padding: "9px 12px", borderRadius: 10, background: "var(--n-161616)", border: "1px solid var(--n-2a2a2a)", color: "var(--n-cccccc)", fontSize: 13, fontFamily: "'Barlow', sans-serif", display: "flex", gap: 8, alignItems: "center" }}>
+          <span aria-hidden="true">📴</span>
+          <span style={{ flex: 1 }}>{offlineLine({ online, savedAt: savedMeetsAt })}</span>
+          {!online && (
+            <button onClick={() => setTab("perks")} style={{ background: "none", border: "none", color: "var(--a-3cabfd)", fontWeight: 800, fontSize: 13, cursor: "pointer", padding: 0, whiteSpace: "nowrap" }}>
+              Play ›
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Every tab: until the email's confirmed. */}
       <ConfirmEmailBanner account={account} onToast={showToast} />
 
@@ -955,7 +1018,7 @@ export default function App() {
           {!search && (
             <button
               onClick={() => setSpotsOpen(true)}
-              style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, marginTop: 10, padding: "12px 14px", borderRadius: 12, border: "1px solid var(--n-1f2a3a)", background: "linear-gradient(135deg, var(--n-0b1e3f), var(--n-111111))", color: "var(--n-f0f0f0)", textAlign: "left", cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" }}
+              style={{ width: "calc(100% - 40px)", display: "flex", alignItems: "center", gap: 12, margin: "10px 20px 0", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--n-1f2a3a)", background: "linear-gradient(135deg, var(--n-0b1e3f), var(--n-111111))", color: "var(--n-f0f0f0)", textAlign: "left", cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" }}
             >
               <span aria-hidden="true" style={{ fontSize: 28 }}>📸</span>
               <span style={{ flex: 1 }}>

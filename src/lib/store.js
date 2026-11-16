@@ -128,8 +128,11 @@ export async function loadEvents(userId = null) {
 
   const rows = eventsRes?.data;
   if (eventsRes?.error || !Array.isArray(rows)) {
-    // Network/db hiccup: degrade to local so the app still shows meets.
-    return [...read(SUBMITTED_KEY, []), ...seedEvents];
+    // Network/db hiccup: degrade to local so the app still shows meets
+    // (App.jsx shows the last saved real list instead when it has one).
+    const fallback = [...read(SUBMITTED_KEY, []), ...seedEvents];
+    fallback.offline = true;
+    return fallback;
   }
 
   // Counts are decorative: if that query fails, still show the meets rather
@@ -634,7 +637,8 @@ const syncing = new Map();
 // Called on every sign-in. Records an agreement made on this device (maybe
 // before the account existed) if the account doesn't have that version yet,
 // and returns true when the account has agreed to the current terms — so a
-// new device doesn't ask again.
+// new device doesn't ask again. null: couldn't check (offline), so don't
+// ask yet; App.jsx checks again when the phone is back online.
 export function syncTosToAccount(user) {
   if (!supabase || !user) return Promise.resolve(false);
   // Auth fires several events on sign-in; one sync per account at a time.
@@ -653,7 +657,7 @@ async function doSyncTos(user) {
     .order("version", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (error) return false;
+  if (error) return null;
   let accountVersion = data?.version || 0;
 
   // On this device, or carried in the sign-up for an email confirmed elsewhere.

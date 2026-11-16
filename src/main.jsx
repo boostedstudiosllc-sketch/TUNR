@@ -30,10 +30,15 @@ window.addEventListener("vite:preloadError", (event) => {
   window.location.reload();
 });
 
-// Makes the app installable to a home screen. Registration failures are not
-// worth surfacing — the app works identically without it.
+// Makes the app installable to a home screen, and keeps this version's files
+// on the phone for offline play (public/sw.js). Registration failures are
+// not worth surfacing — the app works the same online without it.
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then(() => navigator.serviceWorker.ready)
+      .then((reg) => reg.active?.postMessage({ type: "precache" }))
+      .catch((e) => console.warn(`Offline mode isn't set up on this browser. (${e.message})`));
   });
 }
