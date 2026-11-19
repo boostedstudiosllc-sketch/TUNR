@@ -75,6 +75,7 @@ import { JOIN_KEY } from "./lib/gameRooms.js";
 import { saveSnapshot, loadSnapshot, offlineLine } from "./lib/offline.js";
 import Convoy from "./components/Convoy.jsx";
 import PhotoSpots from "./components/PhotoSpots.jsx";
+import HomeSlides from "./components/HomeSlides.jsx";
 import SetupTour from "./components/SetupTour.jsx";
 import PitStopPopup from "./components/PitStop.jsx";
 import { SETUP_KEY, OPEN_EVENT as SETUP_OPEN, shouldAutoShow } from "./lib/setupSteps.js";
@@ -667,6 +668,11 @@ export default function App() {
       setCommunityOpen({ type, id });
     } else if (type === "person") {
       setPersonView(id);
+    } else if (type === "open") {
+      // Screens that aren't tabs (from the Discover banner and alerts).
+      if (id === "photo-spots") setSpotsOpen(true);
+      else if (id === "pitstop") showPitStop(true);
+      else if (id === "setup") setSetupTour("all");
     } else if (type === "convoy") {
       setConvoyCode(id);
     } else if (type === "tab") {
@@ -949,6 +955,7 @@ export default function App() {
       {tab === "discover" && (
         <div style={{ animation: "fadeIn 0.3s ease" }}>
           <HomeScreenPrompt />
+          {!search && <HomeSlides user={user} events={events} rsvps={rsvps} />}
           <TodayStrip events={todayMine} rsvps={rsvps} now={now} onOpen={setSelected} />
 
           <div style={{ padding: "0 20px 12px", position: "relative" }}>
