@@ -26,6 +26,13 @@ gate (`scripts/test-gate.sh`, a Stop hook in `.claude/settings.json`) checks it 
 end of every turn and sends the work back if tests are missing or failing. Never
 skip or weaken a test to get green.
 
+## Helper agents and prompts
+`.claude/agents/`: `test-guardian` (tests), `ux-checker` (phone screenshots, dark and
+light), `security-auditor` (privacy and abuse holes, proven with failing tests). Run
+the ux-checker after visual changes and the security-auditor after anything with
+money, location, photos or private info. Prompts for the owner: `docs/PROMPTS.md`;
+the money plan: `docs/REVENUE_PLAN.md`.
+
 ## Talking to the owner
 End every reply with a short **Summary**: a few plain bullets covering what was done
 or decided, anything the owner needs to do (marked clearly), and what's next. Keep the
