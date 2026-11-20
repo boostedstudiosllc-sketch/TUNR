@@ -23,3 +23,16 @@ export function bonusLine(streak, todayDone, bonus) {
   if (left === 0) return todayDone ? `Bonus earned: +${bonus} today` : `Bonus today: +${bonus} on top`;
   return `${left} more day${left === 1 ? "" : "s"} to the +${bonus} bonus`;
 }
+
+// TUNR+ streak restore (121): what the Pit Stop card says when a streak
+// ended. → null, or { text, action: "restore" | "soon" | "member" }.
+export function restoreOffer(status, now = Date.now()) {
+  if (!status?.lost_streak || status.today_done || status.streak) return null;
+  const n = status.lost_streak;
+  if (status.can_restore) return { text: `Your ${n}-day streak ended. TUNR+ can bring it back (once every 3 months).`, action: "restore" };
+  if (status.member && status.restore_at) {
+    const when = new Date(status.restore_at).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
+    return { text: `Your ${n}-day streak ended. Your next TUNR+ restore is available ${when}.`, action: "soon" };
+  }
+  return { text: `Your ${n}-day streak ended. TUNR+ members can bring it back once every 3 months.`, action: "member" };
+}

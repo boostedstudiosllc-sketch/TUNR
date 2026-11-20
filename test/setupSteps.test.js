@@ -71,3 +71,13 @@ test("the pit stop week row", () => {
   assert.equal(bonusLine(5, true, 5), "2 more days to the +5 bonus");
   assert.equal(bonusLine(3, true, 0), "");
 });
+
+test("the TUNR+ streak restore offer", async () => {
+  const { restoreOffer } = await import("../src/lib/pitStopRules.js");
+  assert.equal(restoreOffer({ lost_streak: 0 }), null);
+  assert.equal(restoreOffer({ lost_streak: 12, today_done: true }), null, "already claimed today: nothing to offer");
+  assert.deepEqual(restoreOffer({ lost_streak: 12, can_restore: true, member: true }).action, "restore");
+  assert.match(restoreOffer({ lost_streak: 12, can_restore: true }).text, /^Your 12-day streak ended/);
+  assert.match(restoreOffer({ lost_streak: 12, member: true, restore_at: "2027-02-18T12:00:00Z" }).text, /available Feb 18/);
+  assert.equal(restoreOffer({ lost_streak: 5 }).action, "member", "not a member: tell them about TUNR+");
+});

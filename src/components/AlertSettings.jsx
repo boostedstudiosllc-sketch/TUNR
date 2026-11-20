@@ -117,6 +117,12 @@ export default function AlertSettings({ user, onClose, onToast }) {
               title="Tell me when a linkup starts near me"
               sub="Someone nearby heading out today or tomorrow to shoot, cruise or hang."
             />
+            <Toggle
+              on={settings.promoted !== false}
+              onChange={(v) => save({ promoted: v })}
+              title="Promoted meets near me"
+              sub="Now and then, a host pays to tell nearby members about their meet. At most one alert per meet."
+            />
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <span style={label}>WITHIN</span>

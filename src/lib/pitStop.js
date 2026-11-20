@@ -37,3 +37,19 @@ export async function claimPitStop() {
 
 // Today in Atlanta, "2026-11-05", for "once a day".
 export const atlToday = (now = new Date()) => now.toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+
+const RESTORE_ERRORS = {
+  not_member: "Streak restores are for TUNR+ members.",
+  nothing_to_restore: "There's no recent streak to bring back.",
+  too_soon: "You've used your restore for these 3 months.",
+  not_signed_in: "Sign in to restore your streak.",
+};
+
+// TUNR+ (121): bring back a streak lost in the last week. → { streak }
+export async function restorePitStop() {
+  if (!supabase) throw new Error("Restoring needs a connection to TUNR.");
+  const { data, error } = await supabase.rpc("restore_pit_stop");
+  if (error) throw new Error(withReason("Couldn't restore your streak.", error));
+  if (data?.status !== "ok") throw new Error(RESTORE_ERRORS[data?.status] || `Couldn't restore your streak. (${data?.status || "no answer"})`);
+  return data;
+}

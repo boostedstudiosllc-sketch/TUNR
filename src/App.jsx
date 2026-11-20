@@ -76,6 +76,8 @@ import { saveSnapshot, loadSnapshot, offlineLine } from "./lib/offline.js";
 import Convoy from "./components/Convoy.jsx";
 import PhotoSpots from "./components/PhotoSpots.jsx";
 import HomeSlides from "./components/HomeSlides.jsx";
+import { loadPromoted } from "./lib/promotions.js";
+import { withPromoted, pinPromoted } from "./lib/promoRules.js";
 import SetupTour from "./components/SetupTour.jsx";
 import PitStopPopup from "./components/PitStop.jsx";
 import { SETUP_KEY, OPEN_EVENT as SETUP_OPEN, shouldAutoShow } from "./lib/setupSteps.js";
@@ -440,6 +442,24 @@ export default function App() {
     });
   }, []);
 
+  // Promoted meets (120): marked and pinned at the top of the list.
+  const [promoted, setPromoted] = useState([]);
+  useEffect(() => {
+    if (!online) return;
+    loadPromoted()
+      .then(setPromoted)
+      .catch((e) => console.warn(e.message));
+  }, [online, user?.id]);
+  // Back from paying to promote a meet (?promoted=<id>).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("promoted")) return;
+    params.delete("promoted");
+    window.history.replaceState(null, "", `${window.location.pathname}${params.size ? `?${params}` : ""}`);
+    showToast("🚀 Payment received. Your meet is promoted (it can take a few seconds to show).");
+    setTimeout(() => loadPromoted().then(setPromoted).catch((e) => console.warn(e.message)), 4000);
+  }, []);
+
   // Load events + rsvps whenever the signed-in user changes (or the phone
   // comes back online). A failed part never empties the list: with no
   // network, the last saved meets show instead, marked as saved.
@@ -501,7 +521,7 @@ export default function App() {
   // calendar shows earlier days of the month); the list drops those.
   const matching = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return withDistances(events, position)
+    return withDistances(withPromoted(events, promoted), position)
       .filter((e) => {
         if (filter === "All") return true;
         if (filter === "Following")
@@ -523,10 +543,10 @@ export default function App() {
           .toLowerCase();
         return haystack.includes(q);
       });
-  }, [events, filter, search, follows, followingPeople, position]);
+  }, [events, promoted, filter, search, follows, followingPeople, position]);
 
   const visible = useMemo(() => {
-    return matching
+    const sorted = matching
       .filter((e) => !isPast(e, now))
       .sort((a, b) => {
         if (sort === "popular") return (b.going || 0) - (a.going || 0);
@@ -538,6 +558,8 @@ export default function App() {
         }
         return sortKey(a, now) - sortKey(b, now);
       });
+    // Promoted meets first (labelled), then the chosen order.
+    return pinPromoted(sorted);
   }, [matching, sort]);
 
   // Meets on the map: the Discover filters, narrowed to the chosen time.
@@ -955,7 +977,7 @@ export default function App() {
       {tab === "discover" && (
         <div style={{ animation: "fadeIn 0.3s ease" }}>
           <HomeScreenPrompt />
-          {!search && <HomeSlides user={user} events={events} rsvps={rsvps} />}
+          {!search && <HomeSlides user={user} events={withPromoted(events, promoted)} rsvps={rsvps} />}
           <TodayStrip events={todayMine} rsvps={rsvps} now={now} onOpen={setSelected} />
 
           <div style={{ padding: "0 20px 12px", position: "relative" }}>

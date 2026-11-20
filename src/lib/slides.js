@@ -79,6 +79,10 @@ export function buildSlides({ admin = [], events = [], rsvps = {}, taco = null, 
     if (!link) continue;
     out.push({ id: s.id, kicker: "NEW ON TUNR", title: s.title, body: s.body || "", cta: s.cta || "Open", link, theme: THEMES[s.theme] ? s.theme : "blue", image: s.image_url || null });
   }
+  // Spotlight promotions (120): paid for a banner slide, labelled PROMOTED.
+  for (const e of upcoming(events, now, 30).filter((x) => x.promotedBanner).sort((a, b) => startOf(a) - startOf(b))) {
+    out.push({ id: `promo:${e.id}`, kicker: "⭐ PROMOTED", title: e.title, body: `${whenLabel(startOf(e), now)}${e.location ? ` · ${e.location}` : ""}`, cta: "See the meet", link: `meet:${e.id}`, theme: "gold", image: e.flyerUrl || null, auto: true });
+  }
   const hot = hotMeet(events, now);
   if (hot && hot.id !== mine?.id) {
     out.push({ id: `hot:${hot.id}`, kicker: "🔥 HOTTEST THIS WEEK", title: hot.title, body: `${hot.going} going · ${whenLabel(startOf(hot), now)}${hot.location ? ` · ${hot.location}` : ""}`, cta: "See the meet", link: `meet:${hot.id}`, theme: "red", image: hot.flyerUrl || null, auto: true });

@@ -1,7 +1,7 @@
 import { activeTheme } from "../lib/theme.js";
 import { useEffect, useState } from "react";
 import { VIBES } from "../data/events.js";
-import { displayDate, displayTime } from "../lib/dates.js";
+import { displayDate, displayTime, isPast } from "../lib/dates.js";
 import { CarSilhouette } from "./MeetCard.jsx";
 import Comments from "./Comments.jsx";
 import ReportMeet from "./ReportMeet.jsx";
@@ -19,6 +19,7 @@ import { directionsUrl } from "../lib/geo.js";
 import { openParked } from "../lib/parking.js";
 import { GOING_AS, crowdLine } from "../lib/photographer.js";
 import DirectionsIcon from "./DirectionsIcon.jsx";
+import PromoteSheet from "./PromoteSheet.jsx";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -54,6 +55,7 @@ export default function MeetDetail({
   // The going chart. Reloaded shortly after this viewer changes their
   // answer, once the RSVP has been saved.
   const [history, setHistory] = useState([]);
+  const [promoting, setPromoting] = useState(false);
   useEffect(() => {
     let alive = true;
     const timer = setTimeout(
@@ -483,6 +485,16 @@ export default function MeetDetail({
               </button>
             )}
           </div>
+          {canEdit && !isPast(event, new Date()) && (
+            <button
+              className="action-btn"
+              onClick={() => setPromoting(true)}
+              style={{ width: "100%", marginTop: 10, padding: "12px 0", background: event.promoted ? "rgba(16,185,129,0.12)" : "linear-gradient(90deg, #FACC15, #F59E0B)", border: event.promoted ? "1px solid #10B981" : "none", borderRadius: 10, color: event.promoted ? "#10B981" : "#111", fontSize: 14, fontWeight: 900, letterSpacing: 1.5, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" }}
+            >
+              {event.promoted ? "⭐ PROMOTED · SEE OR UPGRADE" : "🚀 PROMOTE THIS MEET"}
+            </button>
+          )}
+          {promoting && <PromoteSheet event={event} onClose={() => setPromoting(false)} />}
 
           {event.meetStyle === "showcase" && <ShowcaseBanner note={locked ? "" : event.showcaseNote} />}
 

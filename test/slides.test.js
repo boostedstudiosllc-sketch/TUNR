@@ -71,3 +71,13 @@ test("meet times are read in the meet's own timezone", () => {
   assert.equal(startOf({ start: "2026-11-18T20:00", timezone: "America/Chicago" }), Date.parse("2026-11-19T02:00:00Z"));
   assert.ok(Number.isNaN(startOf({ start: null })));
 });
+
+test("Spotlight meets get a PROMOTED slide after the admin slides", () => {
+  const promo = { id: "pm", title: "Paid meet", start: at(48), going: 3, promotedBanner: true, location: "Buckhead" };
+  const slides = buildSlides({ admin: [{ id: "a1", title: "First", link: "tab:perks" }], events: [...events, promo], now: NOW });
+  assert.deepEqual(slides.map((s) => s.id).slice(0, 3), ["a1", "promo:pm", "hot:big"]);
+  assert.equal(slides[1].kicker, "⭐ PROMOTED");
+  assert.equal(slides[1].link, "meet:pm");
+  const mine = buildSlides({ events: [{ ...promo, start: at(6) }], rsvps: { pm: "going" }, now: NOW });
+  assert.deepEqual(mine.map((s) => s.id), ["mine:pm"], "your own next meet shows once, not twice");
+});

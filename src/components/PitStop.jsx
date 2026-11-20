@@ -1,16 +1,29 @@
 import { useState } from "react";
-import { claimPitStop } from "../lib/pitStop.js";
-import { weekDots, bonusLine } from "../lib/pitStopRules.js";
+import { claimPitStop, restorePitStop } from "../lib/pitStop.js";
+import { weekDots, bonusLine, restoreOffer } from "../lib/pitStopRules.js";
 
 // The Daily Pit Stop card: seven days in a row, a point a day, a bonus on
 // the 7th (117_daily_pit_stop.sql). Used in the pop-up once a day
 // (PitStopPopup) and as the last setup screen (SetupTour.jsx). Always dark.
 
-export function PitStopCard({ status, onClaimed, onError }) {
+export function PitStopCard({ status: given, onClaimed, onError }) {
   const [busy, setBusy] = useState(false);
   const [won, setWon] = useState(null); // { points, streak, bonus }
+  const [restored, setRestored] = useState(null); // the streak brought back (TUNR+)
+  const status = restored ? { ...given, streak: restored, lost_streak: 0 } : given;
   const done = Boolean(won) || Boolean(status?.today_done);
   const streak = won ? won.streak : status?.streak || 0;
+  const offer = won ? null : restoreOffer(status);
+  const restore = async () => {
+    setBusy(true);
+    try {
+      setRestored((await restorePitStop()).streak);
+    } catch (e) {
+      onError?.(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
   const dots = weekDots(streak, done);
 
   const claim = async () => {
@@ -33,6 +46,18 @@ export function PitStopCard({ status, onClaimed, onError }) {
       <div style={{ fontSize: 15, color: "#9AA4B2", fontFamily: "'Barlow', sans-serif", marginTop: 6 }}>
         {won ? `+${won.points} ⭐ in your balance${won.bonus ? ". 7-day bonus!" : ""}` : done ? "Done for today. Come back tomorrow to keep it going." : `Open TUNR every day: +${status?.daily_points ?? 1} ⭐ a day.`}
       </div>
+
+      {offer && (
+        <div style={{ marginTop: 14, padding: "10px 12px", borderRadius: 12, background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.45)", textAlign: "left" }}>
+          <div style={{ fontSize: 14, color: "#DDD6FE", fontFamily: "'Barlow', sans-serif", lineHeight: 1.4 }}>💔 {offer.text}</div>
+          {offer.action === "restore" && (
+            <button onClick={restore} disabled={busy} style={{ width: "100%", marginTop: 8, padding: "10px 0", borderRadius: 10, border: "none", background: "#7C3AED", color: "#fff", fontSize: 15, fontWeight: 900, letterSpacing: 1, cursor: "pointer", fontFamily: "inherit" }}>
+              {busy ? "…" : `💜 RESTORE MY ${status.lost_streak}-DAY STREAK`}
+            </button>
+          )}
+        </div>
+      )}
+      {restored && <div style={{ marginTop: 10, fontSize: 14, fontWeight: 800, color: "#C4B5FD" }}>💜 Streak restored. Claim today to keep it going.</div>}
 
       <div style={{ display: "flex", justifyContent: "center", gap: 7, marginTop: 18 }}>
         {dots.map((d) => (
