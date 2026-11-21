@@ -50,7 +50,7 @@ async function stripePost(secretKey, fetchImpl, path, fields) {
 
 // Merch shop (124): one line per item at the database's price, shipping as
 // a fixed rate, and Stripe collects the US shipping address.
-export function createShopCheckout({ secretKey, fetchImpl = fetch, orderId, lines, shippingCents, email, successUrl, cancelUrl }) {
+export function createShopCheckout({ secretKey, fetchImpl = fetch, now = Date.now, orderId, lines, shippingCents, email, successUrl, cancelUrl }) {
   const items = {};
   lines.forEach((l, i) => {
     const size = l.size && l.size !== "One size" ? ` (${l.size})` : "";
@@ -63,6 +63,10 @@ export function createShopCheckout({ secretKey, fetchImpl = fetch, orderId, line
     client_reference_id: orderId,
     customer_email: email || undefined,
     metadata: { kind: "shop", order_id: orderId },
+    // Cards only (no slow bank payments), and a short window so a cancelled
+    // order can't be paid much later.
+    payment_method_types: { 0: "card" },
+    expires_at: Math.floor(now() / 1000) + 31 * 60,
     payment_intent_data: { metadata: { kind: "shop", order_id: orderId } },
     shipping_address_collection: { allowed_countries: { 0: "US" } },
     shipping_options: { 0: { shipping_rate_data: { type: "fixed_amount", display_name: shippingCents ? "Standard shipping" : "Free shipping", fixed_amount: { amount: shippingCents, currency: "usd" } } } },

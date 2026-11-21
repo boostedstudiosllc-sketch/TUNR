@@ -1,0 +1,36 @@
+name: Load meets found online
+
+# The daily meet finder (a scheduled job) writes Georgia car meets and shows
+# it found on public event sites to data/found-meets/latest.json. This loads
+# that file into the admins' review queue (import_found_meets, 125). Nothing
+# is listed until an admin adds it (Settings → Admin → Found meets).
+
+on:
+  push:
+    branches:
+      - claude/tunr-car-meet-app-f9dqlh
+    paths:
+      - "data/found-meets/**"
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-migrations
+  cancel-in-progress: false
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check the file
+        run: node scripts/check-found-meets.mjs data/found-meets/latest.json
+      - name: Load it
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then echo "SUPABASE_DB_URL isn't set"; exit 1; fi
+          sudo apt-get install -y -qq postgresql-client > /dev/null
+          batch="$(git log -1 --format=%cs)-$(git rev-parse --short HEAD)"
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -At -v items="$(cat data/found-meets/latest.json)" -v batch="$batch" <<'SQL'
+          select public.import_found_meets((:'items'::jsonb) -> 'meets', :'batch');
+          SQL

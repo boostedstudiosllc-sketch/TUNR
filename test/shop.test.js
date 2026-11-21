@@ -48,6 +48,9 @@ test("shop: a Stripe checkout at the database's prices, with shipping and an add
   assert.match(s, /Free%20shipping/);
   assert.match(s, /metadata%5Bkind%5D=shop/);
   assert.match(s, /success_url=https%3A%2F%2Ftunr.app%2F%3Fshop%3Dthanks/);
+  assert.match(s, /payment_method_types%5D?%5B?0%5D=card|payment_method_types%5B0%5D=card/, "cards only");
+  const exp = Number(/expires_at=(\d+)/.exec(s)[1]);
+  assert.ok(exp - Date.now() / 1000 > 30 * 60 && exp - Date.now() / 1000 < 32 * 60, "the payment page expires after about half an hour");
 });
 
 test("shop: the problems, each with its own code", async () => {

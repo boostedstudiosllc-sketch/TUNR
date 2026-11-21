@@ -93,4 +93,28 @@ select tests.eq((public.admin_cancel_order((select (r->>'id')::uuid from o1)))->
 select tests.eq((public.admin_cancel_order((select (r->>'id')::uuid from o3)))->>'status', 'ok', 'a waiting order can be cancelled');
 select tests.ok(exists (select 1 from public.admin_log where target = 'shop_settings'), 'shop changes go in the admin log');
 
+-- ---------- security audit (124) ----------
+-- A cancelled waiting order's Stripe Checkout is still open: if the buyer
+-- pays it anyway, the money must not vanish silently (admins are told).
+select tests.logout();
+create temp table admin_alerts_before as
+  select count(*)::int as n from public.notifications n join public.profiles pr on pr.id = n.user_id where pr.is_admin and n.kind = 'shop_order';
+set local role service_role;
+create temp table late as select public.pay_order((select (r->>'id')::uuid from o3), 'cs_3', 2750, 'Mia', '{}') as r;
+reset role;
+select tests.ok((select count(*)::int from public.notifications n join public.profiles pr on pr.id = n.user_id where pr.is_admin and n.kind = 'shop_order')
+  > (select n from admin_alerts_before), 'a payment for a cancelled order is flagged to admins, not dropped as "already"');
+
+-- The same product and size on two cart lines counts against the stock together.
+update public.shop_products set stock = '{"One size": 1}'::jsonb where name = 'TUNR Hat';
+select tests.login(tests.id('nosy'));
+select tests.eq((public.start_order(jsonb_build_array(
+  jsonb_build_object('product', (select hat from p), 'qty', 1),
+  jsonb_build_object('product', (select hat from p), 'qty', 1))))->>'status', 'sold_out', 'splitting the cart into lines can''t buy more than is left');
+
+-- And against the 5-of-a-thing limit together.
+select tests.eq((public.start_order(jsonb_build_array(
+  jsonb_build_object('product', (select shirt from p), 'size', 'L', 'qty', 5),
+  jsonb_build_object('product', (select shirt from p), 'size', 'L', 'qty', 5))))->>'status', 'bad_qty', 'splitting the cart into lines can''t beat the 5-of-a-thing limit');
+
 rollback;
