@@ -413,7 +413,46 @@ export async function saveVehicle(vehicle, ownerId) {
       if (e2) console.warn("Couldn't add the cover to the gallery:", e2.message);
     }
   }
+  // The private VIN (131): saved, changed or removed with the car.
+  if (saved?.id && vehicle.vin !== undefined) {
+    if (vehicle.vin) {
+      const { error: e3 } = await supabase.from("vehicle_vins").upsert({ vehicle_id: saved.id, owner_id: ownerId, vin: vehicle.vin, decoded: vehicle.vinDecoded || {}, decoded_at: new Date().toISOString() });
+      if (e3) throw new Error(friendlyWriteError(e3, "Your car saved, but its VIN didn't."));
+    } else if (vehicle.hadVin) {
+      const { error: e4 } = await supabase.from("vehicle_vins").delete().eq("vehicle_id", saved.id);
+      if (e4) throw new Error(withReason("Your car saved, but its VIN wasn't removed.", e4));
+    }
+  }
   setupChanged(); // "Add your car" on the points checklist
+  return saved?.id;
+}
+
+// Your car's private VIN row (only you can read it), or null.
+export async function loadVehicleVin(vehicleId) {
+  if (!supabase || !vehicleId) return null;
+  const { data, error } = await supabase.from("vehicle_vins").select("vin, decoded, decoded_at").eq("vehicle_id", vehicleId).maybeSingle();
+  if (error) throw new Error(withReason("Couldn't load your car's VIN.", error));
+  return data;
+}
+
+// Decodes a VIN (api/_routes/vin.js → NHTSA). → { decoded, vin, note? }
+export async function decodeVin(vin) {
+  if (!supabase) throw new Error("Decoding a VIN needs a connection to TUNR.");
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  if (!token) throw new Error("Sign in to decode a VIN.");
+  let r, body;
+  try {
+    r = await fetch("/api/vin", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ vin }) });
+    body = await r.json().catch(() => ({}));
+  } catch (e) {
+    throw new Error(`Couldn't reach the VIN decoder. (${e.message})`);
+  }
+  if (!r.ok) {
+    const why = { bad_vin: body.detail, not_found: `NHTSA has no record of that VIN. (${body.detail || "not found"})`, decoder_failed: `The VIN decoder isn't answering right now. (${body.detail || r.status})`, not_signed_in: "Sign in to decode a VIN." };
+    throw new Error(why[body.error] || `Couldn't decode that VIN. (${body.error || `status ${r.status}`})`);
+  }
+  return body;
 }
 
 export async function deleteVehicle(vehicleId) {

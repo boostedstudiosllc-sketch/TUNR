@@ -143,9 +143,9 @@ test("reading headlight types", () => {
     ["Halogen headlights", "halogen", null],
     ["Laserlight", "laser", true],
     ["Laser lights", "laser", true],
-    ["Headlight", null, null],
   ];
   for (const [text, tech, adaptive] of cases) assert.deepEqual(headlightOf(text), { tech, adaptive }, text);
+  assert.equal(headlightOf("Headlight"), null, "no type mentioned: nothing to compare (the 'which version?' check covers it)");
 });
 
 test("reading transmissions", () => {

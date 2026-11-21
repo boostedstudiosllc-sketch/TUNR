@@ -26,6 +26,7 @@ const ROUTES = {
   "sign-in": () => import("./_routes/sign-in.js"),
   "stripe-webhook": () => import("./_routes/stripe-webhook.js"),
   turn: () => import("./_routes/turn.js"),
+  vin: () => import("./_routes/vin.js"),
 };
 
 export const ROUTE_NAMES = Object.keys(ROUTES);

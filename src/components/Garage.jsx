@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import BuildSheetForm, { sheetOf } from "./BuildSheetForm.jsx";
 import { modelsFor } from "../data/carModels.js";
+import { cleanVin, vinProblem, decodedLine } from "../lib/vin.js";
 import {
   loadCarMakes,
+  loadVehicleVin,
+  decodeVin,
   loadVehicles,
   saveVehicle,
   deleteVehicle,
@@ -157,6 +160,11 @@ export default function Garage({ user, onToast }) {
       paint: v.game_color || "",
       sheet: sheetOf(v),
     });
+    // The private VIN (131), if they added one.
+    loadVehicleVin(v.id)
+      // (Not over a VIN they've typed or decoded since opening the form.)
+      .then((row) => row && setEditing((d) => (d && d.id === v.id ? { ...d, hadVin: true, ...(d.vin === undefined ? { vin: row.vin, vinDecoded: row.decoded } : {}) } : d)))
+      .catch((e) => setError(e.message));
   }
 
   async function makePrimary(vehicle) {
@@ -361,6 +369,7 @@ export default function Garage({ user, onToast }) {
             gap: 11,
           }}
         >
+          <VinField editing={editing} setEditing={setEditing} makes={makes} labelStyle={labelStyle} inputStyle={inputStyle} onToast={onToast} />
           <div style={{ display: "flex", gap: 9 }}>
             <div style={{ width: 92 }}>
               <div style={labelStyle}>YEAR</div>
@@ -597,3 +606,66 @@ const linkStyle = {
   padding: 0,
   fontFamily: "'Barlow', sans-serif",
 };
+
+// The optional, private VIN (131): decode it to fill in the exact car, so
+// TUNR can check whether parts fit. Only the owner ever sees it.
+function VinField({ editing, setEditing, makes, labelStyle, inputStyle, onToast }) {
+  const [text, setText] = useState(editing.vin || "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  useEffect(() => setText(editing.vin || ""), [editing.vin]);
+  const decode = async () => {
+    const vin = cleanVin(text);
+    const problem = vinProblem(vin);
+    if (problem) return setError(problem);
+    setBusy(true);
+    setError("");
+    try {
+      const { decoded: raw } = await decodeVin(vin);
+      const d = { ...raw, make: makes.find((m) => m.toLowerCase() === String(raw.make).toLowerCase()) || "Other" };
+      const model = modelsFor(d.make).find((m) => m.toLowerCase() === d.model.toLowerCase()) || d.model;
+      setEditing((x) => ({
+        ...x,
+        vin,
+        vinDecoded: d,
+        year: d.year ? String(d.year) : x.year,
+        make: d.make,
+        model,
+        sheet: {
+          ...x.sheet,
+          trim: x.sheet.trim ? x.sheet.trim : d.trim,
+          drivetrain: d.drivetrain || x.sheet.drivetrain,
+          transmission: d.transmission || x.sheet.transmission,
+          engine: x.sheet.engine || d.engine,
+        },
+      }));
+      onToast?.(`Found it: ${decodedLine(d)}`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div style={{ padding: "10px 12px", borderRadius: 12, border: "1px solid var(--n-242424)", background: "var(--n-111111)" }}>
+      <div style={labelStyle}>VIN (OPTIONAL, PRIVATE)</div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input style={{ ...inputStyle, flex: 1, letterSpacing: 1, textTransform: "uppercase" }} maxLength={20} placeholder="17 characters" value={text} autoCapitalize="characters" autoComplete="off" spellCheck={false} aria-label="VIN" onChange={(e) => (setText(e.target.value), setError(""))} />
+        <button type="button" disabled={busy || !text.trim()} onClick={decode} style={{ padding: "0 14px", borderRadius: 10, border: "none", background: "#0080F0", color: "#fff", fontWeight: 900, letterSpacing: 1, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" }}>
+          {busy ? "…" : "DECODE"}
+        </button>
+      </div>
+      {editing.vinDecoded && editing.vin && <div style={{ fontSize: 12.5, color: "#10B981", fontWeight: 800, marginTop: 6, fontFamily: "'Barlow', sans-serif" }}>✓ {decodedLine(editing.vinDecoded)}</div>}
+      {editing.vinDecoded && editing.vin && !/\b[A-Z]\d{2}\b/.test(editing.sheet?.trim || "") && <div style={{ fontSize: 12, color: "#F59E0B", marginTop: 3, fontFamily: "'Barlow', sans-serif" }}>Tip: add the chassis code (like G30) to Trim below. A VIN doesn't include it, and it helps match parts.</div>}
+      {editing.vin && (
+        <button type="button" onClick={() => (setEditing((x) => ({ ...x, vin: "", vinDecoded: null })), setText(""))} style={{ background: "none", border: "none", color: "var(--n-888888)", fontSize: 12, padding: "4px 0 0", cursor: "pointer" }}>
+          Remove the VIN
+        </button>
+      )}
+      {error && <div role="alert" style={{ fontSize: 12.5, color: "var(--a-f87171)", marginTop: 6, fontFamily: "'Barlow', sans-serif" }}>{error}</div>}
+      <div style={{ fontSize: 11.5, color: "var(--n-7d8796)", marginTop: 6, lineHeight: 1.45, fontFamily: "'Barlow', sans-serif" }}>
+        Fills in your exact year, model, trim, drivetrain and engine, so TUNR can tell you which parts fit. Only you can see it; it's never on your profile. It's looked up with the US government's free VIN decoder (NHTSA). Options like adaptive headlights aren't in a VIN, so add those under Features.
+      </div>
+    </div>
+  );
+}

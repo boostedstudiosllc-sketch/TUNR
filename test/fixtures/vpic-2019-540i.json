@@ -1,0 +1,22 @@
+{
+ "Results": [
+  {
+   "ErrorCode": "0",
+   "ErrorText": "0 - VIN decoded clean. Check Digit (9th position) is correct",
+   "ModelYear": "2019",
+   "Make": "BMW",
+   "Model": "540i",
+   "Series": "5-Series",
+   "Trim": "xDrive",
+   "Trim2": "",
+   "BodyClass": "Sedan/Saloon",
+   "DriveType": "AWD/All-Wheel Drive",
+   "TransmissionStyle": "Automatic",
+   "TransmissionSpeeds": "8",
+   "DisplacementL": "3.0",
+   "EngineCylinders": "6",
+   "EngineModel": "",
+   "FuelTypePrimary": "Gasoline"
+  }
+ ]
+}

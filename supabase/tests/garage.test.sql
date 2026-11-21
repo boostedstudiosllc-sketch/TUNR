@@ -50,4 +50,21 @@ update public.vehicles set features = array['Hacked'] where id = '00000000-0000-
 select tests.login(tests.id('ana'));
 select tests.eq((select features[1] from public.vehicles where id = '00000000-0000-0000-0000-0000000000c1'), 'Adaptive LED headlights', 'nobody else changes them');
 
+-- (131) The VIN is private: only the owner.
+select tests.login(tests.id('ana'));
+insert into public.vehicle_vins (vehicle_id, vin, decoded) values ('00000000-0000-0000-0000-0000000000c1', 'WBAJE7C59KWW23963', '{"model": "540i"}');
+select tests.eq((select vin from public.vehicle_vins where vehicle_id = '00000000-0000-0000-0000-0000000000c1'), 'WBAJE7C59KWW23963', 'the owner saves their VIN');
+select tests.fails($$ insert into public.vehicle_vins (vehicle_id, vin) values ('00000000-0000-0000-0000-0000000000c1', 'WBAJE7C5IKWW2396O') $$, 'vehicle_vins_vin_check', 'VINs never use I, O or Q');
+select tests.login(tests.id('ben'));
+select tests.eq((select count(*) from public.vehicle_vins)::int, 0, 'nobody else sees a VIN');
+select tests.blocked_by_rls($$ insert into public.vehicle_vins (vehicle_id, vin) values ('00000000-0000-0000-0000-0000000000c1', 'WBAJE7C59KWW23964') $$, 'nobody adds a VIN to someone else''s car');
+update public.vehicle_vins set vin = 'WBAJE7C59KWW23999';
+delete from public.vehicle_vins;
+select tests.login(null);
+select tests.fails($$ select count(*) from public.vehicle_vins $$, 'permission denied', 'signed-out visitors can''t read VINs');
+select tests.login(tests.id('ana'));
+select tests.eq((select vin from public.vehicle_vins), 'WBAJE7C59KWW23963', 'and nobody else changes or deletes it');
+delete from public.vehicle_vins;
+select tests.eq((select count(*) from public.vehicle_vins)::int, 0, 'the owner can delete it');
+
 rollback;
