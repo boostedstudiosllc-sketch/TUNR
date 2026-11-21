@@ -4,6 +4,7 @@
 //      and removing accounts still unconfirmed past their date
 //   3. on Saturdays, "keep your streak alive" for streaks with no check-in
 //      yet this week (queue_streak_reminders, 054)
+//   4. meet awards: tell the winners of any vote that closed (127)
 // then delivers any alerts that queued. If CRON_SECRET is set in Vercel,
 // only Vercel Cron can start it.
 
@@ -39,6 +40,12 @@ export function createHandler({ env = process.env, fetchImpl = fetch, webpushImp
       if (sent !== null) out.streakReminders = sent;
     } catch (e) {
       out.streaksError = String(e?.message || e).slice(0, 200);
+    }
+    try {
+      // Meet awards (127): announce winners of any vote that closed.
+      out.awardsAnnounced = await service.rest("/rest/v1/rpc/finish_all_meet_awards", { method: "POST", body: "{}" });
+    } catch (e) {
+      out.awardsError = String(e?.message || e).slice(0, 200);
     }
     try {
       out.accounts = await createAccounts(service, { now }).runDaily();

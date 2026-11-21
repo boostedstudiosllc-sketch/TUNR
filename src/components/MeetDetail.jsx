@@ -20,6 +20,7 @@ import { openParked } from "../lib/parking.js";
 import { GOING_AS, crowdLine } from "../lib/photographer.js";
 import DirectionsIcon from "./DirectionsIcon.jsx";
 import PromoteSheet from "./PromoteSheet.jsx";
+import MeetAwardsCard from "./MeetAwards.jsx";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -495,6 +496,7 @@ export default function MeetDetail({
             </button>
           )}
           {promoting && <PromoteSheet event={event} onClose={() => setPromoting(false)} />}
+          <MeetAwardsCard event={event} user={user} canEdit={canEdit} onNeedAccount={onNeedAccount} onToast={onToast} />
 
           {event.meetStyle === "showcase" && <ShowcaseBanner note={locked ? "" : event.showcaseNote} />}
 
