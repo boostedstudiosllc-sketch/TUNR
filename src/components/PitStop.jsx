@@ -55,6 +55,11 @@ export function PitStopCard({ status: given, onClaimed, onError }) {
               {busy ? "…" : `💜 RESTORE MY ${status.lost_streak}-DAY STREAK`}
             </button>
           )}
+          {offer.action === "member" && (
+            <button onClick={() => window.dispatchEvent(new CustomEvent("tunr:open", { detail: { link: "open:membership" } }))} style={{ width: "100%", marginTop: 8, padding: "10px 0", borderRadius: 10, border: "1px solid #A855F7", background: "transparent", color: "#DDD6FE", fontSize: 15, fontWeight: 900, letterSpacing: 1, cursor: "pointer", fontFamily: "inherit" }}>
+              💎 SEE TUNR+
+            </button>
+          )}
         </div>
       )}
       {restored && <div style={{ marginTop: 10, fontSize: 14, fontWeight: 800, color: "#C4B5FD" }}>💜 Streak restored. Claim today to keep it going.</div>}

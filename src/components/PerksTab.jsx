@@ -18,8 +18,6 @@ const CATEGORY_LABELS = {
   other: "OTHER",
 };
 
-export const MEMBERSHIP_PRICE = "$3.99";
-
 // Everyone sees every offer — seeing what you'd get is the whole argument for
 // joining. The code and booking link come back null from the database for
 // non-members, so this component never has to be trusted with the paywall.
@@ -203,7 +201,7 @@ export default function PerksTab({ user, onNeedAccount, onToast, launch = null, 
           />
         )}
 
-        {!isMember && memberPerks > 0 && <JoinCard count={memberPerks} onNeedAccount={onNeedAccount} user={user} />}
+        {!isMember && memberPerks > 0 && <JoinCard count={memberPerks} />}
 
         {loading ? (
           <Empty title="Loading perks…" sub="" />
@@ -279,64 +277,20 @@ function PointsCard({ points, onOpen }) {
   );
 }
 
-function JoinCard({ count, user, onNeedAccount }) {
+function JoinCard({ count }) {
   return (
-    <div
-      style={{
-        background: "var(--n-111111)",
-        border: "1px solid #0080F0",
-        borderRadius: 12,
-        padding: "18px 20px",
-        marginBottom: 16,
-      }}
+    <button
+      onClick={() => window.dispatchEvent(new CustomEvent("tunr:open", { detail: { link: "open:membership" } }))}
+      style={{ width: "100%", textAlign: "left", background: "var(--n-111111)", border: "1px solid #A855F7", borderRadius: 12, padding: "16px 18px", marginBottom: 16, color: "var(--n-f0f0f0)", cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" }}
     >
-      <div style={{ fontSize: 19, fontWeight: 900, letterSpacing: 0.4 }}>
-        {count} {count === 1 ? "DISCOUNT" : "DISCOUNTS"}, {MEMBERSHIP_PRICE}/MONTH
-      </div>
-      <div
-        style={{
-          fontSize: 13,
-          color: "var(--n-999999)",
-          marginTop: 8,
-          lineHeight: 1.65,
-          fontFamily: "'Barlow', sans-serif",
-        }}
-      >
-        Finding meets is free and always will be. Membership is for the perks — one detail
-        discount usually covers the year.
-      </div>
-      <button
-        className="action-btn"
-        onClick={() => (user ? null : onNeedAccount())}
-        disabled={Boolean(user)}
-        style={{
-          width: "100%",
-          marginTop: 14,
-          padding: "13px 0",
-          background: user ? "var(--n-1a1a1a)" : "#0080F0",
-          color: user ? "#666" : "#fff",
-          border: user ? "1px solid var(--n-2a2a2a)" : "none",
-          borderRadius: 9,
-          fontSize: 13,
-          fontWeight: 800,
-          letterSpacing: 1.6,
-          fontFamily: "'Barlow Condensed', sans-serif",
-        }}
-      >
-        {user ? "MEMBERSHIP OPENS SOON" : "CREATE A FREE ACCOUNT FIRST"}
-      </button>
-      <div
-        style={{
-          fontSize: 11,
-          color: "var(--n-555555)",
-          marginTop: 8,
-          textAlign: "center",
-          fontFamily: "'Barlow', sans-serif",
-        }}
-      >
-        Not charging yet — we're signing up partners first.
-      </div>
-    </div>
+      <span style={{ display: "block", fontSize: 19, fontWeight: 900, letterSpacing: 0.4 }}>
+        💎 {count} MEMBER {count === 1 ? "DISCOUNT" : "DISCOUNTS"} WITH TUNR+
+      </span>
+      <span style={{ display: "block", fontSize: 13, color: "var(--n-999999)", marginTop: 6, lineHeight: 1.5, fontFamily: "'Barlow', sans-serif" }}>
+        Plus streak restores, your whole garage, profile colours and every Park Up level. One detail discount usually covers the year.
+      </span>
+      <span style={{ display: "block", marginTop: 10, fontSize: 14, fontWeight: 900, letterSpacing: 1.4, color: "var(--a-a855f7)" }}>SEE TUNR+ ›</span>
+    </button>
   );
 }
 

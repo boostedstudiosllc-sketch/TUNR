@@ -182,7 +182,7 @@ async function loadTasks(user) {
     setupStep("alerts", "🔔", "Turn on alerts", "Profile → Alerts, on this phone.", pays.alerts, starter?.alerts),
   ];
   if (rates.member_bonus > 0) {
-    tasks.push({ group: "ONE TIME", id: "member", icon: "💎", title: "Become a TUNR member", text: "Member discounts at Atlanta shops, plus a one-time bonus.", pts: `+${rates.member_bonus}`, done: Boolean(profile?.isMember), go: () => go("tab:perks") });
+    tasks.push({ group: "ONE TIME", id: "member", icon: "💎", title: "Join TUNR+", text: "Member discounts, streak restores and more, plus a one-time bonus.", pts: `+${rates.member_bonus}`, done: Boolean(profile?.isMember), go: () => go("open:membership") });
   }
   // Each task's waiting points, so it shows CLAIM.
   for (const t of tasks) t.claim = unclaimed.filter((u) => (TASK_REASONS[t.id] || []).includes(u.reason));

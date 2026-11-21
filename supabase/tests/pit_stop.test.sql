@@ -59,8 +59,13 @@ select tests.eq(((public.claim_pit_stop())->>'streak')::int, 15, 'today''s claim
 select tests.logout();
 delete from public.daily_pit_stops where user_id = tests.id('member') and day >= public.atl_today() - 2;
 select tests.login(tests.id('member'));
-select tests.eq((public.restore_pit_stop())->>'status', 'too_soon', 'once every 3 months');
+select tests.eq((public.restore_pit_stop())->>'status', 'too_soon', 'once every 30 days');
 select tests.ok((public.pit_stop_status())->>'restore_at' is not null, 'and the app says when the next one is');
+select tests.eq(((public.pit_stop_status())->>'restore_days')::int, 30, 'the app knows the wait');
+select tests.logout();
+update public.pit_stop_restores set used_at = now() - interval '31 days' where user_id = tests.id('member');
+select tests.login(tests.id('member'));
+select tests.eq((public.pit_stop_status())->>'can_restore', 'true', 'a month later it''s available again');
 -- A streak lost too long ago can't come back.
 select tests.logout();
 delete from public.pit_stop_restores where user_id = tests.id('member');

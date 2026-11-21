@@ -1,3 +1,4 @@
+import { loadMembership } from "../lib/membership.js";
 import { useEffect, useState } from "react";
 import TunrRush from "./TunrRush.jsx";
 import ParkUp from "./ParkUp.jsx";
@@ -52,10 +53,11 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
   const [eggBest, setEggBest] = useState(0);
   const [drag, setDrag] = useState(null);
   const [stackBest, setStackBest] = useState(null);
-  // All access (the operator's account): every level open.
+  // TUNR+ members and all access (the operator's account): every level open.
   const [allAccess, setAllAccess] = useState(false);
   useEffect(() => {
-    loadAllAccess(user?.id).then(setAllAccess);
+    if (!user?.id) return setAllAccess(false);
+    Promise.all([loadAllAccess(user.id), loadMembership().catch(() => null)]).then(([all, m]) => setAllAccess(Boolean(all || m?.member)));
   }, [user?.id]);
 
   // Stars come back up to date after a round of Park Up.

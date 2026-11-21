@@ -247,6 +247,11 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
             🔒 Invite 5 friends to pick your profile color
           </button>
         )}
+        {!flairOpen && (
+          <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("tunr:open", { detail: { link: "open:membership" } }))} style={{ ...pill, width: "100%", marginTop: 6, color: "var(--a-a855f7)", borderColor: "#A855F7", textAlign: "left", whiteSpace: "normal" }}>
+            💎 Or join TUNR+ to unlock it now
+          </button>
+        )}
       </div>
 
       <label

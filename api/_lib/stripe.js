@@ -37,6 +37,56 @@ export async function createCheckout({ secretKey, fetchImpl = fetch, amountCents
   return data;
 }
 
+async function stripePost(secretKey, fetchImpl, path, fields) {
+  const r = await fetchImpl(`https://api.stripe.com/v1/${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body: formEncode(fields),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || !data.url) throw new Error(data?.error?.message || `stripe ${r.status}`);
+  return data;
+}
+
+// TUNR+ (122): a monthly or yearly subscription at the database's price.
+// The member's id rides on the session and the subscription, so every
+// webhook about it knows whose it is.
+export function createMembershipCheckout({ secretKey, fetchImpl = fetch, userId, plan, amountCents, customer, email, successUrl, cancelUrl }) {
+  return stripePost(secretKey, fetchImpl, "checkout/sessions", {
+    mode: "subscription",
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    client_reference_id: userId,
+    customer: customer || undefined,
+    customer_email: customer ? undefined : email || undefined,
+    metadata: { kind: "membership", user_id: userId, plan },
+    subscription_data: { metadata: { kind: "membership", user_id: userId, plan } },
+    line_items: { 0: { quantity: 1, price_data: { currency: "usd", unit_amount: amountCents, recurring: { interval: plan }, product_data: { name: "TUNR+ membership" } } } },
+  });
+}
+
+// Stripe's billing page: change card, switch plan, cancel.
+export function createBillingPortal({ secretKey, fetchImpl = fetch, customer, returnUrl }) {
+  return stripePost(secretKey, fetchImpl, "billing_portal/sessions", { customer, return_url: returnUrl });
+}
+
+// What a subscription event means for membership (sync_membership's args).
+export function membershipFromSubscription(sub, eventType) {
+  const item = sub?.items?.data?.[0];
+  const until = sub?.current_period_end ?? item?.current_period_end ?? null;
+  const cancelAt = sub?.cancel_at ?? (sub?.cancel_at_period_end ? until : null);
+  const iso = (t) => (t ? new Date(t * 1000).toISOString() : null);
+  return {
+    p_user: sub?.metadata?.user_id || null,
+    p_status: eventType === "customer.subscription.deleted" ? "canceled" : sub?.status || null,
+    p_plan: item?.price?.recurring?.interval || sub?.metadata?.plan || null,
+    p_until: iso(until),
+    p_cancel_at: iso(cancelAt),
+    p_customer: typeof sub?.customer === "string" ? sub.customer : sub?.customer?.id || null,
+    p_subscription: sub?.id || null,
+  };
+}
+
 // true when the Stripe-Signature header matches the raw body, signed in the
 // last 5 minutes.
 export function verifyStripeSignature(rawBody, header, secret, nowSec = Math.floor(Date.now() / 1000), toleranceSec = 300) {

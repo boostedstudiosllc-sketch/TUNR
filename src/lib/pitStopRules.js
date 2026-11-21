@@ -29,10 +29,12 @@ export function bonusLine(streak, todayDone, bonus) {
 export function restoreOffer(status, now = Date.now()) {
   if (!status?.lost_streak || status.today_done || status.streak) return null;
   const n = status.lost_streak;
-  if (status.can_restore) return { text: `Your ${n}-day streak ended. TUNR+ can bring it back (once every 3 months).`, action: "restore" };
+  const days = status.restore_days || 30;
+  const every = days === 30 ? "once a month" : `once every ${days} days`;
+  if (status.can_restore) return { text: `Your ${n}-day streak ended. TUNR+ can bring it back (${every}).`, action: "restore" };
   if (status.member && status.restore_at) {
     const when = new Date(status.restore_at).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
     return { text: `Your ${n}-day streak ended. Your next TUNR+ restore is available ${when}.`, action: "soon" };
   }
-  return { text: `Your ${n}-day streak ended. TUNR+ members can bring it back once every 3 months.`, action: "member" };
+  return { text: `Your ${n}-day streak ended. TUNR+ members can bring it back ${every}.`, action: "member" };
 }

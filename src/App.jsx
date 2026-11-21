@@ -75,6 +75,7 @@ import { JOIN_KEY } from "./lib/gameRooms.js";
 import { saveSnapshot, loadSnapshot, offlineLine } from "./lib/offline.js";
 import Convoy from "./components/Convoy.jsx";
 import PhotoSpots from "./components/PhotoSpots.jsx";
+import Membership from "./components/Membership.jsx";
 import HomeSlides from "./components/HomeSlides.jsx";
 import { loadPromoted } from "./lib/promotions.js";
 import { withPromoted, pinPromoted } from "./lib/promoRules.js";
@@ -215,6 +216,7 @@ export default function App() {
 
   // Photo spots: the discover screen (PhotoSpots.jsx), opened from anywhere.
   const [spotsOpen, setSpotsOpen] = useState(false);
+  const [memberOpen, setMemberOpen] = useState(false);
   useEffect(() => {
     const open = () => setSpotsOpen(true);
     window.addEventListener(SPOTS_OPEN, open);
@@ -450,6 +452,15 @@ export default function App() {
       .then(setPromoted)
       .catch((e) => console.warn(e.message));
   }, [online, user?.id]);
+  // Back from joining TUNR+ (?member=welcome).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("member")) return;
+    params.delete("member");
+    window.history.replaceState(null, "", `${window.location.pathname}${params.size ? `?${params}` : ""}`);
+    showToast("💎 Welcome to TUNR+! Your perks switch on as soon as the payment's through.");
+    setMemberOpen(true);
+  }, []);
   // Back from paying to promote a meet (?promoted=<id>).
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -695,6 +706,7 @@ export default function App() {
       if (id === "photo-spots") setSpotsOpen(true);
       else if (id === "pitstop") showPitStop(true);
       else if (id === "setup") setSetupTour("all");
+      else if (id === "membership") (setPitStop(null), setMemberOpen(true));
     } else if (type === "convoy") {
       setConvoyCode(id);
     } else if (type === "tab") {
@@ -1652,6 +1664,17 @@ export default function App() {
 
       {setupTour && user && <SetupTour all={setupTour === "all"} onDone={() => (setSetupTour(null), setPitStop(null))} onToast={showToast} />}
       {pitStop && !setupTour && <PitStopPopup status={pitStop} onClose={() => setPitStop(null)} onToast={showToast} />}
+      {memberOpen && (
+        <Membership
+          user={user}
+          onClose={() => setMemberOpen(false)}
+          onNeedAccount={() => {
+            setMemberOpen(false);
+            setTab("profile");
+            showToast("Create a free account first");
+          }}
+        />
+      )}
       {spotsOpen && (
         <PhotoSpots
           user={user}
