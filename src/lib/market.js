@@ -3,6 +3,7 @@ import { withReason, friendlyWriteError } from "./errors.js";
 import { cleanForSending } from "./clean.js";
 import { uploadEventPhoto } from "./store.js";
 import { compressImage } from "./image.js";
+import { fitProblem, fitRow, fitFilter } from "./fitment.js";
 
 // Parts for sale (103_parts_marketplace.sql): listings, and a private chat
 // between a buyer and the seller. Deals happen off the app.
@@ -71,12 +72,14 @@ const need = () => {
 };
 
 // Live listings (and pending/sold ones, faded), newest first.
-export async function loadListings({ category = null, q = "", status = "live", seller = null } = {}) {
+export async function loadListings({ category = null, q = "", status = "live", seller = null, fit = null } = {}) {
   if (!supabase) return [];
   let query = supabase.from("listings_feed").select("*").order("created_at", { ascending: false }).limit(120);
   if (seller) query = query.eq("seller_id", seller).neq("status", "removed");
   else query = query.in("status", status === "live" ? ["active", "pending"] : ["active", "pending", "sold"]);
   if (category) query = query.eq("category", category);
+  const fits = fitFilter(fit);
+  if (fits) query = query.or(fits);
   const term = q.trim().replace(/[%,()]/g, " ");
   if (term) query = query.or(`title.ilike.%${term}%,fits.ilike.%${term}%,description.ilike.%${term}%`);
   const { data, error } = await query;
@@ -97,12 +100,15 @@ export async function uploadListingPhoto(file, userId) {
   return uploadEventPhoto(await compressImage(file), userId);
 }
 
-// draft: { title, description, category, condition, price (text), fits, city, photos }
+// draft: { title, description, category, condition, price (text), fits, city, photos,
+//   fit_universal, fit_make, fit_model, fit_year_from, fit_year_to }
 function toRow(d) {
   const price = parsePrice(d.price);
   if (Number.isNaN(price)) throw new Error("Price: just the number, like 450.");
   if (!d.photos?.length) throw new Error("Add at least one photo.");
   if ((d.title || "").trim().length < 3) throw new Error("Give it a title (what the part is).");
+  const fitError = fitProblem(d);
+  if (fitError) throw new Error(fitError);
   return {
     title: cleanForSending(d.title.trim()),
     description: cleanForSending((d.description || "").trim()),
@@ -112,6 +118,7 @@ function toRow(d) {
     fits: cleanForSending((d.fits || "").trim()) || null,
     city: (d.city || "").trim() || null,
     photos: d.photos,
+    ...fitRow(d),
   };
 }
 

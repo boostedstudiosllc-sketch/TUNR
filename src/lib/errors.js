@@ -77,6 +77,8 @@ const WRITE_ERROR_COPY = {
   card_count_check: "Make between 1 and 500 cards at a time.",
   point_cards_points_check: "Each card can give between 1 and 100,000 points.",
   point_cards_label_check: "Say what the cards are for, in up to 60 characters.",
+  listings_fit_years_check: "The last year it fits can't be before the first.",
+  fitment_required: "Say which car the part fits: make, model and year (or tick Universal).",
   invite_to_unlock_cars: "Invite 1 friend (or join TUNR+) to add more cars. Profile → 🎁 Invite.",
   invite_to_unlock_clubs: "Invite 1 friend (or join TUNR+) to start your own club. Profile → 🎁 Invite.",
   invite_to_unlock_flair: "Invite 5 friends (or join TUNR+) to unlock profile colors. Profile → 🎁 Invite.",

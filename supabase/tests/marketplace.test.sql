@@ -13,10 +13,26 @@ grant select on photo to authenticated;
 
 -- ---------- listing ----------
 select tests.login(tests.id('seller'));
-insert into public.listings (title, category, condition, price_cents, photos)
-values ('Enkei RPF1 17x9', 'wheels', 'used', 80000, array[(select url from photo)]);
+insert into public.listings (title, category, condition, price_cents, photos, fit_make, fit_model, fit_year_from, fit_year_to)
+values ('Enkei RPF1 17x9', 'wheels', 'used', 80000, array[(select url from photo)], 'Subaru', 'WRX', 2015, 2021);
 select tests.eq((select status from public.listings), 'active', 'a new listing goes live');
 select tests.eq((select seller_id from public.listings), tests.id('seller'), 'the seller is whoever is signed in');
+-- (128) Which car it fits is required.
+select tests.fails($$ insert into public.listings (title, category, condition, photos) values ('Mystery part', 'other', 'used', array[(select url from photo)]) $$,
+  'fitment_required', 'a part has to say which car it fits');
+select tests.fails($$ insert into public.listings (title, category, condition, photos, fit_make, fit_year_from) values ('Half filled', 'other', 'used', array[(select url from photo)], 'Honda', 2004) $$,
+  'fitment_required', 'make, model and year, not just some of them');
+select tests.fails($$ insert into public.listings (title, category, condition, photos, fit_make, fit_model, fit_year_from) values ('Bad make', 'other', 'used', array[(select url from photo)], 'Yugo-ish', 'X', 2004) $$,
+  'violates foreign key', 'the make comes from TUNR''s list');
+select tests.fails($$ insert into public.listings (title, category, condition, photos, fit_make, fit_model, fit_year_from, fit_year_to) values ('Backwards', 'other', 'used', array[(select url from photo)], 'Honda', 'Civic', 2010, 2004) $$,
+  'listings_fit_years_check', 'years run forwards');
+insert into public.listings (title, category, condition, photos, fit_make, fit_model, fit_year_from) values ('S2000 hardtop', 'aero', 'used', array[(select url from photo)], 'Honda', 'S2000', 2004);
+select tests.eq((select fit_year_to from public.listings where title = 'S2000 hardtop'), 2004, 'one year means just that year');
+insert into public.listings (title, category, condition, photos, fit_universal, fit_make) values ('Bride seat', 'interior', 'used', array[(select url from photo)], true, 'Honda');
+select tests.eq((select fit_make from public.listings where title = 'Bride seat'), null, 'a universal part fits any car');
+select tests.fails($$ update public.listings set fit_make = null where title = 'S2000 hardtop' $$, 'fitment_required', 'and the fitment can''t be taken off later');
+select tests.eq((select count(*) from public.listings_feed where fit_make = 'Subaru' and fit_model = 'WRX' and 2018 between fit_year_from and fit_year_to)::int, 1, 'the feed filters by make, model and year');
+delete from public.listings where title in ('S2000 hardtop', 'Bride seat');
 
 select tests.fails($$ insert into public.listings (title, category, condition, photos)
   values ('Spoiler', 'aero', 'used', array['https://evil.example/storage/v1/object/public/event-photos/x.jpg']) $$,
@@ -24,8 +40,8 @@ select tests.fails($$ insert into public.listings (title, category, condition, p
 select tests.fails(format($$ insert into public.listings (title, category, condition, photos)
   values ('Spoiler', 'aero', 'used', array['https://abcdefghijklmnopqrst.supabase.co/storage/v1/object/public/event-photos/%s/1.jpg']) $$, tests.id('buyer')),
   'listing_photo_not_ours', 'someone else''s uploaded photo is refused');
-select tests.blocked_by_rls(format($$ insert into public.listings (seller_id, title, category, condition, photos)
-  values (%1$L, 'Fake', 'other', 'used', array['https://abcdefghijklmnopqrst.supabase.co/storage/v1/object/public/event-photos/%1$s/1.jpg']) $$, tests.id('buyer')),
+select tests.blocked_by_rls(format($$ insert into public.listings (seller_id, title, category, condition, fit_universal, photos)
+  values (%1$L, 'Fake', 'other', 'used', true, array['https://abcdefghijklmnopqrst.supabase.co/storage/v1/object/public/event-photos/%1$s/1.jpg']) $$, tests.id('buyer')),
   'you can''t list a part as someone else');
 select tests.fails($$ update public.listings set status = 'removed' $$, 'admins_remove_listings', 'a seller can''t mark their own listing removed');
 update public.listings set seller_id = (select id from tests.people where name = 'buyer');
@@ -41,7 +57,7 @@ select tests.logout();
 insert into public.listings (seller_id, title, category, condition, photos)
 select tests.id('seller'), 'Part ' || g, 'other', 'used', array[(select url from photo)] from generate_series(1, 9) g;
 select tests.login(tests.id('seller'));
-select tests.fails($$ insert into public.listings (title, category, condition, photos) values ('One more', 'other', 'used', array[(select url from photo)]) $$,
+select tests.fails($$ insert into public.listings (title, category, condition, photos, fit_universal) values ('One more', 'other', 'used', array[(select url from photo)], true) $$,
   'rate_limit_listings', 'the 11th listing in a day is refused');
 
 -- ---------- seeing ----------
@@ -52,7 +68,7 @@ select tests.blocked_by_rls($$ delete from public.listings $$, 'a buyer can''t d
 
 select tests.login(null);
 select tests.eq((select count(*) from public.listings_feed)::int, 0, 'signed-out visitors see no listings');
-select tests.blocked_by_rls($$ insert into public.listings (seller_id, title, category, condition, photos) values (gen_random_uuid(), 'x', 'other', 'used', array['x']) $$,
+select tests.blocked_by_rls($$ insert into public.listings (seller_id, title, category, condition, fit_universal, photos) values (gen_random_uuid(), 'x', 'other', 'used', true, array['x']) $$,
   'signed-out visitors can''t list');
 
 -- An admin removes one; it disappears for everyone but the seller and admins.

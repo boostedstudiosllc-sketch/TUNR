@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { fitLabel, filterLabel, YEARS } from "../lib/fitment.js";
+import { modelsFor } from "../data/carModels.js";
+import { loadCarMakes, loadVehicles } from "../lib/store.js";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton, Chip } from "./Sheet.jsx";
 import { Avatar } from "./EditProfile.jsx";
 import { ReportSheet } from "./CommunityBits.jsx";
@@ -42,6 +45,8 @@ export default function MarketTab({ user, onNeedAccount, onToast, onOpenPerson, 
   const [q, setQ] = useState("");
   const [showSold, setShowSold] = useState(false);
   const [mine, setMine] = useState(false);
+  const [fit, setFit] = useState(null); // { make, model, year } — parts that fit this car
+  const [picking, setPicking] = useState(false);
   const [viewing, setViewing] = useState(null); // listing id
   const [selling, setSelling] = useState(null); // null | {} (new) | listing (edit)
   const [inbox, setInbox] = useState(false);
@@ -51,7 +56,7 @@ export default function MarketTab({ user, onNeedAccount, onToast, onOpenPerson, 
 
   const load = () => {
     setError("");
-    loadListings({ category, q, status: showSold ? "all" : "live", seller: mine ? user?.id : null })
+    loadListings({ category, q, status: showSold ? "all" : "live", seller: mine ? user?.id : null, fit })
       .then(setListings)
       .catch((e) => setError(e.message));
   };
@@ -59,7 +64,7 @@ export default function MarketTab({ user, onNeedAccount, onToast, onOpenPerson, 
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(load, q ? 300 : 0);
     return () => clearTimeout(searchTimer.current);
-  }, [category, q, showSold, mine, user?.id]);
+  }, [category, q, showSold, mine, user?.id, fit]);
 
   const refreshChats = () => {
     if (!user) return;
@@ -110,6 +115,21 @@ export default function MarketTab({ user, onNeedAccount, onToast, onOpenPerson, 
           </span>
         ))}
       </div>
+      <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>
+        <button
+          onClick={() => setPicking(true)}
+          aria-label={fit ? `${filterLabel(fit)}. Change the car` : "Filter by the car a part fits"}
+          style={{ flex: 1, textAlign: "left", padding: "10px 14px", borderRadius: 12, border: `1.5px solid ${fit ? "#0080F0" : "var(--n-2a2a2a)"}`, background: fit ? "rgba(0,128,240,0.12)" : "var(--n-161616)", color: "var(--n-f0f0f0)", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" }}
+        >
+          🚗 {fit ? filterLabel(fit) : "Fits which car? Any car"}
+        </button>
+        {fit && (
+          <button aria-label="Show parts for any car" onClick={() => setFit(null)} style={{ width: 42, height: 42, borderRadius: 12, border: "1px solid var(--n-2a2a2a)", background: "var(--n-161616)", color: "var(--n-f0f0f0)", fontSize: 15, cursor: "pointer" }}>
+            ✕
+          </button>
+        )}
+      </div>
+      {picking && <FitFilterSheet user={user} value={fit} onClose={() => setPicking(false)} onPick={(f) => (setFit(f), setPicking(false))} />}
       <div style={{ display: "flex", gap: 14, marginTop: 8, fontSize: 13, fontFamily: "'Barlow', sans-serif", color: "var(--n-9aa4b2)" }}>
         {user && (
           <label style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}>
@@ -130,8 +150,8 @@ export default function MarketTab({ user, onNeedAccount, onToast, onOpenPerson, 
       {listings?.length === 0 && (
         <div style={{ textAlign: "center", padding: "34px 12px" }}>
           <div style={{ fontSize: 34 }}>🛒</div>
-          <div style={{ fontSize: 17, fontWeight: 900, marginTop: 6 }}>{mine ? "You haven't listed anything" : q || category ? "Nothing matches" : "No parts for sale yet"}</div>
-          <div style={{ ...muted }}>{mine || !(q || category) ? "Got parts in the garage? Tap + SELL A PART." : "Try another search or category."}</div>
+          <div style={{ fontSize: 17, fontWeight: 900, marginTop: 6 }}>{mine ? "You haven't listed anything" : q || category || fit ? "Nothing matches" : "No parts for sale yet"}</div>
+          <div style={{ ...muted }}>{mine || !(q || category || fit) ? "Got parts in the garage? Tap + SELL A PART." : fit ? "Nothing for that car yet. Try just the make, or any year." : "Try another search or category."}</div>
         </div>
       )}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
@@ -209,6 +229,7 @@ function ListingCard({ listing: l, onOpen }) {
         <span style={{ display: "block", fontSize: 12, color: "var(--n-8a94a3)", fontFamily: "'Barlow', sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {[l.city, ago(l.created_at)].filter(Boolean).join(" · ")}
         </span>
+        {fitLabel(l) && <span style={{ display: "block", fontSize: 12, fontWeight: 800, color: "var(--a-3cabfd)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: "'Barlow', sans-serif" }}>🚗 {fitLabel(l)}</span>}
       </span>
     </button>
   );
@@ -291,7 +312,7 @@ function ListingView({ id, user, onClose, onToast, onNeedAccount, onOpenPerson, 
           </div>
           <div style={{ ...sheetTitle, marginTop: 0 }}>{l.title}</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-            {[`${CATEGORY[l.category]?.icon} ${CATEGORY[l.category]?.name}`, CONDITION[l.condition], l.fits && `Fits: ${l.fits}`, l.city && `📍 ${l.city}`].filter(Boolean).map((t) => (
+            {[`${CATEGORY[l.category]?.icon} ${CATEGORY[l.category]?.name}`, CONDITION[l.condition], fitLabel(l) && `🚗 Fits ${fitLabel(l)}`, l.fits && `Notes: ${l.fits}`, l.city && `📍 ${l.city}`].filter(Boolean).map((t) => (
               <span key={t} style={{ padding: "4px 10px", borderRadius: 14, background: "var(--n-1a1a1a)", border: "1px solid var(--n-2a2a2a)", fontSize: 13, fontWeight: 700 }}>
                 {t}
               </span>
@@ -378,8 +399,8 @@ function ListingView({ id, user, onClose, onToast, onNeedAccount, onOpenPerson, 
 function SellForm({ user, listing = null, onClose, onSaved, onToast }) {
   const [d, setD] = useState(() =>
     listing
-      ? { title: listing.title, description: listing.description, category: listing.category, condition: listing.condition, price: listing.price_cents == null ? "" : String(listing.price_cents / 100), fits: listing.fits || "", city: listing.city || "", photos: listing.photos }
-      : { title: "", description: "", category: "wheels", condition: "used", price: "", fits: "", city: "", photos: [] }
+      ? { title: listing.title, description: listing.description, category: listing.category, condition: listing.condition, price: listing.price_cents == null ? "" : String(listing.price_cents / 100), fits: listing.fits || "", city: listing.city || "", photos: listing.photos, fit_universal: Boolean(listing.fit_universal), fit_make: listing.fit_make || "", fit_model: listing.fit_model || "", fit_year_from: listing.fit_year_from || "", fit_year_to: listing.fit_year_to || "" }
+      : { title: "", description: "", category: "wheels", condition: "used", price: "", fits: "", city: "", photos: [], fit_universal: false, fit_make: "", fit_model: "", fit_year_from: "", fit_year_to: "" }
   );
   const [free, setFree] = useState(listing?.price_cents === 0);
   const [busy, setBusy] = useState("");
@@ -470,8 +491,13 @@ function SellForm({ user, listing = null, onClose, onSaved, onToast }) {
           </Chip>
         ))}
       </div>
-      <div style={{ ...label, marginTop: 12 }}>FITS (OPTIONAL)</div>
-      <input style={field} maxLength={120} placeholder="2015–2021 WRX/STI, 5x114.3…" value={d.fits} onChange={set("fits")} />
+      <div style={{ ...label, marginTop: 12 }}>WHAT CAR DOES IT FIT?</div>
+      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, fontFamily: "'Barlow', sans-serif", color: "var(--n-cccccc)", cursor: "pointer", marginBottom: 6 }}>
+        <input type="checkbox" checked={d.fit_universal} onChange={(e) => setD((x) => ({ ...x, fit_universal: e.target.checked }))} /> Universal (fits most cars: seats, gauges, lights…)
+      </label>
+      {!d.fit_universal && <CarPicker value={d} onChange={(patch) => setD((x) => ({ ...x, ...patch }))} range />}
+      <div style={{ ...label, marginTop: 12 }}>FITMENT NOTES (OPTIONAL)</div>
+      <input style={field} maxLength={120} placeholder="Also fits STI · 5x114.3 · sedan only…" value={d.fits} onChange={set("fits")} />
       <div style={{ ...label, marginTop: 12 }}>WHERE (CITY OR AREA)</div>
       <input style={field} maxLength={60} placeholder="Marietta" value={d.city} onChange={set("city")} />
       <div style={{ ...label, marginTop: 12 }}>DETAILS</div>
@@ -628,6 +654,96 @@ function ChatView({ thread, draft = "", user, onClose, onOpenListing, onToast })
         </button>
       </form>
       <div style={{ ...muted, fontSize: 11.5, marginTop: 8 }}>🛡️ {SAFETY}</div>
+    </Sheet>
+  );
+}
+
+// Make → model → year(s), from TUNR's car list (the same as the garage).
+// value: { fit_make, fit_model, fit_year_from, fit_year_to }; range: show
+// "to" year too.
+function CarPicker({ value: v, onChange, range = false, anyLabel = null }) {
+  const [makes, setMakes] = useState([]);
+  useEffect(() => {
+    loadCarMakes().then(setMakes);
+  }, []);
+  const models = modelsFor(v.fit_make);
+  const sel = { ...field, appearance: "none" };
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <select aria-label="Make" style={{ ...sel, flex: 1 }} value={v.fit_make} onChange={(e) => onChange({ fit_make: e.target.value, fit_model: modelsFor(e.target.value).includes(v.fit_model) ? v.fit_model : "" })}>
+          <option value="">{anyLabel ? anyLabel.make : "Make…"}</option>
+          {makes.map((m) => (
+            <option key={m}>{m}</option>
+          ))}
+        </select>
+        {models.length || !v.fit_make ? (
+          <select aria-label="Model" style={{ ...sel, flex: 1, opacity: v.fit_make ? 1 : 0.5 }} disabled={!v.fit_make} value={v.fit_model} onChange={(e) => onChange({ fit_model: e.target.value })}>
+            <option value="">{anyLabel ? anyLabel.model : v.fit_make ? "Model…" : "Make first"}</option>
+            {v.fit_model && !models.includes(v.fit_model) && <option value={v.fit_model}>{v.fit_model}</option>}
+            {models.map((m) => (
+              <option key={m}>{m}</option>
+            ))}
+          </select>
+        ) : (
+          <input aria-label="Model" style={{ ...field, flex: 1 }} maxLength={60} placeholder="Model" value={v.fit_model} onChange={(e) => onChange({ fit_model: e.target.value })} />
+        )}
+      </div>
+      <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
+        <select aria-label={range ? "First year it fits" : "Year"} style={{ ...sel, flex: 1 }} value={v.fit_year_from} onChange={(e) => onChange({ fit_year_from: e.target.value, ...(range && v.fit_year_to && Number(v.fit_year_to) < Number(e.target.value) ? { fit_year_to: "" } : {}) })}>
+          <option value="">{anyLabel ? anyLabel.year : range ? "Year (from)…" : "Year…"}</option>
+          {YEARS.map((y) => (
+            <option key={y}>{y}</option>
+          ))}
+        </select>
+        {range && (
+          <>
+            <span style={{ ...muted }}>to</span>
+            <select aria-label="Last year it fits" style={{ ...sel, flex: 1 }} value={v.fit_year_to} onChange={(e) => onChange({ fit_year_to: e.target.value })}>
+              <option value="">Same year</option>
+              {YEARS.filter((y) => !v.fit_year_from || y >= Number(v.fit_year_from)).map((y) => (
+                <option key={y}>{y}</option>
+              ))}
+            </select>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// "Fits which car?": your garage's cars in one tap, or pick any make,
+// model and year. Universal parts always show too.
+function FitFilterSheet({ user, value, onClose, onPick }) {
+  const [garage, setGarage] = useState([]);
+  const [v, setV] = useState({ fit_make: value?.make || "", fit_model: value?.model || "", fit_year_from: value?.year ? String(value.year) : "" });
+  useEffect(() => {
+    if (user?.id) loadVehicles(user.id).then(setGarage);
+  }, [user?.id]);
+  return (
+    <Sheet onClose={onClose} label="Parts that fit" zIndex={300}>
+      <div style={sheetTitle}>🚗 PARTS THAT FIT…</div>
+      {garage.length > 0 && (
+        <>
+          <div style={{ ...label, marginTop: 12 }}>YOUR GARAGE</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {garage.map((c) => (
+              <button key={c.id} onClick={() => onPick({ make: c.make, model: c.model, year: c.year || null })} style={{ ...quietButton, marginTop: 0, textAlign: "left", padding: "11px 14px" }}>
+                {[c.year, c.make, c.model].filter(Boolean).join(" ")}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      <div style={{ ...label, marginTop: 14 }}>{garage.length ? "OR ANY CAR" : "PICK A CAR"}</div>
+      <CarPicker value={v} onChange={(patch) => setV((x) => ({ ...x, ...patch }))} anyLabel={{ make: "Make…", model: "Any model", year: "Any year" }} />
+      <button disabled={!v.fit_make} onClick={() => onPick({ make: v.fit_make, model: v.fit_model || null, year: v.fit_year_from ? Number(v.fit_year_from) : null })} style={{ ...bigButton, marginTop: 12 }}>
+        SHOW PARTS THAT FIT
+      </button>
+      <button onClick={() => onPick(null)} style={{ ...quietButton, marginTop: 8 }}>
+        ANY CAR
+      </button>
+      <div style={{ ...muted, fontSize: 11.5, marginTop: 8 }}>Universal parts show for every car. Always check fitment with the seller.</div>
     </Sheet>
   );
 }
