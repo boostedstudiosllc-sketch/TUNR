@@ -3,13 +3,14 @@
 // Promoted meets: when a Checkout payment completes, turns the promotion on
 // (activate_promotion, with the service key; the database checks the amount
 // paid covers the price and ignores repeats).
+// Merch shop: a paid order is marked paid with its shipping address (pay_order).
 // TUNR+: a finished subscription checkout and every customer.subscription.*
 // event update the membership (sync_membership; older events are ignored).
 // Anything else is acknowledged and ignored.
 //
 // → 200 { received: true, result? }  ·  400 bad_signature  ·  503 not_configured
 
-import { verifyStripeSignature, readRawBody, membershipFromSubscription } from "./_lib/stripe.js";
+import { verifyStripeSignature, readRawBody, membershipFromSubscription, shippingFromSession } from "./_lib/stripe.js";
 
 export function createHandler({ env = process.env, fetchImpl = fetch, now = () => Math.floor(Date.now() / 1000) } = {}) {
   return async function handler(req, res) {
@@ -66,6 +67,13 @@ export function createHandler({ env = process.env, fetchImpl = fetch, now = () =
         p_subscription: typeof s.subscription === "string" ? s.subscription : null,
         p_event_at: at,
       });
+    }
+
+    // Merch shop (124): a paid order, with where to ship it.
+    if (event.type === "checkout.session.completed" && s.metadata?.kind === "shop") {
+      if (s.payment_status !== "paid" || !s.metadata?.order_id) return res.status(200).json({ received: true });
+      const ship = shippingFromSession(s);
+      return rpc("pay_order", { p_id: s.metadata.order_id, p_session: s.id, p_amount_cents: s.amount_total, p_ship_name: ship.name, p_ship_address: ship.address });
     }
 
     // Promoted meets (120).

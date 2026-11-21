@@ -5,6 +5,7 @@ export function perksList(restoreDays = 30) {
   const every = restoreDays === 30 ? "once a month" : `once every ${restoreDays} days`;
   return [
     { icon: "🏷️", title: "Members-only discounts", text: "Codes for Atlanta detail, tint, wrap and parts shops." },
+    { icon: "🛍️", title: "TUNR merch for less", text: "Member prices on TUNR hats and shirts." },
     { icon: "🔥", title: "Streak restore", text: `Missed a day? Bring your Pit Stop streak back, ${every}.` },
     { icon: "🎨", title: "Profile colors", text: "Color your name and photo ring. No invites needed." },
     { icon: "🚗", title: "Your whole garage", text: "Add every car you own, and start your own club." },

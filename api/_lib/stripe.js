@@ -48,6 +48,34 @@ async function stripePost(secretKey, fetchImpl, path, fields) {
   return data;
 }
 
+// Merch shop (124): one line per item at the database's price, shipping as
+// a fixed rate, and Stripe collects the US shipping address.
+export function createShopCheckout({ secretKey, fetchImpl = fetch, orderId, lines, shippingCents, email, successUrl, cancelUrl }) {
+  const items = {};
+  lines.forEach((l, i) => {
+    const size = l.size && l.size !== "One size" ? ` (${l.size})` : "";
+    items[i] = { quantity: l.qty, price_data: { currency: "usd", unit_amount: l.unit_cents, product_data: { name: `${l.name}${size}` } } };
+  });
+  return stripePost(secretKey, fetchImpl, "checkout/sessions", {
+    mode: "payment",
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    client_reference_id: orderId,
+    customer_email: email || undefined,
+    metadata: { kind: "shop", order_id: orderId },
+    payment_intent_data: { metadata: { kind: "shop", order_id: orderId } },
+    shipping_address_collection: { allowed_countries: { 0: "US" } },
+    shipping_options: { 0: { shipping_rate_data: { type: "fixed_amount", display_name: shippingCents ? "Standard shipping" : "Free shipping", fixed_amount: { amount: shippingCents, currency: "usd" } } } },
+    line_items: items,
+  });
+}
+
+// Where a paid shop order goes (older and newer Stripe versions).
+export function shippingFromSession(s) {
+  const d = s?.collected_information?.shipping_details || s?.shipping_details || s?.shipping || null;
+  return { name: d?.name || s?.customer_details?.name || null, address: d?.address || null };
+}
+
 // TUNR+ (122): a monthly or yearly subscription at the database's price.
 // The member's id rides on the session and the subscription, so every
 // webhook about it knows whose it is.

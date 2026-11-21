@@ -35,11 +35,13 @@ import InstagramImportAdmin from "./InstagramImportAdmin.jsx";
 import HomeSlidesAdmin from "./HomeSlidesAdmin.jsx";
 import PromotionsAdmin from "./PromotionsAdmin.jsx";
 import MembershipAdmin from "./MembershipAdmin.jsx";
+import ShopAdmin from "./ShopAdmin.jsx";
 
 const PAGES = {
   homeSlides: "Home banner",
   promotions: "Promoted meets",
   membershipAdmin: "TUNR+ membership",
+  shopAdmin: "Merch shop",
   email: "Email",
   password: "Password",
   points: "Points & rewards",
@@ -413,6 +415,7 @@ export default function SettingsScreen({
                 <Row icon="🖼️" label="Home banner" sub="The swipeable slides at the top of Discover" onClick={() => open("homeSlides")} />
                 <Row icon="🚀" label="Promoted meets" sub="Prices, free promotions, what's paid" onClick={() => open("promotions")} />
                 <Row icon="💎" label="TUNR+ membership" sub="Prices, members, free memberships" onClick={() => open("membershipAdmin")} />
+                <Row icon="🛍️" label="Merch shop" sub="Open it, products, orders to ship" onClick={() => open("shopAdmin")} />
                 <Row icon="🎁" label="Rewards" sub="What points can buy" onClick={() => open("rewardsAdmin")} />
                 <Row icon="📦" label="Sticker orders" sub="Mailed QR stickers: price, payment link, orders" onClick={() => open("stickerOrders")} />
                 {SHOP_OPEN && (
@@ -514,6 +517,8 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
       return <PromotionsAdmin onToast={onToast} />;
     case "membershipAdmin":
       return <MembershipAdmin onToast={onToast} />;
+    case "shopAdmin":
+      return <ShopAdmin user={user} onToast={onToast} />;
     case "claims":
       return <RedemptionsAdmin onToast={onToast} />;
     case "purchases":

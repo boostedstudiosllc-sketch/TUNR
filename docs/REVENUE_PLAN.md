@@ -23,7 +23,7 @@ the law); money comes from members, hosts, shops and sponsors.
 4. ✅ **Built (Nov 2026): TUNR+ membership** ($4.99/mo or $39.99/yr, Stripe subscriptions; see DEVELOPER_HANDOFF.md). Perks today: member shop discounts, a streak restore once a month, profile colors, every garage car and starting a club without invites, every Park Up level. (Welcome points are off until a lawyer OKs them: points buy scratch cards.) Ideas for later: bigger convoys, early RSVP to limited meets. Not a free monthly scratch card: paid members getting chances to win is the gambling problem below. On the web, Stripe; in the App Store app, Apple's in-app purchase rules apply (check current rules for linking to web checkout).
 5. **Sponsored challenges** (Strava-style): a brand sponsors "Detail Week" or a TUNR Rush season; members earn points, the brand gets its logo, banner and a giveaway. Sold per campaign.
 6. **Parts marketplace fee** (Whatnot-style, later): optional secure checkout on Parts listings at 6–8%, or paid "bump to top". Needs payments, disputes and shipping first.
-7. **Merch**: switch on the shop (`SHOP_OPEN`) when stock is ready.
+7. ✅ **Built (Nov 2026): merch shop** (a hat and a shirt, Stripe Checkout with shipping, TUNR+ members 10% off; Settings → Admin → Merch shop → OPEN THE SHOP when photos and stock are in).
 8. **Photographer packs**: meet photographers sell full-resolution photo packs; TUNR keeps 15%.
 
 ## Don't

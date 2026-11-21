@@ -76,6 +76,7 @@ import { saveSnapshot, loadSnapshot, offlineLine } from "./lib/offline.js";
 import Convoy from "./components/Convoy.jsx";
 import PhotoSpots from "./components/PhotoSpots.jsx";
 import Membership from "./components/Membership.jsx";
+import Shop from "./components/Shop.jsx";
 import HomeSlides from "./components/HomeSlides.jsx";
 import { loadPromoted } from "./lib/promotions.js";
 import { withPromoted, pinPromoted } from "./lib/promoRules.js";
@@ -217,6 +218,7 @@ export default function App() {
   // Photo spots: the discover screen (PhotoSpots.jsx), opened from anywhere.
   const [spotsOpen, setSpotsOpen] = useState(false);
   const [memberOpen, setMemberOpen] = useState(false);
+  const [shopOpen, setShopOpen] = useState(false);
   useEffect(() => {
     const open = () => setSpotsOpen(true);
     window.addEventListener(SPOTS_OPEN, open);
@@ -452,6 +454,14 @@ export default function App() {
       .then(setPromoted)
       .catch((e) => console.warn(e.message));
   }, [online, user?.id]);
+  // Back from buying merch (?shop=thanks).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("shop")) return;
+    params.delete("shop");
+    window.history.replaceState(null, "", `${window.location.pathname}${params.size ? `?${params}` : ""}`);
+    showToast("🛍️ Thanks for your order! We'll let you know when it ships.");
+  }, []);
   // Back from joining TUNR+ (?member=welcome).
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -707,6 +717,7 @@ export default function App() {
       else if (id === "pitstop") showPitStop(true);
       else if (id === "setup") setSetupTour("all");
       else if (id === "membership") (setPitStop(null), setMemberOpen(true));
+      else if (id === "shop") setShopOpen(true);
     } else if (type === "convoy") {
       setConvoyCode(id);
     } else if (type === "tab") {
@@ -1664,6 +1675,17 @@ export default function App() {
 
       {setupTour && user && <SetupTour all={setupTour === "all"} onDone={() => (setSetupTour(null), setPitStop(null))} onToast={showToast} />}
       {pitStop && !setupTour && <PitStopPopup status={pitStop} onClose={() => setPitStop(null)} onToast={showToast} />}
+      {shopOpen && (
+        <Shop
+          user={user}
+          onClose={() => setShopOpen(false)}
+          onNeedAccount={() => {
+            setShopOpen(false);
+            setTab("profile");
+            showToast("Create a free account first");
+          }}
+        />
+      )}
       {memberOpen && (
         <Membership
           user={user}

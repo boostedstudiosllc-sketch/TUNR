@@ -145,6 +145,18 @@ export default function PerksTab({ user, onNeedAccount, onToast, launch = null, 
         />
         <button
           className="action-btn"
+          onClick={() => window.dispatchEvent(new CustomEvent("tunr:open", { detail: { link: "open:shop" } }))}
+          style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, marginTop: 10, padding: "14px 16px", background: "var(--n-141414)", border: "1px solid var(--n-2a2a2a)", borderRadius: 12, color: "var(--n-f0f0f0)", textAlign: "left", cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif" }}
+        >
+          <span aria-hidden="true" style={{ fontSize: 28 }}>🛍️</span>
+          <span style={{ flex: 1 }}>
+            <span style={{ display: "block", fontSize: 17, fontWeight: 900, letterSpacing: 0.5 }}>TUNR MERCH</span>
+            <span style={{ display: "block", fontSize: 12.5, color: "var(--n-888888)", fontFamily: "'Barlow', sans-serif" }}>Hats and shirts, shipped to you. TUNR+ members save.</span>
+          </span>
+          <span aria-hidden="true" style={{ fontSize: 20, color: "var(--n-666666)" }}>›</span>
+        </button>
+        <button
+          className="action-btn"
           onClick={() => setPlaying(true)}
           style={{
             width: "100%",
