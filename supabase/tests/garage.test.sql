@@ -39,4 +39,15 @@ select tests.login(tests.id('ana'));
 select tests.fails($$ insert into public.vehicle_photos (vehicle_id, url) select '00000000-0000-0000-0000-0000000000c1', base || auth.uid() || '/25.jpg' from u $$,
   'too_many_car_photos', 'at most 24 photos a car');
 
+-- (130) What the car has, for checking parts fit.
+select tests.login(tests.id('ana'));
+update public.vehicles set features = array['Adaptive LED headlights', 'M Sport package'] where id = '00000000-0000-0000-0000-0000000000c1';
+select tests.eq((select cardinality(features) from public.vehicles where id = '00000000-0000-0000-0000-0000000000c1'), 2, 'the owner lists the car''s features');
+select tests.fails($$ update public.vehicles set features = array['x'] where id = '00000000-0000-0000-0000-0000000000c1' $$, 'vehicles_features_check', 'a feature is at least 2 characters');
+select tests.fails($$ update public.vehicles set features = array(select 'Feature ' || g from generate_series(1, 21) g) where id = '00000000-0000-0000-0000-0000000000c1' $$, 'vehicles_features_check', 'up to 20 features');
+select tests.login(tests.id('ben'));
+update public.vehicles set features = array['Hacked'] where id = '00000000-0000-0000-0000-0000000000c1';
+select tests.login(tests.id('ana'));
+select tests.eq((select features[1] from public.vehicles where id = '00000000-0000-0000-0000-0000000000c1'), 'Adaptive LED headlights', 'nobody else changes them');
+
 rollback;

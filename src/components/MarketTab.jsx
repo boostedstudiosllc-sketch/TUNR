@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { fitLabel, fitWarning, filterLabel, YEARS } from "../lib/fitment.js";
+import { fitLabel, fitWarning, filterLabel, YEARS, bestFit, FIT_BADGE } from "../lib/fitment.js";
 import { modelsFor } from "../data/carModels.js";
 import { loadCarMakes, loadVehicles } from "../lib/store.js";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton, Chip } from "./Sheet.jsx";
@@ -47,6 +47,11 @@ export default function MarketTab({ user, onNeedAccount, onToast, onOpenPerson, 
   const [mine, setMine] = useState(false);
   const [fit, setFit] = useState(null); // { make, model, year } — parts that fit this car
   const [picking, setPicking] = useState(false);
+  const [garage, setGarage] = useState([]); // your cars, to tell you what fits
+  useEffect(() => {
+    if (user?.id) loadVehicles(user.id).then(setGarage);
+    else setGarage([]);
+  }, [user?.id]);
   const [viewing, setViewing] = useState(null); // listing id
   const [selling, setSelling] = useState(null); // null | {} (new) | listing (edit)
   const [inbox, setInbox] = useState(false);
@@ -156,12 +161,13 @@ export default function MarketTab({ user, onNeedAccount, onToast, onOpenPerson, 
       )}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
         {(listings || []).map((l) => (
-          <ListingCard key={l.id} listing={l} onOpen={() => setViewing(l.id)} />
+          <ListingCard garage={garage} key={l.id} listing={l} onOpen={() => setViewing(l.id)} />
         ))}
       </div>
 
       {viewing && (
         <ListingView
+          garage={garage}
           id={viewing}
           user={user}
           onClose={() => setViewing(null)}
@@ -211,7 +217,9 @@ export default function MarketTab({ user, onNeedAccount, onToast, onOpenPerson, 
   );
 }
 
-function ListingCard({ listing: l, onOpen }) {
+function ListingCard({ listing: l, onOpen, garage = [] }) {
+  const fit = bestFit(l, garage);
+  const badge = fit && FIT_BADGE[fit.verdict];
   const tag = statusTag(l.status);
   return (
     <button
@@ -222,6 +230,11 @@ function ListingCard({ listing: l, onOpen }) {
       <span style={{ position: "relative", display: "block", aspectRatio: "1", background: "var(--n-1a1a1a)" }}>
         <img src={l.photos[0]} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
         {tag && <span style={{ position: "absolute", top: 8, left: 8, padding: "2px 8px", borderRadius: 6, background: tag[1], color: "var(--n-ffffff)", fontSize: 11, fontWeight: 900, letterSpacing: 1 }}>{tag[0]}</span>}
+        {badge && fit.verdict !== "unknown" && (
+          <span aria-label={fit.text} style={{ position: "absolute", left: 8, bottom: 8, padding: "3px 8px", borderRadius: 6, background: badge.color, color: "var(--n-ffffff)", fontSize: 11, fontWeight: 900, letterSpacing: 0.8 }}>
+            {badge.icon} {badge.short}
+          </span>
+        )}
       </span>
       <span style={{ display: "block", padding: "8px 10px 10px" }}>
         <span style={{ display: "block", fontSize: 18, fontWeight: 900 }}>{priceText(l.price_cents)}</span>
@@ -236,7 +249,7 @@ function ListingCard({ listing: l, onOpen }) {
   );
 }
 
-function ListingView({ id, user, onClose, onToast, onNeedAccount, onOpenPerson, onEdit, onChanged, onMessage }) {
+function ListingView({ id, user, garage = [], onClose, onToast, onNeedAccount, onOpenPerson, onEdit, onChanged, onMessage }) {
   const [l, setL] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -312,7 +325,8 @@ function ListingView({ id, user, onClose, onToast, onNeedAccount, onOpenPerson, 
             {tag && <span style={{ padding: "2px 8px", borderRadius: 6, background: tag[1], color: "var(--n-ffffff)", fontSize: 12, fontWeight: 900, letterSpacing: 1 }}>{tag[0]}</span>}
           </div>
           <div style={{ ...sheetTitle, marginTop: 0 }}>{l.title}</div>
-          {fitWarning(l) && (
+          <FitVerdict listing={l} garage={garage} user={user} />
+          {fitWarning(l) && bestFit(l, garage)?.verdict !== "fits" && (
             <div role="note" style={{ marginTop: 8, padding: "8px 12px", borderRadius: 10, border: "1px solid #F59E0B", background: "rgba(245,158,11,0.12)", color: "var(--n-f0f0f0)", fontSize: 14, fontWeight: 800, fontFamily: "'Barlow', sans-serif" }}>
               ⚠️ {fitWarning(l)}. Check yours before you buy.
             </div>
@@ -763,5 +777,25 @@ function FitFilterSheet({ user, value, onClose, onPick }) {
       </button>
       <div style={{ ...muted, fontSize: 11.5, marginTop: 8 }}>Universal parts, and parts for every trim, show too. For an exact match, search the part number from your old part's label.</div>
     </Sheet>
+  );
+}
+
+// "Does it fit MY car?", worked out from your garage (fitment.js checkFit).
+function FitVerdict({ listing, garage, user }) {
+  if (!user) return null;
+  if (!garage.length) {
+    return <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 10, border: "1px solid var(--n-2a2a2a)", ...muted, fontSize: 13.5 }}>🚗 Add your car to your garage (Profile → Garage) and TUNR will tell you if parts fit it.</div>;
+  }
+  const fit = bestFit(listing, garage);
+  if (!fit) return null;
+  const b = FIT_BADGE[fit.verdict];
+  return (
+    <div role="status" style={{ marginTop: 8, padding: "9px 12px", borderRadius: 10, border: `1.5px solid ${b.color}`, background: `${b.color}1f`, fontFamily: "'Barlow', sans-serif" }}>
+      <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1, color: b.color, fontFamily: "'Barlow Condensed', sans-serif" }}>
+        {b.icon} {b.short}
+      </div>
+      <div style={{ fontSize: 14, color: "var(--n-e5e7eb)", marginTop: 2, lineHeight: 1.45 }}>{fit.text}</div>
+      {garage.length > 1 && <div style={{ fontSize: 11.5, color: "var(--n-888888)", marginTop: 3 }}>Checked against your {garage.length} cars.</div>}
+    </div>
   );
 }

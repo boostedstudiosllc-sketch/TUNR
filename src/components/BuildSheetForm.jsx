@@ -19,12 +19,23 @@ export function sheetOf(v) {
     stage: v?.stage || "",
     mods: Array.isArray(v?.mods) ? v.mods : [],
     nextUp: v?.next_up || "",
+    features: Array.isArray(v?.features) ? v.features : [],
   };
 }
+
+// Common features that decide whether parts fit (130). Tap to add.
+export const FEATURE_PICKS = ["Adaptive LED headlights", "LED headlights", "Xenon / HID headlights", "Halogen headlights", "Sunroof", "Sport package", "Parking sensors", "Heated seats", "Premium sound", "Manual transmission"];
 
 export default function BuildSheetForm({ sheet, onChange, story, onStory, labelStyle, inputStyle }) {
   const [cat, setCat] = useState("engine");
   const [mod, setMod] = useState("");
+  const [feature, setFeature] = useState("");
+  const features = sheet.features || [];
+  const addFeature = (f) => {
+    const name = String(f || "").trim().replace(/\s+/g, " ").slice(0, 60);
+    if (name.length < 2 || features.some((x) => x.toLowerCase() === name.toLowerCase()) || features.length >= 20) return;
+    set({ features: [...features, name] });
+  };
   const set = (patch) => onChange({ ...sheet, ...patch });
   const digits = (x, n) => x.replace(/[^0-9]/g, "").slice(0, n);
   const chip = (on) => ({
@@ -63,6 +74,31 @@ export default function BuildSheetForm({ sheet, onChange, story, onStory, labelS
       <div>
         <div style={labelStyle}>TRIM / CHASSIS CODE</div>
         <input style={inputStyle} maxLength={40} placeholder="M Sport, xDrive, G30" value={sheet.trim} onChange={(e) => set({ trim: e.target.value })} />
+      </div>
+      <div>
+        <div style={labelStyle}>FEATURES (SO TUNR CAN CHECK IF PARTS FIT)</div>
+        {features.length > 0 && (
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+            {features.map((f) => (
+              <button key={f} type="button" aria-label={`Remove ${f}`} onClick={() => set({ features: features.filter((x) => x !== f) })} style={chip(true)}>
+                {f} ✕
+              </button>
+            ))}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 6 }}>
+          <input style={{ ...inputStyle, flex: 1 }} maxLength={60} placeholder="Adaptive LED headlights, M Sport…" value={feature} onChange={(e) => setFeature(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addFeature(feature), setFeature(""))} aria-label="Add a feature" />
+          <button type="button" onClick={() => (addFeature(feature), setFeature(""))} style={{ ...chip(false), padding: "8px 14px" }}>
+            ADD
+          </button>
+        </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+          {FEATURE_PICKS.filter((f) => !features.some((x) => x.toLowerCase() === f.toLowerCase())).map((f) => (
+            <button key={f} type="button" onClick={() => addFeature(f)} style={chip(false)}>
+              + {f}
+            </button>
+          ))}
+        </div>
       </div>
       <div>
         <div style={labelStyle}>ENGINE</div>

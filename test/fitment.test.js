@@ -46,3 +46,51 @@ test("the Parts filter: that car's parts plus universal ones", () => {
   assert.equal(YEARS[0], new Date().getFullYear() + 1, "next year's models first");
   assert.equal(YEARS.at(-1), 1950);
 });
+
+import { checkFit, bestFit, matchFeature } from "../src/lib/fitment.js";
+
+const lamp = { fit_make: "BMW", fit_model: "540i", fit_year_from: 2017, fit_year_to: 2020, fit_trim: "G30", fit_requires: "Adaptive LED headlights" };
+const my540 = { year: 2019, make: "BMW", model: "540i", trim: "xDrive G30", features: ["Adaptive LED headlights", "M Sport package"] };
+
+test("TUNR tells you if a part fits your car", () => {
+  assert.equal(checkFit(lamp, my540).verdict, "fits");
+  assert.match(checkFit(lamp, my540).text, /yours has Adaptive LED headlights/);
+  // Same car without the adaptive lights listed: we can't be sure.
+  const plain = { ...my540, features: ["LED headlights"] };
+  assert.equal(checkFit(lamp, plain).verdict, "check", "plain LED isn't adaptive");
+  assert.match(checkFit(lamp, plain).text, /^Needs Adaptive LED headlights/);
+  // Wrong car, wrong year.
+  assert.equal(checkFit(lamp, { year: 2019, make: "BMW", model: "M2" }).verdict, "no");
+  assert.equal(checkFit(lamp, { year: 2014, make: "BMW", model: "540i", trim: "F10" }).verdict, "no");
+  assert.equal(checkFit(lamp, { year: 2019, make: "Audi", model: "A6" }).verdict, "no");
+  assert.match(checkFit(lamp, { year: 2019, make: "Audi", model: "A6" }).text, /made for a 2017–2020 BMW 540i G30/);
+  // Same chassis, another model: likely, confirm.
+  const my530 = { year: 2018, make: "BMW", model: "530i", trim: "G30", features: ["Adaptive LED headlights"] };
+  assert.equal(checkFit(lamp, my530).verdict, "check");
+  assert.match(checkFit(lamp, my530).text, /likely fits/);
+  // Missing details on the car: ask for them.
+  assert.match(checkFit(lamp, { make: "BMW", model: "540i" }).text, /Add your car's year/);
+  assert.match(checkFit({ ...lamp, fit_requires: null }, { year: 2019, make: "BMW", model: "540i" }).text, /Add your trim or chassis code/);
+  assert.equal(checkFit({ ...lamp, fit_requires: null }, { year: 2019, make: "BMW", model: "540i", trim: "F10" }).verdict, "check", "a different trim: check, don't guess");
+  // Universal and unknown.
+  assert.equal(checkFit({ fit_universal: true }, my540).verdict, "fits");
+  assert.equal(checkFit({ title: "old" }, my540).verdict, "unknown");
+  assert.equal(checkFit(lamp, null), null);
+});
+
+test("features and the build sheet count", () => {
+  assert.equal(matchFeature({ features: ["adaptive led headlights"] }, "Adaptive LED headlights"), "adaptive led headlights");
+  assert.equal(matchFeature({ features: ["Adaptive headlights"] }, "Adaptive LED headlights"), null, "every word of the requirement");
+  assert.equal(matchFeature({ drivetrain: "AWD" }, "AWD only"), "AWD", "the build sheet's drivetrain counts");
+  assert.equal(matchFeature({ transmission: "Manual" }, "Manual transmission"), null);
+  assert.equal(matchFeature({ features: ["Manual transmission"] }, "manual"), "Manual transmission");
+});
+
+test("the best answer across your garage", () => {
+  const m2 = { year: 2019, make: "BMW", model: "M2" };
+  const best = bestFit(lamp, [m2, my540]);
+  assert.equal(best.verdict, "fits");
+  assert.equal(best.car, my540);
+  assert.equal(bestFit(lamp, [m2]).verdict, "no");
+  assert.equal(bestFit(lamp, []), null, "no cars: nothing to say");
+});

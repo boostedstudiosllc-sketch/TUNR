@@ -390,6 +390,7 @@ export async function saveVehicle(vehicle, ownerId) {
       stage: sh.stage || null,
       mods: (sh.mods || []).map((m) => ({ cat: m.cat, name: cleanForSending(m.name) })),
       next_up: cleanOrNull(sh.nextUp),
+      features: (sh.features || []).map((f) => cleanForSending(String(f).trim())).filter((f) => f.length >= 2).slice(0, 20),
       owned_since: num(sh.ownedSince),
     });
   }
