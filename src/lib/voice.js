@@ -10,7 +10,7 @@ import { voicePeers, shouldOffer, talkingNow, micError } from "./voiceMath.js";
 
 const FALLBACK = [{ urls: ["stun:stun.cloudflare.com:3478", "stun:stun.l.google.com:19302"] }];
 
-// The connection servers, with a relay when the owner's set one up (api/turn.js).
+// The connection servers, with a relay when the owner's set one up (api/_routes/turn.js).
 async function iceServers(convoyId) {
   try {
     const { data } = (await supabase?.auth.getSession()) || {};

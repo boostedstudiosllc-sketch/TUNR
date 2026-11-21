@@ -169,7 +169,7 @@ test("each day has its own look", async () => {
 });
 
 test("the server replays the run and pays on its own distance, not the phone's", async () => {
-  const { createHandler } = await import("../api/rush-finish.js");
+  const { createHandler } = await import("../api/_routes/rush-finish.js");
   const { seededRand, DEFAULT_LEVELS } = await import("../src/lib/rushEngine.js");
   const RUN = "11111111-2222-3333-4444-555555555555";
   const SEED = 424242;

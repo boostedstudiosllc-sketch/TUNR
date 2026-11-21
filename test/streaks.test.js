@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { queueStreakReminders } from "../api/daily.js";
+import { queueStreakReminders } from "../api/_routes/daily.js";
 
 function fakeService() {
   const calls = [];

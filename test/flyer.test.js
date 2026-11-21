@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { FLYER_SCHEMA, buildUserText, normalizeFlyer } from "../api/_lib/flyer.js";
-import { createHandler } from "../api/read-flyer.js";
+import { createHandler } from "../api/_routes/read-flyer.js";
 import { flyerToDraft } from "../src/lib/flyer.js";
 
 const NOW = new Date("2026-10-12T16:00:00Z");

@@ -6,8 +6,8 @@
 // caller first, so the database's per-account limit applies before anything
 // is spent.
 
-import { normalizeFlyer } from "./_lib/flyer.js";
-import { readFlyerWithGemini, DEFAULT_MODEL } from "./_lib/gemini.js";
+import { normalizeFlyer } from "../_lib/flyer.js";
+import { readFlyerWithGemini, DEFAULT_MODEL } from "../_lib/gemini.js";
 
 export function createHandler({
   env = process.env,

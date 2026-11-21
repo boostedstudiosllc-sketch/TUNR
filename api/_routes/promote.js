@@ -3,13 +3,13 @@
 // A host pays to promote their meet (120_meet_promotions.sql). The database
 // checks they're a host and sets the price (request_promotion, run as them);
 // this opens a Stripe Checkout page for that amount and returns its address.
-// Stripe tells api/stripe-webhook.js when it's paid, which turns it on.
+// Stripe tells api/_routes/stripe-webhook.js when it's paid, which turns it on.
 //
 // → 200 { url }  ·  401 not_signed_in  ·  400 bad_request  ·  403 not_host
 //   409 already  ·  503 payments_not_set_up (no STRIPE_SECRET_KEY)
 //   other request_promotion statuses (meet_over, unconfirmed, …) with 400
 
-import { createCheckout } from "./_lib/stripe.js";
+import { createCheckout } from "../_lib/stripe.js";
 
 export function createHandler({ env = process.env, fetchImpl = fetch } = {}) {
   return async function handler(req, res) {

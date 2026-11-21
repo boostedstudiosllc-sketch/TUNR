@@ -3,13 +3,13 @@
 //   { action: "manage" }                        → Stripe's billing page (card, plan, cancel)
 //
 // The database says whether you can join and at what price (start_membership,
-// run as you); Stripe tells api/stripe-webhook.js when it's paid or changes.
+// run as you); Stripe tells api/_routes/stripe-webhook.js when it's paid or changes.
 //
 // → 200 { url }  ·  401 not_signed_in  ·  400 bad_request | bad_plan | unconfirmed
 //   409 already  ·  404 no_subscription  ·  502 stripe_failed
 //   503 payments_not_set_up (no STRIPE_SECRET_KEY) | billing_page_not_set_up
 
-import { createMembershipCheckout, createBillingPortal, hasLiveSubscription } from "./_lib/stripe.js";
+import { createMembershipCheckout, createBillingPortal, hasLiveSubscription } from "../_lib/stripe.js";
 
 export function createHandler({ env = process.env, fetchImpl = fetch } = {}) {
   return async function handler(req, res) {

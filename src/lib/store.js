@@ -821,7 +821,7 @@ export async function signUpWithPassword(email, password, username) {
   return { signedIn: true };
 }
 
-// Through TUNR's server (api/sign-in.js), which applies the lockout: 10
+// Through TUNR's server (api/_routes/sign-in.js), which applies the lockout: 10
 // wrong passwords in a row lock the account for 30 minutes.
 export async function signInWithPassword(email, password) {
   if (!supabase) throw new Error("Backend not configured");
@@ -873,7 +873,7 @@ export async function sendPasswordReset(email) {
   if (error) throw new Error(friendlyAuthError(error));
 }
 
-// Through TUNR's server (api/password.js), which applies the policy:
+// Through TUNR's server (api/_routes/password.js), which applies the policy:
 // 8+ characters, 3 of 4 kinds, none of your last 24 passwords.
 export async function updatePassword(password) {
   if (!supabase) throw new Error("Backend not configured");
@@ -1341,7 +1341,7 @@ export async function uploadEventPhoto(file, userId) {
   return data.publicUrl;
 }
 
-// Has the AI (Gemini) read a flyer the user just uploaded (see api/read-flyer.js) and
+// Has the AI (Gemini) read a flyer the user just uploaded (see api/_routes/read-flyer.js) and
 // returns the fields it found, for the post-a-meet form to fill in.
 export async function readFlyer(imageUrl, caption = "") {
   if (!supabase) throw new Error("Reading flyers needs the live app.");
@@ -1786,7 +1786,7 @@ const INSTAGRAM_ERRORS = {
   too_soon: "An import just ran. Try again in a few minutes.",
 };
 
-// Run the import now (api/instagram-sync.js). Returns the run's counts.
+// Run the import now (api/_routes/instagram-sync.js). Returns the run's counts.
 export async function runInstagramImport() {
   if (!supabase) throw new Error("Backend not configured");
   const { data } = await supabase.auth.getSession();

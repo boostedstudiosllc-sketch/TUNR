@@ -7,8 +7,8 @@
 // server key is missing), email_send_failed (Supabase refused; `detail`
 // says why, e.g. its email limit).
 
-import { createPushService } from "./_lib/push.js";
-import { createAccounts } from "./_lib/accounts.js";
+import { createPushService } from "../_lib/push.js";
+import { createAccounts } from "../_lib/accounts.js";
 
 const WAIT_MS = 10 * 60000;
 

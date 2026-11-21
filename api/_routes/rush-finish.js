@@ -12,8 +12,8 @@
 // (`detail` says why). Otherwise the database's answer plus the replayed
 // run: { status, earned, best, counts, today, run: { dist, score, … } }.
 
-import { createPushService } from "./_lib/push.js";
-import { replay, scoreOf, validMoves, DEFAULT_RULES, DEFAULT_LEVELS } from "../src/lib/rushEngine.js";
+import { createPushService } from "../_lib/push.js";
+import { replay, scoreOf, validMoves, DEFAULT_RULES, DEFAULT_LEVELS } from "../../src/lib/rushEngine.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

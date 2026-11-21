@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { summarizeForecast, alertFor, meetWindow, inForecastRange, describeCode } from "../src/lib/weather.js";
-import { weatherAlerts, withWeather } from "../api/reminders.js";
+import { weatherAlerts, withWeather } from "../api/_routes/reminders.js";
 
 // Hourly forecast for 2026-10-31, 00:00 to 23:00 local.
 const day = (over = {}) => {

@@ -5,7 +5,7 @@
 // or joining a linkup, a chat message, a confirmation). It decides nothing
 // about who's told what — see api/_lib/push.js.
 
-import { createPushService } from "./_lib/push.js";
+import { createPushService } from "../_lib/push.js";
 
 export function createHandler({ env = process.env, fetchImpl = fetch, webpushImpl } = {}) {
   return async function handler(req, res) {

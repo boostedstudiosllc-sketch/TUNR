@@ -2,8 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { shippingFromSession } from "../api/_lib/stripe.js";
-import { createHandler as shopHandler } from "../api/shop.js";
-import { createHandler as webhookHandler } from "../api/stripe-webhook.js";
+import { createHandler as shopHandler } from "../api/_routes/shop.js";
+import { createHandler as webhookHandler } from "../api/_routes/stripe-webhook.js";
 import { cartTotals, addToCart, leftOf, soldOut, orderStatus, errorMessage } from "../src/lib/shopRules.js";
 
 const env = { VITE_SUPABASE_URL: "https://p.supabase.co", VITE_SUPABASE_ANON_KEY: "anon", STRIPE_SECRET_KEY: "sk_test_x", SITE_URL: "https://tunr.app", STRIPE_WEBHOOK_SECRET: "whsec_test", SUPABASE_SERVICE_ROLE_KEY: "service" };

@@ -1,5 +1,5 @@
 // GET /api/daily — Vercel Cron, each morning (vercel.json). Three jobs:
-//   1. meet-day reminders (api/reminders.js)
+//   1. meet-day reminders (api/_routes/reminders.js)
 //   2. confirm-later email: first emails that didn't send, day-3 reminders,
 //      and removing accounts still unconfirmed past their date
 //   3. on Saturdays, "keep your streak alive" for streaks with no check-in
@@ -7,8 +7,8 @@
 // then delivers any alerts that queued. If CRON_SECRET is set in Vercel,
 // only Vercel Cron can start it.
 
-import { createPushService } from "./_lib/push.js";
-import { createAccounts } from "./_lib/accounts.js";
+import { createPushService } from "../_lib/push.js";
+import { createAccounts } from "../_lib/accounts.js";
 import { queueMeetReminders } from "./reminders.js";
 
 // Saturdays (Atlanta time) only: the weekend is the last chance to keep a

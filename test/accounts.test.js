@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { plannedDeleteOn, prettyDate, createAccounts } from "../api/_lib/accounts.js";
-import { createHandler } from "../api/confirm-email.js";
+import { createHandler } from "../api/_routes/confirm-email.js";
 
 const NOW = new Date("2026-10-17T13:00:00Z");
 

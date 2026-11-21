@@ -57,7 +57,7 @@ export async function saveGameSettings({ enabled, triesPerDay, levels }) {
 export const levelRules = (settings, id) => ({ ...DEFAULT_RULES, ...settings.levels[id], enabled: settings.enabled });
 
 // Finish a run: send the lane changes; the server replays them and pays
-// on its own result (api/rush-finish.js). Returns its answer, including
+// on its own result (api/_routes/rush-finish.js). Returns its answer, including
 // the replayed run.
 const FINISH_COPY = {
   not_signed_in: "You were signed out, so this run didn't count.",

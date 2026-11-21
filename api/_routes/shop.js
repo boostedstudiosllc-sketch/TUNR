@@ -3,14 +3,14 @@
 // Buy TUNR merch (124_merch_shop.sql). The database checks the cart and sets
 // every price, the member discount and shipping (start_order, run as you);
 // this opens Stripe Checkout, which also takes the shipping address. Stripe
-// tells api/stripe-webhook.js when it's paid.
+// tells api/_routes/stripe-webhook.js when it's paid.
 //
 // → 200 { url, id }  ·  401 not_signed_in  ·  400 bad_request | empty | bad_size
 //   | bad_qty | not_for_sale | unconfirmed | rate_limit  ·  409 sold_out (+ product,
 //   size, left)  ·  403 closed  ·  502 stripe_failed
 //   503 payments_not_set_up (no STRIPE_SECRET_KEY)
 
-import { createShopCheckout } from "./_lib/stripe.js";
+import { createShopCheckout } from "../_lib/stripe.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

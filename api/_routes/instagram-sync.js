@@ -10,8 +10,8 @@
 // instagram_not_connected, instagram_token_expired, instagram_failed,
 // not_configured, push_not_configured.
 
-import { createPushService } from "./_lib/push.js";
-import { createInstagramImport } from "./_lib/instagram.js";
+import { createPushService } from "../_lib/push.js";
+import { createInstagramImport } from "../_lib/instagram.js";
 
 const MIN_GAP_MS = 5 * 60 * 1000;
 

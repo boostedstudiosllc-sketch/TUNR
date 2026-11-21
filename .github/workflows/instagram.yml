@@ -1,7 +1,7 @@
 name: Import meets from Instagram
 
 # Every two hours, ask the app to look for new meet flyers on @tunr.app
-# (api/instagram-sync.js). Vercel's free plan only runs its own schedule once
+# (api/_routes/instagram-sync.js). Vercel's free plan only runs its own schedule once
 # a day, so this fills the gaps. If CRON_SECRET is set in Vercel, add the
 # same value as a repository secret named CRON_SECRET.
 

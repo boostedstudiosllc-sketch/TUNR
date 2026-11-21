@@ -1,6 +1,6 @@
 // Stripe, without the Stripe library: Checkout sessions over its REST API,
 // and checking a webhook's signature (HMAC-SHA256 over "<timestamp>.<body>"
-// with the webhook secret). Used by api/promote.js and api/stripe-webhook.js.
+// with the webhook secret). Used by api/_routes/promote.js and api/_routes/stripe-webhook.js.
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 

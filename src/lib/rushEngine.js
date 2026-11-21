@@ -7,7 +7,7 @@
 // the course (where traffic and pickups sit) comes from a seed, and your
 // lane changes are logged by step. So the same seed and moves always give
 // the same run. The server uses that to replay every run itself and pay
-// points on the distance it gets (api/rush-finish.js), and the ghost of
+// points on the distance it gets (api/_routes/rush-finish.js), and the ghost of
 // your best attempt is a replay running beside you.
 // No imports here, so it runs in plain Node (tests and the server).
 

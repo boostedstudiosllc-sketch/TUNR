@@ -12,8 +12,8 @@
 // too_many_tries (`minutes`), bad_login (`left` = tries before the lock),
 // sign_in_failed (`detail` says why), push_not_configured.
 
-import { createPushService } from "./_lib/push.js";
-import { LOCKOUT_TRIES, LOCKOUT_MINUTES } from "../src/lib/passwordRules.js";
+import { createPushService } from "../_lib/push.js";
+import { LOCKOUT_TRIES, LOCKOUT_MINUTES } from "../../src/lib/passwordRules.js";
 
 const IP_TRIES = 50;
 

@@ -158,7 +158,7 @@ test("not connected says why", async () => {
 });
 
 test("who can start an import", async () => {
-  const { createHandler } = await import("../api/instagram-sync.js");
+  const { createHandler } = await import("../api/_routes/instagram-sync.js");
   const res = () => {
     const r = { code: 0, body: null, headers: {} };
     r.status = (c) => ((r.code = c), r);

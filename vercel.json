@@ -14,19 +14,7 @@
     }
   ],
   "functions": {
-    "api/read-flyer.js": {
-      "maxDuration": 60
-    },
-    "api/reminders.js": {
-      "maxDuration": 60
-    },
-    "api/push.js": {
-      "maxDuration": 30
-    },
-    "api/daily.js": {
-      "maxDuration": 60
-    },
-    "api/instagram-sync.js": {
+    "api/[route].js": {
       "maxDuration": 60
     }
   },

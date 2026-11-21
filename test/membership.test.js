@@ -2,8 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { membershipFromSubscription } from "../api/_lib/stripe.js";
-import { createHandler as membershipHandler } from "../api/membership.js";
-import { createHandler as webhookHandler } from "../api/stripe-webhook.js";
+import { createHandler as membershipHandler } from "../api/_routes/membership.js";
+import { createHandler as webhookHandler } from "../api/_routes/stripe-webhook.js";
 import { perksList, priceLabel, yearlySaving, statusLine, errorMessage, shortDate } from "../src/lib/memberRules.js";
 import { restoreOffer } from "../src/lib/pitStopRules.js";
 

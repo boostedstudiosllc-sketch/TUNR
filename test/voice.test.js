@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { MAX_VOICE, shouldOffer, voicePeers, talkingNow, micError } from "../src/lib/voiceMath.js";
-import { createHandler, normalizeIceServers, STUN } from "../api/turn.js";
+import { createHandler, normalizeIceServers, STUN } from "../api/_routes/turn.js";
 
 test("exactly one of each pair makes the offer", () => {
   assert.equal(shouldOffer("a", "b"), true);
@@ -45,7 +45,7 @@ test("microphone problems in plain words", () => {
   assert.match(micError({ name: "X", message: "boom" }), /\(boom\)/);
 });
 
-// ---------- the connection-servers route (api/turn.js) ----------
+// ---------- the connection-servers route (api/_routes/turn.js) ----------
 const env = { VITE_SUPABASE_URL: "https://p.supabase.co", VITE_SUPABASE_ANON_KEY: "anon", CLOUDFLARE_TURN_KEY_ID: "kid", CLOUDFLARE_TURN_API_TOKEN: "tok" };
 const CONVOY = "11111111-2222-3333-4444-555555555555";
 function res() {

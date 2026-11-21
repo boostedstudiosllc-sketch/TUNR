@@ -12,8 +12,8 @@
 // push_not_configured.
 
 import bcrypt from "bcryptjs";
-import { createPushService } from "./_lib/push.js";
-import { passwordProblem } from "../src/lib/passwordRules.js";
+import { createPushService } from "../_lib/push.js";
+import { passwordProblem } from "../../src/lib/passwordRules.js";
 
 export function createHandler({ env = process.env, fetchImpl = fetch, compare = bcrypt.compare } = {}) {
   return async function handler(req, res) {

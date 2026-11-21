@@ -10,7 +10,7 @@
 //
 // → 200 { received: true, result? }  ·  400 bad_signature  ·  503 not_configured
 
-import { verifyStripeSignature, readRawBody, membershipFromSubscription, shippingFromSession } from "./_lib/stripe.js";
+import { verifyStripeSignature, readRawBody, membershipFromSubscription, shippingFromSession } from "../_lib/stripe.js";
 
 export function createHandler({ env = process.env, fetchImpl = fetch, now = () => Math.floor(Date.now() / 1000) } = {}) {
   return async function handler(req, res) {

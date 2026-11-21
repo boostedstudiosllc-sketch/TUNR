@@ -1,5 +1,5 @@
-// TUNR's password policy, shared by the app and the server (api/password.js,
-// api/sign-in.js). No imports, so both can use it.
+// TUNR's password policy, shared by the app and the server (api/_routes/password.js,
+// api/_routes/sign-in.js). No imports, so both can use it.
 //
 //   * at least 8 characters (72 at most: longer ones can't be stored safely)
 //   * at least 3 of the 4 kinds: uppercase, lowercase, number, symbol

@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import bcrypt from "bcryptjs";
 import { passwordProblem, passwordChecks } from "../src/lib/passwordRules.js";
-import { createHandler as signInHandler } from "../api/sign-in.js";
-import { createHandler as passwordHandler } from "../api/password.js";
+import { createHandler as signInHandler } from "../api/_routes/sign-in.js";
+import { createHandler as passwordHandler } from "../api/_routes/password.js";
 
 const env = { VITE_SUPABASE_URL: "https://p.supabase.co", VITE_SUPABASE_ANON_KEY: "anon", SUPABASE_SERVICE_ROLE_KEY: "svc" };
 const res = () => ({ statusCode: 200, setHeader() {}, status(c) { this.statusCode = c; return this; }, json(b) { this.body = b; return this; } });

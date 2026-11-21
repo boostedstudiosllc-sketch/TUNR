@@ -1,5 +1,5 @@
 // GET /api/reminders — meet-day reminders on their own (the daily cron runs
-// them through api/daily.js, in the morning Eastern time). Everyone going to
+// them through api/_routes/daily.js, in the morning Eastern time). Everyone going to
 // a meet that happens today gets "Today: <meet> · 7:00 PM", in the inbox and, if they turned alerts on, on
 // their phone. Weekly and monthly meets count on each day they run.
 //
@@ -10,9 +10,9 @@
 // second run queues nothing new. If CRON_SECRET is set in Vercel, only Vercel
 // Cron (which sends it) can start a run.
 
-import { createPushService } from "./_lib/push.js";
-import { isoInTz, isToday, displayTime, todayKey, DEFAULT_TZ } from "../src/lib/dates.js";
-import { fetchHourly, meetWindow, summarizeForecast } from "../src/lib/weather.js";
+import { createPushService } from "../_lib/push.js";
+import { isoInTz, isToday, displayTime, todayKey, DEFAULT_TZ } from "../../src/lib/dates.js";
+import { fetchHourly, meetWindow, summarizeForecast } from "../../src/lib/weather.js";
 
 // The meet as the date helpers want it.
 const asEvent = (e) => {

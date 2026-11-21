@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createHandler as pushHandler } from "../api/push.js";
-import { createHandler as remindersHandler, remindersFor } from "../api/reminders.js";
+import { createHandler as pushHandler } from "../api/_routes/push.js";
+import { createHandler as remindersHandler, remindersFor } from "../api/_routes/reminders.js";
 
 const SUPA = "https://proj.supabase.co";
 const ENV = { VITE_SUPABASE_URL: SUPA, SUPABASE_SERVICE_ROLE_KEY: "service" };

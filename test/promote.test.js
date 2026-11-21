@@ -2,8 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { formEncode, verifyStripeSignature, readRawBody } from "../api/_lib/stripe.js";
-import { createHandler as promoteHandler } from "../api/promote.js";
-import { createHandler as webhookHandler } from "../api/stripe-webhook.js";
+import { createHandler as promoteHandler } from "../api/_routes/promote.js";
+import { createHandler as webhookHandler } from "../api/_routes/stripe-webhook.js";
 
 const EVENT = "11111111-2222-3333-4444-555555555555";
 const env = { VITE_SUPABASE_URL: "https://p.supabase.co", VITE_SUPABASE_ANON_KEY: "anon", STRIPE_SECRET_KEY: "sk_test_x", SITE_URL: "https://tunr.app", STRIPE_WEBHOOK_SECRET: "whsec_test", SUPABASE_SERVICE_ROLE_KEY: "service" };

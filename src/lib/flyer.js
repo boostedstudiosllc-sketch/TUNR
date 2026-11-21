@@ -1,4 +1,4 @@
-// Turns what the flyer reader found (api/read-flyer.js) into the post-a-meet
+// Turns what the flyer reader found (api/_routes/read-flyer.js) into the post-a-meet
 // form's fields. Only fields the flyer actually gave are replaced, so
 // anything the host typed first, or anything the flyer doesn't say, stays.
 export function flyerToDraft(flyer, draft) {

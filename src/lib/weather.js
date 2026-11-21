@@ -1,7 +1,7 @@
 // Meet weather, from Open-Meteo (free, no key): the forecast for a meet's
 // spot and hours, and whether it's worth a heads-up (rain, storms, snow,
 // strong wind, real heat or cold). Used by the meet page and by the
-// meet-day reminders (api/reminders.js), so nothing here touches Supabase.
+// meet-day reminders (api/_routes/reminders.js), so nothing here touches Supabase.
 
 import { nextOccurrenceKey } from "./dates.js";
 

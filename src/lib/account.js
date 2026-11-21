@@ -1,5 +1,5 @@
 // Confirm-later email, the app's half (041_email_confirmation.sql,
-// api/confirm-email.js).
+// api/_routes/confirm-email.js).
 import { createContext, useContext } from "react";
 import { supabase } from "./supabase.js";
 import { withReason } from "./errors.js";
