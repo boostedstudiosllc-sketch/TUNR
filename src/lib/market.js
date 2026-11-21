@@ -81,7 +81,7 @@ export async function loadListings({ category = null, q = "", status = "live", s
   const fits = fitFilter(fit);
   if (fits) query = query.or(fits);
   const term = q.trim().replace(/[%,()]/g, " ");
-  if (term) query = query.or(`title.ilike.%${term}%,fits.ilike.%${term}%,description.ilike.%${term}%`);
+  if (term) query = query.or(`title.ilike.%${term}%,fits.ilike.%${term}%,description.ilike.%${term}%,part_number.ilike.%${term.replace(/\s+/g, "")}%,fit_trim.ilike.%${term}%,fit_requires.ilike.%${term}%`);
   const { data, error } = await query;
   if (error) throw new Error(withReason("Couldn't load the parts for sale.", error));
   return data || [];

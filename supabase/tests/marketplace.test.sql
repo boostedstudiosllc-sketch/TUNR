@@ -32,7 +32,13 @@ insert into public.listings (title, category, condition, photos, fit_universal, 
 select tests.eq((select fit_make from public.listings where title = 'Bride seat'), null, 'a universal part fits any car');
 select tests.fails($$ update public.listings set fit_make = null where title = 'S2000 hardtop' $$, 'fitment_required', 'and the fitment can''t be taken off later');
 select tests.eq((select count(*) from public.listings_feed where fit_make = 'Subaru' and fit_model = 'WRX' and 2018 between fit_year_from and fit_year_to)::int, 1, 'the feed filters by make, model and year');
-delete from public.listings where title in ('S2000 hardtop', 'Bride seat');
+-- (129) Trim, what the car must have, and the part number.
+insert into public.listings (title, category, condition, photos, fit_make, fit_model, fit_year_from, fit_year_to, fit_trim, fit_requires, part_number)
+values ('G30 adaptive LED headlight (left)', 'lighting', 'used', array[(select url from photo)], 'BMW', '540i', 2017, 2020, 'G30', 'Adaptive LED headlights', '63117214961');
+select tests.eq((select fit_requires from public.listings_feed where part_number = '63117214961'), 'Adaptive LED headlights', 'a listing says what the car must have');
+select tests.eq((select count(*) from public.listings_feed where fit_make = 'BMW' and (fit_trim is null or fit_trim ilike '%g30%'))::int, 1, 'and can be found by trim');
+select tests.fails($$ update public.listings set part_number = 'x' where part_number = '63117214961' $$, 'listings_part_number_check', 'part numbers are at least 2 characters');
+delete from public.listings where title in ('S2000 hardtop', 'Bride seat', 'G30 adaptive LED headlight (left)');
 
 select tests.fails($$ insert into public.listings (title, category, condition, photos)
   values ('Spoiler', 'aero', 'used', array['https://evil.example/storage/v1/object/public/event-photos/x.jpg']) $$,
