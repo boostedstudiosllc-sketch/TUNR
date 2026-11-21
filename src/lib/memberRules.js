@@ -6,7 +6,7 @@ export function perksList(restoreDays = 30) {
   return [
     { icon: "🏷️", title: "Members-only discounts", text: "Codes for Atlanta detail, tint, wrap and parts shops." },
     { icon: "🔥", title: "Streak restore", text: `Missed a day? Bring your Pit Stop streak back, ${every}.` },
-    { icon: "🎨", title: "Profile colours", text: "Colour your name and photo ring. No invites needed." },
+    { icon: "🎨", title: "Profile colors", text: "Color your name and photo ring. No invites needed." },
     { icon: "🚗", title: "Your whole garage", text: "Add every car you own, and start your own club." },
     { icon: "🅿️", title: "Every Park Up level", text: "All levels open, no stars needed." },
   ];
@@ -14,7 +14,8 @@ export function perksList(restoreDays = 30) {
 
 export function priceLabel(cents) {
   if (!Number.isFinite(cents) || cents <= 0) return "";
-  return cents % 100 === 0 ? `$${cents / 100}` : `$${(cents / 100).toFixed(2)}`;
+  const n = cents / 100;
+  return `$${n.toLocaleString("en-US", { minimumFractionDigits: cents % 100 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
 }
 
 // The yearly plan's saving against 12 months, in whole percent (0 if none).
@@ -25,10 +26,19 @@ export function yearlySaving(plans = []) {
   return Math.round((1 - y / (m * 12)) * 100);
 }
 
-const day = (iso) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
+// "Dec 21", or "Nov 21, 2027" when it's another year (a yearly renewal
+// mustn't read like today). Atlanta time, like the rest of TUNR.
+export function shortDate(iso, now = Date.now()) {
+  const d = new Date(iso);
+  const year = (t) => new Date(t).toLocaleDateString("en-US", { year: "numeric", timeZone: "America/New_York" });
+  const opts = { month: "short", day: "numeric", timeZone: "America/New_York" };
+  if (year(d) !== year(now)) opts.year = "numeric";
+  return d.toLocaleDateString("en-US", opts);
+}
 
 // One line about your membership: "Monthly plan · renews Dec 21.", …
-export function statusLine(m) {
+export function statusLine(m, now = Date.now()) {
+  const day = (iso) => shortDate(iso, now);
   if (!m?.member) return "";
   if (m.all_access && !m.via) return "All access: everything's unlocked.";
   if (m.via === "admin") return m.active_until ? `Free membership until ${day(m.active_until)}.` : "Free membership from TUNR.";

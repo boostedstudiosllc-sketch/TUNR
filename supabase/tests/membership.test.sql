@@ -120,4 +120,53 @@ select tests.fails($$ select public.membership_stats() $$, 'admins_only', 'stats
 update public.membership_plans set price_cents = 100 where id = 'month';
 select tests.eq((select price_cents from public.membership_plans where id = 'month'), 499, 'members can''t change prices');
 
+-- ---------- security audit ----------
+-- A renewal that fails (card frozen or removed): Stripe moves the subscription
+-- to past_due and has already moved current_period_end to the end of the new,
+-- UNPAID month. 122 says past_due counts only "until the paid period ends";
+-- a short grace is fine, a whole free month (or forever, if Stripe is set to
+-- leave failed subscriptions past_due) isn't.
+select tests.logout();
+select tests.user('pastdue');
+set local role service_role;
+create temp table a1 as select public.sync_membership(x.id, 'active', 'month', now() + interval '1 hour', null, 'cus_pd', 'sub_pd', now() - interval '1 minute') as r
+  from public.profiles x where x.username = 'pastdue';
+create temp table a2 as select public.sync_membership(x.id, 'past_due', 'month', now() + interval '31 days', null, 'cus_pd', 'sub_pd', now()) as r
+  from public.profiles x where x.username = 'pastdue';
+reset role;
+select tests.ok((select active_until from public.memberships where user_id = tests.id('pastdue')) <= now() + interval '1 hour' + interval '7 days',
+  'a failed renewal (past_due) doesn''t give the unpaid month free, at most a week''s grace');
+
+-- Admin comps and take-backs are only traceable if the log says whose
+-- membership it was. memberships has no "id" column, so row_id is empty, and
+-- an UPDATE only lists the changed columns (never user_id).
+select tests.logout();
+select tests.ok(not exists (select 1 from public.admin_log
+                             where target = 'memberships' and coalesce(row_id, changes->>'user_id') is null),
+  'every admin change to a membership says whose membership it was');
+
+-- (123) A late "incomplete" doesn't switch a new payer off; an old card
+-- subscription ending doesn't remove a free membership.
+select tests.logout();
+select tests.user('newpayer');
+set local role service_role;
+create temp table a3 as select
+  public.sync_membership(x.id, 'active', 'month', now() + interval '30 days', null, 'cus_np', 'sub_np', now()) as a,
+  public.sync_membership(x.id, 'incomplete', 'month', now() + interval '30 days', null, 'cus_np', 'sub_np', now()) as b
+  from public.profiles x where x.username = 'newpayer';
+reset role;
+select tests.eq((select b->>'status' from a3), 'ignored', 'a late "incomplete" is ignored');
+select tests.login(tests.id('newpayer'));
+select tests.eq(public.is_member(), true, 'and the new payer stays a member');
+-- Their card plan was later swapped for a free membership from TUNR.
+select tests.logout();
+update public.memberships set via = 'admin', status = 'active', active_until = null where user_id = tests.id('newpayer');
+set local role service_role;
+create temp table a4 as select public.sync_membership(x.id, 'canceled', 'month', null, null, 'cus_np', 'sub_np', now() + interval '5 seconds') as r
+  from public.profiles x where x.username = 'newpayer';
+reset role;
+select tests.eq((select r->>'status' from a4), 'comp_kept', 'an old subscription ending keeps a free membership');
+select tests.login(tests.id('newpayer'));
+select tests.eq(public.is_member(), true, 'they''re still a member');
+
 rollback;

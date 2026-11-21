@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase.js";
 import { withReason } from "../lib/errors.js";
 import { loadMembershipStats, loadPlans, savePlan, saveRestoreDays, setMember } from "../lib/membership.js";
-import { priceLabel } from "../lib/memberRules.js";
+import { priceLabel, shortDate } from "../lib/memberRules.js";
 import { muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
 
 // Settings → Admin → TUNR+ (122_membership.sql): prices, how often members
@@ -42,11 +42,14 @@ export default function MembershipAdmin({ onToast }) {
     }
   };
 
-  const day = (iso) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const day = (iso) => shortDate(iso);
 
   return (
     <div>
-      <div style={muted}>Members pay by card (Stripe). Card payments need STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET in Vercel, and the webhook needs the customer.subscription events. Until then, give memberships here.</div>
+      <details style={muted}>
+        <summary style={{ cursor: "pointer", fontWeight: 700 }}>How to switch on card payments</summary>
+        Members pay by card through Stripe. In Vercel add STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET; in Stripe, send checkout.session.completed and the three customer.subscription events to /api/stripe-webhook, and save the customer portal once (Settings → Billing → Customer portal). Until then, give memberships below.
+      </details>
       {error && (
         <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 8 }}>
           {error}

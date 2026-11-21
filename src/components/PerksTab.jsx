@@ -287,7 +287,7 @@ function JoinCard({ count }) {
         💎 {count} MEMBER {count === 1 ? "DISCOUNT" : "DISCOUNTS"} WITH TUNR+
       </span>
       <span style={{ display: "block", fontSize: 13, color: "var(--n-999999)", marginTop: 6, lineHeight: 1.5, fontFamily: "'Barlow', sans-serif" }}>
-        Plus streak restores, your whole garage, profile colours and every Park Up level. One detail discount usually covers the year.
+        Plus streak restores, your whole garage, profile colors and every Park Up level. One detail discount usually covers the year.
       </span>
       <span style={{ display: "block", marginTop: 10, fontSize: 14, fontWeight: 900, letterSpacing: 1.4, color: "var(--a-a855f7)" }}>SEE TUNR+ ›</span>
     </button>

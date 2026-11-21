@@ -14,11 +14,13 @@ export default function Membership({ user, onClose, onNeedAccount }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  const load = () => {
+    setError("");
     loadMembership()
       .then(setM)
       .catch((e) => (setM({ plans: [] }), setError(e.message)));
-  }, [user?.id]);
+  };
+  useEffect(load, [user?.id]);
 
   const go = async (fn) => {
     setBusy(true);
@@ -31,6 +33,11 @@ export default function Membership({ user, onClose, onNeedAccount }) {
     }
   };
 
+  const errorBox = error ? (
+    <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 12 }}>
+      {error}
+    </div>
+  ) : null;
   const plans = m?.plans || [];
   const saving = yearlySaving(plans);
   const chosen = plans.find((p) => p.id === plan) || plans[0];
@@ -81,7 +88,7 @@ export default function Membership({ user, onClose, onNeedAccount }) {
                 >
                   <span style={{ display: "block", fontSize: 15, fontWeight: 900, letterSpacing: 0.6 }}>
                     {p.name.toUpperCase()}
-                    {p.id === "year" && saving > 0 && <span style={{ fontSize: 10.5, marginLeft: 6, padding: "2px 6px", borderRadius: 999, background: "#FACC15", color: "#111", verticalAlign: 2 }}>SAVE {saving}%</span>}
+                    {p.id === "year" && saving > 0 && <span style={{ fontSize: 10.5, marginLeft: 6, padding: "2px 6px", borderRadius: 999, background: "#FACC15", color: "#111", verticalAlign: 2, whiteSpace: "nowrap", display: "inline-block" }}>SAVE {saving}%</span>}
                   </span>
                   <span style={{ display: "block", fontSize: 24, fontWeight: 900, color: PURPLE }}>
                     {priceLabel(p.price_cents)}
@@ -92,6 +99,7 @@ export default function Membership({ user, onClose, onNeedAccount }) {
               );
             })}
           </div>
+          {errorBox}
           {user ? (
             <button disabled={busy || !chosen} onClick={() => go(() => joinMembership(chosen.id))} style={{ ...bigButton, marginTop: 14, background: PURPLE }}>
               {busy ? "OPENING SECURE CHECKOUT…" : `JOIN TUNR+ · ${priceLabel(chosen?.price_cents)}/${chosen?.id === "year" ? "YR" : "MO"}`}
@@ -105,17 +113,21 @@ export default function Membership({ user, onClose, onNeedAccount }) {
         </>
       )}
 
+      {m?.member && errorBox}
       {m?.member && m.can_manage && (
         <button disabled={busy} onClick={() => go(manageMembership)} style={{ ...quietButton, marginTop: 14 }}>
-          {busy ? "OPENING…" : "MANAGE BILLING (CARD, PLAN, CANCEL)"}
+          {busy ? "OPENING…" : m.cancel_at ? "RESTART OR MANAGE BILLING" : "MANAGE BILLING (CARD, PLAN, CANCEL)"}
         </button>
       )}
-
-      {error && (
-        <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 10 }}>
-          {error}
-        </div>
+      {m && !m.member && !plans.length && (
+        <>
+          {errorBox}
+          <button onClick={load} style={{ ...quietButton, marginTop: 12 }}>
+            TRY AGAIN
+          </button>
+        </>
       )}
+
     </Sheet>
   );
 }

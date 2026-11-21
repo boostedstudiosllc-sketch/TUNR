@@ -9,7 +9,7 @@
 //   409 already  ·  404 no_subscription  ·  502 stripe_failed
 //   503 payments_not_set_up (no STRIPE_SECRET_KEY) | billing_page_not_set_up
 
-import { createMembershipCheckout, createBillingPortal } from "./_lib/stripe.js";
+import { createMembershipCheckout, createBillingPortal, hasLiveSubscription } from "./_lib/stripe.js";
 
 export function createHandler({ env = process.env, fetchImpl = fetch } = {}) {
   return async function handler(req, res) {
@@ -60,6 +60,10 @@ export function createHandler({ env = process.env, fetchImpl = fetch } = {}) {
       return res.status(code).json({ error: r.status || "request_failed" });
     }
     try {
+      // Paid in another tab a moment ago (the database hasn't heard yet).
+      if (r.customer && (await hasLiveSubscription({ secretKey: env.STRIPE_SECRET_KEY, fetchImpl, customer: r.customer }))) {
+        return res.status(409).json({ error: "already" });
+      }
       const session = await createMembershipCheckout({
         secretKey: env.STRIPE_SECRET_KEY,
         fetchImpl,

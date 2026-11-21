@@ -65,6 +65,17 @@ export function createMembershipCheckout({ secretKey, fetchImpl = fetch, userId,
   });
 }
 
+// Does this customer already have a subscription that's running (or
+// retrying a card)? Catches a second checkout before the webhook lands.
+export async function hasLiveSubscription({ secretKey, fetchImpl = fetch, customer }) {
+  const r = await fetchImpl(`https://api.stripe.com/v1/subscriptions?customer=${encodeURIComponent(customer)}&status=all&limit=10`, {
+    headers: { Authorization: `Bearer ${secretKey}` },
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data?.error?.message || `stripe ${r.status}`);
+  return (data.data || []).some((s) => ["active", "trialing", "past_due", "incomplete"].includes(s.status));
+}
+
 // Stripe's billing page: change card, switch plan, cancel.
 export function createBillingPortal({ secretKey, fetchImpl = fetch, customer, returnUrl }) {
   return stripePost(secretKey, fetchImpl, "billing_portal/sessions", { customer, return_url: returnUrl });

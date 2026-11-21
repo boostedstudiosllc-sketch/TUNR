@@ -4,7 +4,7 @@ import { createHmac } from "node:crypto";
 import { membershipFromSubscription } from "../api/_lib/stripe.js";
 import { createHandler as membershipHandler } from "../api/membership.js";
 import { createHandler as webhookHandler } from "../api/stripe-webhook.js";
-import { perksList, priceLabel, yearlySaving, statusLine, errorMessage } from "../src/lib/memberRules.js";
+import { perksList, priceLabel, yearlySaving, statusLine, errorMessage, shortDate } from "../src/lib/memberRules.js";
 import { restoreOffer } from "../src/lib/pitStopRules.js";
 
 const env = { VITE_SUPABASE_URL: "https://p.supabase.co", VITE_SUPABASE_ANON_KEY: "anon", STRIPE_SECRET_KEY: "sk_test_x", SITE_URL: "https://tunr.app", STRIPE_WEBHOOK_SECRET: "whsec_test", SUPABASE_SERVICE_ROLE_KEY: "service" };
@@ -17,13 +17,14 @@ function res() {
 }
 const reply = (status, body) => ({ ok: status < 300, status, json: async () => body });
 
-function apiFetch({ status = "ok", customer = null, rows = [], stripe = [200, { id: "cs_1", url: "https://checkout.stripe.com/c/pay/cs_1" }] } = {}) {
+function apiFetch({ status = "ok", customer = null, rows = [], subs = [], stripe = [200, { id: "cs_1", url: "https://checkout.stripe.com/c/pay/cs_1" }] } = {}) {
   const calls = [];
   const f = async (url, init = {}) => {
     calls.push({ url, init });
     if (url.endsWith("/auth/v1/user")) return reply(init.headers.Authorization === "Bearer good" ? 200 : 401, { id: "u1", email: "m@x.com" });
     if (url.endsWith("/rpc/start_membership")) return reply(200, status === "ok" ? { status, plan: JSON.parse(init.body).p_plan, name: "Yearly", price_cents: 3999, customer } : { status });
     if (url.includes("/rest/v1/memberships")) return reply(200, rows);
+    if (url.includes("api.stripe.com/v1/subscriptions")) return reply(200, { data: subs });
     if (url.includes("api.stripe.com")) return reply(stripe[0], stripe[1]);
     return reply(404, {});
   };
@@ -50,9 +51,22 @@ test("join: a subscription checkout at the database's price, tagged with the mem
 test("join: a returning member reuses their Stripe customer", async () => {
   const f = apiFetch({ customer: "cus_9" });
   await membershipHandler({ env, fetchImpl: f })(post({ action: "join", plan: "month" }), res());
-  const s = f.calls.find((c) => c.url.includes("api.stripe.com")).init.body;
+  const s = f.calls.find((c) => c.url.includes("checkout/sessions")).init.body;
   assert.match(s, /customer=cus_9/);
   assert.doesNotMatch(s, /customer_email/);
+  assert.match(f.calls.find((c) => c.url.includes("/v1/subscriptions")).url, /customer=cus_9/, "Stripe is asked first");
+});
+
+test("join: a second checkout before the webhook lands is refused", async () => {
+  const f = apiFetch({ customer: "cus_9", subs: [{ id: "sub_1", status: "active" }] });
+  const r = res();
+  await membershipHandler({ env, fetchImpl: f })(post({ action: "join", plan: "month" }), r);
+  assert.deepEqual([r.code, r.body.error], [409, "already"]);
+  assert.equal(f.calls.some((c) => c.url.includes("checkout/sessions")), false, "no second checkout");
+  const ok = apiFetch({ customer: "cus_9", subs: [{ id: "sub_0", status: "canceled" }] });
+  const r2 = res();
+  await membershipHandler({ env, fetchImpl: ok })(post({ action: "join", plan: "month" }), r2);
+  assert.equal(r2.code, 200, "an old cancelled one doesn't block rejoining");
 });
 
 test("manage: Stripe's billing page for your own customer", async () => {
@@ -133,8 +147,10 @@ test("TUNR+ perks, prices and status in words", () => {
   assert.equal(yearlySaving([{ id: "month", price_cents: 499 }, { id: "year", price_cents: 3999 }]), 33);
   assert.equal(yearlySaving([{ id: "month", price_cents: 499 }, { id: "year", price_cents: 6000 }]), 0, "no saving, no badge");
   assert.equal(statusLine({ member: false }), "");
-  assert.equal(statusLine({ member: true, via: "stripe", plan: "year", active_until: "2027-11-21T15:00:00Z" }), "Yearly plan · renews Nov 21.");
-  assert.equal(statusLine({ member: true, via: "stripe", plan: "month", cancel_at: "2026-12-21T15:00:00Z" }), "Cancelled. You keep everything until Dec 21.");
+  assert.equal(shortDate("2026-12-21T15:00:00Z", Date.parse("2026-11-21T12:00:00Z")), "Dec 21", "this year: no year");
+  assert.equal(shortDate("2027-11-21T15:00:00Z", Date.parse("2026-11-21T12:00:00Z")), "Nov 21, 2027", "a yearly renewal shows its year");
+  assert.equal(priceLabel(512345), "$5,123.45");
+  assert.equal(statusLine({ member: true, via: "stripe", plan: "month", cancel_at: "2026-12-21T15:00:00Z" }, Date.parse("2026-11-21T12:00:00Z")), "Cancelled. You keep everything until Dec 21.");
   assert.equal(statusLine({ member: true, via: "admin" }), "Free membership from TUNR.");
   assert.equal(statusLine({ member: true, all_access: true }), "All access: everything's unlocked.");
 });
