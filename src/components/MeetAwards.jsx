@@ -35,7 +35,7 @@ export default function MeetAwardsCard({ event, user, canEdit, onNeedAccount, on
         )}
         {canEdit && view.phase !== "closed" && (
           <button onClick={() => setOpen("setup")} style={{ ...quietButton, marginTop: 0, flex: 1 }}>
-            {has ? "EDIT" : "SET UP AWARDS"}
+            {has ? "EDIT AWARDS" : "SET UP AWARDS"}
           </button>
         )}
       </div>
