@@ -77,6 +77,7 @@ import Convoy from "./components/Convoy.jsx";
 import PhotoSpots from "./components/PhotoSpots.jsx";
 import Membership from "./components/Membership.jsx";
 import Shop from "./components/Shop.jsx";
+import BoostSheet from "./components/Boost.jsx";
 import HomeSlides from "./components/HomeSlides.jsx";
 import { loadPromoted } from "./lib/promotions.js";
 import { withPromoted, pinPromoted } from "./lib/promoRules.js";
@@ -219,6 +220,7 @@ export default function App() {
   const [spotsOpen, setSpotsOpen] = useState(false);
   const [memberOpen, setMemberOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
+  const [boostOpen, setBoostOpen] = useState(false);
   useEffect(() => {
     const open = () => setSpotsOpen(true);
     window.addEventListener(SPOTS_OPEN, open);
@@ -718,6 +720,7 @@ export default function App() {
       else if (id === "setup") setSetupTour("all");
       else if (id === "membership") (setPitStop(null), setMemberOpen(true));
       else if (id === "shop") setShopOpen(true);
+      else if (id === "boost") (setPitStop(null), setBoostOpen(true));
     } else if (type === "convoy") {
       setConvoyCode(id);
     } else if (type === "tab") {
@@ -1675,6 +1678,24 @@ export default function App() {
 
       {setupTour && user && <SetupTour all={setupTour === "all"} onDone={() => (setSetupTour(null), setPitStop(null))} onToast={showToast} />}
       {pitStop && !setupTour && <PitStopPopup status={pitStop} onClose={() => setPitStop(null)} onToast={showToast} />}
+      {boostOpen && (
+        <BoostSheet
+          user={user}
+          onClose={() => setBoostOpen(false)}
+          onToast={showToast}
+          onNeedAccount={() => {
+            setBoostOpen(false);
+            setTab("profile");
+            showToast("Create a free account first");
+          }}
+          onShowToday={() => {
+            setBoostOpen(false);
+            setSelected(null);
+            setTab("discover");
+            setFilter("Today");
+          }}
+        />
+      )}
       {shopOpen && (
         <Shop
           user={user}

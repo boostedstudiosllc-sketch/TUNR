@@ -5,12 +5,28 @@
 //   3. on Saturdays, "keep your streak alive" for streaks with no check-in
 //      yet this week (queue_streak_reminders, 054)
 //   4. meet awards: tell the winners of any vote that closed (127)
+//   5. Boost Day (132): Sunday picks next week's day; the morning alert
 // then delivers any alerts that queued. If CRON_SECRET is set in Vercel,
 // only Vercel Cron can start it.
 
 import { createPushService } from "../_lib/push.js";
 import { createAccounts } from "../_lib/accounts.js";
 import { queueMeetReminders } from "./reminders.js";
+
+// Boost Day (132): on Sundays (Atlanta time) pick next week's day; every
+// day, send the morning alert if today is it (the database does it once).
+export async function runBoost(service, now = new Date()) {
+  const out = {};
+  const weekday = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short" }).format(now);
+  if (weekday === "Sun") {
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(now); // YYYY-MM-DD
+    const monday = new Date(`${today}T12:00:00Z`);
+    monday.setUTCDate(monday.getUTCDate() + 1);
+    out.picked = await service.rest("/rest/v1/rpc/pick_boost_day", { method: "POST", body: JSON.stringify({ p_monday: monday.toISOString().slice(0, 10) }) });
+  }
+  out.alerted = await service.rest("/rest/v1/rpc/boost_morning_alerts", { method: "POST", body: "{}" });
+  return out;
+}
 
 // Saturdays (Atlanta time) only: the weekend is the last chance to keep a
 // streak. Returns how many were queued, or null on other days.
@@ -40,6 +56,11 @@ export function createHandler({ env = process.env, fetchImpl = fetch, webpushImp
       if (sent !== null) out.streakReminders = sent;
     } catch (e) {
       out.streaksError = String(e?.message || e).slice(0, 200);
+    }
+    try {
+      out.boost = await runBoost(service, now());
+    } catch (e) {
+      out.boostError = String(e?.message || e).slice(0, 200);
     }
     try {
       // Meet awards (127): announce winners of any vote that closed.

@@ -68,8 +68,12 @@ export function nextMine(events, rsvps, now = Date.now()) {
 // Everything for the banner, in order, at most MAX_SLIDES.
 // admin: rows from home_slides; taco: { is_tuesday, pick: { open, my_choice } };
 // pit: pit_stop_status().
-export function buildSlides({ admin = [], events = [], rsvps = {}, taco = null, pit = null, now = Date.now() } = {}) {
+export function buildSlides({ admin = [], events = [], rsvps = {}, taco = null, pit = null, boost = null, now = Date.now() } = {}) {
   const out = [];
+  // Boost Day (132): first, on the day only, until you've earned it.
+  if (boost?.active && !boost.confirmed_at) {
+    out.push({ id: "boost", kicker: "🔥 BOOST DAY", title: `+${boost.points} bonus points today`, body: boost.opted_in ? "You're in: RSVP to a meet before it starts and show up." : "Opt in, RSVP to any meet today before it starts, and show up.", cta: boost.opted_in ? "See it" : "Opt in", link: "open:boost", theme: "gold", auto: true });
+  }
   const mine = nextMine(events, rsvps, now);
   if (mine) {
     out.push({ id: `mine:${mine.id}`, kicker: "YOUR NEXT MEET", title: mine.title, body: `${whenLabel(startOf(mine), now)}${mine.location ? ` · ${mine.location}` : ""}. You're going.`, cta: "See the meet", link: `meet:${mine.id}`, theme: "green", image: mine.flyerUrl || null, auto: true });

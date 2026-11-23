@@ -123,6 +123,12 @@ export default function AlertSettings({ user, onClose, onToast }) {
               title="Promoted meets near me"
               sub="Now and then, a host pays to tell nearby members about their meet. At most one alert per meet."
             />
+            <Toggle
+              on={settings.boost !== false}
+              onChange={(v) => save({ boost: v })}
+              title="Boost Day"
+              sub="The morning one weekday is a Boost Day: bonus points for RSVPing and showing up to a meet."
+            />
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <span style={label}>WITHIN</span>

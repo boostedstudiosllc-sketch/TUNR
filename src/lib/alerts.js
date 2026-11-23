@@ -133,7 +133,7 @@ export function kickPush() {
 
 // ---------- settings ----------
 
-export const DEFAULT_ALERT_SETTINGS = { radius_miles: 25, lat: null, lng: null, linkups: true, activity: true, reminders: true, promoted: true };
+export const DEFAULT_ALERT_SETTINGS = { radius_miles: 25, lat: null, lng: null, linkups: true, activity: true, reminders: true, promoted: true, boost: true };
 
 export async function loadAlertSettings(userId) {
   if (!supabase || !userId) return { ...DEFAULT_ALERT_SETTINGS };
@@ -153,6 +153,7 @@ export async function saveAlertSettings(userId, settings) {
     activity: Boolean(settings.activity),
     reminders: Boolean(settings.reminders),
     promoted: settings.promoted !== false,
+    boost: settings.boost !== false,
   };
   const { data, error } = await supabase.from("alert_settings").upsert(row, { onConflict: "user_id" }).select().single();
   if (error) throw new Error(withReason("Couldn't save your alert settings.", error));

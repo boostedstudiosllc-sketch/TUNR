@@ -3,6 +3,7 @@ import { loadHomeSlides } from "../lib/homeSlides.js";
 import { buildSlides, THEMES, isExternal } from "../lib/slides.js";
 import { loadTaco } from "../lib/tunrTuesdays.js";
 import { loadPitStop } from "../lib/pitStop.js";
+import { loadBoost } from "../lib/boost.js";
 
 // The swipeable banner at the top of Discover: what's new and what's on.
 // Admins' slides (Settings → Admin → Home banner) mixed with the app's own
@@ -14,7 +15,7 @@ const go = (link) => (isExternal(link) ? window.open(link, "_blank", "noopener")
 
 // The big picture on the right when a slide has no photo.
 const ICON = (link) =>
-  link.startsWith("meet:") ? "🏁" : link === "open:photo-spots" ? "📸" : link === "open:pitstop" ? "🔥" : link === "tab:community" ? "🚗" : link.startsWith("play:") || link === "tab:perks" ? "🎮" : link.startsWith("https:") ? "🔗" : "⭐";
+  link.startsWith("meet:") ? "🏁" : link === "open:photo-spots" ? "📸" : link === "open:pitstop" || link === "open:boost" ? "🔥" : link === "tab:community" ? "🚗" : link.startsWith("play:") || link === "tab:perks" ? "🎮" : link.startsWith("https:") ? "🔗" : "⭐";
 
 export function Slide({ s, onGo = go }) {
   const [a, b, c] = THEMES[s.theme] || THEMES.blue;
@@ -48,6 +49,7 @@ export default function HomeSlides({ user, events, rsvps }) {
   const [admin, setAdmin] = useState([]);
   const [taco, setTaco] = useState(null);
   const [pit, setPit] = useState(null);
+  const [boost, setBoost] = useState(null);
   const [at, setAt] = useState(0);
   const strip = useRef(null);
   const pausedUntil = useRef(0);
@@ -59,6 +61,13 @@ export default function HomeSlides({ user, events, rsvps }) {
     loadTaco()
       .then(setTaco)
       .catch((e) => console.warn(e.message));
+    const refreshBoost = () =>
+      loadBoost()
+        .then(setBoost)
+        .catch((e) => console.warn(e.message));
+    refreshBoost();
+    window.addEventListener("tunr:boost", refreshBoost);
+    return () => window.removeEventListener("tunr:boost", refreshBoost);
   }, [user?.id]);
   useEffect(() => {
     if (!user) return setPit(null);
@@ -71,7 +80,7 @@ export default function HomeSlides({ user, events, rsvps }) {
     return () => window.removeEventListener("tunr:points", refresh);
   }, [user?.id]);
 
-  const slides = useMemo(() => buildSlides({ admin, events, rsvps, taco, pit, now: Date.now() }), [admin, events, rsvps, taco, pit]);
+  const slides = useMemo(() => buildSlides({ admin, events, rsvps, taco, pit, boost, now: Date.now() }), [admin, events, rsvps, taco, pit, boost]);
 
   // Which slide is showing, from the scroll position (swiping moves it).
   const onScroll = () => {

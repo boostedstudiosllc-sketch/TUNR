@@ -36,6 +36,7 @@ import HomeSlidesAdmin from "./HomeSlidesAdmin.jsx";
 import PromotionsAdmin from "./PromotionsAdmin.jsx";
 import MembershipAdmin from "./MembershipAdmin.jsx";
 import ShopAdmin from "./ShopAdmin.jsx";
+import BoostAdmin from "./BoostAdmin.jsx";
 import FoundMeetsAdmin from "./FoundMeetsAdmin.jsx";
 
 const PAGES = {
@@ -43,6 +44,7 @@ const PAGES = {
   promotions: "Promoted meets",
   membershipAdmin: "TUNR+ membership",
   shopAdmin: "Merch shop",
+  boostAdmin: "Boost Day",
   foundMeets: "Found meets",
   email: "Email",
   password: "Password",
@@ -419,6 +421,7 @@ export default function SettingsScreen({
                 <Row icon="🚀" label="Promoted meets" sub="Prices, free promotions, what's paid" onClick={() => open("promotions")} />
                 <Row icon="💎" label="TUNR+ membership" sub="Prices, members, free memberships" onClick={() => open("membershipAdmin")} />
                 <Row icon="🛍️" label="Merch shop" sub="Open it, products, orders to ship" onClick={() => open("shopAdmin")} />
+                <Row icon="🔥" label="Boost Day" sub="This week's pick, change the day, bonus points" onClick={() => open("boostAdmin")} />
                 <Row icon="🎁" label="Rewards" sub="What points can buy" onClick={() => open("rewardsAdmin")} />
                 <Row icon="📦" label="Sticker orders" sub="Mailed QR stickers: price, payment link, orders" onClick={() => open("stickerOrders")} />
                 {SHOP_OPEN && (
@@ -522,6 +525,8 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
       return <MembershipAdmin onToast={onToast} />;
     case "foundMeets":
       return <FoundMeetsAdmin onToast={onToast} onOpenLink={onFollow} />;
+    case "boostAdmin":
+      return <BoostAdmin onToast={onToast} />;
     case "shopAdmin":
       return <ShopAdmin user={user} onToast={onToast} />;
     case "claims":
