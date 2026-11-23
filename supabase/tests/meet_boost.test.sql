@@ -66,6 +66,8 @@ insert into public.boost_days (week_start, day) values (public.atl_today() - 100
 insert into public.events (id, title, created_by, start_at, end_at, location, lat, lng) values
   ('00000000-0000-0000-0000-0000000000e1', 'Tonight Meet', tests.id('host'), now() - interval '10 minutes', now() + interval '2 hours', 'Lot', 33.80, -84.40),
   ('00000000-0000-0000-0000-0000000000e2', 'Tomorrow Meet', tests.id('boss'), now() + interval '1 day', now() + interval '1 day 2 hours', 'Lot', 33.80, -84.40);
+-- Real meets are posted days ahead (pop-ups don't count, 133).
+update public.events set created_at = now() - interval '3 days' where id in ('00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000e2');
 -- RSVP'd before it started: rider, far, host. 'late' RSVPs after the start.
 insert into public.rsvps (user_id, event_id, status, created_at) values
   (tests.id('rider'), '00000000-0000-0000-0000-0000000000e1', 'going', now() - interval '1 day'),
@@ -148,5 +150,74 @@ select tests.ok(not (select public.meet_on_day(e, '2026-12-10') from public.even
 select tests.ok((select public.meet_on_day(e, '2026-12-25') from public.events e where e.title = 'Last Friday'), 'monthly:last:FRI on the last Friday');
 select tests.ok(not (select public.meet_on_day(e, '2026-12-18') from public.events e where e.title = 'Last Friday'), 'not the one before');
 select tests.eq((select public.meet_start_on(e, '2026-11-25') from public.events e where e.title = 'Weekly Wednesday'), '2026-11-25 19:00-05'::timestamptz, 'starts at its usual time that day');
+
+-- ---------- security audit: holes found in 132 (these fail until fixed) ----------
+select tests.logout();
+update public.points_settings set boost_points = 10;
+-- A meet posted minutes before it starts (a friend's or a second account's
+-- "pop-up") is a free +10 for everyone who taps RSVP; check_in_at_meet
+-- refuses one-offs posted under 24 hours ahead (posted_too_late).
+select tests.logout();
+select tests.user('pal');
+select tests.login(tests.id('host'));
+insert into public.events (id, title, created_by, start_at, end_at, location, lat, lng) values
+  ('00000000-0000-0000-0000-0000000000e4', 'Pop-up In My Driveway', auth.uid(), now() + interval '5 minutes', now() + interval '2 hours', 'Driveway', 33.70, -84.30);
+select tests.login(tests.id('pal'));
+insert into public.rsvps (user_id, event_id, status) values (auth.uid(), '00000000-0000-0000-0000-0000000000e4', 'going');
+select public.boost_opt_in();
+select tests.ok((public.boost_check_in('00000000-0000-0000-0000-0000000000e4', 33.70, -84.30))->>'status' <> 'ok', 'a meet posted minutes before it starts doesn''t earn the boost (check_in_at_meet''s posted_too_late rule)');
+-- The RSVP-before-start rule trusts rsvps.created_at, which members write.
+select tests.login(tests.id('late'));
+update public.rsvps set created_at = now() - interval '1 day' where user_id = auth.uid() and event_id = '00000000-0000-0000-0000-0000000000e1';
+select tests.eq((public.boost_check_in('00000000-0000-0000-0000-0000000000e1', 33.80, -84.40))->>'status', 'no_rsvp', 'a late RSVP can''t be backdated by editing created_at');
+select tests.login(tests.id('lazy'));
+insert into public.rsvps (user_id, event_id, status, created_at) values (auth.uid(), '00000000-0000-0000-0000-0000000000e1', 'going', now() - interval '1 day');
+select tests.eq((public.boost_check_in('00000000-0000-0000-0000-0000000000e1', 33.80, -84.40))->>'status', 'no_rsvp', 'an RSVP inserted after the start with a backdated created_at doesn''t count');
+select tests.logout();
+select tests.user('maybe');
+insert into public.rsvps (user_id, event_id, status, created_at) values (tests.id('maybe'), '00000000-0000-0000-0000-0000000000e1', 'interested', now() - interval '1 day');
+select tests.login(tests.id('maybe'));
+select public.boost_opt_in();
+update public.rsvps set status = 'going' where user_id = auth.uid() and event_id = '00000000-0000-0000-0000-0000000000e1';
+select tests.eq((public.boost_check_in('00000000-0000-0000-0000-0000000000e1', 33.80, -84.40))->>'status', 'no_rsvp', 'switching Interested to Going after the start doesn''t count as going before it');
+-- e.lng isn't checked: miles_between() is null, so the distance test passes.
+select tests.logout();
+select tests.user('couch');
+insert into public.events (id, title, created_by, start_at, end_at, location, lat, lng) values
+  ('00000000-0000-0000-0000-0000000000e3', 'Pin Without Longitude', tests.id('host'), now() - interval '10 minutes', now() + interval '2 hours', 'Lot', 33.80, null);
+update public.events set created_at = now() - interval '3 days' where id = '00000000-0000-0000-0000-0000000000e3';
+insert into public.rsvps (user_id, event_id, status, created_at) values (tests.id('couch'), '00000000-0000-0000-0000-0000000000e3', 'going', now() - interval '1 day');
+select tests.login(tests.id('couch'));
+select public.boost_opt_in();
+select tests.eq((public.boost_check_in('00000000-0000-0000-0000-0000000000e3', 0, 0))->>'status', 'need_location', 'a meet pin with no longitude can''t be checked into from anywhere');
+-- day_rsvps is security definer and never revoked (Supabase grants new functions to anon).
+select tests.login(null);
+select tests.fails($$ select public.day_rsvps(public.atl_today()) $$, 'permission denied', 'guests can''t call day_rsvps (counts private RSVPs, replays the Boost Day pick)');
+select tests.login(tests.id('far'));
+select tests.fails($$ select public.day_rsvps(public.atl_today()) $$, 'permission denied', 'members can''t call day_rsvps either');
+-- No can_access_event check: an RSVP left from when you had access still works,
+-- and too_far's distance_m lets you triangulate a private meet.
+select tests.logout();
+select tests.user('kicked');
+insert into public.events (id, title, created_by, start_at, end_at, location, lat, lng, visibility) values
+  ('00000000-0000-0000-0000-0000000000e5', 'Private Garage Night', tests.id('host'), now() - interval '10 minutes', now() + interval '2 hours', 'Secret spot', 33.75, -84.35, 'private');
+update public.events set created_at = now() - interval '3 days' where id = '00000000-0000-0000-0000-0000000000e5';
+-- An RSVP left over from when they were an approved member (no membership now).
+insert into public.rsvps (user_id, event_id, status, created_at) values (tests.id('kicked'), '00000000-0000-0000-0000-0000000000e5', 'going', now() - interval '1 day');
+select tests.login(tests.id('kicked'));
+select public.boost_opt_in();
+select tests.eq((public.boost_check_in('00000000-0000-0000-0000-0000000000e5', 33.80, -84.40))->>'status', 'not_today_meet', 'someone without access to a private meet can''t use boost check-in (its too_far distance reveals where the meet is)');
+-- boost_confirm doesn't re-check hidden (check-in does). Keep this last: it hides e1.
+select tests.logout();
+select tests.user('flag');
+insert into public.rsvps (user_id, event_id, status, created_at) values (tests.id('flag'), '00000000-0000-0000-0000-0000000000e1', 'going', now() - interval '1 day');
+select tests.login(tests.id('flag'));
+select public.boost_opt_in();
+select tests.eq((public.boost_check_in('00000000-0000-0000-0000-0000000000e1', 33.80, -84.40))->>'status', 'ok', 'checked in');
+select tests.logout();
+update public.events set hidden = true where id = '00000000-0000-0000-0000-0000000000e1';
+update public.boost_entries set checked_in_at = now() - interval '25 minutes' where user_id = tests.id('flag');
+select tests.login(tests.id('flag'));
+select tests.ok((public.boost_confirm(33.80, -84.40))->>'status' <> 'ok', 'once moderators hide a meet, confirming there no longer pays');
 
 rollback;

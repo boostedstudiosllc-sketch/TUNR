@@ -13,6 +13,8 @@ export const ERRORS = {
   meet_over: "This meet is over.",
   need_location: "Share your location so TUNR can see you're at the meet.",
   not_checked_in: "Check in at the meet first.",
+  posted_too_late: "This meet was posted less than a day before it started, so it doesn't count for the boost.",
+  rate_limit: "That's a lot of tries today. Try again from the meet itself.",
 };
 
 export function errorFor(status, extra = {}) {

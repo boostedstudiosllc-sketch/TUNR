@@ -27,6 +27,7 @@ test("countdowns and messages", () => {
   assert.equal(errorFor("too_far", { distance_m: 3218 }), "You're 2.0 miles from the meet. Get closer and try again.");
   assert.match(errorFor("too_soon", { confirm_at: "2026-11-25T23:40:00Z" }), /confirm at 6:40 PM/);
   assert.equal(errorFor("weird"), "Couldn't do that. (weird)");
+  assert.match(errorFor("posted_too_late"), /less than a day before/);
 });
 
 test("weeks start on Monday", () => {
@@ -52,4 +53,16 @@ test("the daily job picks next week's day on Sundays only", async () => {
   calls.length = 0;
   await runBoost(service, new Date("2026-11-25T13:00:00Z")); // a Wednesday
   assert.deepEqual(calls.map((c) => c[0]), ["/rest/v1/rpc/boost_morning_alerts"], "weekdays: just the morning alert");
+});
+
+// Security audit (132): /api/daily returns runBoost's output as its JSON body,
+// and without CRON_SECRET anyone can call it. On Sundays that body carried
+// pick_boost_day's { day, scores }, which is next week's Boost Day.
+test("the daily job's response doesn't reveal next week's Boost Day", async () => {
+  const service = {
+    rest: async (path) =>
+      path.endsWith("/pick_boost_day") ? { status: "ok", day: "2026-12-02", scores: { "2026-12-02": { score: 1 } } } : 0,
+  };
+  const out = await runBoost(service, new Date("2026-11-29T13:00:00Z")); // a Sunday in Atlanta
+  assert.equal(JSON.stringify(out).includes("2026-12-02"), false, "only the status, never the picked day or scores");
 });

@@ -22,7 +22,9 @@ export async function runBoost(service, now = new Date()) {
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(now); // YYYY-MM-DD
     const monday = new Date(`${today}T12:00:00Z`);
     monday.setUTCDate(monday.getUTCDate() + 1);
-    out.picked = await service.rest("/rest/v1/rpc/pick_boost_day", { method: "POST", body: JSON.stringify({ p_monday: monday.toISOString().slice(0, 10) }) });
+    const r = await service.rest("/rest/v1/rpc/pick_boost_day", { method: "POST", body: JSON.stringify({ p_monday: monday.toISOString().slice(0, 10) }) });
+    // Only whether it worked: the day stays secret until it comes (admins see it in the app).
+    out.picked = { status: r?.status || "unknown" };
   }
   out.alerted = await service.rest("/rest/v1/rpc/boost_morning_alerts", { method: "POST", body: "{}" });
   return out;
