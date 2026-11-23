@@ -8,11 +8,14 @@ import CarPhotos from "./CarPhotos.jsx";
 
 // What a "Scan my build" sticker opens: the car, its build notes and its
 // owner. Works for people without an account; they're invited to join.
+import ShareSheet from "./ShareSheet.jsx";
+
 export default function BuildPage({ vehicleId, user, onClose, onOpenPerson, onJoin, onToast }) {
   const [car, setCar] = useState(undefined); // undefined = loading, null = not available
   const [error, setError] = useState("");
   const [following, setFollowing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -137,6 +140,10 @@ export default function BuildPage({ vehicleId, user, onClose, onOpenPerson, onJo
               </div>
             </>
           )}
+          <button className="action-btn" onClick={() => setSharing(true)} style={{ ...quietButton, marginTop: 8 }}>
+            ↗ SHARE THIS BUILD
+          </button>
+          {sharing && <ShareSheet kind="car" title="Share build" data={car} onClose={() => setSharing(false)} onToast={onToast} />}
           <button className="action-btn" onClick={onClose} style={{ ...quietButton, marginTop: 8 }}>
             SEE MEETS NEAR YOU
           </button>

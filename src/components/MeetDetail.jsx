@@ -20,6 +20,7 @@ import { openParked } from "../lib/parking.js";
 import { GOING_AS, crowdLine } from "../lib/photographer.js";
 import DirectionsIcon from "./DirectionsIcon.jsx";
 import PromoteSheet from "./PromoteSheet.jsx";
+import ShareSheet from "./ShareSheet.jsx";
 import MeetAwardsCard from "./MeetAwards.jsx";
 import { BoostCard } from "./Boost.jsx";
 
@@ -70,19 +71,11 @@ export default function MeetDetail({
     };
   }, [event.id, rsvp]);
 
-  async function share() {
-    const url = `${window.location.origin}/m/${event.slug || event.id}`;
+  // The share card (Save / Copy Image / Copy Link / Share to…).
+  const [sharing, setSharing] = useState(false);
+  function share() {
     track("meet_shared", { eventId: event.id });
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: event.title, text: `${event.title} — on TUNR`, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        onToast("Link copied");
-      }
-    } catch {
-      // user dismissed the share sheet
-    }
+    setSharing(true);
   }
 
 
@@ -497,6 +490,7 @@ export default function MeetDetail({
             </button>
           )}
           {promoting && <PromoteSheet event={event} onClose={() => setPromoting(false)} />}
+          {sharing && <ShareSheet kind="meet" title="Share meet" data={{ ...event, when: `${displayDate(event)} · ${displayTime(event)}`, goingCount: event.going }} onClose={() => setSharing(false)} onToast={onToast} />}
           <BoostCard event={event} user={user} onToast={onToast} />
           <MeetAwardsCard event={event} user={user} canEdit={canEdit} onNeedAccount={onNeedAccount} onToast={onToast} />
 

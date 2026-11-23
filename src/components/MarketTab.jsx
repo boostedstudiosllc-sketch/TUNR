@@ -5,6 +5,7 @@ import { loadCarMakes, loadVehicles } from "../lib/store.js";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton, Chip } from "./Sheet.jsx";
 import { Avatar } from "./EditProfile.jsx";
 import { ReportSheet } from "./CommunityBits.jsx";
+import ShareSheet from "./ShareSheet.jsx";
 import { ago } from "../lib/community.js";
 import {
   CATEGORIES,
@@ -254,6 +255,7 @@ function ListingView({ id, user, garage = [], onClose, onToast, onNeedAccount, o
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [reporting, setReporting] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const reload = () =>
     loadListing(id)
@@ -339,7 +341,13 @@ function ListingView({ id, user, garage = [], onClose, onToast, onNeedAccount, o
             ))}
           </div>
           {l.description && <div style={{ ...muted, color: "var(--n-dddddd)", whiteSpace: "pre-wrap", marginTop: 10, fontSize: 14 }}>{l.description}</div>}
-          <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>Listed {ago(l.created_at)} ago</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+            <div style={{ ...muted, fontSize: 12, flex: 1 }}>Listed {ago(l.created_at)} ago</div>
+            <button onClick={() => setSharing(true)} style={{ background: "none", border: "1px solid var(--n-2a2a2a)", borderRadius: 999, color: "var(--n-f0f0f0)", padding: "5px 12px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>
+              ↗ SHARE
+            </button>
+          </div>
+          {sharing && <ShareSheet kind="listing" title="Share part" data={{ ...l, fitLabel: fitLabel(l), conditionLabel: CONDITION[l.condition], categoryLabel: CATEGORY[l.category]?.name }} onClose={() => setSharing(false)} onToast={onToast} />}
 
           <button onClick={() => onOpenPerson?.(l.seller_id)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", marginTop: 12, padding: 10, borderRadius: 12, border: "1px solid var(--n-232323)", background: "var(--n-141414)", color: "var(--n-f0f0f0)", cursor: "pointer", textAlign: "left", fontFamily: "'Barlow Condensed', sans-serif" }}>
             <Avatar url={l.seller_avatar} name={l.seller_name} size={40} />
