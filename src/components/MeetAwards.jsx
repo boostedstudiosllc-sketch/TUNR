@@ -4,6 +4,7 @@ import { phaseLine, standings, winnersOf, carLabel } from "../lib/awardRules.js"
 import { currentPosition } from "../lib/alerts.js";
 import { loadVehicles } from "../lib/store.js";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
+import { failWith } from "../lib/toast.js";
 
 const GOLD = "#FACC15";
 
@@ -52,7 +53,7 @@ function AwardsSheet({ event, user, view, onChange, onClose, onNeedAccount, onTo
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (user?.id) loadVehicles(user.id).then(setCars);
+    if (user?.id) loadVehicles(user.id).then(setCars).catch(failWith("Couldn't load your garage."));
   }, [user?.id]);
 
   const run = async (fn) => {

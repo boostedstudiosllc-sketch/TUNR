@@ -15,6 +15,7 @@ import { askForLocation } from "../lib/location.js";
 import { openParked } from "../lib/parking.js";
 import { useLocationStatus, LocationNotice } from "./LocationAccess.jsx";
 import { field, bigButton, muted, label } from "./Sheet.jsx";
+import { failWith } from "../lib/toast.js";
 
 const BOOSTS = [5, 10];
 
@@ -53,7 +54,7 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
     let alive = true;
     loadProfile(user.id)
       .then((p) => alive && setIsAdmin(Boolean(p?.isAdmin)))
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load your profile."));
     return () => {
       alive = false;
     };
@@ -70,7 +71,7 @@ export default function CheckIn({ event, user, onNeedAccount, onToast, onChanged
         setCheckedIn(recent);
         setStayed(recent && Boolean(c.stayed_at));
       })
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load your check-in."));
     return () => {
       alive = false;
     };

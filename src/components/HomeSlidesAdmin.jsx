@@ -185,7 +185,7 @@ function SlideForm({ draft, setDraft, user, busy, error, onCancel, onSave }) {
           </button>
         )}
       </div>
-      {upErr && <div style={{ ...muted, color: "var(--a-f87171)", marginTop: 6 }}>{upErr}</div>}
+      {upErr && <div role="alert" style={{ ...muted, color: "var(--a-f87171)", marginTop: 6 }}>{upErr}</div>}
 
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <div style={{ flex: 1 }}>

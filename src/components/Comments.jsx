@@ -307,7 +307,7 @@ export default function Comments({ eventId, user, onNeedAccount, onToast, onOpen
       {composer}
 
       {error && (
-        <div style={{ fontSize: 12, color: "var(--a-ef4444)", marginTop: 8, fontFamily: "'Barlow', sans-serif" }}>
+        <div role="alert" style={{ fontSize: 12, color: "var(--a-ef4444)", marginTop: 8, fontFamily: "'Barlow', sans-serif" }}>
           {error}
         </div>
       )}

@@ -13,6 +13,7 @@ import { isPast } from "../lib/dates.js";
 import AuthForm from "./AuthForm.jsx";
 import Badge from "./Badge.jsx";
 import { PerkCard } from "./PerksTab.jsx";
+import { failWith } from "../lib/toast.js";
 
 // The link in the bio. Signing up here makes a real account, not a waitlist
 // entry, so there's nothing to convert at launch. /join?ref=tiktok records
@@ -31,11 +32,11 @@ export default function JoinPage({ user, onEnter }) {
     const ref = new URLSearchParams(window.location.search).get("ref");
     rememberSignupSource(ref || "bio");
     track("join_viewed", { ref: ref || "bio" });
-    dayOneOpen().then(setOpen).catch(() => {});
+    dayOneOpen().then(setOpen).catch(failWith("Couldn't check the Day One badge."));
     const now = new Date();
     loadEvents(null)
       .then((events) => setCount(events.filter((e) => !isPast(e, now)).length))
-      .catch(() => {});
+      .catch(failWith("Couldn't load meets."));
   }, []);
 
   // Once signed in, make sure the profile row exists (it's what carries the
@@ -46,10 +47,12 @@ export default function JoinPage({ user, onEnter }) {
       return;
     }
     let alive = true;
+    // quiet: the profile is read right after, and that read reports failures
     ensureProfile(user)
       .catch(() => {})
       .then(() => loadProfile(user.id))
-      .then((p) => alive && setProfile(p));
+      .then((p) => alive && setProfile(p))
+      .catch(failWith("Couldn't load your profile."));
     return () => {
       alive = false;
     };
@@ -61,7 +64,7 @@ export default function JoinPage({ user, onEnter }) {
     let alive = true;
     loadPerks()
       .then((rows) => alive && setFreePerks(rows.filter((p) => p.members_only === false)))
-      .catch(() => {});
+      .catch(failWith("Couldn't load perks."));
     return () => {
       alive = false;
     };

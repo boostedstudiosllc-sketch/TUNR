@@ -9,6 +9,7 @@ import TrackButton from "./TrackButton.jsx";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import { GarageRow, useGarageCar, carName } from "./Showroom.jsx";
 import { lookOf, BODY_NAMES } from "../lib/rushEngine.js";
+import { failWith } from "../lib/toast.js";
 
 // Your own car (from your garage) races as the class closest to it, and the
 // rivals drive that class.
@@ -542,7 +543,7 @@ function RaceScreen({ def, laps, difficulty, car, playerLook = null, view, onVie
           }
           if (remote && now - lastSent > REPORT_MS) {
             lastSent = now;
-            Promise.resolve(remote.room?.send("pos", { round: remote.round, ...reportOf(race) })).catch((e) => console.warn("Couldn't reach the other phone:", e.message));
+            Promise.resolve(remote.room?.send("pos", { round: remote.round, ...reportOf(race) })).catch(failWith("Couldn't reach the other phone."));
           }
           // Against a friend: over once you're both through, they've gone, or
           // 30 seconds after you finish.

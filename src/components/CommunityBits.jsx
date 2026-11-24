@@ -150,7 +150,7 @@ export function ReportSheet({ type, id, onClose, onToast }) {
       </div>
       <div style={{ ...label, marginTop: 14 }}>MORE DETAIL (OPTIONAL)</div>
       <textarea style={{ ...field, minHeight: 60 }} maxLength={250} value={note} onChange={(e) => setNote(e.target.value)} />
-      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
       <button disabled={!reason || busy} onClick={send} style={{ ...bigButton, marginTop: 12, opacity: reason ? 1 : 0.4 }}>
         {busy ? "SENDING…" : "SEND REPORT"}
       </button>

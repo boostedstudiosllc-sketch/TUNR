@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadSignupStats } from "../lib/store.js";
+import { failWith } from "../lib/toast.js";
 
 // Admin-only. Which link people signed up from, so you know whether the
 // TikTok bio is pulling its weight. "app" is everyone who signed up inside
@@ -8,7 +9,7 @@ export default function SignupStats() {
   const [rows, setRows] = useState(null);
 
   useEffect(() => {
-    loadSignupStats().then(setRows);
+    loadSignupStats().then(setRows).catch(failWith("Couldn't load sign-up stats."));
   }, []);
 
   if (!rows || rows.length === 0) return null;

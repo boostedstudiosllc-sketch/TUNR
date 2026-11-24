@@ -53,7 +53,7 @@ export default function LinkupTerms({ onAgreed, onClose, onShowTerms }) {
           , and I understand I go to any linkup at my own risk.
         </span>
       </label>
-      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
       <button disabled={!checked || busy} onClick={agree} style={{ ...bigButton, marginTop: 14, opacity: checked ? 1 : 0.4 }}>
         {busy ? "SAVING…" : "I AGREE"}
       </button>

@@ -28,6 +28,7 @@ import {
   markChatRead,
   watchThread,
 } from "../lib/market.js";
+import { failWith } from "../lib/toast.js";
 
 // Parts for sale, like Facebook Marketplace: browse what people are selling
 // off their cars, message the seller, and sort out the deal yourselves. TUNR
@@ -50,7 +51,7 @@ export default function MarketTab({ user, onNeedAccount, onToast, onOpenPerson, 
   const [picking, setPicking] = useState(false);
   const [garage, setGarage] = useState([]); // your cars, to tell you what fits
   useEffect(() => {
-    if (user?.id) loadVehicles(user.id).then(setGarage);
+    if (user?.id) loadVehicles(user.id).then(setGarage).catch(failWith("Couldn't load your garage."));
     else setGarage([]);
   }, [user?.id]);
   const [viewing, setViewing] = useState(null); // listing id
@@ -76,7 +77,7 @@ export default function MarketTab({ user, onNeedAccount, onToast, onOpenPerson, 
     if (!user) return;
     loadChats()
       .then(setChats)
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load your messages."));
   };
   useEffect(refreshChats, [user?.id]);
 
@@ -614,7 +615,7 @@ function ChatView({ thread, draft = "", user, onClose, onOpenListing, onToast })
         setInfo(t);
         loadListing(t.listing_id)
           .then((l) => live && setListing(l))
-          .catch((e) => console.warn(e.message));
+          .catch(failWith("Couldn't load that listing."));
         setMessages(await loadMessages(thread));
         markChatRead(thread);
         stop = watchThread(thread, (m) => {
@@ -703,7 +704,7 @@ function ChatView({ thread, draft = "", user, onClose, onOpenListing, onToast })
 function CarPicker({ value: v, onChange, range = false, anyLabel = null }) {
   const [makes, setMakes] = useState([]);
   useEffect(() => {
-    loadCarMakes().then(setMakes);
+    loadCarMakes().then(setMakes).catch(failWith("Couldn't load the list of car makes."));
   }, []);
   const models = modelsFor(v.fit_make);
   const sel = { ...field, appearance: "none" };
@@ -757,7 +758,7 @@ function FitFilterSheet({ user, value, onClose, onPick }) {
   const [garage, setGarage] = useState([]);
   const [v, setV] = useState({ fit_make: value?.make || "", fit_model: value?.model || "", fit_year_from: value?.year ? String(value.year) : "", fit_trim: value?.trim || "" });
   useEffect(() => {
-    if (user?.id) loadVehicles(user.id).then(setGarage);
+    if (user?.id) loadVehicles(user.id).then(setGarage).catch(failWith("Couldn't load your garage."));
   }, [user?.id]);
   return (
     <Sheet onClose={onClose} label="Parts that fit" zIndex={300}>

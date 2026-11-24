@@ -56,7 +56,7 @@ export default function Shouts({ user, position, focusId, refreshKey, onToast, o
           🙋 WHO'S DOWN? ASK PEOPLE NEARBY
         </button>
       )}
-      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
       {list.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
           {list.map((s) => (

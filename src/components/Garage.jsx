@@ -19,6 +19,7 @@ import StickerSheet from "./StickerSheet.jsx";
 import { ShowroomStage, GarageShowroom, OtherColor, repairLink } from "./Showroom.jsx";
 import { saveGameLook } from "../lib/rush.js";
 import { lookOf, lookColumns, GAME_COLORS, COLOR_NAMES, guessBody, BODY_NAMES } from "../lib/rushEngine.js";
+import LoadError from "./LoadError.jsx";
 
 const inputStyle = {
   background: "var(--n-0f0f0f)",
@@ -48,6 +49,8 @@ const EMPTY = { id: null, year: "", make: "", model: "", buildNotes: "", photoUr
 // the one attached when you RSVP.
 export default function Garage({ user, onToast }) {
   const [vehicles, setVehicles] = useState([]);
+  // Why the garage didn't load (shown instead of "add your first car").
+  const [loadError, setLoadError] = useState("");
   const [makes, setMakes] = useState([]);
   const [editing, setEditing] = useState(null);
   // The car whose "Scan my build" sticker sheet is open.
@@ -62,16 +65,24 @@ export default function Garage({ user, onToast }) {
   const saving = useRef({});
 
   async function refresh() {
-    setVehicles(await loadVehicles(user.id));
+    try {
+      setVehicles(await loadVehicles(user.id));
+      setLoadError("");
+    } catch (e) {
+      setLoadError(e.message);
+    }
   }
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([loadVehicles(user.id), loadCarMakes()]).then(([v, m]) => {
-      if (cancelled) return;
-      setVehicles(v);
-      setMakes(m);
-    });
+    Promise.all([loadVehicles(user.id), loadCarMakes()])
+      .then(([v, m]) => {
+        if (cancelled) return;
+        setVehicles(v);
+        setMakes(m);
+        setLoadError("");
+      })
+      .catch((e) => !cancelled && setLoadError(e.message));
     return () => {
       cancelled = true;
     };
@@ -104,7 +115,7 @@ export default function Garage({ user, onToast }) {
           return;
         }
       } catch (e) {
-        console.warn(e.message);
+        onToast(e.message); // the database still checks the limit when saving
       }
     }
     setEditing({ ...EMPTY });
@@ -128,9 +139,13 @@ export default function Garage({ user, onToast }) {
   }
 
   async function remove(vehicle) {
-    await deleteVehicle(vehicle.id);
-    await refresh();
-    onToast("Car removed");
+    try {
+      await deleteVehicle(vehicle.id);
+      await refresh();
+      onToast("Car removed");
+    } catch (e) {
+      onToast(e.message);
+    }
   }
 
   // Restyling in the 3D garage: shown at once, saved once you stop tapping.
@@ -254,7 +269,8 @@ export default function Garage({ user, onToast }) {
         </button>
       )}
 
-      {vehicles.length === 0 && !editing && (
+      <LoadError message={loadError} onRetry={refresh} />
+      {vehicles.length === 0 && !editing && !loadError && (
         <div
           style={{
             fontSize: 12.5,
@@ -524,7 +540,7 @@ export default function Garage({ user, onToast }) {
           </div>
 
           {error && (
-            <div
+            <div role="alert"
               style={{
                 fontSize: 12,
                 color: "var(--a-ff6b4a)",

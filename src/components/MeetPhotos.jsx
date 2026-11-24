@@ -7,6 +7,7 @@ import {
   track,
 } from "../lib/store.js";
 import { compressImage } from "../lib/image.js";
+import { failWith } from "../lib/toast.js";
 
 // Gives a meet an afterlife. Anyone who can see the meet can see the photos;
 // anyone signed in can add one. Deleting is decided by row-level security —
@@ -25,11 +26,10 @@ export default function MeetPhotos({ eventId, user, isHost, onNeedAccount, onToa
 
   useEffect(() => {
     let alive = true;
-    loadMeetPhotos(eventId).then((rows) => {
-      if (!alive) return;
-      setPhotos(rows);
-      setLoaded(true);
-    });
+    loadMeetPhotos(eventId)
+      .then((rows) => alive && setPhotos(rows))
+      .catch(failWith("Couldn't load photos."))
+      .finally(() => alive && setLoaded(true));
     return () => {
       alive = false;
     };

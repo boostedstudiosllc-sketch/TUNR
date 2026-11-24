@@ -4,6 +4,7 @@ import { takeSharedRoom } from "../lib/gameRooms.js";
 import { loadProfile } from "../lib/store.js";
 import { muted, bigButton, quietButton, field } from "./Sheet.jsx";
 import InviteSheetGame from "./InviteSheetGame.jsx";
+import { failWith, showError } from "../lib/toast.js";
 
 // Playing a friend, live, in any Arcade game that has it: make a room and
 // share its code (or the link), join one with a code, or Quick match with
@@ -47,7 +48,7 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
     loadProfile(user.id)
       .then((p) => setName(p?.username || user.email?.split("@")[0] || "driver"))
       .catch((e) => {
-        console.warn(e.message);
+        showError("Couldn't load your username, so you're shown by your email name.", e);
         setName(user.email?.split("@")[0] || "driver");
       });
   }, [user?.id]);
@@ -75,7 +76,7 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
 
   // Keep your car and (as host) your settings up to date for the other player.
   useEffect(() => {
-    room.current?.set({ look, opts: options }).catch((e) => console.warn(e.message));
+    room.current?.set({ look, opts: options }).catch(failWith("Couldn't send your car to the other player."));
   }, [JSON.stringify(look), JSON.stringify(options)]);
 
   // The game's music plays in the room and through the game (it can only
@@ -216,7 +217,7 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
         setResult(r);
         setStage("room");
         setReady(false);
-        room.current?.set({ ready: false }).catch((e) => console.warn(e.message));
+        room.current?.set({ ready: false }).catch(failWith("Couldn't send your car to the other player."));
       },
       onQuit: () => {
         hooks.current = {};

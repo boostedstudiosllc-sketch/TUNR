@@ -67,7 +67,7 @@ export default function TunrTuesdays({ user, onNeedAccount, onToast }) {
         </div>
       </div>
 
-      {error && <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--a-f87171)", fontFamily: "'Barlow', sans-serif" }}>{error}</div>}
+      {error && <div role="alert" style={{ marginTop: 10, fontSize: 12.5, color: "var(--a-f87171)", fontFamily: "'Barlow', sans-serif" }}>{error}</div>}
 
       {pick && (open || pick.day >= weekAgo(taco.today)) ? (
         <div style={{ marginTop: 12 }}>

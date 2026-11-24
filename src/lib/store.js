@@ -135,6 +135,7 @@ export async function loadEvents(userId = null) {
     // (App.jsx shows the last saved real list instead when it has one).
     const fallback = [...read(SUBMITTED_KEY, []), ...seedEvents];
     fallback.offline = true;
+    fallback.reason = withReason("Couldn't load meets.", eventsRes?.error || "no data came back");
     return fallback;
   }
 
@@ -278,7 +279,8 @@ export async function loadRsvps(userId = null) {
 export async function loadGoingAs(userId) {
   if (!supabase || !userId) return {};
   const { data, error } = await supabase.from("rsvps").select("event_id,going_as").eq("user_id", userId);
-  if (error || !Array.isArray(data)) return {};
+  if (error) throw new Error(withReason("Couldn't load how you're going to meets.", error));
+  if (!Array.isArray(data)) return {};
   return Object.fromEntries(data.map((r) => [r.event_id, r.going_as || "car"]));
 }
 
@@ -349,7 +351,8 @@ export async function saveRsvp(rsvps, eventId, status, userId = null, goingAs = 
 export async function loadCarMakes() {
   if (!supabase) return [];
   const { data, error } = await supabase.from("car_makes").select("name").order("name");
-  if (error || !Array.isArray(data)) return [];
+  if (error) throw new Error(withReason("Couldn't load the list of car makes.", error));
+  if (!Array.isArray(data)) return [];
   // 'Other' is the escape hatch, so it belongs at the bottom rather than
   // alphabetically between Nissan and Porsche.
   const names = data.map((r) => r.name);
@@ -364,7 +367,8 @@ export async function loadVehicles(ownerId) {
     .eq("owner_id", ownerId)
     .order("is_primary", { ascending: false })
     .order("created_at");
-  if (error || !Array.isArray(data)) return [];
+  if (error) throw new Error(withReason("Couldn't load the garage.", error));
+  if (!Array.isArray(data)) return [];
   return data;
 }
 
@@ -460,7 +464,10 @@ export async function decodeVin(vin) {
 
 export async function deleteVehicle(vehicleId) {
   if (!supabase) return;
-  await supabase.from("vehicles").delete().eq("id", vehicleId);
+  {
+    const { error } = await supabase.from("vehicles").delete().eq("id", vehicleId);
+    if (error) throw new Error(friendlyWriteError(error, "Couldn't delete that car."));
+  }
 }
 
 // The trigger from 015 demotes whichever car was primary before.
@@ -498,7 +505,8 @@ export async function loadAttendees(eventId) {
     .select("make,model,status")
     .eq("event_id", eventId)
     .order("created_at");
-  if (error || !Array.isArray(data)) return [];
+  if (error) throw new Error(withReason("Couldn't load who's going.", error));
+  if (!Array.isArray(data)) return [];
   return data;
 }
 
@@ -793,7 +801,8 @@ export async function loadSignupStats() {
     .from("signup_stats")
     .select("source,signups,day_one,last_7_days")
     .order("signups", { ascending: false });
-  if (error || !Array.isArray(data)) return [];
+  if (error) throw new Error(withReason("Couldn't load sign-up stats.", error));
+  if (!Array.isArray(data)) return [];
   return data;
 }
 
@@ -1119,7 +1128,8 @@ export async function loadEventCohosts(eventId) {
     .select("id,host,user_id,status")
     .eq("event_id", eventId)
     .order("created_at");
-  if (error || !Array.isArray(data)) return [];
+  if (error) throw new Error(withReason("Couldn't load co-hosts.", error));
+  if (!Array.isArray(data)) return [];
   return data;
 }
 
@@ -1137,7 +1147,8 @@ export async function loadMyCohostInvites(userId) {
     .select("id,event_id")
     .eq("user_id", userId)
     .eq("status", "invited");
-  if (error || !Array.isArray(data) || !data.length) return [];
+  if (error) throw new Error(withReason("Couldn't load your co-host invites.", error));
+  if (!Array.isArray(data) || !data.length) return [];
   const { data: events } = await supabase
     .from("events_public")
     .select("id,title,host,start_at,city")
@@ -1181,7 +1192,8 @@ export async function loadListingRequests() {
     .select("*")
     .eq("status", "open")
     .order("created_at", { ascending: true });
-  if (error || !Array.isArray(data)) return [];
+  if (error) throw new Error(withReason("Couldn't load listing requests.", error));
+  if (!Array.isArray(data)) return [];
   return data;
 }
 
@@ -1205,7 +1217,7 @@ export async function loadMyVerification(userId) {
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (error) return null;
+  if (error) throw new Error(withReason("Couldn't load your host verification.", error));
   return data || null;
 }
 
@@ -1228,7 +1240,10 @@ export async function requestVerification(host, instagramHandle, userId) {
 
 export async function withdrawVerification(id) {
   if (!supabase) return;
-  await supabase.from("host_verifications").delete().eq("id", id);
+  {
+    const { error } = await supabase.from("host_verifications").delete().eq("id", id);
+    if (error) throw new Error(friendlyWriteError(error, "Couldn't withdraw the request."));
+  }
 }
 
 // ---------- host invites ----------
@@ -1255,7 +1270,8 @@ export function clearHostInvite() {
 export async function peekHostInvite(token) {
   if (!supabase || !token) return null;
   const { data, error } = await supabase.rpc("peek_host_invite", { p_token: token });
-  if (error || !Array.isArray(data) || !data.length) return null;
+  if (error) throw new Error(withReason("Couldn't load the host invite.", error));
+  if (!Array.isArray(data) || !data.length) return null;
   return data[0];
 }
 
@@ -1298,7 +1314,8 @@ export async function loadHostInvites() {
     .select("id,token,instagram_handle,created_at,expires_at,used_at,used_host")
     .order("created_at", { ascending: false })
     .limit(20);
-  if (error || !Array.isArray(data)) return [];
+  if (error) throw new Error(withReason("Couldn't load host invites.", error));
+  if (!Array.isArray(data)) return [];
   return data;
 }
 
@@ -1310,7 +1327,8 @@ export async function loadPendingVerifications() {
     .select("*")
     .eq("status", "pending")
     .order("created_at", { ascending: true });
-  if (error || !Array.isArray(data)) return [];
+  if (error) throw new Error(withReason("Couldn't load verification requests.", error));
+  if (!Array.isArray(data)) return [];
   return data;
 }
 
@@ -1358,7 +1376,8 @@ export async function loadJoinRequests(eventId) {
     .select("*")
     .eq("event_id", eventId)
     .order("created_at", { ascending: true });
-  if (error || !Array.isArray(data)) return [];
+  if (error) throw new Error(withReason("Couldn't load join requests.", error));
+  if (!Array.isArray(data)) return [];
   return data;
 }
 
@@ -1462,7 +1481,8 @@ export async function loadComments(eventId) {
     .eq("event_id", eventId)
     .order("created_at", { ascending: false })
     .limit(100);
-  if (error || !Array.isArray(data)) return [];
+  if (error) throw new Error(withReason("Couldn't load the meet chat.", error));
+  if (!Array.isArray(data)) return [];
   return data;
 }
 
@@ -1503,7 +1523,10 @@ export async function addComment(eventId, body, userId) {
 
 export async function deleteComment(commentId) {
   if (!supabase) return;
-  await supabase.from("comments").delete().eq("id", commentId);
+  {
+    const { error } = await supabase.from("comments").delete().eq("id", commentId);
+    if (error) throw new Error(friendlyWriteError(error, "Couldn't delete that message."));
+  }
 }
 
 // ---------- blocking ----------
@@ -1556,7 +1579,8 @@ export async function deleteMyAccount() {
 export async function getPerson(personId) {
   if (!supabase || !personId) return null;
   const { data, error } = await supabase.rpc("get_person", { p_user: personId });
-  if (error || !Array.isArray(data) || !data.length) return null;
+  if (error) throw new Error(withReason("Couldn't load that profile.", error));
+  if (!Array.isArray(data) || !data.length) return null;
   return data[0];
 }
 
@@ -1580,7 +1604,10 @@ export async function searchPeople(q = "") {
 export async function followPerson(personId, userId, following) {
   if (!supabase || !userId) throw new Error("Sign in to follow people");
   if (following) {
-    await supabase.from("user_follows").delete().eq("follower_id", userId).eq("followee_id", personId);
+    {
+      const { error } = await supabase.from("user_follows").delete().eq("follower_id", userId).eq("followee_id", personId);
+      if (error) throw new Error(friendlyWriteError(error, "Couldn't unfollow them."));
+    }
     return;
   }
   const { error } = await supabase
@@ -1634,7 +1661,10 @@ export async function loadRestrictedAccounts() {
 export async function reactToComment(commentId, userId, value, current) {
   if (!supabase || !userId) throw new Error("Sign in to react");
   if (current === value) {
-    await supabase.from("comment_reactions").delete().eq("comment_id", commentId).eq("user_id", userId);
+    {
+      const { error } = await supabase.from("comment_reactions").delete().eq("comment_id", commentId).eq("user_id", userId);
+      if (error) throw new Error(friendlyWriteError(error, "Couldn't take your reaction back."));
+    }
     return null;
   }
   const { error } = await supabase
@@ -1647,7 +1677,8 @@ export async function reactToComment(commentId, userId, value, current) {
 export async function loadFollows(userId) {
   if (!supabase || !userId) return [];
   const { data, error } = await supabase.from("follows").select("host").eq("user_id", userId);
-  if (error || !Array.isArray(data)) return [];
+  if (error) throw new Error(withReason("Couldn't load the hosts you follow.", error));
+  if (!Array.isArray(data)) return [];
   return data.map((r) => r.host);
 }
 
@@ -1658,16 +1689,23 @@ export async function loadHostFollowerCount(host) {
     .select("followers")
     .eq("host", host)
     .maybeSingle();
-  if (error || !data) return 0;
+  if (error) throw new Error(withReason("Couldn't load the follower count.", error));
+  if (!data) return 0;
   return Number(data.followers) || 0;
 }
 
 export async function toggleFollow(host, userId, following) {
   if (!supabase || !userId) throw new Error("Sign in to follow hosts");
   if (following) {
-    await supabase.from("follows").delete().eq("user_id", userId).eq("host", host);
+    {
+      const { error } = await supabase.from("follows").delete().eq("user_id", userId).eq("host", host);
+      if (error) throw new Error(friendlyWriteError(error, "Couldn't unfollow @" + host + "."));
+    }
   } else {
-    await supabase.from("follows").upsert({ user_id: userId, host }, { onConflict: "user_id,host" });
+    {
+      const { error } = await supabase.from("follows").upsert({ user_id: userId, host }, { onConflict: "user_id,host" });
+      if (error) throw new Error(friendlyWriteError(error, "Couldn't follow @" + host + "."));
+    }
   }
 }
 
@@ -1681,7 +1719,8 @@ export async function loadMeetPhotos(eventId) {
     .eq("event_id", eventId)
     .order("created_at", { ascending: false })
     .limit(60);
-  if (error || !Array.isArray(data)) return [];
+  if (error) throw new Error(withReason("Couldn't load photos.", error));
+  if (!Array.isArray(data)) return [];
   return data;
 }
 
@@ -1713,7 +1752,10 @@ export async function addMeetPhoto(eventId, photoUrl, caption, userId) {
 // The uploader, the meet's host and admins can delete; RLS decides which.
 export async function deleteMeetPhoto(photoId) {
   if (!supabase) return;
-  await supabase.from("meet_photos").delete().eq("id", photoId);
+  {
+    const { error } = await supabase.from("meet_photos").delete().eq("id", photoId);
+    if (error) throw new Error(friendlyWriteError(error, "Couldn't delete that photo."));
+  }
 }
 
 // ---------- perks ----------
@@ -1728,7 +1770,8 @@ export async function loadPerks() {
     supabase.from("perk_redemption_counts").select("*"),
   ]);
   const rows = perksRes?.data;
-  if (perksRes?.error || !Array.isArray(rows)) return [];
+  if (perksRes?.error) throw new Error(withReason("Couldn't load perks.", perksRes.error));
+  if (!Array.isArray(rows)) return [];
   const counts = new Map(
     (Array.isArray(countsRes?.data) ? countsRes.data : []).map((r) => [r.perk_id, r.redemptions])
   );
@@ -1750,7 +1793,8 @@ export async function loadReportQueue(includeResolved = false) {
   let q = supabase.from("reports_queue").select("*").order("created_at", { ascending: false });
   if (!includeResolved) q = q.is("resolved_at", null);
   const { data, error } = await q.limit(100);
-  if (error || !Array.isArray(data)) return [];
+  if (error) throw new Error(withReason("Couldn't load reports.", error));
+  if (!Array.isArray(data)) return [];
   return data;
 }
 

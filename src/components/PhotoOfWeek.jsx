@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Sheet, { sheetTitle, muted, quietButton } from "./Sheet.jsx";
 import { loadPhotoOfWeek, loadPhotoBallot, votePhoto } from "../lib/photoWeek.js";
+import { failWith, showError } from "../lib/toast.js";
 
 // Photo of the week, on Discover: last week's winning meet photo, and the
 // vote for this week's.
@@ -18,12 +19,12 @@ export default function PhotoOfWeek({ user, onToast, onNeedAccount }) {
     loadPhotoOfWeek()
       .then(setWinner)
       .catch((e) => {
-        console.warn(e.message);
+        showError("Couldn't load the Photo of the Week.", e);
         setWinner(null);
       });
     loadPhotoBallot()
       .then(setBallot)
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load this week's photo vote."));
   }, [user?.id]);
 
   const count = ballot?.photos?.length || 0;

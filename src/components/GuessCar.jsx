@@ -5,6 +5,7 @@ import FriendRoom from "./FriendRoom.jsx";
 import { sharedGame } from "../lib/gameRooms.js";
 import { RushAudio } from "../lib/rushAudio.js";
 import MusicButtons from "./MusicButtons.jsx";
+import { failWith } from "../lib/toast.js";
 
 // Guess the Car: a blurred photo sharpens over 20 seconds; pick the make
 // and model from four. Today's car is the same for everyone and pays 1–3
@@ -90,7 +91,7 @@ export default function GuessCar({ onClose, user = null, onNeedAccount }) {
     if (user)
       loadMyGuesses()
         .then(setStats)
-        .catch((e) => console.warn(e.message));
+        .catch(failWith("Couldn't load your Guess the Car stats."));
   };
   useEffect(refresh, [user?.id]);
 

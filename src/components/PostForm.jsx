@@ -67,6 +67,7 @@ export default function PostForm({ forum, forums = [], user, onClose, onPosted, 
       if (tag === "spot" && !spot && place.trim()) {
         if (!MAPBOX_TOKEN) throw new Error("Looking up a typed spot isn't set up (VITE_MAPBOX_TOKEN is missing). Tap “I'm here” instead.");
         const found = await geocodeLocation(place, "", { token: MAPBOX_TOKEN });
+        if (found.status === "error") throw new Error(`Couldn't look up “${place.trim()}” on the map. (${found.reason})`);
         if (found.status === "none") throw new Error(`Couldn't find “${place.trim()}” on the map. Add the street or city, or tap “I'm here”.`);
         spot = { lat: found.lat, lng: found.lng };
       }
@@ -205,7 +206,7 @@ export default function PostForm({ forum, forums = [], user, onClose, onPosted, 
         )}
       </div>
 
-      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 12 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-ef4444)", marginTop: 12 }}>{error}</div>}
       <button disabled={busy === "post" || busy === "photo"} onClick={submit} style={{ ...bigButton, marginTop: 16 }}>
         {busy === "post" ? "POSTING…" : "POST"}
       </button>

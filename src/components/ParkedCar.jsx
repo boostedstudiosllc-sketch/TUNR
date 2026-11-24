@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Sheet, { sheetTitle, muted, label, field, bigButton, quietButton } from "./Sheet.jsx";
 import { compressImage } from "../lib/image.js";
 import { FLOORS, OPEN_EVENT, CHANGED_EVENT, floorName, parkedSummary, makeSpot, loadSpot, saveSpot, clearSpot, walkUrl, distanceText, savedAgo } from "../lib/parking.js";
+import { failWith } from "../lib/toast.js";
 
 // The 🅿️ in the header: save where you parked (map pin + floor, spot, photo,
 // note) and find it again. Rules and storage are in src/lib/parking.js.
@@ -230,7 +231,7 @@ function ParkForm({ start, meet, onCancel, onSaved }) {
       <div style={{ ...label, marginTop: 14 }}>NOTE</div>
       <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} placeholder="e.g. by the elevators, left of the ramp" style={field} />
 
-      {error && <div style={{ marginTop: 12, fontSize: 13, color: "var(--a-f87171)", fontWeight: 700 }}>{error}</div>}
+      {error && <div role="alert" style={{ marginTop: 12, fontSize: 13, color: "var(--a-f87171)", fontWeight: 700 }}>{error}</div>}
 
       <button className="action-btn" onClick={save} disabled={busy || finding} style={{ ...bigButton, marginTop: 18, opacity: busy || finding ? 0.6 : 1 }}>
         {finding ? "FINDING YOU…" : "SAVE WHERE I PARKED"}
@@ -248,7 +249,7 @@ function FindCar({ spot, onUpdate, onLeft }) {
     if (spot?.lat == null) return;
     here()
       .then(setMe)
-      .catch((e) => console.warn("Couldn't find you for the distance:", e.message));
+      .catch(failWith("Couldn't find where you are, so the distance to your car isn't shown."));
   }, [spot]);
   if (!spot) return null;
   const walk = walkUrl(spot);

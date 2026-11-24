@@ -4,6 +4,7 @@ import { buildSlides, THEMES, isExternal } from "../lib/slides.js";
 import { loadTaco } from "../lib/tunrTuesdays.js";
 import { loadPitStop } from "../lib/pitStop.js";
 import { loadBoost } from "../lib/boost.js";
+import { failWith } from "../lib/toast.js";
 
 // The swipeable banner at the top of Discover: what's new and what's on.
 // Admins' slides (Settings → Admin → Home banner) mixed with the app's own
@@ -57,14 +58,14 @@ export default function HomeSlides({ user, events, rsvps }) {
   useEffect(() => {
     loadHomeSlides()
       .then(setAdmin)
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load the banner."));
     loadTaco()
       .then(setTaco)
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load the Taco Tuesday banner."));
     const refreshBoost = () =>
       loadBoost()
         .then(setBoost)
-        .catch((e) => console.warn(e.message));
+        .catch(failWith("Couldn't load Boost Day."));
     refreshBoost();
     window.addEventListener("tunr:boost", refreshBoost);
     return () => window.removeEventListener("tunr:boost", refreshBoost);
@@ -74,7 +75,7 @@ export default function HomeSlides({ user, events, rsvps }) {
     const refresh = () =>
       loadPitStop()
         .then(setPit)
-        .catch((e) => console.warn(e.message));
+        .catch(failWith("Couldn't load the Daily Pit Stop."));
     refresh();
     window.addEventListener("tunr:points", refresh);
     return () => window.removeEventListener("tunr:points", refresh);

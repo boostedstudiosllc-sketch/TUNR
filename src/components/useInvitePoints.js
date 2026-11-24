@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadPointsSettings } from "../lib/points.js";
+import { failWith } from "../lib/toast.js";
 
 // The invite and welcome points admins set (points_settings), for wording
 // like "you get +1 point when they check in". null until loaded.
@@ -8,7 +9,7 @@ export default function useInvitePoints() {
   useEffect(() => {
     loadPointsSettings()
       .then((r) => setPts({ invite: Number(r.referral_points ?? 5), welcome: Number(r.welcome_points ?? 1) }))
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load the points settings."));
   }, []);
   return pts;
 }

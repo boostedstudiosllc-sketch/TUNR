@@ -3,6 +3,7 @@ import { setupSteps, platformOf, homeScreenSteps, SETUP_KEY, MOTION_KEY, LATER }
 import { pushSupport, deviceSubscribed, enablePush, isStandalone } from "../lib/alerts.js";
 import { loadPitStop } from "../lib/pitStop.js";
 import { PitStopCard } from "./PitStop.jsx";
+import { orNull } from "../lib/toast.js";
 
 // First-run setup, one thing per screen (like a language app's): location,
 // the home screen, alerts, motion, then the Daily Pit Stop. Each has a big
@@ -70,7 +71,7 @@ export default function SetupTour({ all = false, onDone, onToast }) {
       } catch (e) {
         console.warn(e.message);
       }
-      const status = await loadPitStop().catch((e) => (console.warn(e.message), null));
+      const status = await loadPitStop().catch(orNull("Couldn't load the Daily Pit Stop."));
       if (!alive) return;
       setPit(status);
       const list = setupSteps({

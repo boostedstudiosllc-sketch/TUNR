@@ -8,6 +8,7 @@ import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import { chip, chipOn } from "./DriftKing.jsx";
 import { GarageRow, useGarageCar, carName } from "./Showroom.jsx";
 import { lookOf } from "../lib/rushEngine.js";
+import { failWith } from "../lib/toast.js";
 
 const LEVELS = [
   ["easy", "Easy"],
@@ -380,7 +381,7 @@ function Match({ size, length, difficulty, ballCam, myLook = null, pedal = false
     }
     let lastSent = 0;
     let lastCtl = "";
-    const send0 = (e, p) => Promise.resolve(remote?.room?.send(e, { round: remote.round, ...p })).catch((err) => console.warn("Couldn't reach the other phone:", err.message));
+    const send0 = (e, p) => Promise.resolve(remote?.room?.send(e, { round: remote.round, ...p })).catch(failWith("Couldn't reach the other phone."));
     // For the browser checks: lets a test reach into the match.
     if (import.meta.env.DEV) window.__ballMatch = match;
     const keys = { ArrowLeft: "left", a: "left", ArrowRight: "right", d: "right", ArrowDown: "brake", s: "brake", Shift: "boost", ArrowUp: "boost", w: "boost", " ": "jump", g: "gas" };
@@ -443,7 +444,7 @@ function Match({ size, length, difficulty, ballCam, myLook = null, pedal = false
             }
           }
           if (remote) {
-            const send = (e, p) => Promise.resolve(remote.room?.send(e, { round: remote.round, ...p })).catch((err) => console.warn("Couldn't reach the other phone:", err.message));
+            const send = (e, p) => Promise.resolve(remote.room?.send(e, { round: remote.round, ...p })).catch(failWith("Couldn't reach the other phone."));
             if (remote.isHost) {
               // The match, ten times a second.
               if (now - lastSent > 100) {

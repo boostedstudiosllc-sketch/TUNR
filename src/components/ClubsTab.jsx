@@ -7,6 +7,7 @@ import { loadMyInvites, openInvites } from "../lib/invites.js";
 import { Logo } from "./CommunityBits.jsx";
 import ClubView from "./ClubView.jsx";
 import Sheet, { sheetTitle, muted, label, field, bigButton, Chip } from "./Sheet.jsx";
+import { showError } from "../lib/toast.js";
 
 // Clubs: yours first, then everyone's, and starting one.
 export default function ClubsTab({ user, events, open, onOpened, onNeedAccount, onToast, onOpenPerson, onOpenMeet }) {
@@ -51,7 +52,7 @@ export default function ClubsTab({ user, events, open, onOpened, onNeedAccount, 
           return;
         }
       } catch (e) {
-        console.warn(e.message);
+        showError("Couldn't check your invites.", e); // the database still checks when the club is made
       }
     }
     setCreating(true);
@@ -66,7 +67,7 @@ export default function ClubsTab({ user, events, open, onOpened, onNeedAccount, 
         + START A CLUB
       </button>
       <input style={{ ...field, marginTop: 10 }} placeholder="🔍 Search clubs by name or city" value={search} onChange={(e) => setSearch(e.target.value)} />
-      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
 
       {mine.length > 0 && (
         <>
@@ -206,7 +207,7 @@ function ClubForm({ user, onClose, onToast, onCreated }) {
           🔒 I APPROVE
         </Chip>
       </div>
-      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
       <button disabled={Boolean(busy)} onClick={submit} style={{ ...bigButton, marginTop: 16 }}>
         {busy === "save" ? "CREATING…" : "CREATE CLUB"}
       </button>

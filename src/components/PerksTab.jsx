@@ -6,6 +6,7 @@ import Arcade from "./Arcade.jsx";
 import TunrTuesdays from "./TunrTuesdays.jsx";
 import ScratchCards from "./ScratchCards.jsx";
 import DetailingRequest from "./DetailingRequest.jsx";
+import { failWith } from "../lib/toast.js";
 
 const CATEGORY_LABELS = {
   detailing: "DETAILING",
@@ -53,7 +54,7 @@ export default function PerksTab({ user, onNeedAccount, onToast, launch = null, 
     let alive = true;
     loadMyPoints()
       .then((p) => alive && setPoints(p))
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load your points."));
     return () => {
       alive = false;
     };

@@ -187,7 +187,7 @@ export default function LinkupDetail({ linkup, user, miles, onClose, onChanged, 
         </div>
       )}
 
-      {loadError && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{loadError}</div>}
+      {loadError && <div role="alert" style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{loadError}</div>}
 
       {/* Your answer */}
       {!status.over && role !== "host" && (

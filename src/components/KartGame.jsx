@@ -10,6 +10,7 @@ import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import { TrackShape, ordinal, chip, chipOn } from "./DriftKing.jsx";
 import { usePortrait, useLandscapeLock } from "./Sideways.jsx";
 import { GarageRow, useGarageCar, carName } from "./Showroom.jsx";
+import { failWith } from "../lib/toast.js";
 
 const LEVELS = [
   ["easy", "Easy"],
@@ -538,7 +539,7 @@ function KartRace({ def, laps, difficulty, color, pedal = false, guide = true, a
           }
           if (remote && now - lastSent > REPORT_MS) {
             lastSent = now;
-            Promise.resolve(remote.room?.send("pos", { round: remote.round, ...kartReport(race) })).catch((e) => console.warn("Couldn't reach the other phone:", e.message));
+            Promise.resolve(remote.room?.send("pos", { round: remote.round, ...kartReport(race) })).catch(failWith("Couldn't reach the other phone."));
           }
           // Against a friend: over once you're both through, they've gone, or
           // 30 seconds after you finish.

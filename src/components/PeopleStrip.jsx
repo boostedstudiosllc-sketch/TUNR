@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "./EditProfile.jsx";
 import { searchPeople, followPerson } from "../lib/store.js";
+import { failWith } from "../lib/toast.js";
 
 // People matching the Discover search ("Search meets, hosts, people…"),
 // shown above the meets: TUNR is meet-first, so finding people lives in the
@@ -21,7 +22,7 @@ export default function PeopleStrip({ user, query, onFollowed, onToast }) {
     const t = setTimeout(() => {
       searchPeople(q)
         .then((r) => n === seq.current && setRows(r.slice(0, 8)))
-        .catch((e) => console.warn(e.message));
+        .catch(failWith("Couldn't search for people."));
     }, 250);
     return () => clearTimeout(t);
   }, [q, user?.id]);

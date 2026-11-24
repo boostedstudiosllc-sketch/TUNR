@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase.js";
 import { withReason } from "../lib/errors.js";
 import { memberSince, standingLabel } from "../lib/standingText.js";
 import StandingCard, { slipTag } from "./StandingCard.jsx";
+import { failWith } from "../lib/toast.js";
 
 // "Member since …" and the class tag ("PRO STOCK · Atlanta") on a profile
 // (yours and other people's). Tap the tag for the full time slip, which you
@@ -31,7 +32,7 @@ export default function StandingBadge({ userId, username, isMe = false, onToast 
     setSt(null);
     loadStanding(userId)
       .then(setSt)
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load the standing badge."));
   }, [userId]);
 
   const openSlip = () => {

@@ -15,6 +15,7 @@ import SettingsScreen from "./SettingsScreen.jsx";
 import Wrapped from "./Wrapped.jsx";
 import { wrappedYearToOffer } from "../lib/wrappedSlides.js";
 import { PostCard, Segments, Logo } from "./CommunityBits.jsx";
+import { failWith } from "../lib/toast.js";
 
 const legalButton = {
   flex: 1,
@@ -122,14 +123,14 @@ function SignedIn({
   const [meetFilter, setMeetFilter] = useState("going");
   const tabsTop = useRef(null);
 
-  const refreshSocial = () => getPerson(user.id).then(setSocial);
+  const refreshSocial = () => getPerson(user.id).then(setSocial).catch(failWith("Couldn't load your followers and following."));
 
   useEffect(() => {
     let alive = true;
     refreshSocial();
     loadProfileCounts(user.id)
       .then((c) => alive && setCounts(c))
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load the profile counts."));
     loadProfile(user.id)
       .then((p) => alive && setProfile(p))
       .catch((e) => {
@@ -156,7 +157,7 @@ function SignedIn({
     let alive = true;
     loadMyCohostInvites(user.id)
       .then((rows) => alive && setCohostInvites(rows.length))
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load your co-host invites."));
     return () => {
       alive = false;
     };

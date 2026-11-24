@@ -130,7 +130,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
     !checking;
 
   const placeKey = `${draft.location.trim()}|${draft.city.trim()}`;
-  const geoWarning = geo && geo.checked === placeKey && geo.status === "none";
+  const geoWarning = geo && geo.checked === placeKey && (geo.status === "none" || geo.status === "error");
 
   // Look the place up before moving on, to pin it on the map. A place we
   // can't find gets a warning first; tapping Continue again goes ahead anyway.
@@ -286,9 +286,10 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
               {label("CITY", "city")}
               <input style={inputStyle} value={draft.city} onChange={set("city")} />
               {geoWarning && (
-                <div style={{ ...warn, marginTop: 8 }}>
-                  We couldn't find that place on the map. Add a street address so people can get
-                  there — or continue if it's announced later.
+                <div role="alert" style={{ ...warn, marginTop: 8 }}>
+                  {geo.status === "error"
+                    ? `Couldn't check that place on the map (${geo.reason}). Continue and it posts without a map pin, or try again in a moment.`
+                    : "We couldn't find that place on the map. Add a street address so people can get there — or continue if it's announced later."}
                 </div>
               )}
             </div>
@@ -498,7 +499,7 @@ export default function SubmitMeet({ onClose, onSubmit, user }) {
                   </label>
                 )}
                 {photoError && (
-                  <div
+                  <div role="alert"
                     style={{
                       fontSize: 11,
                       color: "var(--a-ff6b4a)",

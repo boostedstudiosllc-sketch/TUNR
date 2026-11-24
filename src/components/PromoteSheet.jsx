@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { loadPackages, loadMeetPromotions, payToPromote } from "../lib/promotions.js";
 import { priceLabel, PERKS } from "../lib/promoRules.js";
 import Sheet, { sheetTitle, muted, bigButton } from "./Sheet.jsx";
+import { failWith } from "../lib/toast.js";
 
 // "Promote this meet" (a host's tool on the meet page): Featured or
 // Spotlight, paid by card on Stripe's page (120_meet_promotions.sql).
@@ -18,7 +19,7 @@ export default function PromoteSheet({ event, onClose }) {
       .catch((e) => (setPackages([]), setError(e.message)));
     loadMeetPromotions(event.id)
       .then((list) => setRunning(list.filter((p) => p.status === "active" && Date.parse(p.ends_at) > Date.now())))
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load this meet's promotions."));
   }, [event.id]);
 
   const pay = async () => {

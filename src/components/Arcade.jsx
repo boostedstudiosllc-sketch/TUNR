@@ -18,6 +18,7 @@ import { loadDragProgress, RIVALS } from "../lib/dragEngine.js";
 import { loadStackBest } from "../lib/stackEngine.js";
 import { loadAllAccess } from "../lib/store.js";
 import { muted, quietButton } from "./Sheet.jsx";
+import { failWith, orNull } from "../lib/toast.js";
 
 // Every TUNR game in one place. One game pays points each day (TUNR Rush);
 // the rest are free play.
@@ -57,7 +58,9 @@ export default function Arcade({ user, onClose, onToast, onNeedAccount, startGam
   const [allAccess, setAllAccess] = useState(false);
   useEffect(() => {
     if (!user?.id) return setAllAccess(false);
-    Promise.all([loadAllAccess(user.id), loadMembership().catch(() => null)]).then(([all, m]) => setAllAccess(Boolean(all || m?.member)));
+    Promise.all([loadAllAccess(user.id), loadMembership().catch(orNull("Couldn't check your TUNR+ membership."))])
+      .then(([all, m]) => setAllAccess(Boolean(all || m?.member)))
+      .catch(failWith("Couldn't check which levels you can play."));
   }, [user?.id]);
 
   // Stars come back up to date after a round of Park Up.

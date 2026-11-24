@@ -157,7 +157,7 @@ function AccessGate({ event, user, onNeedAccount, onToast, onJoined }) {
       )}
 
       {error && (
-        <div style={{ ...bodyStyle, color: "var(--a-ff6b4a)", marginTop: 10 }}>{error}</div>
+        <div role="alert" style={{ ...bodyStyle, color: "var(--a-ff6b4a)", marginTop: 10 }}>{error}</div>
       )}
     </Panel>
   );

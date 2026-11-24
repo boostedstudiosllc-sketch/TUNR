@@ -5,6 +5,7 @@ import Sheet, { sheetTitle, muted, label, bigButton, quietButton } from "./Sheet
 import useInvitePoints, { plusPoints } from "./useInvitePoints.js";
 import PrintPage from "./PrintPage.jsx";
 import StickerOrder from "./StickerOrder.jsx";
+import { failWith } from "../lib/toast.js";
 
 // A car's "Scan my build" QR: turn its public page on, see scans, print the
 // sticker (one big, two small), or share the link.
@@ -23,7 +24,7 @@ export default function StickerSheet({ vehicle, onClose, onToast, onChanged }) {
       .catch((e) => (setCode(""), onToast(e.message)));
     loadScanStats(vehicle.id)
       .then(setStats)
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load the sticker scans."));
   }, [vehicle.id]);
 
   const url = code === null ? "" : buildPageUrl(vehicle.id, code);

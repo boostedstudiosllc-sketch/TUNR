@@ -102,6 +102,7 @@ export default function AuthForm({ onDone, initialUsername = "", initialMode = "
         } else {
           // The confirm-your-email message. If it can't go out now, the
           // banner at the top says why and the daily job tries again.
+          // quiet: the banner at the top shows why the email didn't go out
           requestConfirmationEmail().catch((e) => console.warn("confirmation email:", e.message));
           if (onDone) onDone();
         }
@@ -308,7 +309,7 @@ export default function AuthForm({ onDone, initialUsername = "", initialMode = "
       </div>
 
       {error && (
-        <div
+        <div role="alert"
           style={{
             marginTop: 10,
             fontSize: 12.5,

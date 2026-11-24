@@ -90,7 +90,7 @@ export default function ForumsTab({ user, open, onOpened, onNeedAccount, onToast
         </div>
       </div>
 
-      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
         {posts === null ? (
@@ -226,7 +226,7 @@ function ForumForm({ user, onClose, onToast, onCreated }) {
       </div>
       <div style={{ ...label, marginTop: 14 }}>WHAT IT'S FOR</div>
       <textarea style={{ ...field, minHeight: 70 }} maxLength={300} placeholder="Who it's for and what to post." value={description} onChange={(e) => setDescription(e.target.value)} />
-      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
       <button disabled={busy} onClick={submit} style={{ ...bigButton, marginTop: 14 }}>
         {busy ? "CREATING…" : "CREATE FORUM"}
       </button>

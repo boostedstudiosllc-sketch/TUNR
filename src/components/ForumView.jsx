@@ -91,7 +91,7 @@ export default function ForumView({ forum, user, onClose, onToast, onNeedAccount
         <Segments options={[["hot", "🔥 HOT"], ["new", "🆕 NEW"], ["top", "⬆ TOP"]]} value={sort} onChange={setSort} />
       </div>
 
-      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-ef4444)", marginTop: 10 }}>{error}</div>}
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
         {posts === null ? (
           <div style={muted}>Loading…</div>

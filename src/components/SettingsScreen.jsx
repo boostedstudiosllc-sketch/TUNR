@@ -38,6 +38,7 @@ import MembershipAdmin from "./MembershipAdmin.jsx";
 import ShopAdmin from "./ShopAdmin.jsx";
 import BoostAdmin from "./BoostAdmin.jsx";
 import FoundMeetsAdmin from "./FoundMeetsAdmin.jsx";
+import { failWith } from "../lib/toast.js";
 
 const PAGES = {
   homeSlides: "Home banner",
@@ -112,7 +113,7 @@ export default function SettingsScreen({
   useEffect(() => {
     loadMyStreak()
       .then((s) => setOnBoards(!s?.hidden))
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load your leaderboard setting."));
   }, []);
 
   async function toggleBoards() {
@@ -136,10 +137,10 @@ export default function SettingsScreen({
     let alive = true;
     loadMyVerification(user.id)
       .then((v) => alive && setVerification(v))
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load your host verification."));
     Promise.all([loadBlockedAccounts(), loadRestrictedAccounts(), loadMyCohostInvites(user.id)])
       .then(([b, r, c]) => alive && setCounts({ blocked: b.length, restricted: r.length, cohosts: c.length }))
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load your blocked, restricted and co-host counts."));
     return () => {
       alive = false;
     };

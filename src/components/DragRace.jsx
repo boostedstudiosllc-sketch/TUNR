@@ -8,6 +8,7 @@ import { GarageRow, useGarageCar } from "./Showroom.jsx";
 import DragFriend from "./DragFriend.jsx";
 import { REPORT_MS } from "../lib/remoteMotion.js";
 import { sharedGame } from "../lib/gameRooms.js";
+import { failWith } from "../lib/toast.js";
 
 // Drag Race: a quarter mile against five rivals in turn. Launch on the
 // green, shift in the green, one shot of nitro. Free play; your times and
@@ -240,7 +241,7 @@ export function DragRun({ look, rivalIndex = 0, audio, onDone, onQuit, remote = 
         bye: () => remoteDone(race, { out: "left" }),
       };
     }
-    const report = (fn) => Promise.resolve(fn()).catch((e) => console.warn("Couldn't reach the other phone:", e.message));
+    const report = (fn) => Promise.resolve(fn()).catch(failWith("Couldn't reach the other phone."));
     let view;
     let raf = 0;
     let last = 0;

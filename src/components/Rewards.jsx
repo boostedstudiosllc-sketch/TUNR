@@ -52,6 +52,7 @@ import { loadStickerSettings } from "../lib/stickerOrders.js";
 import Leaderboard from "./Leaderboard.jsx";
 import { receiptKind, RECEIPT_ACCEPT } from "../lib/receiptFile.js";
 import PrintPage from "./PrintPage.jsx";
+import { failWith } from "../lib/toast.js";
 
 const KIND_LABELS = { merch: "MERCH", discount: "DISCOUNT", experience: "EXPERIENCE", other: "REWARD" };
 
@@ -107,7 +108,7 @@ export default function RewardsPanel({ user, initialCard = "", onToast }) {
   useEffect(() => {
     loadStickerSettings()
       .then(setSticker)
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load the sticker offer."));
   }, []);
 
   // Opening this is when one-time bonuses get checked and paid.

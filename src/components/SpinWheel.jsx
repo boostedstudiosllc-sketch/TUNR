@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Sheet, { sheetTitle, muted, quietButton } from "./Sheet.jsx";
 import { loadMySpin, spinWheel } from "../lib/points.js";
+import { failWith } from "../lib/toast.js";
 
 // The weekly spin (in the 📋 checklist): a wheel of 1–5 points, spun once a
 // week. The server picks the number; the wheel just turns to land on it.
@@ -31,7 +32,7 @@ export function SpinCard({ user, onSpun, onToast }) {
     if (!user) return;
     loadMySpin()
       .then(setState)
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load today's spin."));
   }, [user?.id]);
   if (!state) return null;
   return (

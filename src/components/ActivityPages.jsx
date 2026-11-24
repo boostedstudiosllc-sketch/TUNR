@@ -4,6 +4,7 @@ import { loadMyInvites, openInvites } from "../lib/invites.js";
 import { loadPointHistory, loadMyRedemptions, loadPointsSettings } from "../lib/points.js";
 import { loadAlertSound, saveAlertSound, playAlertSound, clipToDataUrl, SOUND_LIMITS } from "../lib/activity.js";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
+import { failWith } from "../lib/toast.js";
 
 const day = (iso) =>
   new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -52,7 +53,7 @@ export function InviteHistory({ onOpenLink }) {
   useEffect(() => {
     loadPointsSettings()
       .then((r) => setInvitePoints(r.referral_points))
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load the points settings."));
   }, []);
   const [data, setData] = useState(null);
   const [error, setError] = useState("");

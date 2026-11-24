@@ -132,7 +132,7 @@ export function CarCards({ cars, selectedId, onPick, onAdd, addLabel = "+ ADD CA
     const t = setTimeout(() => {
       loadShowroom()
         .then((m) => setThumbs(m.carThumbs(looks)))
-        .catch((e) => console.warn("Car pictures didn't draw:", e.message));
+        .catch((e) => console.warn("Car pictures didn't draw:", e.message)); // quiet: the picture is decoration
     }, 400);
     return () => clearTimeout(t);
   }, [key]);
@@ -772,7 +772,7 @@ export function RideCard({ name, look = null, icon = "🚗", onOpen }) {
     let alive = true;
     loadShowroom()
       .then((m) => alive && setThumb(m.carThumbs([look], 240, 140)[0]))
-      .catch((e) => console.warn("Car picture didn't draw:", e.message));
+      .catch((e) => console.warn("Car picture didn't draw:", e.message)); // quiet: the picture is decoration
     return () => {
       alive = false;
     };

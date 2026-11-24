@@ -36,6 +36,7 @@ import { loadVehicles, loadProfile } from "../lib/store.js";
 import { Avatar } from "./EditProfile.jsx";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import { GarageShowroom, RideCard, carName as nameOf } from "./Showroom.jsx";
+import { failWith } from "../lib/toast.js";
 
 // The Boosted Studios badge (the boost pickup) and the full logo (shown
 // while boosting). Loaded once; the game draws them when ready.
@@ -127,7 +128,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount, startV
   useEffect(() => {
     loadGameSettings()
       .then(setSettings)
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load the game settings."));
   }, []);
 
   useEffect(() => {
@@ -188,7 +189,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount, startV
       .then((p) => {
         if (p?.username) setPlate(p.username);
       })
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load your profile."));
     refreshMine(true);
   }, [user?.id]);
 
@@ -198,7 +199,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount, startV
     if (!user) return;
     loadGhost(level)
       .then(setGhost)
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load the ghost car."));
   }, [user?.id, level]);
 
   // Today's pick and tries, and your bests. On first load, start on the
@@ -209,7 +210,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount, startV
         setMine(m);
         if (first && m?.today?.difficulty) setLevel(m.today.difficulty);
       })
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load your TUNR Rush progress."));
   }
 
   const today = mine?.today || null;
@@ -549,7 +550,7 @@ export default function TunrRush({ user, onClose, onToast, onNeedAccount, startV
                 refreshMine();
                 loadGhost(level)
                   .then(setGhost)
-                  .catch((e) => console.warn(e.message));
+                  .catch(failWith("Couldn't load the ghost car."));
               }
             }}
             onQuit={() => setScreen("garage")}

@@ -38,7 +38,7 @@ export default function CommunityReports({ onToast, onOpenLink }) {
   return (
     <div style={{ background: "var(--n-111111)", border: "1px solid var(--n-2a2a2a)", borderRadius: 10, padding: "14px 18px", marginBottom: 12 }}>
       <div style={{ fontSize: 13, fontWeight: 800 }}>Community reports {items.length > 0 && <span style={{ color: "#0080F0" }}>({items.length})</span>}</div>
-      {error && <div style={{ fontSize: 12, color: "var(--a-ef4444)", marginTop: 6 }}>{error}</div>}
+      {error && <div role="alert" style={{ fontSize: 12, color: "var(--a-ef4444)", marginTop: 6 }}>{error}</div>}
       {rows && items.length === 0 && <div style={{ fontSize: 12, color: "var(--n-666666)", marginTop: 4, fontFamily: "'Barlow', sans-serif" }}>Nothing reported in forums or clubs.</div>}
       {items.map((r) => (
         <div key={r.id} style={{ borderTop: "1px solid var(--n-1e1e1e)", marginTop: 10, paddingTop: 10 }}>

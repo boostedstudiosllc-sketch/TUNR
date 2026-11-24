@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadReportQueue, moderateEvent, dismissReport, track } from "../lib/store.js";
+import { failWith } from "../lib/toast.js";
 
 const REASON_LABELS = {
   "Wrong date or time": "🕐 Wrong date or time",
@@ -21,8 +22,13 @@ export default function ModerationQueue({ onToast }) {
   const [loaded, setLoaded] = useState(false);
 
   async function refresh() {
-    setRows(await loadReportQueue(false));
-    setLoaded(true);
+    try {
+      setRows(await loadReportQueue(false));
+    } catch (e) {
+      failWith("Couldn't load reports.")(e);
+    } finally {
+      setLoaded(true);
+    }
   }
 
   useEffect(() => {

@@ -5,6 +5,7 @@ import { loadLinkupStats } from "../lib/linkups.js";
 import { loadCleanupStats } from "../lib/account.js";
 import { toCsv } from "../lib/csv.js";
 import GoingTicker from "./GoingTicker.jsx";
+import { failWith } from "../lib/toast.js";
 
 // Admin-only, top of the Profile tab: is TUNR growing, and which hosts are
 // pulling people. The numbers come from views that return nothing to anyone
@@ -40,7 +41,7 @@ export default function Insights() {
   useEffect(() => {
     loadRatingSummary()
       .then(setRating)
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load the app ratings."));
   }, []);
   const [metric, setMetric] = useState("going");
   const [hostSort, setHostSort] = useState("going_30d");

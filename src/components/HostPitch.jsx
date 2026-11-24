@@ -9,6 +9,7 @@ import {
 } from "../lib/store.js";
 import { isPast } from "../lib/dates.js";
 import HostSetup from "./HostSetup.jsx";
+import { failWith } from "../lib/toast.js";
 
 // The page you send a host. It IS the pitch — no separate waitlist.
 // Reached at /hosts, and the only way out is into signup and verification.
@@ -37,8 +38,8 @@ export default function HostPitch({ user, onStart }) {
     const now = new Date();
     loadEvents(null)
       .then((events) => setCount(events.filter((e) => !isPast(e, now)).length))
-      .catch(() => {});
-    if (token) peekHostInvite(token).then(setInvite).catch(() => {});
+      .catch(failWith("Couldn't load meets."));
+    if (token) peekHostInvite(token).then(setInvite).catch(failWith("Couldn't check your host invite."));
   }, []);
 
   useEffect(() => {

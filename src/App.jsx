@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toastMs, uncaughtText, errorText } from "./lib/toast.js";
+import LoadError from "./components/LoadError.jsx";
 import { VIBES } from "./data/events.js";
 import {
   isPast,
@@ -106,11 +108,15 @@ export default function App() {
   const [goingAs, setGoingAs] = useState({});
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  // Why meets (or your RSVPs) didn't load, shown above the list; TRY AGAIN
+  // bumps meetsTry to load again.
+  const [meetsError, setMeetsError] = useState("");
+  const [meetsTry, setMeetsTry] = useState(0);
   const [tab, setTab] = useState("discover");
   const [filter, setFilter] = useState("All");
   const [selected, setSelected] = useState(null);
   const [showSubmit, setShowSubmit] = useState(false);
-  const [toast, setToast] = useState(null);
+  const [toasts, setToasts] = useState([]);
   // First open: the welcome page (sign in, sign up, or browse as a guest).
   // A guest agrees to the terms there; an account reads and agrees to them on
   // their own screen after signing up (and again only when they change).
@@ -414,7 +420,7 @@ export default function App() {
           return a;
         });
       })
-      .catch((e) => console.warn(e.message));
+      .catch((e) => showToast(errorText("Couldn't load your account.", e), true));
     return () => {
       alive = false;
     };
@@ -454,7 +460,7 @@ export default function App() {
     if (!online) return;
     loadPromoted()
       .then(setPromoted)
-      .catch((e) => console.warn(e.message));
+      .catch((e) => showToast(errorText("Couldn't load promoted meets.", e), true));
   }, [online, user?.id]);
   // Back from buying merch (?shop=thanks).
   useEffect(() => {
@@ -480,7 +486,7 @@ export default function App() {
     params.delete("promoted");
     window.history.replaceState(null, "", `${window.location.pathname}${params.size ? `?${params}` : ""}`);
     showToast("🚀 Payment received. Your meet is promoted (it can take a few seconds to show).");
-    setTimeout(() => loadPromoted().then(setPromoted).catch((e) => console.warn(e.message)), 4000);
+    setTimeout(() => loadPromoted().then(setPromoted).catch((e) => showToast(errorText("Couldn't load promoted meets.", e), true)), 4000);
   }, []);
 
   // Load events + rsvps whenever the signed-in user changes (or the phone
@@ -508,11 +514,21 @@ export default function App() {
       };
     }
     // A bad connection gets 10 seconds before the saved meets show.
+    // The first thing that failed is shown, with why (saved meets or not).
+    let why = null;
     const soft = (p) =>
-      Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error("timed out")), 10000))]).catch((e) => (console.warn(e.message), failed));
+      Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error("timed out")), 10000))]).catch((e) => ((why = why || e), failed));
     Promise.all([soft(loadEvents(uid)), soft(loadRsvps(uid)), soft(loadFollows(uid)), soft(loadGoingAs(uid))])
       .then(([evts, r, f, g]) => {
         if (cancelled) return;
+        // The meets themselves first; then your RSVPs, follows and how you're going.
+        const problem =
+          evts !== failed && evts.offline && evts.reason && navigator.onLine !== false
+            ? evts.reason
+            : why
+              ? errorText(evts === failed ? "Couldn't load meets." : "Couldn't load your RSVPs and follows.", why)
+              : "";
+        setMeetsError(problem);
         const fresh = evts !== failed && !evts.offline;
         const saved = fresh ? null : loadSnapshot(window.localStorage, uid);
         if (saved) {
@@ -538,7 +554,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, online]);
+  }, [user?.id, online, meetsTry]);
 
   // Meets matching the chosen filter and search, past ones included (the
   // calendar shows earlier days of the month); the list drops those.
@@ -690,8 +706,9 @@ export default function App() {
     try {
       await toggleFollow(host, user.id, isFollowing);
       track(isFollowing ? "host_unfollowed" : "host_followed", { host });
-    } catch {
+    } catch (e) {
       setFollows((f) => (isFollowing ? [...f, host] : f.filter((h) => h !== host)));
+      showToast(errorText(isFollowing ? `Couldn't unfollow @${host}.` : `Couldn't follow @${host}.`, e), true);
     }
   }
 
@@ -806,10 +823,74 @@ export default function App() {
     );
   }
 
-  function showToast(msg) {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2400);
+  // Messages stack (up to 3, newest at the bottom), so a small failure never
+  // hides a bigger one. Each has its own time; errors stay up longer (they
+  // carry a reason to read). The same message isn't shown twice at once.
+  const toastId = useRef(0);
+  function showToast(msg, error = /^(Couldn't|Can't|Something didn't)|\(.+\)$/.test(String(msg || ""))) {
+    if (!msg) return;
+    const text = String(msg);
+    const id = ++toastId.current;
+    setToasts((list) => [...list.filter((t) => t.text !== text), { id, text, error }].slice(-3));
+    setTimeout(() => setToasts((list) => list.filter((t) => t.id !== id)), toastMs(text, error));
   }
+
+  // Messages from anywhere (src/lib/toast.js), and failures nobody caught:
+  // the member sees what went wrong instead of nothing happening.
+  useEffect(() => {
+    let last = "";
+    let lastAt = 0;
+    const show = (text, error) => {
+      if (!text || (text === last && Date.now() - lastAt < 5000)) return;
+      last = text;
+      lastAt = Date.now();
+      showToast(text, error);
+    };
+    const onToast = (e) => show(e.detail?.message, Boolean(e.detail?.error));
+    const onRejection = (e) => show(uncaughtText(e.reason), true);
+    const onError = (e) => show(uncaughtText(e.error || e.message), true);
+    window.addEventListener("tunr:toast", onToast);
+    window.addEventListener("unhandledrejection", onRejection);
+    window.addEventListener("error", onError);
+    return () => {
+      window.removeEventListener("tunr:toast", onToast);
+      window.removeEventListener("unhandledrejection", onRejection);
+      window.removeEventListener("error", onError);
+    };
+  }, []);
+
+  // The message pop-up, on every screen (the welcome, terms and landing pages too).
+  const toastView = toasts.length > 0 && (
+    <div style={{ position: "fixed", bottom: 92, left: "50%", transform: "translateX(-50%)", width: "min(380px, calc(100vw - 32px))", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, zIndex: 520, pointerEvents: "none" }}>
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          role={t.error ? "alert" : "status"}
+          onClick={() => setToasts((list) => list.filter((x) => x.id !== t.id))}
+          style={{
+            pointerEvents: "auto",
+            maxWidth: "100%",
+            boxSizing: "border-box",
+            background: "var(--n-131315)",
+            border: `1px solid ${t.error ? "#EF4444" : "#0080F0"}`,
+            color: "var(--n-f0f0f0)",
+            padding: "11px 18px",
+            borderRadius: 10,
+            fontSize: 13,
+            fontWeight: 600,
+            boxShadow: "0 8px 30px rgba(0,0,0,0.5)",
+            textAlign: "center",
+            animation: "toastUp 0.25s ease",
+            fontFamily: "'Barlow', sans-serif",
+            cursor: "pointer",
+          }}
+        >
+          {t.error ? "⚠️ " : ""}
+          {t.text}
+        </div>
+      ))}
+    </div>
+  );
 
   if (showHostPitch) {
     return (
@@ -824,6 +905,7 @@ export default function App() {
             else setTab("profile");
           }}
         />
+        {toastView}
       </>
     );
   }
@@ -840,6 +922,7 @@ export default function App() {
             setTab("discover");
           }}
         />
+        {toastView}
       </>
     );
   }
@@ -867,6 +950,7 @@ export default function App() {
           }}
           onToast={showToast}
         />
+        {toastView}
       </div>
     );
   }
@@ -882,6 +966,7 @@ export default function App() {
             setGuestTos(true);
           }}
         />
+        {toastView}
       </>
     );
   }
@@ -910,6 +995,7 @@ export default function App() {
               : null
           }
         />
+        {toastView}
       </>
     );
   }
@@ -1259,6 +1345,7 @@ export default function App() {
             <CalendarView events={matching} rsvps={rsvps} onOpen={setSelected} now={now} />
           ) : (
           <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 14 }}>
+            {!loading && <LoadError message={meetsError} onRetry={() => (setMeetsError(""), setMeetsTry((n) => n + 1))} style={{ margin: 0 }} />}
             {loading ? (
               <EmptyState title="Loading meets…" sub="Pulling the latest events" />
             ) : visible.length === 0 ? (
@@ -1821,32 +1908,7 @@ export default function App() {
 
       {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
 
-      {toast && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: 92,
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: "var(--n-131315)",
-            border: "1px solid #0080F0",
-            color: "var(--n-f0f0f0)",
-            padding: "11px 18px",
-            borderRadius: 10,
-            fontSize: 13,
-            fontWeight: 600,
-            // Above full-screen views like the convoy map (470).
-            zIndex: 520,
-            boxShadow: "0 8px 30px rgba(0,0,0,0.5)",
-            maxWidth: 380,
-            textAlign: "center",
-            animation: "toastIn 0.25s ease",
-            fontFamily: "'Barlow', sans-serif",
-          }}
-        >
-          {toast}
-        </div>
-      )}
+      {toastView}
     </div>
     </AccountContext.Provider>
   );
@@ -1881,6 +1943,7 @@ function GlobalStyles() {
       .tunr-game input, .tunr-game textarea { -webkit-user-select: text; user-select: text; }
       @keyframes fadeSlideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
       @keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
+      @keyframes toastUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
       @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(14px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
       @keyframes fadeIn { from{opacity:0} to{opacity:1} }
       @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }

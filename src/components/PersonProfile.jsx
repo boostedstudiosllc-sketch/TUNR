@@ -18,11 +18,14 @@ import { Logo, ReportSheet } from "./CommunityBits.jsx";
 import { Avatar } from "./EditProfile.jsx";
 import { GarageShowroom } from "./Showroom.jsx";
 import StandingBadge from "./StandingBadge.jsx";
+import { failWith } from "../lib/toast.js";
+import LoadError from "./LoadError.jsx";
 
 // Someone's profile, opened from their name in a meet chat: follow them,
 // see their cars, or block or restrict them.
 export default function PersonProfile({ personId, user, onClose, onToast, onNeedAccount, onOpenHost, onChanged }) {
   const [person, setPerson] = useState(undefined); // undefined = loading
+  const [loadErr, setLoadErr] = useState("");
   const [cars, setCars] = useState([]);
   const [busy, setBusy] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -42,18 +45,19 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
 
   useEffect(() => {
     track("person_profile_opened", {});
-    refresh();
-    loadVehicles(personId).then(setCars);
+    setLoadErr("");
+    refresh().catch((e) => setLoadErr(e.message));
+    loadVehicles(personId).then(setCars).catch(failWith("Couldn't load their garage."));
     loadProfileCounts(personId)
       .then(setCounts)
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load the profile counts."));
     loadPersonClubs(personId)
       .then(setClubs)
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load their clubs."));
   }, [personId]);
 
   useEffect(() => {
-    if (user) loadProfile(user.id).then((p) => setViewerIsAdmin(Boolean(p.isAdmin)));
+    if (user) loadProfile(user.id).then((p) => setViewerIsAdmin(Boolean(p?.isAdmin))).catch(failWith("Couldn't load your profile."));
   }, [user?.id]);
 
   const isMe = user && user.id === personId;
@@ -114,7 +118,9 @@ export default function PersonProfile({ personId, user, onClose, onToast, onNeed
           </button>
         </div>
 
-        {person === undefined ? (
+        {person === undefined && loadErr ? (
+          <LoadError message={loadErr} onRetry={() => (setLoadErr(""), refresh().catch((e) => setLoadErr(e.message)))} />
+        ) : person === undefined ? (
           <Muted>Loading…</Muted>
         ) : !person || person.unavailable ? (
           <Muted>This account isn't available.</Muted>

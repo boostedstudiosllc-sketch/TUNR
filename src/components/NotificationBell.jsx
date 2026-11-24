@@ -98,7 +98,7 @@ export default function NotificationBell({ user, onOpenLink, onToast, onOpenSett
       {open && (
         <Sheet onClose={() => setOpen(false)} label="Alerts" zIndex={320} portal>
           <div style={sheetTitle}>ALERTS</div>
-          {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
+          {error && <div role="alert" style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
           {items.length === 0 && !error ? (
             <div style={{ ...muted, marginTop: 10 }}>
               Nothing yet. Linkups near you, people joining yours, and meet-day reminders show up here.

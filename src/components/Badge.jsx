@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { loadHostBadge } from "../lib/points.js";
+import { failWith } from "../lib/toast.js";
 
 // Profile badges. Icon only — no words on the badge itself; tapping one says
 // what it's for. The database decides who has them, so showing them is all
@@ -173,7 +174,7 @@ function HostBadge({ userId, size }) {
     let live = true;
     loadHostBadge(userId)
       .then((h) => live && setHost(h))
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load the host badge."));
     return () => {
       live = false;
     };

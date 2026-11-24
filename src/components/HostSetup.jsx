@@ -13,6 +13,7 @@ import {
 import { INSTAGRAM_HANDLE } from "../lib/contact.js";
 import AuthForm from "./AuthForm.jsx";
 import Badge from "./Badge.jsx";
+import { failWith } from "../lib/toast.js";
 
 // The /hosts flow after the pitch: account → host name → verified.
 //
@@ -37,11 +38,15 @@ export default function HostSetup({ user, token, invite, onStart }) {
   useEffect(() => {
     if (!user) return;
     let alive = true;
+    // quiet: the profile is read right after, and that read reports failures
     ensureProfile(user)
       .catch(() => {})
       .then(() => loadProfile(user.id))
-      .then((p) => alive && setProfile(p));
-    loadMyVerification(user.id).then((r) => alive && setRequest(r));
+      .then((p) => alive && setProfile(p))
+      .catch(failWith("Couldn't load your profile."));
+    loadMyVerification(user.id)
+      .then((r) => alive && setRequest(r))
+      .catch(failWith("Couldn't load your host verification."));
     return () => {
       alive = false;
     };
@@ -179,7 +184,7 @@ function PickName({ suggested, userId, onSaved }) {
           style={{ ...inputStyle, paddingLeft: 30 }}
         />
       </div>
-      {error && <div style={{ ...small, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...small, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
       <PrimaryButton disabled={busy || clean.length < 3} onClick={save}>
         {busy ? "…" : "CONTINUE"}
       </PrimaryButton>
@@ -289,7 +294,7 @@ function RequestAccess({ user, host, request, onRequested, onStart }) {
           style={{ ...inputStyle, paddingLeft: 30 }}
         />
       </div>
-      {error && <div style={{ ...small, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...small, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
       <PrimaryButton disabled={busy || !handle.trim()} onClick={submit}>
         {busy ? "…" : "REQUEST VERIFICATION"}
       </PrimaryButton>

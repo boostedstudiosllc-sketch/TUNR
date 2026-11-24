@@ -124,7 +124,7 @@ export default function ListingRequest({ event }) {
         </div>
       )}
 
-      {error && <div style={{ ...note, color: "var(--a-ef4444)", marginTop: 6 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...note, color: "var(--a-ef4444)", marginTop: 6 }}>{error}</div>}
 
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
         <button onClick={() => setOpen(false)} style={{ ...button, flex: 0.4 }}>

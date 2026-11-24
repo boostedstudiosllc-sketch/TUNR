@@ -8,6 +8,7 @@ import { geocodeLocation } from "../lib/geocode.js";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 import { CohostsSection } from "./Cohosts.jsx";
+import { showToast } from "../lib/toast.js";
 
 const input = {
   width: "100%",
@@ -75,6 +76,7 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
       if (placeChanged && MAPBOX_TOKEN) {
         const geo = await geocodeLocation(location, city, { token: MAPBOX_TOKEN });
         if (geo.status === "found" || geo.status === "area") coords = { lat: geo.lat, lng: geo.lng };
+        else showToast(geo.status === "error" ? `The map pin won't move: couldn't look up the new place (${geo.reason}).` : "The new place wasn't found on the map, so the map pin won't move.", { error: true });
       }
       await updateEvent(event.id, {
         ...coords,
@@ -245,7 +247,7 @@ export default function EditMeet({ event, user, onClose, onSaved, onToast, onCoh
         )}
 
         {error && (
-          <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--a-ef4444)", fontFamily: "'Barlow', sans-serif" }}>
+          <div role="alert" style={{ marginTop: 10, fontSize: 12.5, color: "var(--a-ef4444)", fontFamily: "'Barlow', sans-serif" }}>
             {error}
           </div>
         )}

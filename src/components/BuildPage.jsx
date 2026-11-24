@@ -9,6 +9,7 @@ import CarPhotos from "./CarPhotos.jsx";
 // What a "Scan my build" sticker opens: the car, its build notes and its
 // owner. Works for people without an account; they're invited to join.
 import ShareSheet from "./ShareSheet.jsx";
+import { failWith } from "../lib/toast.js";
 
 export default function BuildPage({ vehicleId, user, onClose, onOpenPerson, onJoin, onToast }) {
   const [car, setCar] = useState(undefined); // undefined = loading, null = not available
@@ -35,7 +36,7 @@ export default function BuildPage({ vehicleId, user, onClose, onOpenPerson, onJo
     if (!user || !car?.owner?.id || car.is_mine) return;
     getPerson(car.owner.id)
       .then((p) => setFollowing(Boolean(p?.i_follow)))
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load that profile."));
   }, [user?.id, car?.owner?.id]);
 
   async function toggleFollow() {

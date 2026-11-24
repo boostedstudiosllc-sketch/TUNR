@@ -11,6 +11,7 @@ import {
   track,
 } from "../lib/store.js";
 import { INSTAGRAM_HANDLE } from "../lib/contact.js";
+import { failWith } from "../lib/toast.js";
 
 const inputStyle = {
   background: "var(--n-0f0f0f)",
@@ -47,11 +48,10 @@ export default function HostVerification({ user, profile, onToast }) {
 
   useEffect(() => {
     let cancelled = false;
-    loadMyVerification(user?.id || null).then((r) => {
-      if (cancelled) return;
-      setRequest(r);
-      setLoading(false);
-    });
+    loadMyVerification(user?.id || null)
+      .then((r) => !cancelled && setRequest(r))
+      .catch(failWith("Couldn't load your host verification."))
+      .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };

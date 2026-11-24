@@ -68,7 +68,8 @@ test("the lookup never throws, and needs a token", async () => {
   const failing = async () => {
     throw new Error("offline");
   };
-  assert.equal((await geocodeLocation("1 Main St", "Atlanta, GA", { token: "t", fetchImpl: failing })).status, "none");
+  assert.deepEqual(await geocodeLocation("1 Main St", "Atlanta, GA", { token: "t", fetchImpl: failing }), { status: "error", reason: "offline" }, "a failed lookup says why, not \"not found\"");
+  assert.equal((await geocodeLocation("1 Main St", "Atlanta, GA", { token: "t", fetchImpl: async () => new Response("", { status: 503 }) })).reason, "the map service answered 503");
   let asked = "";
   const ok = async (url) => {
     asked = url;

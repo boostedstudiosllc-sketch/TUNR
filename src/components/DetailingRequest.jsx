@@ -24,10 +24,12 @@ export default function DetailingRequest({ user, onClose, onToast, onNeedAccount
 
   useEffect(() => {
     if (!user) return;
-    loadVehicles(user.id).then((list) => {
-      setCars(list);
-      if (list[0]) setCar(carName(list[0]));
-    });
+    loadVehicles(user.id)
+      .then((list) => {
+        setCars(list);
+        if (list[0]) setCar(carName(list[0]));
+      })
+      .catch((e) => setError(e.message));
   }, [user?.id]);
 
   async function send() {

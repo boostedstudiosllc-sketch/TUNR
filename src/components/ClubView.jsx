@@ -131,7 +131,7 @@ export default function ClubView({ club, user, events = [], onClose, onToast, on
           ))}
         </div>
       )}
-      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-ef4444)", marginTop: 8 }}>{error}</div>}
 
       {/* Join / leave */}
       <div style={{ marginTop: 14 }}>

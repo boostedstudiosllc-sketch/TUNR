@@ -1,3 +1,4 @@
+import { errorReason } from "./errors.js";
 // The online check on a meet's location: look it up on Mapbox and see
 // whether it's a real place. Also gives the map pin real coordinates instead
 // of the middle of Atlanta. Anywhere in the US is fine — TUNR is marketed in
@@ -35,10 +36,11 @@ export async function geocodeLocation(location, city, { token, fetchImpl = fetch
     `&access_token=${encodeURIComponent(token)}`;
   try {
     const res = await fetchImpl(url);
-    if (!res.ok) return { status: "none" };
+    // "error": the lookup itself failed (not "that place doesn't exist").
+    if (!res.ok) return { status: "error", reason: `the map service answered ${res.status}` };
     return judgeGeocode(await res.json());
-  } catch {
-    return { status: "none" };
+  } catch (e) {
+    return { status: "error", reason: errorReason(e) || "no answer" };
   }
 }
 

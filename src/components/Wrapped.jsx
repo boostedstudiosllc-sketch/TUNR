@@ -36,7 +36,7 @@ export default function Wrapped({ year, onClose, onToast }) {
     if (!carSoon || carPic) return;
     import("../lib/showroom3d.js")
       .then((m) => setCarPic(m.carThumbs([lookOf(data.car)], 720, 440)[0]))
-      .catch((e) => console.warn(e.message));
+      .catch((e) => console.warn(e.message)); // quiet: the picture is decoration; the card works without it
   }, [carSoon]);
 
   // Auto-advance, paused while held.

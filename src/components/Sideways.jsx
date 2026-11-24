@@ -26,7 +26,7 @@ export function useLandscapeLock() {
     const o = typeof screen !== "undefined" ? screen.orientation : null;
     // Phones that can't lock (iPhones, most browsers outside full screen)
     // say no; the race turns itself on its side there.
-    o?.lock?.("landscape").catch((e) => console.info("Landscape lock not available here:", e.message));
+    o?.lock?.("landscape").catch((e) => console.info("Landscape lock not available here:", e.message)); // quiet: most phones can't lock; turning the phone works
     return () => o?.unlock?.();
   }, []);
 }

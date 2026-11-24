@@ -10,6 +10,7 @@ import { joinVoice } from "../lib/voice.js";
 import { MAX_VOICE } from "../lib/voiceMath.js";
 import { makeSpot, loadSpot, saveSpot, clearSpot, CHANGED_EVENT, OPEN_EVENT as OPEN_PARKING } from "../lib/parking.js";
 import InviteSheetGame from "./InviteSheetGame.jsx";
+import { showError } from "../lib/toast.js";
 
 // A convoy, live (115_convoys.sql): everyone in it on a map, moving. Each
 // phone shares its position while this screen is open (or minimised) and
@@ -146,7 +147,7 @@ export default function Convoy({ id, user, hidden = false, onMinimize, onClosed,
     navigator.wakeLock
       ?.request("screen")
       .then((w) => (wakeRef.current = w))
-      .catch((e) => console.warn(`Screen may sleep during the convoy. (${e.message})`));
+      .catch((e) => showError("Your screen may go to sleep during the convoy. Keep tapping it now and then.", e));
   }
   // Parked: save where the car stopped (only on this phone, like the 🅿️
   // button). Drove off again within 3 minutes: it wasn't parking, so put
@@ -183,6 +184,7 @@ export default function Convoy({ id, user, hidden = false, onMinimize, onClosed,
     stopCompass.current = null;
     compass.current = null;
     setSharing(false);
+    // quiet: letting the screen sleep again; nothing to tell anyone
     wakeRef.current?.release?.().catch((e) => console.warn(e.message));
     wakeRef.current = null;
     if (tellServer) stopSharing(id).catch((e) => setError(e.message));
@@ -420,7 +422,7 @@ function ConvoyMap({ members, meId }) {
     loadMapbox()
       .then(setGl)
       .catch((e) => {
-        console.warn(e.message);
+        showError("The map didn't load, so it's the radar view.", e);
         setGl(null);
       });
   }, []);

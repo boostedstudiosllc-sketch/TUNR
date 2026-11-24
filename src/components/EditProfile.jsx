@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { saveProfile, uploadAvatar, removeAvatarFile } from "../lib/store.js";
 import { FLAIR_COLORS, loadMyInvites, openInvites } from "../lib/invites.js";
 import Sheet, { sheetTitle, muted, label, field, bigButton } from "./Sheet.jsx";
+import { failWith } from "../lib/toast.js";
 
 const BIO_MAX = 160;
 
@@ -67,7 +68,7 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
   useEffect(() => {
     loadMyInvites()
       .then((d) => setFlairOpen(Boolean(d?.unlocked?.flair)))
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load your invite rewards."));
   }, []);
   const [uploading, setUploading] = useState(false);
   // Photos uploaded in this sheet; any not kept are deleted from storage.
@@ -133,6 +134,7 @@ export default function EditProfile({ user, profile, onClose, onSaved, onToast, 
 
   // Closing without saving: photos uploaded here aren't used, so delete them.
   function cancel() {
+    // quiet: tidying unused uploads; you closed the screen
     if (uploads.length) Promise.all(uploads.map((u) => removeAvatarFile(u, user.id))).catch((e) => console.warn(e.message));
     onClose();
   }

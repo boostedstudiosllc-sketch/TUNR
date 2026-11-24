@@ -154,7 +154,7 @@ export default function ReportMeet({ eventId, user, onNeedAccount }) {
         }}
       />
       {error && (
-        <div style={{ fontSize: 11.5, color: "var(--a-ef4444)", marginTop: 6, fontFamily: "'Barlow', sans-serif" }}>
+        <div role="alert" style={{ fontSize: 11.5, color: "var(--a-ef4444)", marginTop: 6, fontFamily: "'Barlow', sans-serif" }}>
           {error}
         </div>
       )}

@@ -10,6 +10,7 @@ import { loadTodaysCar } from "../lib/guessCar.js";
 import { loadTaco } from "../lib/tunrTuesdays.js";
 import { SETUP_EVENT } from "../lib/setupSignal.js";
 import { loadPitStop, openPitStop } from "../lib/pitStop.js";
+import { failWith, orNull } from "../lib/toast.js";
 
 // The points checklist (the 📋 in the header): every way to earn points as a
 // task, with what's done today, this week and for good, and a GO button to
@@ -79,10 +80,7 @@ async function loadTasks(user) {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   // Milestones are paid first, so they show as ready to claim below.
-  const host = await claimHostBadges().catch((e) => {
-    console.warn(e.message);
-    return null;
-  });
+  const host = await claimHostBadges().catch(orNull("Couldn't pay your host badge points."));
   // Setup steps are paid before the waiting points are loaded, so a step
   // just done shows CLAIM now (not on the next open).
   const starter = await claimStarterPoints();
@@ -90,14 +88,14 @@ async function loadTasks(user) {
     loadMyStreak(),
     loadPointsSettings(),
     loadPointsSince(user.id, monthStart),
-    loadMyGame().catch(() => null),
+    loadMyGame().catch(orNull("Couldn't load your TUNR Rush progress.")),
     loadProfile(user.id),
     loadMyPoints(),
     loadUnclaimed(user.id),
-    loadPhotoBallot().catch(() => null),
-    loadTodaysCar().catch(() => null),
-    loadTaco().catch(() => null),
-    loadPitStop().catch(() => null),
+    loadPhotoBallot().catch(orNull("Couldn't load this week's photo vote.")),
+    loadTodaysCar().catch(orNull("Couldn't load today's Guess the Car.")),
+    loadTaco().catch(orNull("Couldn't load Taco Tuesday.")),
+    loadPitStop().catch(orNull("Couldn't load the Daily Pit Stop.")),
   ]);
   const today = DAY(now);
   const pays = starter?.pays || { photo: rates.starter_photo_points ?? 5, car: rates.starter_car_points ?? 10, alerts: rates.starter_alerts_points ?? 5 };
@@ -219,7 +217,7 @@ export default function Checklist({ user, onToast }) {
         if (ticket !== latest.current) return;
         setData((d) => d && { ...d, unclaimed, tasks: d.tasks.map((t) => ({ ...t, claim: unclaimed.filter((u) => (TASK_REASONS[t.id] || []).includes(u.reason)) })) });
       })
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load your points to claim."));
   }
 
   useEffect(() => {

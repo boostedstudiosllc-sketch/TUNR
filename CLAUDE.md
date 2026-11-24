@@ -9,6 +9,13 @@ Every error the user sees must state its cause, not just "Couldn't do that."
   `catch (e)` and show `e.message`.
 - API routes return a specific error code (`bad_key`, `rate_limit_flyers`, …) and the
   client shows either a message for that code or the code itself.
+- On screens, a failure a member could notice is shown, never only logged: an inline
+  line (`LoadError` with TRY AGAIN where a list would be) or a pop-up via
+  `failWith("Couldn't load …")`, `orNull(…)`, `showError(…)` from `src/lib/toast.js`.
+  Loaders in `src/lib` throw on a database error instead of returning an empty list.
+  Something that should stay quiet says why with `// quiet: <why>`; `test/toast.test.js`
+  fails otherwise. Anything uncaught still shows ("Something didn't work. (reason)"), and
+  a crashed screen shows its reason (`ErrorBoundary.jsx`).
 
 ## Light mode
 Screens use theme colours, not raw greys: `var(--n-1a1a1a)` style variables from

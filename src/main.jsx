@@ -1,12 +1,15 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import TUNR from "./App.jsx";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import "./theme.css";
 import "./lib/theme.js";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <TUNR />
+    <ErrorBoundary>
+      <TUNR />
+    </ErrorBoundary>
   </StrictMode>
 );
 

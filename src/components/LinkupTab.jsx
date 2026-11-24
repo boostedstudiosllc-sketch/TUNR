@@ -13,6 +13,7 @@ import { shoutToLinkup } from "../lib/shouts.js";
 import { linkupFromShout } from "../lib/shoutRules.js";
 import { muted, bigButton, quietButton } from "./Sheet.jsx";
 import { useAccount } from "../lib/account.js";
+import { failWith } from "../lib/toast.js";
 
 // Linkups: who's heading out today or tomorrow, and starting your own.
 export default function LinkupTab({ user, position, openId, shoutId, onOpened, onNeedAccount, onToast, onOpenPerson, onShowTerms, onOpenAlerts }) {
@@ -45,7 +46,7 @@ export default function LinkupTab({ user, position, openId, shoutId, onOpened, o
     refresh();
     loadAlertSettings(user.id)
       .then((s) => s.lat != null && setHome({ lat: s.lat, lng: s.lng }))
-      .catch((e) => console.warn(e.message));
+      .catch(failWith("Couldn't load your alert settings."));
     const timer = setInterval(() => document.visibilityState === "visible" && refresh(), 30000);
     return () => clearInterval(timer);
   }, [user?.id]);
@@ -133,7 +134,7 @@ export default function LinkupTab({ user, position, openId, shoutId, onOpened, o
         </button>
       )}
 
-      {error && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 12 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...muted, color: "var(--a-ef4444)", marginTop: 12 }}>{error}</div>}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
         {linkups === null && !error ? (

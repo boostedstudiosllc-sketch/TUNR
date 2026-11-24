@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadAttendees } from "../lib/store.js";
+import { failWith } from "../lib/toast.js";
 
 // What's turning up, not who. The view behind this publishes make and model
 // only — no names, handles or photos cross that boundary.
@@ -12,6 +13,7 @@ export default function Attendees({ eventId, goingCount }) {
     setLoading(true);
     loadAttendees(eventId)
       .then((rows) => alive && setCars(rows))
+      .catch(failWith("Couldn't load who's going."))
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;

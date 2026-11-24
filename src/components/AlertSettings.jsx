@@ -78,7 +78,7 @@ export default function AlertSettings({ user, onClose, onToast }) {
     // Above Settings (290), which opens it too.
     <Sheet onClose={onClose} label="Alert settings" zIndex={295}>
       <div style={sheetTitle}>ALERT SETTINGS</div>
-      {loadError && <div style={{ ...muted, color: "var(--a-ef4444)", marginTop: 6 }}>{loadError}</div>}
+      {loadError && <div role="alert" style={{ ...muted, color: "var(--a-ef4444)", marginTop: 6 }}>{loadError}</div>}
 
       <Section title="THIS DEVICE">
         {support === "ios_home_screen" ? (
