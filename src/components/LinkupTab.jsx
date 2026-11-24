@@ -8,15 +8,22 @@ import LinkupForm from "./LinkupForm.jsx";
 import LinkupDetail from "./LinkupDetail.jsx";
 import LinkupTerms from "./LinkupTerms.jsx";
 import ConvoyHub from "./ConvoyHub.jsx";
+import Shouts from "./Shouts.jsx";
+import { shoutToLinkup } from "../lib/shouts.js";
+import { linkupFromShout } from "../lib/shoutRules.js";
 import { muted, bigButton, quietButton } from "./Sheet.jsx";
 import { useAccount } from "../lib/account.js";
 
 // Linkups: who's heading out today or tomorrow, and starting your own.
-export default function LinkupTab({ user, position, openId, onOpened, onNeedAccount, onToast, onOpenPerson, onShowTerms, onOpenAlerts }) {
+export default function LinkupTab({ user, position, openId, shoutId, onOpened, onNeedAccount, onToast, onOpenPerson, onShowTerms, onOpenAlerts }) {
   const [linkups, setLinkups] = useState(null);
   const [convoyHub, setConvoyHub] = useState(false);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
+  // A "who's down?" shout being turned into this linkup.
+  const [fromShout, setFromShout] = useState(null);
+  const [shoutsKey, setShoutsKey] = useState(0);
+  const [focusShout, setFocusShout] = useState(null);
   const [openLinkup, setOpenLinkup] = useState(null);
   const [termsThen, setTermsThen] = useState(null);
   const [home, setHome] = useState(null);
@@ -50,6 +57,12 @@ export default function LinkupTab({ user, position, openId, onOpened, onNeedAcco
       onOpened();
     }
   }, [openId]);
+  useEffect(() => {
+    if (shoutId) {
+      setFocusShout(shoutId);
+      onOpened();
+    }
+  }, [shoutId]);
 
   const from = position || home;
   const milesTo = (l) => (from && l.lat != null ? haversineMiles(from.lat, from.lng, l.lat, l.lng) : null);
@@ -99,6 +112,20 @@ export default function LinkupTab({ user, position, openId, onOpened, onNeedAcco
           🚗 CONVOY: DRIVE TOGETHER, SEE EACH OTHER ON THE MAP
         </button>
       )}
+      {!unconfirmed && (
+        <Shouts
+          user={user}
+          position={position || home}
+          focusId={focusShout}
+          refreshKey={shoutsKey}
+          onToast={onToast}
+          requireTerms={requireTerms}
+          onMakeLinkup={(s) => {
+            setFromShout(s);
+            setCreating(true);
+          }}
+        />
+      )}
       {convoyHub && <ConvoyHub onClose={() => setConvoyHub(false)} />}
       {!home && (
         <button onClick={onOpenAlerts} style={{ ...quietButton, marginTop: 8, padding: "10px 0", fontSize: 12 }}>
@@ -127,10 +154,24 @@ export default function LinkupTab({ user, position, openId, onOpened, onNeedAcco
       {creating && (
         <LinkupForm
           user={user}
-          onClose={() => setCreating(false)}
+          initial={fromShout ? linkupFromShout(fromShout) : null}
+          onClose={() => {
+            setCreating(false);
+            setFromShout(null);
+          }}
           onToast={onToast}
           onPosted={(id) => {
             setCreating(false);
+            if (fromShout) {
+              const shout = fromShout;
+              setFromShout(null);
+              shoutToLinkup(shout.id, id)
+                .then(() => {
+                  onToast(Number(shout.downs) ? `⚡ It's on. ${shout.downs} ${Number(shout.downs) === 1 ? "person" : "people"} who were down got told.` : "⚡ It's on");
+                  setShoutsKey((k) => k + 1);
+                })
+                .catch((e) => onToast(e.message));
+            }
             // Open it once the list has it, rather than flashing "over".
             refresh().then(() => setOpenLinkup(id));
           }}

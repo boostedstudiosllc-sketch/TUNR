@@ -21,7 +21,7 @@ export default function CommunityTab({ open, onOpened, ...props }) {
 
   useEffect(() => {
     if (!open) return;
-    setSection(open.type === "linkup" ? "linkups" : open.type === "club" ? "clubs" : open.type.startsWith("listing") ? "parts" : "forums");
+    setSection(open.type === "linkup" || open.type === "shout" ? "linkups" : open.type === "club" ? "clubs" : open.type.startsWith("listing") ? "parts" : "forums");
   }, [open]);
 
   function pick(s) {
@@ -39,7 +39,7 @@ export default function CommunityTab({ open, onOpened, ...props }) {
         <Segments options={[["linkups", "⚡ LINKUPS"], ["forums", "💬 FORUMS"], ["clubs", "🏁 CLUBS"], ["parts", "🛒 PARTS"]]} value={section} onChange={pick} />
       </div>
       {section === "linkups" && (
-        <LinkupTab {...props} openId={open?.type === "linkup" ? open.id : null} onOpened={onOpened} />
+        <LinkupTab {...props} openId={open?.type === "linkup" ? open.id : null} shoutId={open?.type === "shout" ? open.id : null} onOpened={onOpened} />
       )}
       {section === "forums" && (
         <div style={{ padding: "0 20px" }}>

@@ -62,3 +62,18 @@ export function directionsUrl(event) {
   }
   return null;
 }
+
+// The same trip in Waze. Street address first (like directionsUrl), then the
+// pin; null when there's neither. Opens the Waze app if it's installed.
+export function wazeUrl(place) {
+  if (!place) return null;
+  const location = (place.location || place.place || "").trim();
+  if (/\d/.test(location)) {
+    const q = place.city ? `${location}, ${place.city}` : location;
+    return `https://waze.com/ul?q=${encodeURIComponent(q)}&navigate=yes`;
+  }
+  const lat = Number(place.lat);
+  const lng = Number(place.lng);
+  if (place.lat != null && place.lng != null && Number.isFinite(lat) && Number.isFinite(lng)) return `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
+  return null;
+}

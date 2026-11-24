@@ -706,7 +706,7 @@ export default function App() {
   function openLink(link) {
     const [type, id] = String(link || "").split(":");
     if (!id) return;
-    if (type === "linkup" || type === "post" || type === "forum" || type === "club" || type === "listing" || type === "listing-chat") {
+    if (type === "linkup" || type === "shout" || type === "post" || type === "forum" || type === "club" || type === "listing" || type === "listing-chat") {
       setSelected(null);
       setPersonView(null);
       setTab("community");

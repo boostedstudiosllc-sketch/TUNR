@@ -129,6 +129,12 @@ export default function AlertSettings({ user, onClose, onToast }) {
               title="Boost Day"
               sub="The morning one weekday is a Boost Day: bonus points for RSVPing and showing up to a meet."
             />
+            <Toggle
+              on={settings.parts !== false}
+              onChange={(v) => save({ parts: v })}
+              title="Parts for my car"
+              sub="When someone lists a part made for a car in your garage (same make, model and year)."
+            />
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <span style={label}>WITHIN</span>

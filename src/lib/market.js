@@ -4,6 +4,7 @@ import { cleanForSending } from "./clean.js";
 import { uploadEventPhoto } from "./store.js";
 import { compressImage } from "./image.js";
 import { fitProblem, fitRow, fitFilter } from "./fitment.js";
+import { kickPush } from "./alerts.js";
 
 // Parts for sale (103_parts_marketplace.sql): listings, and a private chat
 // between a buyer and the seller. Deals happen off the app.
@@ -126,6 +127,7 @@ export async function createListing(draft) {
   need();
   const { data, error } = await supabase.from("listings").insert(toRow(draft)).select("id").single();
   if (error) throw new Error(why(error, "Couldn't post your listing."));
+  kickPush(); // owners of the car it fits get a "part for you" alert
   return data.id;
 }
 

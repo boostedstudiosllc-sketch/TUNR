@@ -160,6 +160,9 @@ export default function MeetCard({ event, rsvp, onOpen, onRsvp, onOpenHost, now,
           )}
         </div>
         <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+          {event.cancelledAt && (
+            <span style={{ background: "rgba(239,68,68,0.14)", border: "1px solid #EF4444", color: "var(--a-f87171)", fontSize: 11, padding: "5px 10px", borderRadius: 4, letterSpacing: 0.8, fontWeight: 800 }}>❌ CANCELLED</span>
+          )}
           {event.issueFlag && <IssueFlag issue={event.issueFlag} count={event.issueCount} />}
           {event.tags.map((tag) => (
             <span

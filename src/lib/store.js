@@ -93,6 +93,9 @@ function rowToEvent(row, counts, userId) {
     // A discrepancy three or more people have reported, e.g. "Cancelled or postponed".
     issueFlag: row.issue_flag || null,
     issueCount: row.issue_count || 0,
+    // Cancelled by the host (134_meet_tools.sql): shown as a banner, no new RSVPs.
+    cancelledAt: row.cancelled_at || null,
+    cancelReason: row.cancel_reason || "",
     submittedByUser: Boolean(userId && row.created_by === userId),
     // The owner or an accepted co-host: may edit, approve requests, see the
     // passcode. Only the owner (submittedByUser) deletes or manages co-hosts.
@@ -309,7 +312,7 @@ export async function saveRsvp(rsvps, eventId, status, userId = null, goingAs = 
       const { error } = await supabase
         .from("rsvps")
         .upsert({ user_id: userId, event_id: eventId, status, vehicle_id: null }, { onConflict: "user_id,event_id" });
-      if (error) throw new Error(withReason("Couldn't save your RSVP.", error));
+      if (error) throw new Error(friendlyWriteError(error, "Couldn't save your RSVP."));
     } else {
       // Bring your main car by default. A car isn't required to RSVP, so this
       // stays null for anyone who hasn't added one — they just don't appear in
@@ -333,7 +336,7 @@ export async function saveRsvp(rsvps, eventId, status, userId = null, goingAs = 
         },
         { onConflict: "user_id,event_id" }
       );
-      if (error) throw new Error(withReason("Couldn't save your RSVP.", error));
+      if (error) throw new Error(friendlyWriteError(error, "Couldn't save your RSVP."));
     }
   } else {
     write(RSVP_KEY, next);
@@ -1049,6 +1052,22 @@ export async function completeSignInFromUrl() {
 
 // ---------- editing your own meets ----------
 
+// Cancel a meet (or undo it). Everyone who RSVP'd going or maybe is told.
+const CANCEL_ERRORS = {
+  not_host: "Only the meet's hosts can cancel it.",
+  not_found: "That meet isn't there any more.",
+  already: "This meet is already cancelled.",
+  not_cancelled: "This meet isn't cancelled.",
+  meet_over: "This meet is already over.",
+};
+export async function cancelMeet(eventId, reason = "", undo = false) {
+  if (!supabase) throw new Error("Backend not configured");
+  const { data, error } = await supabase.rpc("cancel_meet", { p_event: eventId, p_reason: cleanOrNull(reason), p_undo: undo });
+  if (error) throw new Error(withReason(undo ? "Couldn't put the meet back on." : "Couldn't cancel the meet.", error));
+  if (data?.status !== "ok") throw new Error(CANCEL_ERRORS[data?.status] || `Couldn't do that. (${data?.status || "no answer"})`);
+  kickPush();
+}
+
 export async function updateEvent(eventId, fields) {
   if (!supabase) throw new Error("Backend not configured");
   const payload = {};
@@ -1076,6 +1095,7 @@ export async function updateEvent(eventId, fields) {
   const { data, error } = await supabase.from("events").update(payload).eq("id", eventId).select("id");
   if (error) throw new Error(withReason("Couldn't save those changes.", error));
   if (!data || !data.length) throw new Error("You can't edit this meet any more.");
+  kickPush(); // a new time or place alerts everyone who RSVP'd
 }
 
 // ---------- co-hosts ----------

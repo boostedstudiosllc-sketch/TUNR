@@ -15,7 +15,7 @@ import IssueFlag from "./IssueFlag.jsx";
 import { track, loadGoingHistory } from "../lib/store.js";
 import GoingTicker from "./GoingTicker.jsx";
 import MeetWeather from "./MeetWeather.jsx";
-import { directionsUrl } from "../lib/geo.js";
+import { directionsUrl, wazeUrl } from "../lib/geo.js";
 import { openParked } from "../lib/parking.js";
 import { GOING_AS, crowdLine } from "../lib/photographer.js";
 import DirectionsIcon from "./DirectionsIcon.jsx";
@@ -23,6 +23,7 @@ import PromoteSheet from "./PromoteSheet.jsx";
 import ShareSheet from "./ShareSheet.jsx";
 import MeetAwardsCard from "./MeetAwards.jsx";
 import { BoostCard } from "./Boost.jsx";
+import { CancelledBanner, CancelMeetButton } from "./MeetCancel.jsx";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -82,6 +83,7 @@ export default function MeetDetail({
   const color = VIBES[event.vibe] || "#0080F0";
   const hasCoords = event.lat != null && event.lng != null;
   const directions = directionsUrl(event);
+  const waze = wazeUrl(event);
 
   return (
     <div
@@ -236,6 +238,7 @@ export default function MeetDetail({
             </button>
           </div>
 
+          <CancelledBanner event={event} />
           {event.issueFlag && (
             <div style={{ marginTop: 14 }}>
               <IssueFlag issue={event.issueFlag} count={event.issueCount} size="large" />
@@ -382,6 +385,22 @@ export default function MeetDetail({
                   🗺 NAVIGATE
                 </a>
               )}
+              {waze && (
+                <a
+                  href={waze}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label="Directions in Waze"
+                  style={{ flex: 1, padding: "12px 0", background: "var(--n-0f1a1f)", border: "1px solid #33CCFF", borderRadius: 10, color: "var(--a-33ccff)", fontSize: 13, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Barlow Condensed',sans-serif", textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center" }}
+                >
+                  🚙 WAZE
+                </a>
+              )}
+            </div>
+          )}
+          {!locked && (
+            <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
               <a
                 href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
                   event.title
@@ -480,7 +499,7 @@ export default function MeetDetail({
               </button>
             )}
           </div>
-          {canEdit && !isPast(event, new Date()) && (
+          {canEdit && !event.cancelledAt && !isPast(event, new Date()) && (
             <button
               className="action-btn"
               onClick={() => setPromoting(true)}
@@ -489,6 +508,7 @@ export default function MeetDetail({
               {event.promoted ? "⭐ PROMOTED · SEE OR UPGRADE" : "🚀 PROMOTE THIS MEET"}
             </button>
           )}
+          {canEdit && (event.cancelledAt || !isPast(event, new Date())) && <CancelMeetButton event={event} onChanged={onJoined} onToast={onToast} />}
           {promoting && <PromoteSheet event={event} onClose={() => setPromoting(false)} />}
           {sharing && <ShareSheet kind="meet" title="Share meet" data={{ ...event, when: `${displayDate(event)} · ${displayTime(event)}`, goingCount: event.going }} onClose={() => setSharing(false)} onToast={onToast} />}
           <BoostCard event={event} user={user} onToast={onToast} />
@@ -572,6 +592,7 @@ export default function MeetDetail({
               goingAs={goingAs}
               onGoingAs={onGoingAs}
               directions={directions}
+              cancelled={Boolean(event.cancelledAt)}
             />
           )}
         </div>
@@ -670,7 +691,7 @@ function Flyer({ url, title }) {
 }
 
 // Stays at the bottom of the meet while you scroll: your answer, and the way there.
-function ActionBar({ rsvp, onRsvp, goingAs, onGoingAs, directions }) {
+function ActionBar({ rsvp, onRsvp, goingAs, onGoingAs, directions, cancelled }) {
   const options = [
     { id: "going", label: "GOING", on: "✓ GOING", color: "#0080F0", fill: true },
     { id: "interested", label: "MAYBE", on: "★ MAYBE", color: "var(--a-3cabfd)" },
@@ -719,7 +740,12 @@ function ActionBar({ rsvp, onRsvp, goingAs, onGoingAs, directions }) {
         </div>
       )}
       <div style={{ display: "flex", gap: 8 }}>
-        {options.map((o) => {
+        {cancelled && !rsvp && (
+          <div style={{ flex: 1, padding: "13px 0", textAlign: "center", borderRadius: 8, border: "1px solid var(--n-2a2a2a)", color: "var(--a-f87171)", fontSize: 12.5, fontWeight: 800, letterSpacing: 1.2, fontFamily: "'Barlow Condensed', sans-serif" }}>
+            ❌ CANCELLED · NOT TAKING RSVPS
+          </div>
+        )}
+        {(cancelled && !rsvp ? [] : cancelled ? options.filter((o) => o.id === rsvp) : options).map((o) => {
           const active = rsvp === o.id;
           return (
             <button

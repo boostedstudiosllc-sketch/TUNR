@@ -16,7 +16,7 @@ import {
 import { linkupStatus } from "../lib/linkupTime.js";
 import { GOING_AS } from "../lib/photographer.js";
 import { CONTACT_EMAIL } from "../lib/contact.js";
-import { formatMiles } from "../lib/geo.js";
+import { formatMiles, wazeUrl } from "../lib/geo.js";
 import { Badges } from "./Badge.jsx";
 import { useAccount } from "../lib/account.js";
 import { ConfirmToChat } from "./ConfirmEmail.jsx";
@@ -149,6 +149,16 @@ export default function LinkupDetail({ linkup, user, miles, onClose, onChanged, 
                 style={{ display: "block", textAlign: "center", marginTop: 10, padding: "10px 0", borderRadius: 8, background: "var(--n-0f1f0f)", border: "1px solid #10B981", color: "#10B981", fontSize: 13, fontWeight: 800, letterSpacing: 1.2, textDecoration: "none", fontFamily: "'Barlow Condensed', sans-serif" }}
               >
                 <DirectionsIcon size={15} /> DIRECTIONS
+              </a>
+            )}
+            {directions && wazeUrl(linkup) && (
+              <a
+                href={wazeUrl(linkup)}
+                target="_blank"
+                rel="noreferrer"
+                style={{ display: "block", textAlign: "center", marginTop: 8, padding: "10px 0", borderRadius: 8, background: "var(--n-0f1a1f)", border: "1px solid #33CCFF", color: "var(--a-33ccff)", fontSize: 13, fontWeight: 800, letterSpacing: 1.2, textDecoration: "none", fontFamily: "'Barlow Condensed', sans-serif" }}
+              >
+                OPEN IN WAZE
               </a>
             )}
             {(role === "host" || role === "in") && (

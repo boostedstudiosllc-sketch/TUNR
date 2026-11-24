@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { loadSpots, setSpotSaved, spotsForum } from "../lib/photoSpots.js";
+import { wazeUrl } from "../lib/geo.js";
 import { arrangeSpots, SORTS, VIBES, BEST_TIMES, vibeLabel, timeLabel, securityOf, directionsUrl } from "../lib/spotRules.js";
 import { currentPosition } from "../lib/alerts.js";
 import { hasAcceptedLinkupTerms } from "../lib/linkups.js";
@@ -240,6 +241,11 @@ function SpotCard({ spot: s, onSave, onShoot, onOpen }) {
           <a href={directionsUrl(s)} target="_blank" rel="noreferrer" style={{ ...small, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", color: "#10B981" }}>
             🧭 GO
           </a>
+          {wazeUrl(s) && (
+            <a href={wazeUrl(s)} target="_blank" rel="noreferrer" aria-label="Directions in Waze" style={{ ...small, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", color: "var(--a-33ccff)" }}>
+              WAZE
+            </a>
+          )}
           <button onClick={onShoot} style={{ ...small, color: "var(--a-7fc4ff)" }}>
             📸 SHOOT HERE
           </button>

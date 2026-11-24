@@ -22,6 +22,7 @@ const WRITE_ERROR_COPY = {
   duplicate_request: "You've already sent us that request — we'll be in touch.",
   host_reserved:
     "That host name belongs to a verified host. Post under your own handle.",
+  meet_cancelled: "This meet was cancelled, so it isn't taking RSVPs.",
   linkup_terms_required: "Agree to the linkup rules first.",
   linkup_starts_within_2_hours: "A linkup has to start within the next 2 hours.",
   linkup_start_passed: "That start time has already passed. Pick a later time.",

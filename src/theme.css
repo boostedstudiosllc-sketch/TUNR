@@ -22,6 +22,7 @@
   --n-0f0f0f: #0f0f0f;
   --n-0f1116: #0f1116;
   --n-0f1a12: #0f1a12;
+  --n-0f1a1f: #0f1a1f;
   --n-0f1f0f: #0f1f0f;
   --n-101010: #101010;
   --n-101820: #101820;
@@ -103,6 +104,7 @@
   --n-f0f0f0: #f0f0f0;
   --n-f1f5f9: #f1f5f9;
   --n-ffffff: #ffffff;
+  --a-33ccff: #33ccff;
   --a-38bdf8: #38bdf8;
   --a-3cabfd: #3cabfd;
   --a-4da6ff: #4da6ff;
@@ -155,6 +157,7 @@
   --n-0f0f0f: #ffffff;
   --n-0f1116: #fdfeff;
   --n-0f1a12: #fcfffe;
+  --n-0f1a1f: #faffff;
   --n-0f1f0f: #fafffa;
   --n-101010: #ffffff;
   --n-101820: #faffff;
@@ -236,6 +239,7 @@
   --n-f0f0f0: #1c1c1c;
   --n-f1f5f9: #17191c;
   --n-ffffff: #141414;
+  --a-33ccff: #1f7a99;
   --a-38bdf8: #227296;
   --a-3cabfd: #236494;
   --a-4da6ff: #2b5c8d;

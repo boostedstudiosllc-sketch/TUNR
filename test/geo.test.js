@@ -77,3 +77,12 @@ test("directions fall back to the pin, then to nothing", async () => {
   assert.equal(directionsUrl({ location: "Buford, exact spot posted a week before", city: "Buford, GA", lat: null, lng: null }), null);
   assert.equal(directionsUrl({ location: null, lat: null, lng: null }), null);
 });
+
+test("Waze: address first, then the pin, else nothing", async () => {
+  const { wazeUrl } = await import("../src/lib/geo.js");
+  assert.equal(wazeUrl({ location: "1828 Jonesboro Rd", city: "McDonough, GA", lat: 33.46, lng: -84.21 }), "https://waze.com/ul?q=1828%20Jonesboro%20Rd%2C%20McDonough%2C%20GA&navigate=yes");
+  assert.equal(wazeUrl({ location: "Historic District", lat: 31.06, lng: -81.42 }), "https://waze.com/ul?ll=31.06,-81.42&navigate=yes");
+  assert.equal(wazeUrl({ place: "QT on Buford Hwy", lat: "33.89", lng: "-84.27" }), "https://waze.com/ul?ll=33.89,-84.27&navigate=yes", "linkups and spots use the pin");
+  assert.equal(wazeUrl({ location: "TBA", lat: null, lng: null }), null);
+  assert.equal(wazeUrl(null), null);
+});
