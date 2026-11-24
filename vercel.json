@@ -11,6 +11,18 @@
     {
       "source": "/join",
       "destination": "/api/join"
+    },
+    {
+      "source": "/meets",
+      "destination": "/api/meets"
+    },
+    {
+      "source": "/meets/:city",
+      "destination": "/api/meets?city=:city"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
     }
   ],
   "functions": {

@@ -67,7 +67,18 @@
     </script>
   </head>
   <body style="margin:0;background:var(--n-0a0a0a, #0A0A0A);">
-    <div id="root"></div>
+    <!-- Readable without JavaScript (search engines, AI assistants). The app
+         replaces it when it starts; the pages /m/<slug> and /meets swap in
+         their own text (api/_lib/seo.js). Hidden for people while the app loads. -->
+    <style>.js #root > main { display: none; }</style>
+    <script>document.documentElement.classList.add("js");</script>
+    <div id="root"><!--seo--><main style="max-width:640px;margin:0 auto;padding:24px 16px;font-family:system-ui,sans-serif;line-height:1.5">
+      <h1>TUNR: find car meets in Georgia</h1>
+      <p>TUNR is a free app for Georgia's car scene. Find car meets, car shows and cruise-ins near you, RSVP, get directions and see who's going. Hosts post meets for free.</p>
+      <p>Also on TUNR: linkups (quick cruises and photo shoots today or tomorrow), a parts marketplace that checks if a part fits your car, car clubs, forums, photo spots, a 3D garage and car games.</p>
+      <p><a href="/meets">Car meets in Georgia this week</a> · <a href="/hosts">Post your meet free</a></p>
+      <p>Made by Boosted Studios LLC · boostedstudiosllc@gmail.com</p>
+    </main><!--/seo--></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

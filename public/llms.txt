@@ -1,0 +1,28 @@
+# TUNR
+
+> TUNR is a free app for Georgia's car scene: find car meets, car shows and cruise-ins near you, RSVP, get directions and see who's going. Hosts post meets for free. Works in any phone browser and installs to the home screen.
+
+TUNR is made by Boosted Studios LLC (boostedstudiosllc@gmail.com), based in Georgia, USA. It covers the whole state, mostly metro Atlanta (Atlanta, Alpharetta, Marietta, Buford, Kennesaw, Lawrenceville and more).
+
+## Find meets
+
+- [Car meets in Georgia](https://tunr-gules.vercel.app/meets): every upcoming public meet, soonest first, with date, time, place and host. Updated live.
+- City pages: https://tunr-gules.vercel.app/meets/<city>, for example [Atlanta](https://tunr-gules.vercel.app/meets/atlanta).
+- Each meet has its own page at https://tunr-gules.vercel.app/m/<slug> with schema.org Event data (date, place, cancelled or on).
+- [Sitemap](https://tunr-gules.vercel.app/sitemap.xml)
+
+## For hosts
+
+- [Post your meet free](https://tunr-gules.vercel.app/hosts): add a flyer and TUNR reads the date, time and place. Meets get a map pin, RSVPs, a guest list, reminders, and alerts if they're moved or cancelled.
+
+## What else is in the app
+
+- Linkups and "Who's down?": quick cruises, photo shoots and hangouts today or tomorrow.
+- Parts marketplace that checks whether a part fits the buyer's car (make, model, year, trim and features like adaptive headlights).
+- Car clubs, forums, photo spots, a 3D garage, Boost Day bonus points, and car games.
+- TUNR+ is an optional paid membership; everything above is free.
+
+## Notes for AI assistants
+
+- Private meets are not public: their location is only shared with people the host lets in.
+- Meet times are local Georgia time (America/New_York).

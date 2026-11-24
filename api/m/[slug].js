@@ -1,105 +1,58 @@
-// Serves /m/:slug for both humans and link-preview bots. Bots never run JS,
-// so the meet-specific title/description/image have to be present in the
-// initial HTML — this fetches the event, injects Open Graph/Twitter tags
-// into the real built index.html, and returns that (with the URL unchanged,
-// so the app's own client-side deep-link handling still opens the meet for
-// real visitors).
+// Serves /m/:slug for people, link-preview bots, search engines and AI
+// assistants. Bots don't run JavaScript, so the meet's title, description,
+// photo, readable details and schema.org Event data are put into the built
+// index.html here (api/_lib/seo.js). The URL stays the same, so the app's own
+// deep-link handling still opens the meet for real visitors.
+//
+// events_public, not events: a private meet comes back redacted (location,
+// photo and description null, `locked` true), so nothing here can leak an
+// address. Private meets also get noindex and no Event data.
+import { loadIndexHtml, injectPage, eventJsonLd, meetBody, cityName } from "../_lib/seo.js";
 
-const FALLBACK_HTML =
-  '<!doctype html><html><head><meta charset="utf-8"><title>TUNR</title></head><body></body></html>';
-
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
+const COLS = "slug,title,host,city,location,lat,lng,description,photo_url,flyer_url,start_at,end_at,recurrence,recurrence_until,timezone,visibility,locked,cancelled_at,cancel_reason,vibe";
 
 export default async function handler(req, res) {
-  const slug = req.query.slug;
+  const slug = String(req.query.slug || "");
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
 
   let event = null;
   if (supabaseUrl && anonKey && slug) {
     try {
-      // events_public, not events: it hands back a redacted row for private
-      // meets (location/photo already null, `locked` true), so a link preview
-      // can't leak an address even if the code below got it wrong.
-      const headers = { apikey: anonKey, Authorization: `Bearer ${anonKey}` };
-      const where = `slug=eq.${encodeURIComponent(slug)}`;
-      let apiRes = await fetch(
-        `${supabaseUrl}/rest/v1/events_public?${where}&select=title,description,photo_url,city,location,locked&limit=1`,
-        { headers }
-      );
-      // The view arrives with migration 008; until then read the table, which
-      // has no private meets to redact yet.
-      if (!apiRes.ok) {
-        apiRes = await fetch(
-          `${supabaseUrl}/rest/v1/events?${where}&select=title,description,photo_url,city,location&limit=1`,
-          { headers }
-        );
-      }
-      if (apiRes.ok) {
-        const rows = await apiRes.json();
-        event = rows[0] || null;
-      }
-    } catch {
-      // no event data: fall through to generic tags
+      const r = await fetch(`${supabaseUrl}/rest/v1/events_public?slug=eq.${encodeURIComponent(slug)}&select=${COLS}&limit=1`, {
+        headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+      });
+      if (r.ok) event = (await r.json())[0] || null;
+      else console.error("meet page: events_public", r.status);
+    } catch (e) {
+      console.error("meet page:", e.message); // generic tags below
     }
   }
 
-  const proto = req.headers["x-forwarded-proto"] || "https";
-  const host = req.headers["x-forwarded-host"] || req.headers.host;
-  const pageUrl = `${proto}://${host}/m/${encodeURIComponent(slug || "")}`;
-
-  const title = event ? `${event.title} — TUNR` : "TUNR — Find Your Meet";
-  let description;
+  const { origin, html } = await loadIndexHtml(req);
+  const url = `${origin}/m/${encodeURIComponent(slug)}`;
   if (!event) {
-    description = "Find car meets near you. Discover, RSVP, and post local meets.";
-  } else if (event.locked) {
-    // Private meet: the title is the most a shared link ever gives away.
-    description = "Private meet on TUNR. Open the link to request access.";
-  } else {
-    description = [event.location, event.city].filter(Boolean).join(", ") || "Car meet on TUNR.";
-  }
-  const image = event?.locked ? null : event?.photo_url || null;
-
-  let indexHtml;
-  try {
-    const selfRes = await fetch(`${proto}://${host}/index.html`);
-    indexHtml = selfRes.ok ? await selfRes.text() : FALLBACK_HTML;
-  } catch {
-    indexHtml = FALLBACK_HTML;
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=60");
+    return res.status(200).send(injectPage(html, { title: "TUNR — Find Your Meet", description: "Find car meets near you. Discover, RSVP, and post local meets.", url, noindex: true }));
   }
 
-  // Strip the static generic og:*/twitter:*/description tags baked into
-  // index.html so the event-specific ones injected below are the only
-  // copies — duplicates are ambiguous and most crawlers just take whichever
-  // they see first, which would silently defeat this per-meet override.
-  indexHtml = indexHtml
-    .replace(/<meta\s+property="og:[^"]*"[^>]*>\s*/g, "")
-    .replace(/<meta\s+name="twitter:[^"]*"[^>]*>\s*/g, "")
-    .replace(/<meta\s+name="description"[^>]*>\s*/g, "");
-
-  const metaTags = `
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="${escapeHtml(title)}" />
-    <meta property="og:description" content="${escapeHtml(description)}" />
-    <meta property="og:url" content="${escapeHtml(pageUrl)}" />
-    ${image ? `<meta property="og:image" content="${escapeHtml(image)}" />` : ""}
-    <meta name="twitter:card" content="${image ? "summary_large_image" : "summary"}" />
-    <meta name="twitter:title" content="${escapeHtml(title)}" />
-    <meta name="twitter:description" content="${escapeHtml(description)}" />
-    ${image ? `<meta name="twitter:image" content="${escapeHtml(image)}" />` : ""}
-  `;
-
-  const html = indexHtml
-    .replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(title)}</title>`)
-    .replace("</head>", `${metaTags}\n  </head>`);
+  const city = cityName(event.city);
+  const title = `${event.cancelled_at ? "Cancelled: " : ""}${event.title}${city ? ` · ${city} car meet` : ""} — TUNR`;
+  const description = event.locked
+    ? "Private meet on TUNR. Open the link to request access."
+    : [event.location, event.city].filter(Boolean).join(", ") || "Car meet on TUNR.";
+  const page = injectPage(html, {
+    title,
+    description,
+    url,
+    image: event.locked ? null : event.photo_url || event.flyer_url || null,
+    jsonLd: eventJsonLd(event, { origin }),
+    body: meetBody(event, { origin }),
+    noindex: Boolean(event.locked),
+  });
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", "public, max-age=300, s-maxage=300, stale-while-revalidate=600");
-  res.status(200).send(html);
+  res.status(200).send(page);
 }
