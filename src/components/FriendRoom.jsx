@@ -5,6 +5,7 @@ import { loadProfile } from "../lib/store.js";
 import { muted, bigButton, quietButton, field } from "./Sheet.jsx";
 import InviteSheetGame from "./InviteSheetGame.jsx";
 import { failWith, showError } from "../lib/toast.js";
+import { errorReason } from "../lib/errors.js";
 
 // Playing a friend, live, in any Arcade game that has it: make a room and
 // share its code (or the link), join one with a code, or Quick match with
@@ -160,7 +161,7 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
         await room.current?.send("start", go);
         begin(go);
       } catch (e) {
-        setError(`Couldn't start the game. (${e.message})`);
+        setError(`Couldn't start the game. (${errorReason(e)})`);
       }
     })();
     return () => {
@@ -175,7 +176,7 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
       await room.current?.set({ ready: next });
     } catch (e) {
       setReady(!next);
-      setError(`Couldn't tell your friend you're ready. (${e.message})`);
+      setError(`Couldn't tell your friend you're ready. (${errorReason(e)})`);
     }
   }
 
@@ -191,7 +192,7 @@ export default function FriendRoom({ game, title = "PLAY A FRIEND", intro, user,
       setInvited((list) => (list.some((p) => p.kind === "link") ? list : [...list, { id: "link", name: "Room link", kind: "link" }]));
       setInviting(false);
     } catch (e) {
-      if (e.name !== "AbortError") setError(`Couldn't share the room. (${e.message})`);
+      if (e.name !== "AbortError") setError(`Couldn't share the room. (${errorReason(e)})`);
     }
   }
 

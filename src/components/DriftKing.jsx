@@ -10,6 +10,7 @@ import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import { GarageRow, useGarageCar, carName } from "./Showroom.jsx";
 import { lookOf, BODY_NAMES } from "../lib/rushEngine.js";
 import { failWith } from "../lib/toast.js";
+import { errorReason } from "../lib/errors.js";
 
 // Your own car (from your garage) races as the class closest to it, and the
 // rivals drive that class.
@@ -450,7 +451,7 @@ function RaceScreen({ def, laps, difficulty, car, playerLook = null, view, onVie
         try {
           scene.current = mod.createF1Scene(canvas.current, race, { view: live.current.view, guide: live.current.guide, lowPower: LOW_POWER, playerLook });
         } catch (e) {
-          cb.current.onFail(`Couldn't start the 3D view on this phone. (${e.message})`);
+          cb.current.onFail(`Couldn't start the 3D view on this phone. (${errorReason(e)})`);
           return;
         }
         const resize = () => {
@@ -563,7 +564,7 @@ function RaceScreen({ def, laps, difficulty, car, playerLook = null, view, onVie
         };
         raf = requestAnimationFrame(loop);
       })
-      .catch((e) => cb.current.onFail(`Couldn't load the 3D view. (${e.message}) If the app was just updated, close it fully and open it again.`));
+      .catch((e) => cb.current.onFail(`Couldn't load the 3D view. (${errorReason(e)}) If the app was just updated, close it fully and open it again.`));
 
     return () => {
       gone = true;

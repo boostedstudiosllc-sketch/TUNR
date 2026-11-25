@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { loadWrapped } from "../lib/points.js";
 import { wrappedSlides, shareStats } from "../lib/wrappedSlides.js";
 import { lookOf } from "../lib/rushEngine.js";
+import { errorReason } from "../lib/errors.js";
 
 // TUNR Wrapped: your year as tap-through story slides, ending in a card
 // you can share. Tap right for next, left for back; hold to pause.
@@ -83,7 +84,7 @@ export default function Wrapped({ year, onClose, onToast }) {
         onToast?.("Saved your Wrapped card");
       }
     } catch (e) {
-      if (e.name !== "AbortError") onToast?.(`Couldn't share your Wrapped. (${e.message})`);
+      if (e.name !== "AbortError") onToast?.(`Couldn't share your Wrapped. (${errorReason(e)})`);
     }
   }
 

@@ -9,6 +9,7 @@ import PostForm from "./PostForm.jsx";
 import LinkupForm from "./LinkupForm.jsx";
 import LinkupTerms from "./LinkupTerms.jsx";
 import SpotCover from "./SpotCover.jsx";
+import { errorReason } from "../lib/errors.js";
 
 // Photo spots: places to shoot cars, from members (116_photo_spots.sql).
 // Browse near you, top rated, new or saved; filter by the kind of shot or the
@@ -80,7 +81,7 @@ export default function PhotoSpots({ user, onClose, onNeedAccount, onToast, onSh
       try {
         setPosition(await currentPosition());
       } catch (e) {
-        setError(`Couldn't find where you are, so these are sorted by rating. (${e.message})`);
+        setError(`Couldn't find where you are, so these are sorted by rating. (${errorReason(e)})`);
       }
     }
     if (id === "saved" && !user) onNeedAccount?.();

@@ -1,4 +1,5 @@
 import { Component } from "react";
+import { errorReason } from "../lib/errors.js";
 
 // A screen that crashes shows what broke and a way out, instead of a blank
 // page. Games and screens can wrap themselves in one too (label says which).
@@ -19,7 +20,8 @@ export default class ErrorBoundary extends Component {
   render() {
     const { error } = this.state;
     if (!error) return this.props.children;
-    const reason = String(error?.message || error || "unknown error").slice(0, 200);
+    // Plain words for the member; the technical text goes to the admins' app error log.
+    const reason = errorReason(error, `${this.props.label || "TUNR"} hit a problem.`).slice(0, 200) || "unknown error";
     return (
       <div role="alert" style={{ minHeight: this.props.inline ? 0 : "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: 24, textAlign: "center", background: "var(--n-0a0a0a)", color: "var(--n-f0f0f0)", fontFamily: "'Barlow', system-ui, sans-serif" }}>
         <div style={{ fontSize: 40 }}>🛠️</div>

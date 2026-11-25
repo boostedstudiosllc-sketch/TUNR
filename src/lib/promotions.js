@@ -2,7 +2,7 @@
 // paying (api/promote → Stripe Checkout), and the admin's side. Rules for
 // the list: promoRules.js. Screens: PromoteSheet.jsx, PromotionsAdmin.jsx.
 import { supabase } from "./supabase.js";
-import { withReason, friendlyWriteError } from "./errors.js";
+import { withReason, friendlyWriteError, errorReason } from "./errors.js";
 
 export async function loadPromoted() {
   if (!supabase) return [];
@@ -48,11 +48,11 @@ export async function payToPromote(eventId, pkg) {
     r = await fetch("/api/promote", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ eventId, package: pkg }) });
     body = await r.json().catch(() => ({}));
   } catch (e) {
-    throw new Error(`Couldn't reach TUNR to start the payment. (${e.message})`);
+    throw new Error(`Couldn't reach TUNR to start the payment. (${errorReason(e)})`);
   }
   if (!r.ok || !body.url) {
     const msg = ERRORS[body.error] || `Couldn't start the payment. (${body.error || `status ${r.status}`})`;
-    throw new Error(body.detail && body.error === "stripe_failed" ? `${msg} (${body.detail})` : msg);
+    throw new Error(body.detail && body.error === "stripe_failed" ? `${msg} (${errorReason(body.detail)})` : msg);
   }
   window.location.href = body.url;
 }

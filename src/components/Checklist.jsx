@@ -11,6 +11,7 @@ import { loadTaco } from "../lib/tunrTuesdays.js";
 import { SETUP_EVENT } from "../lib/setupSignal.js";
 import { loadPitStop, openPitStop } from "../lib/pitStop.js";
 import { failWith, orNull } from "../lib/toast.js";
+import { errorReason } from "../lib/errors.js";
 
 // The points checklist (the 📋 in the header): every way to earn points as a
 // task, with what's done today, this week and for good, and a GO button to
@@ -270,7 +271,7 @@ export default function Checklist({ user, onToast }) {
       try {
         localStorage.setItem(HIDDEN_KEY, JSON.stringify([...next]));
       } catch (e) {
-        onToast?.(`Couldn't hide that step on this phone. (${e.message})`);
+        onToast?.(`Couldn't hide that step on this phone. (${errorReason(e)})`);
       }
       return next;
     });
@@ -379,7 +380,7 @@ export default function Checklist({ user, onToast }) {
                     try {
                       localStorage.removeItem(HIDDEN_KEY);
                     } catch (e) {
-                      onToast?.(`Couldn't show the hidden steps. (${e.message})`);
+                      onToast?.(`Couldn't show the hidden steps. (${errorReason(e)})`);
                     }
                   }}
                   style={{ background: "none", border: "none", color: "var(--a-3cabfd)", fontWeight: 800, cursor: "pointer", padding: "0 0 0 6px", fontSize: 12.5 }}

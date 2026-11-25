@@ -37,6 +37,7 @@ import PromotionsAdmin from "./PromotionsAdmin.jsx";
 import MembershipAdmin from "./MembershipAdmin.jsx";
 import ShopAdmin from "./ShopAdmin.jsx";
 import BoostAdmin from "./BoostAdmin.jsx";
+import AppErrorsAdmin from "./AppErrorsAdmin.jsx";
 import FoundMeetsAdmin from "./FoundMeetsAdmin.jsx";
 import { failWith } from "../lib/toast.js";
 
@@ -46,6 +47,7 @@ const PAGES = {
   membershipAdmin: "TUNR+ membership",
   shopAdmin: "Merch shop",
   boostAdmin: "Boost Day",
+  appErrors: "App errors",
   foundMeets: "Found meets",
   email: "Email",
   password: "Password",
@@ -423,6 +425,7 @@ export default function SettingsScreen({
                 <Row icon="💎" label="TUNR+ membership" sub="Prices, members, free memberships" onClick={() => open("membershipAdmin")} />
                 <Row icon="🛍️" label="Merch shop" sub="Open it, products, orders to ship" onClick={() => open("shopAdmin")} />
                 <Row icon="🔥" label="Boost Day" sub="This week's pick, change the day, bonus points" onClick={() => open("boostAdmin")} />
+                <Row icon="🧯" label="App errors" sub="What went wrong for members, with the technical reason" onClick={() => open("appErrors")} />
                 <Row icon="🎁" label="Rewards" sub="What points can buy" onClick={() => open("rewardsAdmin")} />
                 <Row icon="📦" label="Sticker orders" sub="Mailed QR stickers: price, payment link, orders" onClick={() => open("stickerOrders")} />
                 {SHOP_OPEN && (
@@ -528,6 +531,8 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
       return <FoundMeetsAdmin onToast={onToast} onOpenLink={onFollow} />;
     case "boostAdmin":
       return <BoostAdmin onToast={onToast} />;
+    case "appErrors":
+      return <AppErrorsAdmin onToast={onToast} />;
     case "shopAdmin":
       return <ShopAdmin user={user} onToast={onToast} />;
     case "claims":

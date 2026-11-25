@@ -9,6 +9,7 @@ import { chip, chipOn } from "./DriftKing.jsx";
 import { GarageRow, useGarageCar, carName } from "./Showroom.jsx";
 import { lookOf } from "../lib/rushEngine.js";
 import { failWith } from "../lib/toast.js";
+import { errorReason } from "../lib/errors.js";
 
 const LEVELS = [
   ["easy", "Easy"],
@@ -406,7 +407,7 @@ function Match({ size, length, difficulty, ballCam, myLook = null, pedal = false
         try {
           scene.current = mod.createSoccerScene(canvas.current, match, { lowPower: LOW_POWER, ballCam, myLook });
         } catch (e) {
-          cb.current.onFail(`Couldn't start the 3D view on this phone. (${e.message})`);
+          cb.current.onFail(`Couldn't start the 3D view on this phone. (${errorReason(e)})`);
           return;
         }
         const resize = () => {
@@ -519,7 +520,7 @@ function Match({ size, length, difficulty, ballCam, myLook = null, pedal = false
         };
         raf = requestAnimationFrame(loop);
       })
-      .catch((e) => cb.current.onFail(`Couldn't load the 3D view. (${e.message}) If the app was just updated, close it fully and open it again.`));
+      .catch((e) => cb.current.onFail(`Couldn't load the 3D view. (${errorReason(e)}) If the app was just updated, close it fully and open it again.`));
 
     return () => {
       gone = true;

@@ -5,6 +5,7 @@ import { loadPointHistory, loadMyRedemptions, loadPointsSettings } from "../lib/
 import { loadAlertSound, saveAlertSound, playAlertSound, clipToDataUrl, SOUND_LIMITS } from "../lib/activity.js";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import { failWith } from "../lib/toast.js";
+import { errorReason } from "../lib/errors.js";
 
 const day = (iso) =>
   new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -265,7 +266,7 @@ export function AlertSound({ onToast }) {
       setError(
         e.name === "NotAllowedError"
           ? "Microphone is blocked for TUNR. Allow it in your browser or phone settings, or upload a clip."
-          : `Couldn't record. (${e.message})`
+          : `Couldn't record. (${errorReason(e)})`
       );
     }
   }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { cardContent, drawCard } from "../lib/shareCard.js";
 import Sheet, { sheetTitle, muted } from "./Sheet.jsx";
+import { errorReason } from "../lib/errors.js";
 
 // "Share": a branded card of a meet, a car or a part (shareCard.js), with
 // Save, Copy Image, Copy Link and Share to… — TUNR's take on the share
@@ -21,7 +22,7 @@ export default function ShareSheet({ kind, data, title = "Share", onClose, onToa
         url = URL.createObjectURL(b);
         setPreview(url);
       })
-      .catch((e) => setError(`Couldn't make the share picture. (${e.message})`));
+      .catch((e) => setError(`Couldn't make the share picture. (${errorReason(e)})`));
     return () => url && URL.revokeObjectURL(url);
   }, [kind, data?.id]);
 

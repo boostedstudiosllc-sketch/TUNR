@@ -7,6 +7,7 @@ import { saveGameLook } from "../lib/rush.js";
 import { loadGarageParts, unlockGaragePart, partId } from "../lib/garageParts.js";
 import { quietButton, label, muted } from "./Sheet.jsx";
 import { loadVehicles } from "../lib/store.js";
+import { errorReason } from "../lib/errors.js";
 
 // The garage showroom: your car on a turntable in a 3D garage
 // (showroom3d.js), cards for each car, and rows to restyle it. Used on your
@@ -42,7 +43,7 @@ export function ShowroomStage({ look, plate = "", flat = false, interactive = tr
         try {
           view.current = m.createShowroom(canvas.current, { lowPower: LOW_POWER, interactive });
         } catch (e) {
-          setWhy(`3D garage didn't start, so here's the flat view. (${e.message})`);
+          setWhy(`3D garage didn't start, so here's the flat view. (${errorReason(e)})`);
           setMode("2d");
           return;
         }
@@ -57,7 +58,7 @@ export function ShowroomStage({ look, plate = "", flat = false, interactive = tr
         view.current.show({ ...latest.current.look, plate: latest.current.plate });
       })
       .catch((e) => {
-        setWhy(`3D garage didn't load, so here's the flat view. (${e.message})`);
+        setWhy(`3D garage didn't load, so here's the flat view. (${errorReason(e)})`);
         setMode("2d");
       });
     return () => {
@@ -732,7 +733,7 @@ export function useGarageCar(user, game) {
     let alive = true;
     loadVehicles(user.id)
       .then((list) => alive && setCars(list))
-      .catch((e) => onError(`Couldn't load your garage. (${e.message})`));
+      .catch((e) => onError(`Couldn't load your garage. (${errorReason(e)})`));
     return () => {
       alive = false;
     };

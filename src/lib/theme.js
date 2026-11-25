@@ -1,6 +1,7 @@
 // Light or dark mode. The choice ("dark", "light" or "system" to follow the
 // phone) is kept on this device; index.html applies it before the app
 // draws so there's no dark flash. Colours come from src/theme.css.
+import { errorReason } from "./errors.js";
 
 const KEY = "tunr.theme";
 const BG = { dark: "#0A0A0A", light: "#F4F4F4" };
@@ -32,7 +33,7 @@ export function setThemePref(pref) {
   try {
     localStorage.setItem(KEY, pref);
   } catch (e) {
-    throw new Error(`Couldn't save the theme on this phone. (${e.message})`);
+    throw new Error(`Couldn't save the theme on this phone. (${errorReason(e)})`);
   }
   return applyTheme(pref);
 }

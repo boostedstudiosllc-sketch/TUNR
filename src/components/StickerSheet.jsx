@@ -6,6 +6,7 @@ import useInvitePoints, { plusPoints } from "./useInvitePoints.js";
 import PrintPage from "./PrintPage.jsx";
 import StickerOrder from "./StickerOrder.jsx";
 import { failWith } from "../lib/toast.js";
+import { errorReason } from "../lib/errors.js";
 
 // A car's "Scan my build" QR: turn its public page on, see scans, print the
 // sticker (one big, two small), or share the link.
@@ -34,7 +35,7 @@ export default function StickerSheet({ vehicle, onClose, onToast, onChanged }) {
     import("qrcode")
       .then(({ default: QRCode }) => QRCode.toDataURL(url, { margin: 1, width: 480, errorCorrectionLevel: "M" }))
       .then(setQr)
-      .catch((e) => onToast(`Couldn't draw the QR code. (${e.message})`));
+      .catch((e) => onToast(`Couldn't draw the QR code. (${errorReason(e)})`));
   }, [url]);
 
   async function togglePublic() {
@@ -60,7 +61,7 @@ export default function StickerSheet({ vehicle, onClose, onToast, onChanged }) {
         onToast("Link copied");
       }
     } catch (e) {
-      if (e.name !== "AbortError") onToast(`Couldn't share. (${e.message})`);
+      if (e.name !== "AbortError") onToast(`Couldn't share. (${errorReason(e)})`);
     }
   }
 
@@ -70,7 +71,7 @@ export default function StickerSheet({ vehicle, onClose, onToast, onChanged }) {
     try {
       setPrintHtml(await stickerHtml(url, name, ["L", "S", "S"]));
     } catch (e) {
-      onToast(`Couldn't make the sticker. (${e.message})`);
+      onToast(`Couldn't make the sticker. (${errorReason(e)})`);
     }
   }
 

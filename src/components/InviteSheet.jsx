@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { UNLOCKS, inviteLink, loadMyInvites, shareInvite } from "../lib/invites.js";
 import Sheet, { sheetTitle, muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import useInvitePoints, { plusPoints } from "./useInvitePoints.js";
+import { errorReason } from "../lib/errors.js";
 
 // Your invite link, how many friends count, and what that unlocks.
 export default function InviteSheet({ reason = "", onClose, onToast, onOpenPerson }) {
@@ -20,7 +21,7 @@ export default function InviteSheet({ reason = "", onClose, onToast, onOpenPerso
       const how = await shareInvite(data.code);
       if (how === "copied") onToast("Invite link copied. Paste it to a friend.");
     } catch (e) {
-      onToast(`Couldn't share the link. (${e.message})`);
+      onToast(`Couldn't share the link. (${errorReason(e)})`);
     }
   }
 
@@ -29,7 +30,7 @@ export default function InviteSheet({ reason = "", onClose, onToast, onOpenPerso
       await navigator.clipboard.writeText(inviteLink(data.code));
       onToast("Invite link copied");
     } catch (e) {
-      onToast(`Couldn't copy the link. (${e.message})`);
+      onToast(`Couldn't copy the link. (${errorReason(e)})`);
     }
   }
 

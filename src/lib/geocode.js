@@ -37,7 +37,7 @@ export async function geocodeLocation(location, city, { token, fetchImpl = fetch
   try {
     const res = await fetchImpl(url);
     // "error": the lookup itself failed (not "that place doesn't exist").
-    if (!res.ok) return { status: "error", reason: `the map service answered ${res.status}` };
+    if (!res.ok) return { status: "error", reason: res.status === 429 ? "the map lookup is busy. Try again in a minute" : "the map lookup isn't answering right now" };
     return judgeGeocode(await res.json());
   } catch (e) {
     return { status: "error", reason: errorReason(e) || "no answer" };

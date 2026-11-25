@@ -11,6 +11,7 @@ import { MAX_VOICE } from "../lib/voiceMath.js";
 import { makeSpot, loadSpot, saveSpot, clearSpot, CHANGED_EVENT, OPEN_EVENT as OPEN_PARKING } from "../lib/parking.js";
 import InviteSheetGame from "./InviteSheetGame.jsx";
 import { showError } from "../lib/toast.js";
+import { errorReason } from "../lib/errors.js";
 
 // A convoy, live (115_convoys.sql): everyone in it on a map, moving. Each
 // phone shares its position while this screen is open (or minimised) and
@@ -125,7 +126,7 @@ export default function Convoy({ id, user, hidden = false, onMinimize, onClosed,
         }
       },
       (e) => {
-        setError(e.code === 1 ? "Location is off for TUNR. Allow it in your phone's settings (Location → TUNR or your browser), then try again." : `Couldn't get your location. (${e.message})`);
+        setError(e.code === 1 ? "Location is off for TUNR. Allow it in your phone's settings (Location → TUNR or your browser), then try again." : `Couldn't get your location. (${errorReason(e)})`);
         if (e.code === 1) end(false);
       },
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
@@ -230,7 +231,7 @@ export default function Convoy({ id, user, hidden = false, onMinimize, onClosed,
         onToast?.("Convoy link copied");
       }
     } catch (e) {
-      if (e.name !== "AbortError") onToast?.(`Couldn't share the link. (${e.message})`);
+      if (e.name !== "AbortError") onToast?.(`Couldn't share the link. (${errorReason(e)})`);
     }
   };
 

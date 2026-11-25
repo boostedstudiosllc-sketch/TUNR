@@ -1,7 +1,7 @@
 // TUNR Rush: talking to the server (060_tunr_rush.sql, levels in
 // 065_rush_difficulty.sql). The game itself is in rushEngine.js.
 import { supabase } from "./supabase.js";
-import { friendlyWriteError, withReason } from "./errors.js";
+import { friendlyWriteError, withReason, errorReason } from "./errors.js";
 import { DEFAULT_RULES, DEFAULT_LEVELS, LEVEL_IDS, SCENERY, SCENERY_IDS, lookColumns } from "./rushEngine.js";
 import { loadAllAccess } from "./store.js";
 
@@ -76,7 +76,7 @@ export async function finishRun(runId, moves) {
   });
   const body = await res.json().catch((e) => ({ error: "bad_reply", detail: e.message }));
   if (!res.ok) {
-    throw new Error(FINISH_COPY[body.error] || `Couldn't save your run. (${body.error || res.status}${body.detail ? `: ${body.detail}` : ""})`);
+    throw new Error(FINISH_COPY[body.error] || `Couldn't save your run. (${errorReason(body.detail || body.error || `HTTP ${res.status}`)})`);
   }
   return body;
 }

@@ -2,7 +2,7 @@
 // (api/shop → Stripe Checkout), and the admin's side. Rules: shopRules.js.
 // Screens: Shop.jsx, ShopAdmin.jsx.
 import { supabase } from "./supabase.js";
-import { withReason, friendlyWriteError } from "./errors.js";
+import { withReason, friendlyWriteError, errorReason } from "./errors.js";
 import { ERRORS, errorMessage } from "./shopRules.js";
 
 export async function loadShop() {
@@ -40,7 +40,7 @@ export async function checkout(cart) {
     r = await fetch("/api/shop", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ items: cart }) });
     res = await r.json().catch(() => ({}));
   } catch (e) {
-    throw new Error(`Couldn't reach TUNR. (${e.message})`);
+    throw new Error(`Couldn't reach TUNR. (${errorReason(e)})`);
   }
   if (!r.ok || !res.url) throw new Error(errorMessage(r.status, res));
   window.location.href = res.url;

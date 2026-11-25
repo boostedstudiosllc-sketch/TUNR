@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toastMs, uncaughtText, errorText } from "./lib/toast.js";
 import LoadError from "./components/LoadError.jsx";
+import { startErrorLog } from "./lib/appErrors.js";
+
+// Technical reasons go to the admins' app error log; members see plain words.
+startErrorLog();
 import { VIBES } from "./data/events.js";
 import {
   isPast,
@@ -89,6 +93,7 @@ import { SETUP_KEY, OPEN_EVENT as SETUP_OPEN, shouldAutoShow } from "./lib/setup
 import { loadPitStop, OPEN_EVENT as PIT_OPEN, SHOWN_KEY as PIT_SHOWN, atlToday } from "./lib/pitStop.js";
 import { OPEN_EVENT as SPOTS_OPEN } from "./lib/photoSpots.js";
 import { joinConvoy, CONVOY_KEY, OPEN_EVENT as CONVOY_OPEN } from "./lib/convoy.js";
+import { errorReason } from "./lib/errors.js";
 
 const BASE_FILTERS = ["All", "Today", "This Weekend", "✨ Showcase", "⭐ Points", "JDM", "Euro", "Exotic", "Domestic", "Truck"];
 
@@ -273,7 +278,7 @@ export default function App() {
     try {
       sessionStorage.setItem(JOIN_KEY, `${game}:${code}`);
     } catch (e) {
-      showToast(`Couldn't open that game room. (${e.message})`);
+      showToast(`Couldn't open that game room. (${errorReason(e)})`);
       return;
     }
     for (const k of ["play", "room", "drag"]) params.delete(k);
@@ -750,7 +755,7 @@ export default function App() {
       try {
         sessionStorage.setItem(JOIN_KEY, `${id}:${code}`);
       } catch (e) {
-        showToast(`Couldn't open that game room. (${e.message})`);
+        showToast(`Couldn't open that game room. (${errorReason(e)})`);
         return;
       }
       setSelected(null);

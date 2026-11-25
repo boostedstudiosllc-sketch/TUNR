@@ -37,6 +37,7 @@ import { Avatar } from "./EditProfile.jsx";
 import { muted, label, bigButton, quietButton } from "./Sheet.jsx";
 import { GarageShowroom, RideCard, carName as nameOf } from "./Showroom.jsx";
 import { failWith } from "../lib/toast.js";
+import { errorReason } from "../lib/errors.js";
 
 // The Boosted Studios badge (the boost pickup) and the full logo (shown
 // while boosting). Loaded once; the game draws them when ready.
@@ -795,7 +796,7 @@ function Game({ look, plate, rules, difficulty, forPoints, onStarted, ghostRun, 
     if (want3d) {
       import("../lib/rush3d.js")
         .then(setMod3d)
-        .catch((e) => onFallback?.(`3D graphics didn't load, so it's the classic look. (${e.message})`));
+        .catch((e) => onFallback?.(`3D graphics didn't load, so it's the classic look. (${errorReason(e)})`));
     }
     const timer = setInterval(
       () =>
@@ -823,7 +824,7 @@ function Game({ look, plate, rules, difficulty, forPoints, onStarted, ghostRun, 
         view3d = mod3d.createRush3D(glRef.current, hudRef.current, W, H, me, ART, { theme, place, shadows: !LOW_POWER });
         draw = (g) => view3d.render(g, ghost);
       } catch (e) {
-        onFallback?.(`This phone couldn't run 3D graphics, so it's the classic look. (${e.message})`);
+        onFallback?.(`This phone couldn't run 3D graphics, so it's the classic look. (${errorReason(e)})`);
         return;
       }
     } else {

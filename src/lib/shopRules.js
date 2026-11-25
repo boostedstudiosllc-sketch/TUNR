@@ -1,6 +1,7 @@
 // Merch shop (124_merch_shop.sql): cart maths for showing totals (the
 // database sets the real prices at checkout), stock, order status, error
 // messages. No network here, so it's unit-tested (test/shop.test.js).
+import { errorReason } from "./errors.js";
 
 // Left of one size; null means no limit.
 export function leftOf(product, size) {
@@ -61,5 +62,5 @@ export function errorMessage(status, body = {}) {
     return body.left ? `Only ${body.left} ${body.product || "left"}${size} left. Lower the number.` : `${body.product || "That"}${size} is sold out.`;
   }
   const msg = ERRORS[body.error] || `Couldn't open the payment page. (${body.error || `status ${status}`})`;
-  return body.detail && body.error === "stripe_failed" ? `${msg} (${body.detail})` : msg;
+  return body.detail && body.error === "stripe_failed" ? `${msg} (${errorReason(body.detail)})` : msg;
 }

@@ -8,6 +8,7 @@
 // you drove in; see docs/DEVELOPER_HANDOFF.md, section 8.)
 
 import { haversineMiles } from "./geo.js";
+import { errorReason } from "./errors.js";
 
 export const PARKED_KEY = "tunr.parked";
 export const OPEN_EVENT = "tunr:parked"; // window event: open the 🅿️ sheet; detail { meet: { id, title } }
@@ -71,12 +72,12 @@ export function saveSpot(spot, storage = globalThis.localStorage) {
     storage.setItem(PARKED_KEY, JSON.stringify(spot));
     return { spot, droppedPhoto: false };
   } catch (e) {
-    if (!spot.photo) throw new Error(`Couldn't save where you parked. (${e.message})`);
+    if (!spot.photo) throw new Error(`Couldn't save where you parked. (${errorReason(e)})`);
     const lighter = { ...spot, photo: null };
     try {
       storage.setItem(PARKED_KEY, JSON.stringify(lighter));
     } catch (e2) {
-      throw new Error(`Couldn't save where you parked. (${e2.message})`);
+      throw new Error(`Couldn't save where you parked. (${errorReason(e2)})`);
     }
     return { spot: lighter, droppedPhoto: true };
   }

@@ -2,7 +2,7 @@
 // api/_routes/confirm-email.js).
 import { createContext, useContext } from "react";
 import { supabase } from "./supabase.js";
-import { withReason } from "./errors.js";
+import { withReason, errorReason } from "./errors.js";
 
 // { confirmed, deleteOn, welcomeSentAt } for the signed-in account, or null
 // while unknown / signed out. Components that gate chat read it from here.
@@ -45,7 +45,7 @@ export async function requestConfirmationEmail() {
   if (!res.ok) {
     const what = SEND_ERRORS[body.error] || `The confirmation email didn't send (${body.error || `HTTP ${res.status}`})`;
     if (body.error === "confirm_email_wait") throw new Error(what);
-    throw new Error(body.detail ? `${what}: ${body.detail}.` : `${what}.`);
+    throw new Error(body.detail ? `${what} (${errorReason(body.detail)}).` : `${what}.`);
   }
   return body;
 }

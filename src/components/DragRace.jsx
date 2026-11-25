@@ -9,6 +9,7 @@ import DragFriend from "./DragFriend.jsx";
 import { REPORT_MS } from "../lib/remoteMotion.js";
 import { sharedGame } from "../lib/gameRooms.js";
 import { failWith } from "../lib/toast.js";
+import { errorReason } from "../lib/errors.js";
 
 // Drag Race: a quarter mile against five rivals in turn. Launch on the
 // green, shift in the green, one shot of nitro. Free play; your times and
@@ -257,7 +258,7 @@ export function DragRun({ look, rivalIndex = 0, audio, onDone, onQuit, remote = 
         view = m.createDrag3D(canvas.current, { me: { ...look, plate: "TUNR" }, rival });
         raf = requestAnimationFrame(frame);
       })
-      .catch((e) => setError(`Couldn't start the 3D strip. (${e.message})`));
+      .catch((e) => setError(`Couldn't start the 3D strip. (${errorReason(e)})`));
     const a = audio.current;
     a?.startEngine();
 

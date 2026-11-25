@@ -92,19 +92,88 @@ const WRITE_ERROR_COPY = {
     "Confirm your email first — tap the link we emailed you (or “Resend email” at the top of the app).",
 };
 
-// The short reason behind a failure, for showing next to the friendly
-// message: "Couldn't save that car. (permission denied for table vehicles)".
-// Every error the app shows says what actually went wrong.
-export function errorReason(error) {
+// The raw reason, as the database or browser said it: "permission denied for
+// table vehicles". For admins (the app error log), not for members.
+export function technicalReason(error) {
   if (!error) return "";
-  if (typeof error === "string") return error.slice(0, 140);
+  if (typeof error === "string") return error.replace(/\s+/g, " ").trim().slice(0, 300);
   const raw = String(error.message || error.error_description || error.error || error.code || error.status || "").trim();
-  if (/failed to fetch|networkerror|load failed|network request failed/i.test(raw)) return "no connection";
-  return raw.replace(/\s+/g, " ").slice(0, 140);
+  const code = error.code && error.code !== raw ? ` [${error.code}]` : "";
+  return `${raw.replace(/\s+/g, " ")}${code}`.slice(0, 300);
+}
+
+// Plain-words reasons for members. Order matters: the first match wins.
+const PLAIN = [
+  [/failed to fetch|networkerror|load failed|network request failed|no connection|ERR_INTERNET|ERR_NETWORK|offline/i, "no connection"],
+  [/denied geolocation|geolocation.*(denied|blocked)|location (access|permission).*(denied|blocked)|User denied/i, "location is blocked for TUNR. Allow it in your phone's settings"],
+  [/position unavailable|unable to determine (your )?(position|location)|POSITION_UNAVAILABLE/i, "your phone couldn't find where you are"],
+  [/jwt|token (is )?expired|invalid (refresh )?token|not authenticated|PGRST30[123]|session (expired|not found)/i, "you've been signed out. Sign in again"],
+  [/permission denied|row-level security|insufficient privilege|\[42501\]|not allowed|forbidden|\b403\b/i, "you don't have access to that"],
+  [/duplicate key|already exists|\[23505\]/i, "that's already saved"],
+  [/foreign key|\[23503\]/i, "something it belongs to is gone"],
+  [/violates check constraint|violates not-null|invalid input syntax|value too long|out of range|\[2(3514|3502|2P02|2001|2003)\]/i, "something in it wasn't valid"],
+  [/timed? ?out|timeout|\[57014\]/i, "it took too long. Try again"],
+  [/too many requests|rate limit|\b429\b/i, "too many tries. Wait a minute and try again"],
+  [/PGRST116|JSON object requested, multiple \(or no\) rows|0 rows|\b404\b/i, "it isn't there any more"],
+  [/does not exist|schema cache|could not find the (function|table)|PGRST20[0-9]|\[(42883|42P01|42703)\]/i, "TUNR is being updated. Try again in a few minutes"],
+  [/\b50[0-9]\b|internal server error|bad gateway|service unavailable|restarting|upstream|XX000|\[53[0-9]{3}\]|too many connections|server error/i, "TUNR's server is having trouble. Try again in a minute"],
+];
+// Words that only a developer would understand.
+const TECHNICAL = /\b(table|relation|column|function|schema|constraint|syntax|operator|uuid|jsonb|PGRST|SQLSTATE|postgres|supabase|TypeError|ReferenceError|SyntaxError|undefined|null value|is not a function|Cannot read prop|stack|API key|sk_(test|live)|stripe|webhook|env|VITE_|HTTP \d{3}|status \d{3})\b|PGRST\w*|\[[0-9A-Z]{5}\]/i;
+
+// Would a member need a developer to understand this?
+export function looksTechnical(text) {
+  const t = String(text || "");
+  return TECHNICAL.test(t) || PLAIN.some(([pattern, words]) => words !== "no connection" && pattern.test(t));
+}
+
+// The reason shown to members: plain words, never table or function names.
+// The technical one goes to the admins' app error log (onTechnicalError).
+// "Couldn't save that car. (you don't have access to that)"
+export function errorReason(error, context = "") {
+  let raw = technicalReason(error);
+  if (!raw) return "";
+  // Already one of our sentences, "Couldn't … (reason)": just its reason.
+  const ours = raw.match(/^(?:Couldn't|Can't)[^(]*\((.+)\)\.?$/);
+  if (ours) return ours[1];
+  let plain = null;
+  for (const [pattern, words] of PLAIN) {
+    if (pattern.test(raw)) {
+      plain = words;
+      break;
+    }
+  }
+  // A database code from our own rules ("meet_cancelled"): in words.
+  if (!plain && /^[a-z]+(_[a-z0-9]+)+$/.test(raw)) plain = raw.replace(/_/g, " ");
+  if (!plain && TECHNICAL.test(raw)) plain = "something went wrong on our side";
+  // Plain enough already: shown without its error code.
+  if (!plain) return raw.replace(/ \[[^\]]+\]$/, "").slice(0, 140);
+  if (plain !== "no connection") report(raw, context ? `${context} (${plain})` : plain);
+  return plain;
+}
+
+// Where technical reasons go (App.jsx sends them to the admins' log).
+let sink = null;
+export function onTechnicalError(fn) {
+  sink = fn;
+}
+function report(detail, shown) {
+  try {
+    sink?.(detail, shown);
+  } catch (e) {
+    console.warn("app error log:", e.message); // quiet: the member already saw the message
+  }
+}
+
+// The message already says why in plain words: the technical part only goes
+// to the admins' log.
+function explained(message, error) {
+  errorReason(error, message);
+  return message;
 }
 
 export function withReason(message, error) {
-  const reason = errorReason(error);
+  const reason = errorReason(error, message);
   return reason ? `${message} (${reason})` : message;
 }
 
@@ -129,14 +198,14 @@ export function authErrorMessage(error) {
   if (/email not confirmed/i.test(msg)) return "Confirm your email first — check your inbox (and spam).";
   if (/already registered|already been registered/i.test(msg) || code === "user_already_exists")
     return "That email already has an account. Tap LOG IN instead.";
-  if (/password/i.test(msg) && /(short|least|6)/i.test(msg)) return withReason("Password must be at least 6 characters.", error);
+  if (/password/i.test(msg) && /(short|least|6)/i.test(msg)) return explained("Password must be at least 6 characters.", error);
   if (code === "over_email_send_rate_limit" || /email rate limit/i.test(msg))
-    return withReason(
+    return explained(
       "TUNR has hit its limit on sign-up emails for now, so new accounts can't be created for a bit. This isn't your fault — try again in an hour, or log in if you already have an account.",
       error
     );
   if (code === "over_request_rate_limit" || /rate limit|too many/i.test(msg))
-    return withReason("Too many tries from this device. Wait a few minutes and try again.", error);
+    return explained("Too many tries from this device. Wait a few minutes and try again.", error);
   if (code === "email_address_not_authorized" || /not authorized/i.test(msg))
     return withReason("TUNR can't send a confirmation email to that address yet.", error);
   if (code === "email_address_invalid" || (/invalid/i.test(msg) && /email/i.test(msg)))

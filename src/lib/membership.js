@@ -2,7 +2,7 @@
 // (api/membership → Stripe), and the admin's side. Rules: memberRules.js.
 // Screen: Membership.jsx; admin: MembershipAdmin.jsx.
 import { supabase } from "./supabase.js";
-import { withReason, friendlyWriteError } from "./errors.js";
+import { withReason, friendlyWriteError, errorReason } from "./errors.js";
 import { ERRORS, errorMessage } from "./memberRules.js";
 
 export async function loadMembership() {
@@ -22,7 +22,7 @@ async function call(body) {
     r = await fetch("/api/membership", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
     res = await r.json().catch(() => ({}));
   } catch (e) {
-    throw new Error(`Couldn't reach TUNR. (${e.message})`);
+    throw new Error(`Couldn't reach TUNR. (${errorReason(e)})`);
   }
   if (!r.ok || !res.url) throw new Error(errorMessage(r.status, res));
   window.location.href = res.url;

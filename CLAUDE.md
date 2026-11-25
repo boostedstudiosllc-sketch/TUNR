@@ -1,12 +1,17 @@
 # TUNR conventions
 
 ## Errors always say what went wrong
-Every error the user sees must state its cause, not just "Couldn't do that."
+Every error the user sees must state its cause, not just "Couldn't do that." The cause
+is in plain words for members ("you don't have access to that", "no connection",
+"TUNR's server is having trouble"), never table, function or code names: `errorReason`
+in `src/lib/errors.js` translates them and sends the technical reason to the admins'
+app error log (Settings → Admin → App errors, `135_app_errors.sql`).
 - In `src/lib/store.js`, wrap failures with `withReason("Couldn't …", error)` or
   `friendlyWriteError(error, "Couldn't …")` from `src/lib/errors.js`. Both append
-  the real reason, e.g. "Couldn't save that car. (permission denied for table vehicles)".
+  the reason in plain words, e.g. "Couldn't save that car. (you don't have access to that)";
+  admins see "permission denied for table vehicles" in the app error log.
 - Never swallow an error with a bare `catch {}` and a generic message; catch it as
-  `catch (e)` and show `e.message`.
+  `catch (e)` and show `e.message`, or `errorReason(e)` for a raw browser or server error.
 - API routes return a specific error code (`bad_key`, `rate_limit_flyers`, …) and the
   client shows either a message for that code or the code itself.
 - On screens, a failure a member could notice is shown, never only logged: an inline

@@ -8,7 +8,7 @@ import { cleanForSending, cleanOrNull, assertClean } from "./clean.js";
 import { seedEvents } from "../data/events.js";
 import { supabase } from "./supabase.js";
 import { DEFAULT_TZ, parseLocal, isoInTz } from "./dates.js";
-import { friendlyWriteError, withReason, authErrorMessage } from "./errors.js";
+import { friendlyWriteError, withReason, authErrorMessage, errorReason } from "./errors.js";
 import { cleanUsername } from "./instagramName.js";
 import { normalizePasscode } from "./passcode.js";
 import { kickPush } from "./alerts.js";
@@ -453,7 +453,7 @@ export async function decodeVin(vin) {
     r = await fetch("/api/vin", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ vin }) });
     body = await r.json().catch(() => ({}));
   } catch (e) {
-    throw new Error(`Couldn't reach the VIN decoder. (${e.message})`);
+    throw new Error(`Couldn't reach the VIN decoder. (${errorReason(e)})`);
   }
   if (!r.ok) {
     const why = { bad_vin: body.detail, not_found: `NHTSA has no record of that VIN. (${body.detail || "not found"})`, decoder_failed: `The VIN decoder isn't answering right now. (${body.detail || r.status})`, not_signed_in: "Sign in to decode a VIN." };
@@ -897,7 +897,7 @@ function signInErrorMessage(b) {
   if (b.error === "too_many_tries") return `Too many wrong passwords from this network. Try again in ${plural(b.minutes, "minute")}.`;
   if (b.error === "missing_fields") return "Enter your email and password.";
   if (b.error === "sign_in_failed") return authErrorMessage({ message: b.detail || "", code: b.code || "" });
-  return `Couldn't sign in. (${b.error}${b.detail ? `: ${b.detail}` : ""})`;
+  return `Couldn't sign in. (${errorReason(b.detail || b.error)})`;
 }
 
 // POST to one of TUNR's server functions; the reply's JSON, with `error`
@@ -937,7 +937,7 @@ export async function updatePassword(password) {
   if (body.error === "password_reused") throw new Error("That's one of your last 24 passwords. Pick one you haven't used before.");
   if (body.error === "weak_password") throw new Error(body.detail || "That password is too weak.");
   if (body.error === "not_signed_in") throw new Error("You were signed out. Sign in again (or use a fresh reset link), then set the password.");
-  throw new Error(`Couldn't change your password. (${body.error}${body.detail ? `: ${body.detail}` : ""})`);
+  throw new Error(`Couldn't change your password. (${errorReason(body.detail || body.error)})`);
 }
 
 function friendlyAuthError(error) {
@@ -1450,7 +1450,7 @@ export async function readFlyer(imageUrl, caption = "") {
       no_model: "Flyer reading isn't set up right (AI model not found). Fill the details in by hand.",
     }[body.error] || `Couldn't read the flyer (${body.error || res.status}). Fill the details in by hand.`;
   // Say what actually happened, in Google's words when it gave a reason.
-  throw new Error(body.detail ? `${message} (${body.detail})` : message);
+  throw new Error(body.detail ? `${message} (${errorReason(body.detail)})` : message);
 }
 
 // The meet's going count after every RSVP change, for its ticker chart.

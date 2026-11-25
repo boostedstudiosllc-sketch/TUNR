@@ -2,10 +2,14 @@
 // background load, a library). App.jsx listens for "tunr:toast" and shows
 // it. Every failure a member could notice ends up here or in the screen's own
 // error line, with the reason (CLAUDE.md: errors always say what went wrong).
-import { errorReason } from "./errors.js";
+import { errorReason, technicalReason, looksTechnical } from "./errors.js";
 
-// Messages written for people (src/lib wording), shown as they are.
-const CLEAN = /^(Couldn't|Can't|You|You're|That|This|Sign in|Confirm|Only|Too|No |Please|Pick|Add|Share|Turn|Enter|Check)/;
+// Messages written for people (src/lib wording), shown as they are. Ours
+// start "Couldn't …" / "Can't …" and already carry a plain reason; any other
+// sentence passes only if it has nothing technical in it ("No API key found
+// in request" doesn't).
+const CLEAN_START = /^(Couldn't|Can't|You|You're|That|This|Sign in|Confirm|Only|Too|No |Please|Pick|Add|Share|Turn|Enter|Check)/;
+const isClean = (text) => CLEAN_START.test(text) && (/^(Couldn't|Can't) /.test(text) || !looksTechnical(text));
 
 export function showToast(message, { error = false } = {}) {
   if (typeof window === "undefined" || !message) return;
@@ -14,10 +18,10 @@ export function showToast(message, { error = false } = {}) {
 
 // "Couldn't load the leaderboard. (no connection)"
 export function errorText(what, e) {
-  const why = errorReason(e);
+  const why = errorReason(e, what);
   const msg = typeof e?.message === "string" ? e.message : "";
   // Messages from src/lib already say what failed and why: show as is.
-  if (msg && CLEAN.test(msg)) return msg;
+  if (msg && isClean(msg)) return msg;
   return why ? `${what} (${why})` : what;
 }
 
@@ -33,11 +37,12 @@ export const failWith = (what) => (e) => showError(what, e);
 const NOISE = /ResizeObserver loop|AbortError|The user aborted|Share canceled|cancell?ed by the user|^Script error\.?$|NotAllowedError: play\(\)|The play\(\) request was interrupted/i;
 export function uncaughtText(reason) {
   const name = reason?.name || "";
-  const text = errorReason(reason) || String(reason ?? "");
-  if (!text || name === "AbortError" || NOISE.test(text) || NOISE.test(`${name}: ${text}`)) return null;
+  const raw = technicalReason(reason);
+  if (!raw || name === "AbortError" || NOISE.test(raw) || NOISE.test(`${name}: ${raw}`)) return null;
+  const text = errorReason(reason, "Something didn't work.");
   // Our own messages already say what failed and why.
   const full = typeof reason?.message === "string" ? reason.message : typeof reason === "string" ? reason : "";
-  if (CLEAN.test(full)) return full.slice(0, 300);
+  if (isClean(full)) return full.slice(0, 300);
   return `Something didn't work. (${text})`;
 }
 

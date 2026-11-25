@@ -6,6 +6,7 @@ import { sharedGame } from "../lib/gameRooms.js";
 import { RushAudio } from "../lib/rushAudio.js";
 import MusicButtons from "./MusicButtons.jsx";
 import { failWith } from "../lib/toast.js";
+import { errorReason } from "../lib/errors.js";
 
 // Guess the Car: a blurred photo sharpens over 20 seconds; pick the make
 // and model from four. Today's car is the same for everyone and pays 1–3
@@ -274,7 +275,7 @@ function Duel({ start, room, hooks, opponent, onDone, onQuit }) {
         // For the browser checks.
         if (import.meta.env.DEV) window.__duelCar = ready;
       })
-      .catch((e) => setError(`Couldn't show that car. (${e.message})`));
+      .catch((e) => setError(`Couldn't show that car. (${errorReason(e)})`));
     return () => {
       live = false;
     };
@@ -341,7 +342,7 @@ function Duel({ start, room, hooks, opponent, onDone, onQuit }) {
                 const correct = choice === car.answer;
                 const entry = { i: at, correct, seconds, points: duelPoints(correct, seconds) };
                 setMine((m) => [...m, entry]);
-                Promise.resolve(room?.send("answer", { round: start.round, ...entry })).catch((e) => setError(`Couldn't send your answer to your friend. (${e.message})`));
+                Promise.resolve(room?.send("answer", { round: start.round, ...entry })).catch((e) => setError(`Couldn't send your answer to your friend. (${errorReason(e)})`));
                 return { correct, answer: car.answer, credit: car.credit, source_url: car.source_url, points: 0 };
               }}
               onNext={() => setAt((n) => n + 1)}

@@ -157,7 +157,8 @@ test("TUNR+ perks, prices and status in words", () => {
 
 test("membership errors say what went wrong", () => {
   assert.match(errorMessage(503, { error: "payments_not_set_up" }), /aren't switched on/);
-  assert.equal(errorMessage(502, { error: "stripe_failed", detail: "Invalid API Key" }), "The payment page wouldn't open. (Invalid API Key)");
+  assert.equal(errorMessage(502, { error: "stripe_failed", detail: "Invalid API Key" }), "The payment page wouldn't open. (something went wrong on our side)", "members never see Stripe's technical reason");
+  assert.equal(errorMessage(502, { error: "stripe_failed", detail: "Your card was declined." }), "The payment page wouldn't open. (Your card was declined.)");
   assert.equal(errorMessage(500, {}), "Couldn't open the payment page. (status 500)");
 });
 

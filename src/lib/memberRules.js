@@ -1,5 +1,6 @@
 // TUNR+ (122_membership.sql): what members get and how the status reads.
 // No network here, so it's unit-tested (test/membership.test.js).
+import { errorReason } from "./errors.js";
 
 export function perksList(restoreDays = 30) {
   const every = restoreDays === 30 ? "once a month" : `once every ${restoreDays} days`;
@@ -63,5 +64,5 @@ export const ERRORS = {
 // The message for a failed /api/membership reply.
 export function errorMessage(status, body = {}) {
   const msg = ERRORS[body.error] || `Couldn't open the payment page. (${body.error || `status ${status}`})`;
-  return body.detail && body.error === "stripe_failed" ? `${msg} (${body.detail})` : msg;
+  return body.detail && body.error === "stripe_failed" ? `${msg} (${errorReason(body.detail)})` : msg;
 }

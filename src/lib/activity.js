@@ -1,7 +1,7 @@
 // Your own activity for the Settings pages: sign-in history, meet history,
 // and this device's alert sound. Rules live in 050_activity.sql.
 import { supabase } from "./supabase.js";
-import { withReason } from "./errors.js";
+import { withReason, errorReason } from "./errors.js";
 
 // "Safari on iPhone", "Chrome on Windows"… from the browser's own label.
 export function deviceLabel(ua = navigator.userAgent || "") {
@@ -86,7 +86,7 @@ export function saveAlertSound(dataUrl) {
     if (dataUrl) localStorage.setItem(SOUND_KEY, dataUrl);
     else localStorage.removeItem(SOUND_KEY);
   } catch (e) {
-    throw new Error(`Couldn't save the sound on this device. (${e.message})`);
+    throw new Error(`Couldn't save the sound on this device. (${errorReason(e)})`);
   }
 }
 

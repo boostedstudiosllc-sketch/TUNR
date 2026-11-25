@@ -5,6 +5,7 @@ import TrackButton from "./TrackButton.jsx";
 import { lookOf } from "../lib/rushEngine.js";
 import { muted, bigButton, quietButton } from "./Sheet.jsx";
 import { GarageRow, useGarageCar } from "./Showroom.jsx";
+import { errorReason } from "../lib/errors.js";
 
 // Car Stack: tap to drop cars from the crane and build the tallest tower
 // you can. Free play; your best is kept on this phone.
@@ -153,7 +154,7 @@ function StackRun({ look, best, audio, onDone, onQuit }) {
         view = m.createStack3D(canvas.current, { myLook: look });
         raf = requestAnimationFrame(frame);
       })
-      .catch((e) => setError(`Couldn't start the 3D view. (${e.message})`));
+      .catch((e) => setError(`Couldn't start the 3D view. (${errorReason(e)})`));
     const say = (text, color) => setFlash({ text, color, at: Date.now() });
     const frame = (now) => {
       raf = requestAnimationFrame(frame);

@@ -65,7 +65,7 @@ async function serverKey() {
   const body = await res.json().catch(() => ({}));
   if (!res.ok || !body.publicKey) {
     const what = SERVER_ERRORS[body.error] || `Couldn't turn on alerts (${body.error || `HTTP ${res.status}`})`;
-    throw new Error(body.detail ? `${what}: ${body.detail}.` : `${what}.`);
+    throw new Error(body.detail ? `${what} (${errorReason(body.detail)}).` : `${what}.`);
   }
   return body.publicKey;
 }

@@ -1,5 +1,6 @@
 import { classOf, classLine, positionLine, sinceShort, slipRows, slipNumber, barcode } from "../lib/standingText.js";
 import { timeSlipImage } from "../lib/standingCard.js";
+import { errorReason } from "../lib/errors.js";
 
 // A member's TUNR time slip (from StandingBadge.jsx): the printed slip a drag
 // strip hands you after a pass, with their class stamped on it. Always dark
@@ -58,7 +59,7 @@ export default function StandingCard({ st, activity, username, isMe, onClose, on
         onToast?.("Saved your time slip");
       }
     } catch (e) {
-      if (e.name !== "AbortError") onToast?.(`Couldn't share the slip. (${e.message})`);
+      if (e.name !== "AbortError") onToast?.(`Couldn't share the slip. (${errorReason(e)})`);
     }
   };
 
