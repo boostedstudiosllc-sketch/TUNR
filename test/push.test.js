@@ -124,6 +124,15 @@ test("delivery sends each claimed alert to each device and drops dead ones", asy
   assert.deepEqual(db.state.deleted, ["https://push.example/gone"]);
 });
 
+test("each delivery also sends comeback nudges whose time has come, before pushing", async () => {
+  const db = fakeDb({ keys: { public_key: "PUB", private_key: "PRIV" }, claimed: [] });
+  await pushHandler({ env: ENV, fetchImpl: db.fetchImpl, webpushImpl: fakePush() })({ method: "POST", headers: {} }, fakeRes());
+  const paths = db.calls.map((c) => c.path);
+  const release = paths.indexOf("/rest/v1/rpc/release_comeback_nudges");
+  assert.ok(release >= 0, "comeback nudges released");
+  assert.ok(release < paths.indexOf("/rest/v1/rpc/claim_pushes"), "before the alerts are claimed for pushing");
+});
+
 const NOW = new Date("2026-10-17T13:00:00Z"); // Saturday 9 AM in Atlanta
 const ev = (over) => ({
   id: "e1",

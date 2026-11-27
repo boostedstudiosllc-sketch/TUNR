@@ -47,6 +47,15 @@ export function createHandler({ env = process.env, fetchImpl = fetch, now = () =
       if (now().getTime() - last < MIN_GAP_MS) return res.status(429).json({ error: "too_soon" });
     }
 
+    // The 5 PM run also sends comeback nudges whose time has come (136), so
+    // they go out the same afternoon even if nobody opened the app. Sending
+    // only what's due, so any caller is harmless.
+    try {
+      await service.rest("/rest/v1/rpc/release_comeback_nudges", { method: "POST", body: "{}" });
+      await service.flush();
+    } catch (e) {
+      console.error("comeback nudges", e?.message);
+    }
     const result = await createInstagramImport({ service, env, fetchImpl, now }).run();
     if (!result.ok) console.error("instagram-sync", result);
     const status = result.ok ? 200 : result.error === "instagram_not_connected" || result.error === "not_configured" ? 503 : 502;

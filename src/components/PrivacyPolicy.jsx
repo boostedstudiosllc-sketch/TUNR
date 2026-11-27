@@ -37,7 +37,7 @@ export default function PrivacyPolicy({ onClose }) {
           <div>
             <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 0.5 }}>PRIVACY POLICY</div>
             <div style={{ fontSize: 11, color: "var(--n-555555)", letterSpacing: 1.5, marginTop: 2 }}>
-              LAST UPDATED OCTOBER 2026
+              LAST UPDATED NOVEMBER 2026
             </div>
           </div>
           <button
@@ -178,6 +178,15 @@ export default function PrivacyPolicy({ onClose }) {
           <strong>Usage events:</strong> basic records of actions like opening the app, searching,
           RSVPing, and sharing, so we can tell which parts of the app are useful. These are linked
           to your account if you're signed in.
+          <br />
+          <br />
+          <strong>When you last opened TUNR:</strong> so we can send a "comeback" alert (and
+          sometimes bonus points) if you've been away a while. Turn these off in Alerts.{" "}
+          <strong>Error reports:</strong> when something fails, the technical reason, the screen
+          it happened on and your browser type go to a log only our admins can see, so we can fix
+          it. Passwords, codes, card numbers and email addresses are removed first.{" "}
+          <strong>Your car's VIN</strong> (optional) is visible only to you, and is sent to the US
+          government's NHTSA database to decode it.
         </div>
 
         <div style={heading}>WHAT WE DON'T COLLECT</div>
@@ -228,7 +237,10 @@ export default function PrivacyPolicy({ onClose }) {
           <strong>Google</strong> also reads a flyer when you post a meet from one: the flyer image and
           any caption you paste are sent to its Gemini AI to pick out the details. On the free tier
           we use, Google may use what's sent to improve its products, so only use it for flyers that
-          are public anyway. <strong>Apple, Google and Mozilla</strong> carry alerts to your device
+          are public anyway. <strong>TUNR Help</strong> (the help chat) sends your question and the
+          conversation so far to Gemini to answer it; we don't store the questions, only how many
+          were asked each day, so don't type private details into it.{" "}
+          <strong>Apple, Google and Mozilla</strong> carry alerts to your device
           if you turn them on — their push services receive the alert (encrypted) and deliver it.
           <br />
           <br />
@@ -267,7 +279,8 @@ export default function PrivacyPolicy({ onClose }) {
           are removed with your account. Linkups and their chats are kept
           after they end so problems can be looked into, and are removed with your account.
           The record of which terms you agreed to, and when, is kept for as long as your account
-          exists.
+          exists. Error reports are kept 30 days, comeback offers 60 days, and Help keeps only a
+          daily count of questions, for a week.
         </div>
 
         <div style={heading}>DELETING YOUR ACCOUNT</div>

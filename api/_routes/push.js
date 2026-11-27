@@ -22,6 +22,8 @@ export function createHandler({ env = process.env, fetchImpl = fetch, webpushImp
       if (req.method === "POST") {
         // Boost Day "tap to finish" reminders that are due (132).
         await service.rest("/rest/v1/rpc/queue_boost_reminders", { method: "POST", body: "{}" }).catch((e) => console.warn("boost reminders", e?.message));
+        // Comeback nudges whose afternoon time has come (136).
+        await service.rest("/rest/v1/rpc/release_comeback_nudges", { method: "POST", body: "{}" }).catch((e) => console.warn("comeback nudges", e?.message));
         return res.status(200).json(await service.flush());
       }
       res.setHeader("Allow", "GET, POST");

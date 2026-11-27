@@ -71,6 +71,13 @@ export function createHandler({ env = process.env, fetchImpl = fetch, webpushImp
       out.awardsError = String(e?.message || e).slice(0, 200);
     }
     try {
+      // Comeback nudges (136): queue today's, each for a random afternoon time.
+      out.comebackQueued = await service.rest("/rest/v1/rpc/queue_comeback_nudges", { method: "POST", body: "{}" });
+      out.comebackSent = await service.rest("/rest/v1/rpc/release_comeback_nudges", { method: "POST", body: "{}" });
+    } catch (e) {
+      out.comebackError = String(e?.message || e).slice(0, 200);
+    }
+    try {
       out.accounts = await createAccounts(service, { now }).runDaily();
     } catch (e) {
       out.accountsError = String(e?.message || e).slice(0, 200);

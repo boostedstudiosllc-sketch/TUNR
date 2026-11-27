@@ -59,6 +59,10 @@ import PerksTab from "./components/PerksTab.jsx";
 import JoinPage from "./components/JoinPage.jsx";
 import CommunityTab from "./components/CommunityTab.jsx";
 import NotificationBell from "./components/NotificationBell.jsx";
+import ThemeToggle from "./components/ThemeToggle.jsx";
+import ComebackSheet from "./components/ComebackSheet.jsx";
+import HelpChat from "./components/HelpChat.jsx";
+import { markSeen } from "./lib/comeback.js";
 import RatePrompt from "./components/RatePrompt.jsx";
 import Checklist from "./components/Checklist.jsx";
 import ParkedCar from "./components/ParkedCar.jsx";
@@ -232,6 +236,7 @@ export default function App() {
   const [memberOpen, setMemberOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [boostOpen, setBoostOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   useEffect(() => {
     const open = () => setSpotsOpen(true);
     window.addEventListener(SPOTS_OPEN, open);
@@ -381,6 +386,22 @@ export default function App() {
   // Offline: the banner, and the meets saved from the last good load
   // (src/lib/offline.js). Games and the parked-car card need no network.
   const [online, setOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine !== false));
+  // A welcome-back points offer (136), shown when the app opens.
+  const [comeback, setComeback] = useState(null);
+  const seenPing = useRef(0);
+  useEffect(() => {
+    if (!user?.id || !online) return;
+    const ping = () => {
+      if (document.visibilityState !== "visible" || Date.now() - seenPing.current < 10 * 60e3) return;
+      seenPing.current = Date.now();
+      markSeen()
+        .then((offer) => offer && setComeback(offer))
+        .catch((e) => showToast(errorText("Couldn't check for your welcome-back bonus.", e), true));
+    };
+    ping();
+    document.addEventListener("visibilitychange", ping);
+    return () => document.removeEventListener("visibilitychange", ping);
+  }, [user?.id, online]);
   const [savedMeetsAt, setSavedMeetsAt] = useState(null); // when showing saved meets
   useEffect(() => {
     const on = () => setOnline(true);
@@ -728,7 +749,7 @@ export default function App() {
   function openLink(link) {
     const [type, id] = String(link || "").split(":");
     if (!id) return;
-    if (type === "linkup" || type === "shout" || type === "post" || type === "forum" || type === "club" || type === "listing" || type === "listing-chat") {
+    if (type === "linkup" || type === "shout" || type === "post" || type === "forum" || type === "club" || type === "listing" || type === "listing-chat" || type === "listing-fit") {
       setSelected(null);
       setPersonView(null);
       setTab("community");
@@ -743,6 +764,11 @@ export default function App() {
       else if (id === "membership") (setPitStop(null), setMemberOpen(true));
       else if (id === "shop") setShopOpen(true);
       else if (id === "boost") (setPitStop(null), setBoostOpen(true));
+      else if (id === "help") setHelpOpen(true);
+      else if (id === "comeback")
+        markSeen()
+          .then((offer) => (offer ? setComeback(offer) : showToast("That bonus was already claimed or has ended.")))
+          .catch((e) => showToast(errorText("Couldn't open your welcome-back bonus.", e), true));
     } else if (type === "convoy") {
       setConvoyCode(id);
     } else if (type === "tab") {
@@ -1043,7 +1069,8 @@ export default function App() {
             ATLANTA, GA
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <ThemeToggle />
         <ParkedCar onToast={showToast} />
         <Checklist user={user} onToast={showToast} />
         <RatePrompt user={user} onToast={showToast} />
@@ -1064,12 +1091,13 @@ export default function App() {
             fontSize: 12,
             fontWeight: 700,
             letterSpacing: 1.5,
-            padding: "9px 15px",
+            padding: "9px 12px",
             borderRadius: 5,
             fontFamily: "'Barlow Condensed', sans-serif",
+            whiteSpace: "nowrap",
           }}
         >
-          + POST MEET
+          + POST<span className="hide-narrow"> MEET</span>
         </button>
         </div>
       </div>
@@ -1770,6 +1798,8 @@ export default function App() {
 
       {setupTour && user && <SetupTour all={setupTour === "all"} onDone={() => (setSetupTour(null), setPitStop(null))} onToast={showToast} />}
       {pitStop && !setupTour && <PitStopPopup status={pitStop} onClose={() => setPitStop(null)} onToast={showToast} />}
+      {helpOpen && <HelpChat onClose={() => setHelpOpen(false)} />}
+      {comeback && <ComebackSheet offer={comeback} onClose={() => setComeback(null)} onToast={showToast} />}
       {boostOpen && (
         <BoostSheet
           user={user}
@@ -1943,6 +1973,7 @@ function GlobalStyles() {
       @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap');
       * { box-sizing: border-box; margin: 0; padding: 0; }
       ::-webkit-scrollbar { width: 0; height: 0; }
+      @media (max-width: 379px) { .hide-narrow { display: none; } }
       /* Games: holding a button steers, it never selects text or opens the copy menu. */
       .tunr-game, .tunr-game * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
       .tunr-game input, .tunr-game textarea { -webkit-user-select: text; user-select: text; }

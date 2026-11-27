@@ -12,6 +12,7 @@
 const ROUTES = {
   "confirm-email": () => import("./_routes/confirm-email.js"),
   daily: () => import("./_routes/daily.js"),
+  help: () => import("./_routes/help.js"),
   hosts: () => import("./_routes/hosts.js"),
   "instagram-sync": () => import("./_routes/instagram-sync.js"),
   join: () => import("./_routes/join.js"),

@@ -28,7 +28,7 @@ import {
   markChatRead,
   watchThread,
 } from "../lib/market.js";
-import { failWith } from "../lib/toast.js";
+import { failWith, showError } from "../lib/toast.js";
 
 // Parts for sale, like Facebook Marketplace: browse what people are selling
 // off their cars, message the seller, and sort out the deal yourselves. TUNR
@@ -81,13 +81,23 @@ export default function MarketTab({ user, onNeedAccount, onToast, onOpenPerson, 
   };
   useEffect(refreshChats, [user?.id]);
 
-  // Opened from an alert: the listing, or the chat.
+  // Opened from an alert: the listing, the chat, or parts for one of your
+  // cars ("listing-fit:<car id>", from "3 parts for sale fit your …").
+  const [fitCarId, setFitCarId] = useState(null);
   useEffect(() => {
     if (!open) return;
     if (open.type === "listing") setViewing(open.id);
     if (open.type === "listing-chat") setChat({ thread: open.id });
+    if (open.type === "listing-fit") setFitCarId(open.id);
     onOpened?.();
   }, [open]);
+  useEffect(() => {
+    if (!fitCarId || !garage.length) return;
+    const c = garage.find((v) => v.id === fitCarId);
+    if (c) setFit({ make: c.make, model: c.model, year: c.year || null, trim: c.trim || null });
+    else showError("Couldn't find that car in your garage, so these are all parts.");
+    setFitCarId(null);
+  }, [fitCarId, garage]);
 
   const unread = chats.filter((c) => c.unread).length;
   const needAccount = () => (user ? false : (onNeedAccount?.(), true));
@@ -334,6 +344,9 @@ function ListingView({ id, user, garage = [], onClose, onToast, onNeedAccount, o
               ⚠️ {fitWarning(l)}. Check yours before you buy.
             </div>
           )}
+          <div role="note" style={{ ...muted, fontSize: 11.5, marginTop: 6 }}>
+            Fit checks are estimates from what the seller entered. Confirm with the part number, your VIN or a mechanic before you buy. TUNR isn't part of the sale; meet in a public place.
+          </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
             {[`${CATEGORY[l.category]?.icon} ${CATEGORY[l.category]?.name}`, CONDITION[l.condition], fitLabel(l) && `🚗 Fits ${fitLabel(l)}`, l.part_number && `Part # ${l.part_number}`, l.fits && `Notes: ${l.fits}`, l.city && `📍 ${l.city}`].filter(Boolean).map((t) => (
               <span key={t} style={{ padding: "4px 10px", borderRadius: 14, background: "var(--n-1a1a1a)", border: "1px solid var(--n-2a2a2a)", fontSize: 13, fontWeight: 700 }}>
@@ -550,7 +563,9 @@ function SellForm({ user, listing = null, onClose, onSaved, onToast }) {
       <button className="action-btn" disabled={Boolean(busy)} onClick={save} style={{ ...bigButton, marginTop: 14, background: "#16A34A" }}>
         {busy === "save" ? "SAVING…" : listing ? "SAVE CHANGES" : "POST LISTING"}
       </button>
-      <div style={{ ...muted, fontSize: 11.5, marginTop: 8 }}>Only parts you own. No stolen parts, airbags, or anything illegal to sell. Reported listings are taken down.</div>
+      <div style={{ ...muted, fontSize: 11.5, marginTop: 8 }}>
+        By posting, you confirm the part is yours to sell, legal to sell, and described honestly, fitment included. No stolen parts, removed VINs, emissions-defeat devices, airbags or anything illegal to sell. Reported listings are taken down. Terms, section 14.
+      </div>
     </Sheet>
   );
 }
@@ -687,6 +702,7 @@ function ChatView({ thread, draft = "", user, onClose, onOpenListing, onToast })
           {error}
         </div>
       )}
+      <div style={{ ...muted, fontSize: 11, textAlign: "center", marginBottom: 6 }}>Meet in a public place, check the part before paying, and don't pay strangers by wire or gift card. TUNR isn't part of the sale.</div>
       <form onSubmit={send} style={{ display: "flex", gap: 8 }}>
         <input value={text} onChange={(e) => setText(e.target.value)} maxLength={1000} placeholder="Message…" aria-label="Message" style={{ ...field, flex: 1, borderRadius: 20 }} />
         <button type="submit" disabled={busy || !text.trim()} style={{ ...bigButton, marginTop: 0, width: 80, opacity: text.trim() ? 1 : 0.5 }}>

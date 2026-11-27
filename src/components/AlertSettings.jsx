@@ -133,7 +133,13 @@ export default function AlertSettings({ user, onClose, onToast }) {
               on={settings.parts !== false}
               onChange={(v) => save({ parts: v })}
               title="Parts for my car"
-              sub="When someone lists a part made for a car in your garage (same make, model and year)."
+              sub="When someone lists a part made for a car in your garage (same make, model, year and trim), and when you add a car that parts are already listed for."
+            />
+            <Toggle
+              on={settings.comeback !== false}
+              onChange={(v) => save({ comeback: v })}
+              title="Comeback rewards"
+              sub="If you've been away a while: what's new near you, and now and then bonus points for coming back."
             />
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>

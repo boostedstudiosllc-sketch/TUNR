@@ -3,7 +3,7 @@ import { CONTACT_EMAIL, LEGAL_ENTITY } from "../lib/contact.js";
 import { LINKUP_RULES } from "../lib/linkupRules.js";
 
 // Shown at the top. Change it whenever TOS_VERSION in lib/store.js changes.
-const TERMS_UPDATED = "October 2026";
+const TERMS_UPDATED = "November 2026";
 
 const body = { fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "var(--n-aaaaaa)", lineHeight: 1.7 };
 const heading = {
@@ -114,6 +114,8 @@ export default function TermsOfService({ onAccept, onClose, onDecline = null, re
         <div style={warn}>
           ⚠️ TUNR is a discovery platform only. We do not organize or endorse any listed event.
           Attending any event is at your own risk.
+          In Parts, members buy and sell to each other: TUNR isn't part of those sales and doesn't
+          guarantee that any part fits or is as described (section 14).
         </div>
 
         <div style={heading}>1. ILLEGAL ACTIVITY — ZERO TOLERANCE</div>
@@ -224,7 +226,7 @@ export default function TermsOfService({ onAccept, onClose, onDecline = null, re
             </span>
           ))}
           <span style={{ display: "block", marginTop: 8 }}>
-            Sections 15 and 16 (release, limit of liability and indemnity) apply to linkups exactly
+            Sections 21, 23 and 24 (disputes between members, release, limit of liability and indemnity) apply to linkups exactly
             as they do to meets.
           </span>
         </div>
@@ -330,15 +332,91 @@ export default function TermsOfService({ onAccept, onClose, onDecline = null, re
           members own. TUNR isn't connected with, sponsored or endorsed by any car maker.
         </div>
 
-        <div style={heading}>14. THE APP IS PROVIDED "AS IS"</div>
+        <div style={heading}>14. PARTS MARKETPLACE</div>
+        <div style={body}>
+          <b>TUNR isn't part of the sale.</b> Parts lets members list car parts and message each other. We aren't the buyer, seller, agent or broker; we don't own, inspect, store, ship or hold payment for any item, and we aren't a party to any sale. Whatever you agree with another member (price, payment, shipping or pickup, returns, refunds, warranties) is between the two of you. Unless the seller promises otherwise in writing, items are sold as is.
+          <br />
+          <br />
+          <b>Fitment is an estimate, not a promise.</b> What a part fits (make, model, years, trim or chassis code, "only fits cars with", part number) is entered by the seller. The fit check (✅ FITS YOUR CAR, ⚠️ CHECK FIT, ❌ WON'T FIT), "Parts for my car" alerts, the "Fits which car?" filter and VIN decoding are automatic estimates made from what the seller entered, what your garage says and public data, and they can be wrong or incomplete. They don't promise that a part fits, works, is legal for your car, or is what the listing says. Before you buy or install anything, confirm it yourself: the part number, your VIN, the maker's or a dealer's parts catalog, or a qualified mechanic. TUNR isn't responsible for a part that doesn't fit or work, is damaged, fake, stolen or not as described, or for the cost of returning, fitting or removing it.
+          <br />
+          <br />
+          <b>Sellers.</b> Only list what you own or are allowed to sell, describe it honestly (condition, fitment, defects, whether it's genuine), follow the law (including consumer protection and taxes), and do what you agree to. Not allowed: stolen goods or parts from stolen vehicles; parts with VIN or serial numbers removed or altered; devices that defeat emissions controls or parts advertised as street legal when they aren't; airbags and recalled safety parts; fakes or replicas sold as genuine; and anything else that's illegal to sell. We can remove any listing and suspend any seller.
+          <br />
+          <br />
+          <b>Stay safe.</b> We don't check members' identity. Meet in a busy public place in daylight, bring someone, inspect the item before you pay, and don't pay strangers by wire transfer, gift card or anything you can't get back. Never share passwords or codes. Report fraud or theft to the police and to us.
+          <br />
+          <br />
+          <b>When a deal goes wrong,</b> sort it out with the other member. We may look at reports and remove listings or accounts, but we don't have to step in, refund anyone, or decide who's right.
+          <br />
+          <br />
+          <b>Working on your car.</b> Parts and modifications can void a warranty, affect insurance, emissions, inspections or whether a car is street legal, and can be dangerous if fitted wrong. You do it at your own risk; use a qualified mechanic.
+        </div>
+
+        <div style={heading}>15. MERCH SHOP</div>
+        <div style={body}>
+          The price, sizes, any TUNR+ discount and shipping are shown before you pay. Card payments are taken on our payment processor's (Stripe's) checkout page. Colors on screen can look a little different in person, so check the size and description before you order. If an item sells out after you've paid, we refund you.
+          <br />
+          <br />
+          We ship to the address you give us, in the US. Delivery times are estimates, not promises. Once the carrier marks a package delivered, it's yours; if it's lost after that, contact the carrier, and we'll help where we can.
+          <br />
+          <br />
+          If an item arrives damaged, defective or wrong, email us within 30 days of delivery with a photo and we'll replace it or refund you. Otherwise sales are final, unless we say otherwise at checkout or the law gives you more.
+        </div>
+
+        <div style={heading}>16. PROMOTED MEETS &amp; OTHER PAID FEATURES</div>
+        <div style={body}>
+          Promoting a meet buys placement for a time: a spot at the top of Discover, and with Spotlight a banner slide and one alert to members nearby. It doesn't guarantee views, RSVPs, attendance or any result. The price and what you get are shown before you pay through Stripe. If the meet is removed, hidden or over before the promotion starts, you get a refund; once a promotion is live it isn't refundable, except where the law requires. We can turn down or stop a promotion for a meet that breaks these terms, without a refund. Promoted meets are labeled "Promoted"; promotion isn't an endorsement by us.
+        </div>
+
+        <div style={heading}>17. MAPS, DIRECTIONS, LOCATION &amp; DRIVING</div>
+        <div style={body}>
+          <b>Never use TUNR while driving.</b> Directions, convoys, check-ins and alerts are for passengers or when you're parked. A convoy is not a navigation or safety system: don't speed, race, follow too closely or drive unsafely to keep up with anyone.
+          <br />
+          <br />
+          Directions open Google Maps or Waze, and maps come from Mapbox. Addresses, map pins, distances, routes and weather come from hosts and other services and can be wrong. Check where you're going and obey traffic laws and signs.
+          <br />
+          <br />
+          Your location is used only when you choose: checking in, convoys, "Who's down?" and distances. In a convoy, its members see where you are while you share. Think about who you share it with.
+          <br />
+          <br />
+          Photo spots are suggested by members. We don't check that a spot is legal, safe, public or open. Get permission where you need it, respect "no trespassing" and property rules, and don't block traffic. "Where I parked" is a convenience kept on your phone, not a guarantee.
+        </div>
+
+        <div style={heading}>18. AI FEATURES</div>
+        <div style={body}>
+          Some features use AI from Google (Gemini): reading flyers when you post a meet, listing meets found on Instagram, and TUNR Help. AI can be wrong, so check what it fills in before you post. TUNR Help answers questions about using the app from our help guide; it can't see your account, can't make promises or exceptions for us, and isn't legal, mechanical, financial or safety advice. Don't type passwords, payment details or other private information into it. Your questions are sent to Google to be answered; we don't keep them.
+        </div>
+
+        <div style={heading}>19. SCRATCH CARDS &amp; TUNR TUESDAYS</div>
+        <div style={body}>
+          Scratch cards let you spend points for a chance to win points. Everyone gets one free card a week, with no points or purchase needed. Prizes are points only, never cash or goods, and points can't be bought on their own, sold or cashed out. TUNR Tuesdays is a free weekly pick; a right pick earns points. You must be 18 or older. Where these are not allowed by law, they're void. We can change cards, odds, prizes and picks, or end them, at any time, and can remove points won by cheating.
+        </div>
+
+        <div style={heading}>20. OTHER COMPANIES' SERVICES</div>
+        <div style={body}>
+          TUNR uses and links to services run by other companies, including Stripe (payments), Google (maps and AI), Waze, Mapbox (maps), Instagram, the US government's NHTSA vehicle database (VIN decoding) and the businesses behind perks. They have their own terms and privacy policies. We aren't responsible for them, their content, or whether they're available.
+        </div>
+
+        <div style={heading}>21. DISPUTES BETWEEN MEMBERS</div>
+        <div style={body}>
+          What happens between you and other members (at meets, linkups and convoys, in sales, chats, clubs, photo shoots or anything else) is between you and them. To the fullest extent the law allows, you release {LEGAL_ENTITY}, its owners, employees and agents from all claims, demands and damages of every kind, known or unknown, that come from those dealings, and you give up any law that would otherwise limit this release to claims you knew about when you agreed.
+        </div>
+
+        <div style={heading}>22. THE APP IS PROVIDED "AS IS"</div>
         <div style={body}>
           TUNR is provided "as is" and "as available". To the extent the law allows, we make no
           promise that it will be accurate, uninterrupted, or error-free, or that any event,
           listing, host, or offer is what it claims to be, and we disclaim all implied warranties,
           including merchantability, fitness for a particular purpose, and non-infringement.
+          <br />
+          <br />
+          Things TUNR works out for you are estimates and can be wrong: fit checks, part details,
+          VIN decoding, flyer readings, AI answers, directions, distances, weather, "going" counts
+          and points shown before they're paid. Don't rely on them for anything important without
+          checking.
         </div>
 
-        <div style={heading}>15. RELEASE &amp; LIMIT OF LIABILITY</div>
+        <div style={heading}>23. RELEASE &amp; LIMIT OF LIABILITY</div>
         <div style={body}>
           TO THE MAXIMUM EXTENT PERMITTED BY LAW, {LEGAL_ENTITY.toUpperCase()}, ITS OWNERS,
           EMPLOYEES AND AGENTS ARE NOT LIABLE FOR ANY INJURY, DEATH, PROPERTY DAMAGE, OR OTHER HARM
@@ -346,20 +424,27 @@ export default function TermsOfService({ onAccept, onClose, onDecline = null, re
           ANY EVENT OR LINKUP AT YOUR SOLE RISK.
           <br />
           <br />
+          TO THE SAME EXTENT, WE ARE NOT LIABLE FOR: ANYTHING BOUGHT, SOLD OR TRADED BETWEEN
+          MEMBERS, INCLUDING PARTS THAT DON'T FIT, DON'T WORK OR AREN'T AS DESCRIBED, AND ANY
+          DAMAGE OR INJURY FROM INSTALLING THEM; WHAT OTHER MEMBERS, HOSTS OR SELLERS DO OR SAY;
+          ROUTES, CONVOYS, PHOTO SPOTS OR DRIVING; ESTIMATES AND AI ANSWERS; OTHER COMPANIES'
+          SERVICES; OR LOST DATA, POINTS OR CONTENT.
+          <br />
+          <br />
           TO THE SAME EXTENT, WE ARE NOT LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR
           CONSEQUENTIAL DAMAGES, AND OUR TOTAL LIABILITY FOR ANY CLAIM ABOUT TUNR IS LIMITED TO THE
           GREATER OF $50 OR WHAT YOU PAID US IN THE 12 MONTHS BEFORE THE CLAIM.
         </div>
 
-        <div style={heading}>16. INDEMNITY</div>
+        <div style={heading}>24. INDEMNITY</div>
         <div style={body}>
           If someone brings a claim against us because of a meet you hosted, a linkup you posted or
-          went to, content you posted, or
+          went to, content you posted, an item you listed, sold or bought, a spot you shared, or
           your breach of these terms or the law, you agree to cover our reasonable costs of dealing
           with it, including legal fees.
         </div>
 
-        <div style={heading}>17. REPORTING</div>
+        <div style={heading}>25. REPORTING</div>
         <div style={body}>
           If you witness illegal activity at a TUNR-listed meet, report it to local law enforcement
           immediately. TUNR will cooperate fully with law enforcement investigations.
@@ -370,23 +455,38 @@ export default function TermsOfService({ onAccept, onClose, onDecline = null, re
           breaks these terms.
         </div>
 
-        <div style={heading}>18. CHANGES TO THESE TERMS</div>
+        <div style={heading}>26. CHANGES TO THESE TERMS</div>
         <div style={body}>
           If we change these terms in a way that matters, we'll ask you to agree to the new version
           in the app before you carry on. If you don't agree, you can stop using TUNR and delete your
           account.
         </div>
 
-        <div style={heading}>19. GOVERNING LAW</div>
+        <div style={heading}>27. GOVERNING LAW &amp; DISPUTES</div>
         <div style={body}>
           These terms are governed by the laws of the State of Georgia, USA. Any dispute about TUNR
           will be handled in the state or federal courts located in Georgia, and you and we agree to
           those courts' jurisdiction — except that either of us may bring a claim in small claims
           court where it qualifies. If any part of these terms can't be enforced, the rest still
           applies.
+          <br />
+          <br />
+          Before bringing a claim, email us what it's about and give us 30 days to try to sort it
+          out. To the extent the law allows, a claim about TUNR must be brought within one year of
+          when it arose, and only on your own behalf, not as part of a class or group claim.
         </div>
 
-        <div style={heading}>20. CONTACT</div>
+        <div style={heading}>28. GENERAL</div>
+        <div style={body}>
+          These terms (with the linkup rules and the Privacy Policy) are the whole agreement
+          between you and us about TUNR. If we don't enforce a part of them straight away, we can
+          still enforce it later. You can't transfer this agreement; we can, for example if TUNR is
+          sold. We aren't responsible for delays or outages caused by things outside our control,
+          such as outages at other companies, the weather or the law. Nothing in these terms takes
+          away rights the law gives you that can't be signed away.
+        </div>
+
+        <div style={heading}>29. CONTACT</div>
         <div style={body}>
           TUNR is operated by {LEGAL_ENTITY}. Questions, complaints, or anything that needs a
           human:{" "}

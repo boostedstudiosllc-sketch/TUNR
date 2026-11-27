@@ -29,13 +29,16 @@ export function applyTheme(pref = themePref()) {
   return t;
 }
 
+// Switches right away; if the phone won't store the choice (private
+// browsing), it still switches and says it won't be remembered.
 export function setThemePref(pref) {
+  const t = applyTheme(pref);
   try {
     localStorage.setItem(KEY, pref);
   } catch (e) {
-    throw new Error(`Couldn't save the theme on this phone. (${errorReason(e)})`);
+    throw new Error(`Switched, but this phone won't remember it next time. (${errorReason(e)})`);
   }
-  return applyTheme(pref);
+  return t;
 }
 
 // Follow the phone's setting while on "system".

@@ -29,7 +29,7 @@ const HOST_INVITE_KEY = "tunr.host_invite.v1";
 // indemnity, termination, governing law (October 2026).
 // 4: sticker orders, spending points, games, meets imported from
 // Instagram (late October 2026).
-export const TOS_VERSION = 4;
+export const TOS_VERSION = 5;
 
 function read(key, fallback) {
   try {

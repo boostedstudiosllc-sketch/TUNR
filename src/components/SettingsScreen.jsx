@@ -38,6 +38,8 @@ import MembershipAdmin from "./MembershipAdmin.jsx";
 import ShopAdmin from "./ShopAdmin.jsx";
 import BoostAdmin from "./BoostAdmin.jsx";
 import AppErrorsAdmin from "./AppErrorsAdmin.jsx";
+import ComebackAdmin from "./ComebackAdmin.jsx";
+import HelpChat from "./HelpChat.jsx";
 import FoundMeetsAdmin from "./FoundMeetsAdmin.jsx";
 import { failWith } from "../lib/toast.js";
 
@@ -48,6 +50,7 @@ const PAGES = {
   shopAdmin: "Merch shop",
   boostAdmin: "Boost Day",
   appErrors: "App errors",
+  comebackAdmin: "Comeback nudges",
   foundMeets: "Found meets",
   email: "Email",
   password: "Password",
@@ -106,6 +109,7 @@ export default function SettingsScreen({
   // Same rule as the dot on the profile's gear.
   const unconfirmed = Boolean(account && account.confirmed === false);
   const [page, setPage] = useState(initialPage);
+  const [helping, setHelping] = useState(initialPage === "help");
   const [rating, setRating] = useState(false);
   const [wrapped, setWrapped] = useState(null);
   const [verification, setVerification] = useState(undefined); // undefined = loading
@@ -217,6 +221,7 @@ export default function SettingsScreen({
             : "Get verified";
 
   return (
+    <>
     <div
       role="dialog"
       aria-label="Settings"
@@ -304,6 +309,9 @@ export default function SettingsScreen({
           </div>
         ) : (
           <>
+            <Section title="HELP">
+              <Row icon="❓" label="Help" sub="Ask anything about the app and get an answer right away" onClick={() => setHelping(true)} />
+            </Section>
             <Section title="ACCOUNT">
               <Row
                 icon="👤"
@@ -425,6 +433,7 @@ export default function SettingsScreen({
                 <Row icon="💎" label="TUNR+ membership" sub="Prices, members, free memberships" onClick={() => open("membershipAdmin")} />
                 <Row icon="🛍️" label="Merch shop" sub="Open it, products, orders to ship" onClick={() => open("shopAdmin")} />
                 <Row icon="🔥" label="Boost Day" sub="This week's pick, change the day, bonus points" onClick={() => open("boostAdmin")} />
+                <Row icon="🎁" label="Comeback nudges" sub="Bring quiet members back: points per step, what's working" onClick={() => open("comebackAdmin")} />
                 <Row icon="🧯" label="App errors" sub="What went wrong for members, with the technical reason" onClick={() => open("appErrors")} />
                 <Row icon="🎁" label="Rewards" sub="What points can buy" onClick={() => open("rewardsAdmin")} />
                 <Row icon="📦" label="Sticker orders" sub="Mailed QR stickers: price, payment link, orders" onClick={() => open("stickerOrders")} />
@@ -442,6 +451,7 @@ export default function SettingsScreen({
               <Row icon="📄" label="Terms of Service" onClick={onShowTerms} />
               <Row icon="🔒" label="Privacy Policy" onClick={onShowPrivacy} />
               <Row icon="🏁" label="Other Boosted businesses" sub="Boosted Photography, Boosted Detailing" onClick={() => open("boosted")} />
+              <Row icon="❓" label="Help" sub="Ask the TUNR Help assistant" onClick={() => setHelping(true)} />
               <Row icon="💬" label="Contact us" sub="Questions, problems, partnerships" onClick={() => open("contact")} />
               <Row icon="💡" label="Suggestion box" sub="Ideas to make TUNR better" onClick={() => open("suggestions")} />
               {user && <Row icon="⭐" label="Rate TUNR" sub="Tell us how we're doing" onClick={() => setRating(true)} />}
@@ -484,6 +494,8 @@ export default function SettingsScreen({
         )}
       </div>
     </div>
+      {helping && <HelpChat onClose={() => setHelping(false)} onContact={() => (setHelping(false), open("contact"))} />}
+    </>
   );
 }
 
@@ -533,6 +545,8 @@ function SubPage({ page, user, profile, account, onToast, onCohostChange, onFoll
       return <BoostAdmin onToast={onToast} />;
     case "appErrors":
       return <AppErrorsAdmin onToast={onToast} />;
+    case "comebackAdmin":
+      return <ComebackAdmin onToast={onToast} />;
     case "shopAdmin":
       return <ShopAdmin user={user} onToast={onToast} />;
     case "claims":

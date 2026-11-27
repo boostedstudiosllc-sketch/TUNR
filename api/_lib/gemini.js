@@ -92,3 +92,43 @@ export async function readFlyerWithGemini({ apiKey, model = DEFAULT_MODEL, image
     return { error: "ai_failed" };
   }
 }
+
+// A text chat turn (the Help assistant). contents: [{ role: "user"|"model", text }].
+// → { text } or { error: "busy" | "bad_key" | "no_model" | "blocked" | "ai_failed", detail }
+export async function chatWithGemini({ apiKey, model = DEFAULT_MODEL, system, contents, maxTokens = 600, fetchImpl = fetch }) {
+  const body = JSON.stringify({
+    systemInstruction: { parts: [{ text: system }] },
+    contents: contents.map((c) => ({ role: c.role === "model" ? "model" : "user", parts: [{ text: c.text }] })),
+    generationConfig: { temperature: 0.3, maxOutputTokens: maxTokens },
+  });
+  let res;
+  for (const name of [model, ...FALLBACK_MODELS.filter((m) => m !== model)]) {
+    res = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(name)}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body,
+    });
+    if (res.status !== 404 && res.status !== 429) break;
+  }
+  if (!res.ok) {
+    const text = await res.text();
+    console.error("help gemini:", res.status, text.slice(0, 500));
+    let detail = `HTTP ${res.status}`;
+    try {
+      detail = JSON.parse(text)?.error?.message || detail;
+    } catch (e) {
+      console.warn("help gemini: reply wasn't JSON", e.message); // quiet: the status says enough
+    }
+    detail = String(detail).replace(/\s+/g, " ").slice(0, 200);
+    if (res.status === 429 || res.status === 503) return { error: "busy", detail };
+    if (res.status === 401 || res.status === 403) return { error: "bad_key", detail };
+    if (res.status === 404) return { error: "no_model", detail };
+    return { error: "ai_failed", detail };
+  }
+  const data = await res.json();
+  if (data.promptFeedback?.blockReason) return { error: "blocked" };
+  const cand = data.candidates?.[0];
+  if (!cand || ["SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST"].includes(cand.finishReason)) return { error: "blocked" };
+  const text = (cand.content?.parts || []).map((p) => p.text || "").join("").trim();
+  return text ? { text } : { error: "ai_failed", detail: cand.finishReason || "empty answer" };
+}
