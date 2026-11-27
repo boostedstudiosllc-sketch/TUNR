@@ -102,14 +102,27 @@ export async function chatWithGemini({ apiKey, model = DEFAULT_MODEL, system, co
     generationConfig: { temperature: 0.3, maxOutputTokens: maxTokens },
   });
   let res;
+  // Each model gets 15 seconds and the whole answer 40, well inside the
+  // server's 60-second limit; past that the member is told it's busy.
+  const started = Date.now();
   for (const name of [model, ...FALLBACK_MODELS.filter((m) => m !== model)]) {
-    res = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(name)}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-      body,
-    });
+    const left = 40000 - (Date.now() - started);
+    if (left < 3000) break;
+    try {
+      res = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(name)}:generateContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body,
+        signal: AbortSignal.timeout(Math.min(15000, left)),
+      });
+    } catch (e) {
+      console.error("help gemini:", name, e?.name, e?.message);
+      res = null;
+      continue; // too slow or unreachable: try the next model
+    }
     if (res.status !== 404 && res.status !== 429) break;
   }
+  if (!res) return { error: "busy", detail: "the AI service took too long to answer" };
   if (!res.ok) {
     const text = await res.text();
     console.error("help gemini:", res.status, text.slice(0, 500));

@@ -105,3 +105,28 @@ test("route: limits, missing setup and AI trouble each say so", async () => {
   await createHandler({ env: ENV, fetchImpl: fake().fetchImpl })({ method: "GET", headers: {} }, r);
   assert.equal(r.code, 405);
 });
+
+test("route: an AI that hangs is cut off and the member is told it's busy", async () => {
+  const f = fake();
+  const slow = async (url, init = {}) => {
+    if (String(url).includes("generativelanguage")) {
+      return new Promise((_, no) => init.signal?.addEventListener("abort", () => no(Object.assign(new Error("aborted"), { name: "TimeoutError" }))));
+    }
+    return f.fetchImpl(url, init);
+  };
+  const realTimeout = AbortSignal.timeout;
+  AbortSignal.timeout = () => {
+    // fast for the test, and a normal timer so the test waits for it
+    const c = new AbortController();
+    setTimeout(() => c.abort(), 20);
+    return c.signal;
+  };
+  try {
+    const r = res();
+    await createHandler({ env: ENV, fetchImpl: slow })(ask(), r);
+    assert.deepEqual([r.code, r.body.error], [503, "busy"]);
+    assert.match(r.body.detail, /took too long/);
+  } finally {
+    AbortSignal.timeout = realTimeout;
+  }
+});
