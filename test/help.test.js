@@ -32,9 +32,17 @@ test("answers are tidied into plain text", () => {
   assert.equal(tidyAnswer("## Steps\n**Tap** + POST MEET\n* Add a flyer\n\n\n\nDone"), "Steps\nTap + POST MEET\n- Add a flyer\n\nDone");
 });
 
-test("help errors in plain words", () => {
+test("help errors in plain words", async () => {
   assert.match(helpError("rate_limit", { limit: 40 }), /40 questions today/);
   assert.match(helpError("busy"), /busy/);
+  {
+    const { onTechnicalError } = await import("../src/lib/errors.js");
+    const logged = [];
+    onTechnicalError((detail) => logged.push(detail));
+    assert.match(helpError("busy", { detail: "Quota exceeded for metric generate_content_free_tier_requests [429]" }), /busy right now/, "members see plain words");
+    assert.ok(logged.some((d) => /Quota exceeded/.test(d)), "admins get Google's reason in the app error log");
+    onTechnicalError(null);
+  }
   assert.match(helpError("not_configured"), /isn't switched on/);
   assert.equal(helpError("ai_failed", { detail: "permission denied for table x" }), "TUNR Help couldn't answer. (you don't have access to that)");
 });

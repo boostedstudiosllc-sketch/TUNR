@@ -53,7 +53,9 @@ export function createHandler({ env = process.env, fetchImpl = fetch } = {}) {
     if (quota?.status !== "ok") return res.status(400).json({ error: "bad_request" });
 
     const out = await chatWithGemini({ apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL || DEFAULT_MODEL, system: SYSTEM, contents: convo.turns, fetchImpl });
-    if (out.error === "busy") return res.status(503).json({ error: "busy" });
+    // Google's own reason goes back too: the app shows members plain words and
+    // puts this in the admins' app error log.
+    if (out.error === "busy") return res.status(503).json({ error: "busy", detail: out.detail || "the AI service is busy" });
     if (out.error === "blocked") return res.status(200).json({ answer: "I can only help with questions about using TUNR. Try asking about meets, parts, points or your account.", left: quota.left });
     if (out.error) return res.status(502).json({ error: "ai_failed", detail: out.detail || out.error });
     return res.status(200).json({ answer: tidyAnswer(out.text), left: quota.left });

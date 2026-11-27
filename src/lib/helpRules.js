@@ -10,7 +10,11 @@ const ERRORS = {
 
 export function helpError(code, body = {}) {
   if (code === "rate_limit") return `That's ${body.limit || "today's"} questions today, the daily limit. Try again tomorrow, or use Settings → Contact us.`;
-  if (ERRORS[code]) return ERRORS[code];
+  if (ERRORS[code]) {
+    // The technical reason (e.g. Google's quota message) goes to the admins' log.
+    if (body.detail) errorReason(body.detail, ERRORS[code]);
+    return ERRORS[code];
+  }
   return `TUNR Help couldn't answer. (${errorReason(body.detail || code)})`;
 }
 
